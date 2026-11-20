@@ -97,12 +97,13 @@ test("the Pages fit route forwards only the bounded estimator query to the confi
   const origin = "https://release.fastest.example";
   const estimate = { kind: "fit_estimate", status: "estimated" };
   const observed = [];
+  let upstream = Response.json(estimate);
   t.mock.method(globalThis, "fetch", async (url, options) => {
     observed.push(url.href);
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.equal(options.cache, "no-store");
     assert.equal(options.headers?.Authorization, undefined);
-    return Response.json(estimate);
+    return upstream;
   });
   const fit = (suffix, env = { FASTEST_RELEASE_ORIGIN: origin }) => onRequestGet({
     request: new Request("https://fastest.example/fit.json" + suffix, { headers: { Authorization: "private" } }), env,
@@ -116,6 +117,13 @@ test("the Pages fit route forwards only the bounded estimator query to the confi
   assert.equal((await fit("?url=https://example.net")).status, 400);
   assert.equal((await fit(query, {})).status, 404);
   assert.equal(observed.length, 1);
+
+  upstream = Response.redirect("https://elsewhere.example/private-preview");
+  const redirect = await fit(query);
+  assert.equal(redirect.status, 503);
+  assert.equal(redirect.headers.get("Location"), null);
+  assert.deepEqual(await redirect.json(), { error: "Fit service unavailable." });
+  assert.deepEqual(observed, [origin + "/fit.json" + query, origin + "/fit.json" + query]);
 });
 
 test("the Pages navigation keeps standalone hash links and resolves hosted evidence destinations", async () => {

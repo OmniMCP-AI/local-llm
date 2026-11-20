@@ -21,7 +21,7 @@ function pinnedPath(value, origin) {
 async function readJSON(url) {
   try {
     const response = await fetch(url, {
-      cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000),
+      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(8000),
     });
     return {
       status: response.status,

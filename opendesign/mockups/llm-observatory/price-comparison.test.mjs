@@ -41,7 +41,7 @@ test("the edge preserves original offers, exact market, pinned release and decis
   const fetchMock = t.mock.method(globalThis, "fetch", async (url, options) => {
     assert.equal(url.origin, origin);
     assert.equal(options.cache, "no-store");
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.equal(options.headers, undefined);
     return Response.json(paths.get(url.pathname + url.search));
   });
@@ -61,6 +61,16 @@ test("the edge preserves original offers, exact market, pinned release and decis
   decision.market = { ...market, destination: "US-NY" };
   const mismatched = await request(query, env);
   assert.equal((await mismatched.json()).decision, null);
+});
+
+test("the edge refuses an upstream price redirect without exposing the destination", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", async () =>
+    Response.redirect("https://elsewhere.example/private-preview"));
+  const response = await request({ release: releaseId }, { FASTEST_RELEASE_ORIGIN: origin });
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("Location"), null);
+  assert.deepEqual(await response.json(), { status: "unavailable", releaseId });
+  assert.equal(fetchMock.mock.callCount(), 1);
 });
 
 test("a withdrawal from the origin removes offers, decisions and economics immediately", async (t) => {
