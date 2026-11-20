@@ -1,0 +1,632 @@
+{
+  "V001-P024": {
+    "task": "Generate a reply in a short conversation",
+    "topics": [
+      "interactive-chat"
+    ]
+  },
+  "V001-P029": {
+    "task": "Generate a reply in a short conversation",
+    "topics": [
+      "interactive-chat"
+    ]
+  },
+  "V001-P030": {
+    "task": "Estimate the memory needed for a short conversation",
+    "topics": [
+      "model-fit",
+      "interactive-chat"
+    ]
+  },
+  "V001-P031": {
+    "task": "Estimate model and context memory at 64K",
+    "topics": [
+      "model-fit"
+    ]
+  },
+  "V001-P032": {
+    "task": "Estimate model and context memory at 128K",
+    "topics": [
+      "model-fit"
+    ]
+  },
+  "V002-P005": {
+    "task": "Serve 128 concurrent requests in vLLM",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V002-P006": {
+    "task": "Serve 128 concurrent requests in vLLM",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V002-P007": {
+    "task": "Measure per-user output under 32 simultaneous users",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V002-P008": {
+    "task": "Measure per-user output under 32 simultaneous users",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V002-P014": {
+    "task": "Report aggregate KV cache capacity across users",
+    "topics": [
+      "multi-user-serving",
+      "model-fit"
+    ]
+  },
+  "V003-P002": {
+    "task": "Continue a conversation with 128K context",
+    "topics": [
+      "interactive-chat"
+    ]
+  },
+  "V003-P007": {
+    "task": "Compare generation speed under a 280 W power cap",
+    "topics": [
+      "runtime-tuning"
+    ]
+  },
+  "V005-P002": {
+    "task": "Generate code with Adamant and Strata",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V005-P007": {
+    "task": "Compare draft-assisted JSON and prose generation",
+    "topics": [
+      "runtime-tuning"
+    ]
+  },
+  "V006-P004": {
+    "task": "Report a fine-tuning performance claim",
+    "topics": [
+      "fine-tuning"
+    ]
+  },
+  "V007-P004": {
+    "task": "Compare layer and tensor splitting during generation",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V007-P005": {
+    "task": "Compare layer and tensor splitting during generation",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V007-P006": {
+    "task": "Compare layer and tensor splitting during generation",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V007-P007": {
+    "task": "Compare layer and tensor splitting during generation",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V007-P008": {
+    "task": "Compare layer and tensor splitting during generation",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V007-P017": {
+    "task": "Serve eight simultaneous conversations",
+    "topics": [
+      "multi-user-serving",
+      "interactive-chat"
+    ]
+  },
+  "V007-P018": {
+    "task": "Serve multiple conversations at once",
+    "topics": [
+      "multi-user-serving",
+      "interactive-chat"
+    ]
+  },
+  "V008-P007": {
+    "task": "Check a proposed database change with a code gate",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V008-P008": {
+    "task": "Scan and rewrite a contract with an offline auditor",
+    "topics": [
+      "document-processing",
+      "private-deployment"
+    ]
+  },
+  "V008-P009": {
+    "task": "Resume an agent for a second turn with memory parking",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V008-P010": {
+    "task": "Resume an agent for a second turn",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V009-P005": {
+    "task": "Generate code from a request",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V009-P007": {
+    "task": "Reply to a short greeting with medium reasoning effort",
+    "topics": [
+      "interactive-chat"
+    ]
+  },
+  "V009-P010": {
+    "task": "Answer a code question with a 128K context setting",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V009-P011": {
+    "task": "Inspect a repository using tool calls",
+    "topics": [
+      "coding",
+      "agent-workflows"
+    ]
+  },
+  "V009-P012": {
+    "task": "Analyze a repository with the selected dense model",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V012-P002": {
+    "task": "Generate a response to the same coding task on two engines",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V012-P011": {
+    "task": "Complete a four-turn coding task with 36 hidden tests",
+    "topics": [
+      "coding",
+      "model-evaluation"
+    ]
+  },
+  "V012-P013": {
+    "task": "Complete the coding task with a 3-bit artifact on two engines",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V012-P020": {
+    "task": "Complete eight 127K-token requests serially and in parallel",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V012-P021": {
+    "task": "Process prompts for eight parallel requests",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V012-P024": {
+    "task": "Report the stability of an agent session",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V013-P007": {
+    "task": "Compare next-token predictions with a reference model on the same book page",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P008": {
+    "task": "Compare next-token predictions with a reference model on the same book page",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P009": {
+    "task": "Compare next-token predictions with a reference model on the same book page",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P010": {
+    "task": "Compare next-token predictions with a reference model on the same book page",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P011": {
+    "task": "Compare next-token predictions with a reference model on the same book page",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P012": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P013": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P014": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P015": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P016": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V013-P017": {
+    "task": "Blind-grade a 20-task suite for completion without fixes",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V014-P002": {
+    "task": "Report a fine-tuning efficiency claim",
+    "topics": [
+      "fine-tuning"
+    ]
+  },
+  "V018-P006": {
+    "task": "Generate output in the cited chat workload",
+    "topics": [
+      "interactive-chat"
+    ]
+  },
+  "V018-P007": {
+    "task": "Generate output in the cited agent workload",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V018-P008": {
+    "task": "Generate output in the cited agent workload",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V021-P011": {
+    "task": "Estimate one agent turn with 64K cold input and 2,000 output tokens",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V021-P012": {
+    "task": "Project agent turn time for a hypothetical future model",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V021-P015": {
+    "task": "Estimate an agent turn under the creator’s hypothetical scenario",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V021-P019": {
+    "task": "Serve 32 agents concurrently",
+    "topics": [
+      "agent-workflows",
+      "multi-user-serving"
+    ]
+  },
+  "V021-P020": {
+    "task": "Serve 32 agents concurrently",
+    "topics": [
+      "agent-workflows",
+      "multi-user-serving"
+    ]
+  },
+  "V022-P012": {
+    "task": "Generate the output for one agent step",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V022-P013": {
+    "task": "Extrapolate the time for a 20-step agent job",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V022-P015": {
+    "task": "Estimate the first-token wait for a 37K OpenCode prompt",
+    "topics": [
+      "agent-workflows",
+      "coding"
+    ]
+  },
+  "V022-P024": {
+    "task": "Answer a 100-question slice of Humanity’s Last Exam locally and by API",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V024-P007": {
+    "task": "Retrieve information at five depths in a 128K context, with three trials per depth",
+    "topics": [
+      "retrieval",
+      "model-evaluation"
+    ]
+  },
+  "V024-P008": {
+    "task": "Score reasoning questions at four difficulty levels",
+    "topics": [
+      "model-evaluation"
+    ]
+  },
+  "V024-P009": {
+    "task": "Solve the creator’s Python coding challenges",
+    "topics": [
+      "coding",
+      "model-evaluation"
+    ]
+  },
+  "V025-P017": {
+    "task": "Generate a long code output with tensor splitting and multi-token prediction",
+    "topics": [
+      "coding",
+      "runtime-tuning"
+    ]
+  },
+  "V026-P004": {
+    "task": "Write code for an animated cat",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V027-P003": {
+    "task": "Analyze a repository page",
+    "topics": [
+      "coding"
+    ]
+  },
+  "V028-P009": {
+    "task": "Generate code using draft-assisted decoding on two DGX Sparks",
+    "topics": [
+      "coding",
+      "distributed-inference"
+    ]
+  },
+  "V028-P010": {
+    "task": "Generate structured output with draft assistance on two DGX Sparks",
+    "topics": [
+      "runtime-tuning",
+      "distributed-inference"
+    ]
+  },
+  "V028-P011": {
+    "task": "Generate output across two networked Strix Halo systems",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V028-P012": {
+    "task": "Process a prompt across two networked Strix Halo systems",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V028-P013": {
+    "task": "Compare short fresh prompts after adding a second Strix Halo system",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V028-P017": {
+    "task": "Serve four users and report their combined output rate",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V028-P021": {
+    "task": "Serve eight users with the original 4-bit weights",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V028-P032": {
+    "task": "Estimate an equivalent API purchase using an assumed off-peak price",
+    "topics": [
+      "ownership-cost"
+    ]
+  },
+  "V028-P033": {
+    "task": "Project annual token production at continuous utilization",
+    "topics": [
+      "ownership-cost"
+    ]
+  },
+  "V028-P034": {
+    "task": "Estimate purchase payback at 35 tokens per second with electricity excluded",
+    "topics": [
+      "ownership-cost"
+    ]
+  },
+  "V028-P035": {
+    "task": "Estimate purchase payback at a draft-assisted 80 tokens per second with electricity excluded",
+    "topics": [
+      "ownership-cost"
+    ]
+  },
+  "V029-P011": {
+    "task": "Serve eight users and report aggregate and per-user throughput",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V029-P012": {
+    "task": "Serve 16 users and report aggregate and per-user throughput",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V029-P014": {
+    "task": "Serve 16 streams with speculative decoding",
+    "topics": [
+      "multi-user-serving",
+      "runtime-tuning"
+    ]
+  },
+  "V029-P017": {
+    "task": "Compare long-prompt prefill with and without an NVLink bridge",
+    "topics": [
+      "distributed-inference",
+      "runtime-tuning"
+    ]
+  },
+  "V029-P018": {
+    "task": "Compare eight-user throughput with the NVLink bridge",
+    "topics": [
+      "multi-user-serving",
+      "distributed-inference"
+    ]
+  },
+  "V029-P019": {
+    "task": "Compare 16-user throughput with the NVLink bridge",
+    "topics": [
+      "multi-user-serving",
+      "distributed-inference"
+    ]
+  },
+  "V029-P020": {
+    "task": "Serve 16 users with speculation and an NVLink bridge",
+    "topics": [
+      "multi-user-serving",
+      "distributed-inference"
+    ]
+  },
+  "V029-P031": {
+    "task": "Serve concurrent vLLM requests with an uncertain stream count in the captions",
+    "topics": [
+      "multi-user-serving"
+    ]
+  },
+  "V045-P003": {
+    "task": "Start a cold agent request and time its first token",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V045-P004": {
+    "task": "Start a cold agent request and time its first token",
+    "topics": [
+      "agent-workflows"
+    ]
+  },
+  "V049-P001": {
+    "task": "Time the GPU baseline for a video-search embedding pipeline",
+    "topics": [
+      "audio-video",
+      "retrieval"
+    ]
+  },
+  "V049-P002": {
+    "task": "Offload vision to the Neural Engine in a video-search embedding pipeline",
+    "topics": [
+      "audio-video",
+      "retrieval",
+      "runtime-tuning"
+    ]
+  },
+  "V049-P003": {
+    "task": "Offload vision and part of the language pipeline when indexing video for search",
+    "topics": [
+      "audio-video",
+      "retrieval",
+      "runtime-tuning"
+    ]
+  },
+  "V053-P002": {
+    "task": "Generate output offline on the compact appliance",
+    "topics": [
+      "private-deployment"
+    ]
+  },
+  "V059-P003": {
+    "task": "Run pipeline-sharded inference on two Mac Studios",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P004": {
+    "task": "Run pipeline-sharded inference on two Mac Studios",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P008": {
+    "task": "Run tensor-sharded inference over RDMA on two Mac Studios",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P009": {
+    "task": "Generate output over Ethernet after the RDMA attempt failed",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P010": {
+    "task": "Run inference on the RDMA-connected Mac cluster",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P011": {
+    "task": "Run inference on the RDMA-connected Mac cluster",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P019": {
+    "task": "Monitor per-node power while a four-node cluster generates a long story",
+    "topics": [
+      "distributed-inference"
+    ]
+  },
+  "V059-P020": {
+    "task": "Estimate total cluster power by summing the four nodes",
+    "topics": [
+      "distributed-inference"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "generated": "2026-11-20T14:34:45.303623+00:00",
+  "sections": [
+    {
+      "id": "mockups",
+      "label": "Mockups",
+      "groups": [
+        {
+          "slug": "llm-observatory",
+          "files": [
+            {
+              "label": "fastest.ai · Rim redesign",
+              "path": "mockups/llm-observatory/fastest-ai.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design-systems",
+      "label": "Design Systems",
+      "groups": []
+    }
+  ]
+}

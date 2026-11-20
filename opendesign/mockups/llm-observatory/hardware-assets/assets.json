@@ -1,0 +1,38 @@
+{
+  "rtx-4090": {
+    "file": "rtx-4090.jpg",
+    "credit": "Benlisquare / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Benlisquare",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Asus_Strix_RTX_4090.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "ASUS ROG Strix GeForce RTX 4090 graphics card"
+  },
+  "rtx-3090": {
+    "file": "rtx-3090.jpg",
+    "credit": "Adam Kapetanakis / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Adam Kapetanakis",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RTX_3090_Founders_Edition.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "NVIDIA GeForce RTX 3090 Founders Edition graphics card"
+  },
+  "rtx-3060": {
+    "file": "rtx-3060.jpg",
+    "credit": "Qurren / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Qurren",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Zotac_GeForce_RTX_3060_12GB_VRAM_LHR_video_card.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Zotac GeForce RTX 3060 12 GB LHR graphics card"
+  },
+  "arc-b580": {
+    "file": "arc-b580.jpg",
+    "credit": "Jiahwang / Wikimedia Commons (CC0 1.0; resized)",
+    "author": "Jiahwang",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_Battlemage_B580_Limited_Edition.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Intel Arc B580 Limited Edition graphics card and packaging"
+  }
+}

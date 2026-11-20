@@ -1,0 +1,57 @@
+[
+  {
+    "id": "aa-index-v5-method",
+    "format": "article",
+    "title": "Coding and scientific tasks in Intelligence Index v5",
+    "publisher": "Artificial Analysis",
+    "url": "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5",
+    "date": "2026-10-27",
+    "topics": [
+      "model-evaluation",
+      "coding",
+      "agent-workflows"
+    ],
+    "context": "The v5 methodology includes FrontierCode repository changes judged for merge readiness and terminal-based scientific tasks. Its changes to the suite matter when reading scores across releases."
+  },
+  {
+    "id": "aa-glm-5-2",
+    "format": "article",
+    "title": "GLM-5.2 on knowledge work and coding benchmarks",
+    "publisher": "Artificial Analysis",
+    "url": "https://artificialanalysis.ai/articles/glm-5-2-is-the-new-leading-open-weights-model-on-the-artificial-analysis-intelligence-index",
+    "date": "2026-06-16",
+    "topics": [
+      "model-evaluation",
+      "coding",
+      "agent-workflows"
+    ],
+    "context": "The publisher evaluates GLM-5.2 with Intelligence Index v4.1, GDPval-AA v2 knowledge-work tasks and SciCode. Its cost-per-task comparison uses API pricing."
+  },
+  {
+    "id": "together-evaluation-methods",
+    "format": "blog",
+    "title": "Choosing an evaluation method for a language model",
+    "publisher": "Together AI",
+    "url": "https://www.together.ai/blog/evaluate-and-benchmark-llms",
+    "date": "2025-11-04",
+    "topics": [
+      "model-evaluation",
+      "coding",
+      "evidence-research"
+    ],
+    "context": "The guide contrasts MMLU classification, GSM8K answer checking and HumanEval code execution. It explains how training-data overlap can distort benchmark interpretation."
+  },
+  {
+    "id": "lcz-strata-quantization",
+    "format": "post",
+    "title": "Comparing quantized model configurations in Strata",
+    "publisher": "LCZ forum",
+    "url": "https://lcz.me/topic/2174",
+    "date": null,
+    "topics": [
+      "model-evaluation",
+      "runtime-tuning"
+    ],
+    "context": "The author compares capability and speed on a Radeon R9700. The model quantization and RAM loading policy both change, limiting what the reported differences can establish about either setting."
+  }
+]
