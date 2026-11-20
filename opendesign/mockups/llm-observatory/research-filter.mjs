@@ -33,3 +33,24 @@ export function filterResearch(sources, filters, locale, tagText) {
     return collator.compare(a.title, b.title) || a.id.localeCompare(b.id);
   });
 }
+
+export function readResearchFilters(params, vocabulary) {
+  const valid = (field, facet) => {
+    const value = params.get(field);
+    return Object.hasOwn(vocabulary[facet], value) ? value : "";
+  };
+  return {
+    format: valid("format", "formats"),
+    topic: valid("topic", "topics"),
+    task: params.get("task") === "unspecified" ? "unspecified" : valid("task", "topics"),
+    dimension: valid("dimension", "dimensions"),
+    query: params.get("query") || "",
+    sort: params.get("sort") === "title" ? "title" : "newest",
+  };
+}
+
+export function researchReleaseUrl(release, filters = {}) {
+  const params = new URLSearchParams(Object.entries(filters).filter(([key, value]) =>
+    value && !(key === "sort" && value === "newest")));
+  return `/research/${release}/library.html${params.size ? "?" + params.toString() : ""}`;
+}
