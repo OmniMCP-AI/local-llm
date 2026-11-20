@@ -4,11 +4,12 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 from fastest_goals import GoalService
-from test_goals import server
+from test_goals import allow_observations, server
 
 
 PLAN = Path(__file__).resolve().parents[1] / "fastest_text" / "plan.json"
@@ -53,7 +54,9 @@ def configured_service(root, record, *, include_solo=False):
         "schema_version": 1, "market": {"market": "US", "destination": None, "currency": "USD", "condition": "new"},
         "records": records, "candidates": {}, "serving_records": ["serving.json"],
     }))
-    return GoalService(path)
+    service = GoalService(path, rights_path=path.parent / "rights.json")
+    allow_observations(service)
+    return service
 
 
 def serving_result(service, **limits):
@@ -104,6 +107,24 @@ class ServingTests(unittest.TestCase):
         for displayed in ("Client deadline elapsed.", "Server returned an error.", "423 ms", "9300 J",
                           "93 accepted", "serving-host-ac-input", "127"):
             self.assertIn(displayed, html)
+
+    def test_withdrawn_serving_observation_is_denied_without_restarting(self):
+        with TemporaryDirectory(prefix="fastest-serving-test-") as root:
+            service = configured_service(root, serving_record(), include_solo=True)
+            serving_url = service.url(service.selection({"entry": "serving"}), ".json")
+            with server(service) as base:
+                with urlopen(base + serving_url, timeout=5) as response:
+                    self.assertEqual(result_row(json.load(response))["serving"]["counts"]["accepted"], 93)
+                policy = json.loads(service.rights_path.read_text())
+                policy["observations"][service.observation_digests["serving"]["apple-m4"]] = "withdrawn"
+                service.rights_path.write_text(json.dumps(policy))
+                for path in (serving_url, "/api/v1/comparison?entry=serving"):
+                    with self.subTest(path=path), self.assertRaises(HTTPError) as error:
+                        urlopen(base + path, timeout=5)
+                    with error.exception as response:
+                        self.assertEqual(response.code, 410)
+                with urlopen(base + f"/goals/{service.release_id}/text-pilot.json", timeout=5) as response:
+                    self.assertEqual(response.status, 200)
 
     def test_api_reuses_the_pinned_serving_decision_and_citation(self):
         with TemporaryDirectory(prefix="fastest-serving-test-") as root:

@@ -1,3 +1,4 @@
+from functools import partial
 import json
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -6,11 +7,11 @@ from subprocess import TimeoutExpired
 import re
 from urllib.parse import parse_qs
 
-from fastest_cost import PUBLIC_FIELDS as COST_FIELDS, calculate
+from fastest_cost import CostInputError, PUBLIC_FIELDS as COST_FIELDS, calculate
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
 from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
-from fastest_goals import GoalService, PUBLIC_FIELDS as GOAL_FIELDS
+from fastest_goals import GoalEvidenceWithdrawn, GoalRightsUnavailable, GoalService, PUBLIC_FIELDS as GOAL_FIELDS
 from fastest_goals.page import render_goals
 from fastest_prices import PriceError, PriceReleaseNotFound
 
@@ -46,7 +47,7 @@ GOALS_ROUTE = re.compile(
 
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
-                scaling_pair=()):
+                scaling_pair=(), cost_scenario=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
     scaling_pair = tuple(scaling_pair)
     if scaling_pair and (
@@ -64,7 +65,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     default_goals = GoalService()
     goals = goals or default_goals
     goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
-    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader)
+    cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader)
+    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader, cost_reader=cost_reader)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
@@ -183,12 +185,20 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
         def _cost(self, path, query):
             try:
-                params = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=len(COST_FIELDS))
-                if params.keys() - COST_FIELDS or any(len(values) != 1 for values in params.values()):
+                fields = COST_FIELDS | {"revision"}
+                params = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=len(fields))
+                if params.keys() - fields or any(len(values) != 1 for values in params.values()):
                     raise ValueError("Unknown or repeated cost parameter.")
-                result = calculate({key: values[0] for key, values in params.items()})
+                selection = {key: values[0] for key, values in params.items()}
+                revision = selection.pop("revision", None)
+                result = cost_reader(selection)
+            except (CostInputError, OSError, TimeoutExpired, PriceError):
+                logging.exception("Cannot read the configured cost scenario")
+                return self._respond(503, "Cost scenario unavailable.\n")
             except ValueError as error:
                 return self._respond(400, f"{error}\n")
+            if revision is not None and revision != result["revision"]:
+                return self._respond(404, "Cost scenario revision unavailable.\n")
             return self._respond(200, render_cost(result, path), COST_ROUTES[path])
 
         def _profile(self, profiles, kind, identity, extension, query):
@@ -213,7 +223,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 extension = name.rsplit(".", 1)[1]
                 content_type = {"html": CONTENT_TYPES["benchmark.html"], "md": CONTENT_TYPES["benchmark.md"],
                                 "json": "application/json"}[extension]
-                return self._respond(200, service.text_artifacts[name], content_type)
+                try:
+                    return self._respond(200, service.text_artifact(name), content_type)
+                except GoalEvidenceWithdrawn:
+                    return self._respond(410, "Goal evidence withdrawn.\n")
+                except GoalRightsUnavailable:
+                    return self._respond(503, "Goal evidence unavailable.\n")
             try:
                 params = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=len(GOAL_FIELDS))
                 if any(len(values) != 1 for values in params.values()):
@@ -223,7 +238,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(400, f"{error}\n")
             if pin:
                 return self._respond(307, location=service.url(selection))
-            result = service.evaluate(selection)
+            try:
+                result = service.evaluate(selection)
+            except GoalEvidenceWithdrawn:
+                return self._respond(410, "Goal evidence withdrawn.\n")
+            except GoalRightsUnavailable:
+                return self._respond(503, "Goal evidence unavailable.\n")
             if suffix == ".json":
                 return self._respond(200, json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n", "application/json")
             return self._respond(200, render_goals(service, result, fit is not None), CONTENT_TYPES["benchmark.html"])

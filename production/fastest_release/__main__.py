@@ -40,6 +40,8 @@ def main(argv=None):
                        help="Compare one reviewed one-GPU release to one reviewed multi-GPU release.")
     serve.add_argument("--goal-cohort", type=Path, action="append", default=[],
                        help="Keep a reviewed goals cohort available. The last manifest becomes current.")
+    serve.add_argument("--cost-scenario", type=Path, help="Read a reviewed cost scenario for the public evidence view.")
+    serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -69,12 +71,12 @@ def main(argv=None):
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
             price_reader = PriceStore(args.database_url).read if args.database_url else None
-            goal_history = [GoalService(manifest, price_reader=price_reader) for manifest in args.goal_cohort]
+            goal_history = [GoalService(manifest, price_reader=price_reader, rights_path=args.goal_rights) for manifest in args.goal_cohort]
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
                              profile_releases=args.profile_release,
                              profile_archives=[archive.split(",") for archive in args.profile_archive],
                              goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1],
-                             price_reader=price_reader, scaling_pair=args.scaling_pair) as server:
+                             price_reader=price_reader, scaling_pair=args.scaling_pair, cost_scenario=args.cost_scenario) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

@@ -1,7 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { researchReleaseId } from "./research-released-snapshot.mjs";
 
-export const emptyEvidenceState = { paths: [], updates: [], withdrawnSources: [] };
+export const emptyEvidenceState = { paths: [], updates: [], withdrawnSources: [], researchPins: {} };
 
 const escape = (text) => text.replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -11,8 +12,12 @@ const projectIssue = /^https:\/\/github\.com\/OmniMCP-AI\/local-llm\/issues\/[1-
 const safeSource = (link) => /^(?:https:\/\/[^\s<>"()]+|#wiki\/[a-z0-9-]+)$/.test(link);
 export const isPublicIssue = (link) => typeof link === "string" && projectIssue.test(link);
 
-export async function writeEvidenceState(output, state = emptyEvidenceState) {
-  const { paths, updates, withdrawnSources = [] } = state;
+export function validateEvidenceState(state) {
+  const { paths, updates, withdrawnSources = [], researchPins = {} } = state;
+  if (!researchPins || Array.isArray(researchPins) || typeof researchPins !== "object" ||
+      Object.entries(researchPins).some(([release, hash]) => !researchReleaseId.test(release) || !/^[a-f0-9]{64}$/.test(hash))) {
+    throw new Error("Invalid retained research pins");
+  }
   if (!Array.isArray(withdrawnSources) || withdrawnSources.some((hash) => !/^[a-f0-9]{64}$/.test(hash))) {
     throw new Error("Invalid withdrawn source digests");
   }
@@ -22,13 +27,23 @@ export async function writeEvidenceState(output, state = emptyEvidenceState) {
     (path.includes("*") && !path.endsWith("/*")))) {
     throw new Error("Invalid evidence quarantine paths");
   }
-  if (updates.some(({ id, action, research, source, issue }) =>
+  if (updates.some(({ id, action, research, source, sourceDigest, issue }) =>
     !/^[a-f0-9]{64}$/.test(id) || !["withdraw", "correct"].includes(action) ||
     !localReleasePath.test(research) || (source && (action !== "correct" || !safeSource(source))) ||
+    (sourceDigest && (!source || !/^[a-f0-9]{64}$/.test(sourceDigest))) ||
     (issue && !isPublicIssue(issue)))) {
     throw new Error("Invalid public evidence update");
   }
-  const publicUpdates = updates.map(({ id, action, research, source, issue }) => ({ id, action, research, source, issue }));
+  return { paths, updates, withdrawnSources, researchPins };
+}
+
+export async function writeEvidenceState(output, state = emptyEvidenceState, isWithdrawn = () => false) {
+  const { paths, updates, withdrawnSources, researchPins } = validateEvidenceState(state);
+  const blocked = new Set(withdrawnSources);
+  const publicUpdates = updates.map(({ id, action, research, source, sourceDigest, issue }) => ({
+    id, action, research, issue,
+    ...(!blocked.has(sourceDigest) && !isWithdrawn(source) && { source, sourceDigest }),
+  }));
   const html = publicUpdates.map(({ id, action, research, source, issue }) => `<section id="${id}">
 <h2>${action === "withdraw" ? "Withdrawn evidence" : "Corrected evidence"}</h2>
 <p><a href="${research}">Updated research release</a>${source ? ` · <a href="${escape(source.startsWith("#") ? "/" + source : source)}">Reviewed source</a>` : ""}${issue ? ` · <a href="${issue}">Public issue</a>` : ""}</p>
@@ -38,7 +53,7 @@ export async function writeEvidenceState(output, state = emptyEvidenceState) {
     `[Updated research release](${research}.md)${source ? ` · [Reviewed source](${source.startsWith("#") ? "/" + source : source})` : ""}${issue ? ` · [Public issue](${issue})` : ""}\n`).join("\n");
   await Promise.all([
     writeFile(join(output, "evidence-quarantine.json"), JSON.stringify({
-      paths: [...new Set(paths)].sort(), updates: publicUpdates, withdrawnSources: [...new Set(withdrawnSources)].sort(),
+      paths: [...new Set(paths)].sort(), updates: publicUpdates, researchPins, withdrawnSources: [...new Set(withdrawnSources)].sort(),
     }, null, 2) + "\n"),
     writeFile(join(output, "wiki/evidence-updates.html"), `<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

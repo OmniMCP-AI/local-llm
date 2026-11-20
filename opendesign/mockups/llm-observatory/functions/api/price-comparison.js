@@ -1,3 +1,5 @@
+import { releaseOrigin } from "../../release-origin.mjs";
+
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const goalRoute = /^\/goals\/([a-f0-9]{64})\.json$/;
 const costRevision = /^v1-[a-f0-9]{64}$/;
@@ -8,16 +10,6 @@ function json(body, status = 200) {
     status,
     headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
   });
-}
-
-function originFor(value) {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.href === url.origin + "/" ? url.origin : null;
-  } catch {
-    return null;
-  }
 }
 
 function pinnedPath(value, origin) {
@@ -47,7 +39,7 @@ export async function onRequestGet({ request, env }) {
       || (query.has("release") && !uuid.test(releaseId))) {
     return json({ status: "invalid", releaseId: null }, 400);
   }
-  const origin = originFor(env.FASTEST_RELEASE_ORIGIN);
+  const origin = releaseOrigin(env.FASTEST_RELEASE_ORIGIN);
   if (!origin || !uuid.test(releaseId)) return json({ status: "missing", releaseId: null }, 404);
 
   const goalPath = pinnedPath(query.get("goal"), origin);

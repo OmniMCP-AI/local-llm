@@ -137,3 +137,51 @@ test("the Pages middleware sends only a supported language hint on private HTML"
   assert.equal(languages.ar.direction, "rtl");
   assert.equal(new Set(Object.keys(languages).map((language) => priceCopy(language).title)).size, 10);
 });
+
+test("localized price release displays current expiry and pinned collection gaps", async () => {
+  const { build } = await import("esbuild");
+  const { createRequire } = await import("node:module");
+  const { priceCopy } = await import("./price-comparison-copy.mjs");
+  const { outputFiles: [{ text }] } = await build({
+    stdin: { contents: `
+      import React from "react";
+      import { renderToStaticMarkup } from "react-dom/server";
+      import { PriceRelease } from "./price-comparison.jsx";
+      export default function render(props) { return renderToStaticMarkup(<PriceRelease {...props} />); }
+    `, loader: "jsx", resolveDir: process.cwd() },
+    bundle: true, platform: "node", format: "cjs", packages: "external", write: false,
+  });
+  const loaded = { exports: {} };
+  new Function("module", "require", text)(loaded, createRequire(import.meta.url));
+  const props = {
+    data: { price: { ...price, adapter_status: "stale", as_of: "2026-11-10",
+      last_success_at: "2026-11-08T12:00:00Z", last_success_age_days: 2,
+      offers: [
+        { ...price.offers[0], kind: "asking", seller: "Fixture seller", freshness: "fresh",
+          observed_at: "2026-11-08T12:00:00Z", age_days: 2, availability: "available",
+          expires_at: "2026-11-30T00:00:00Z", landed_price: "250.00", source_locator: "fixture/price" },
+        { ...price.offers[0], listing_id: "b", kind: "asking", seller: "Fixture seller", freshness: "fresh",
+          observed_at: "2026-11-07T12:00:00Z", age_days: 3, availability: "available",
+          expires_at: "2026-11-20T00:00:00Z", source_locator: "fixture/expired" },
+      ], days: [{ date: "2026-11-09", status: "capture_failed" }, { date: "2026-11-10", status: "not_checked" }],
+    } }, query: new URLSearchParams(), currency: "USD",
+  };
+  for (const [language, locale, labels] of [
+    ["en", "en", ["Collection status", "Stale", "Expired", "Capture failed", "Not checked"]],
+    ["zh-Hant", "zh-TW", ["收集狀態", "已過時", "已到期", "收集失敗", "未查詢"]],
+  ]) {
+    const html = loaded.exports.default({
+      ...props, copy: priceCopy(language), locale, now: new Date("2026-11-21T00:00:00Z"),
+    });
+    for (const label of [...labels, "2026-11-10", "2026-11-20T00:00:00Z", "250.00 USD"]) assert.ok(html.includes(label), label);
+    assert.doesNotMatch(html, /Available at release|當時有貨/);
+  }
+  props.data.price.adapter_status = "fresh";
+  props.data.price.stale_after_days = 3;
+  const pinned = loaded.exports.default({
+    ...props, copy: priceCopy("en"), locale: "en", now: new Date("2026-11-21T00:00:00Z"),
+  });
+  assert.match(pinned, /Fresh at release/);
+  assert.match(pinned, /Stale/);
+  assert.doesNotMatch(pinned, /Available at release/);
+});

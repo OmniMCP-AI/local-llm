@@ -34,6 +34,10 @@ class PublicRelease:
         assert release_id == RELEASE_ID
         return self.snapshot
 
+    def read_evidence(self, evidence_id):
+        assert evidence_id == "c5258a75-75ec-465f-8cbc-1212b749fddd"
+        return getattr(self, "latest", self.snapshot)
+
     def artifact(self, release_id, name):
         return build_artifacts(self.read(release_id))[name]
 
@@ -159,3 +163,22 @@ class ShortsDeliveryTest(unittest.TestCase):
         self.assertEqual(task["release_id"], RELEASE_ID)
         self.assertEqual(task["receipt_id"], json.loads(receipt.read_bytes())["receipt_id"])
         self.assertEqual(shorts.corrections(self.store, self.delivery_dir), [correction_path])
+
+    def test_superseded_release_holds_new_exports_but_preserves_a_live_receipt(self):
+        package = shorts.prepare(self.store, self.draft(), self.directory / "review")
+        live = self.approve(package)
+        queued = self.approve(package, account="UC" + "a" * 22)
+        shorts.export(self.store, package, live, self.delivery_dir)
+        receipt = shorts.record_receipt(
+            live, self.delivery_dir, account=CHANNEL_ID, url=POST_URL,
+            published_at=self.now.isoformat(), operator="operator@example.test",
+        )
+        self.store.latest = {**self.store.snapshot, "release_id": "e343f9c9-285b-420d-b181-7324f27046b8", "revision": 2}
+        with self.assertRaisesRegex(ValueError, "superseded_release"):
+            shorts.export(self.store, package, queued, self.delivery_dir)
+        self.assertEqual(shorts.export(self.store, package, live, self.delivery_dir), receipt)
+        task_path, = shorts.corrections(self.store, self.delivery_dir)
+        task = json.loads(task_path.read_bytes())
+        self.assertEqual(task["reason"], "superseded_release")
+        self.assertEqual(task["replacement_release_id"], self.store.latest["release_id"])
+        self.assertEqual(shorts.corrections(self.store, self.delivery_dir), [task_path])

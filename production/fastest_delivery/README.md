@@ -82,7 +82,7 @@ python3 -m fastest_delivery --channel youtube-shorts receipt \
   --published-at "$POSTED_AT" --operator "$OPERATOR"
 ```
 
-After a withdrawal, scan recorded Shorts with the command below. It prints the path to each applicable `correction.json` and reuses the same task on retry. The task identifies the live URL, channel, withdrawn release, claim IDs and receipt. Set the affected video to Private in YouTube Studio and, where revised evidence qualifies, prepare and approve a replacement. Set aside exported copies of withdrawn packages awaiting upload. [Change a video's visibility](https://support.google.com/youtube/answer/157177).
+After a correction or withdrawal, scan recorded Shorts with the command below. New handoffs check the current release of the exact evidence before export. Previously confirmed receipts remain replayable. The scan records an immutable task for each applicable live Short, including the replacement release ID when the result was superseded. Set the affected video to Private in YouTube Studio and, where revised evidence qualifies, prepare and approve a replacement. Set aside exported copies of superseded or withdrawn packages awaiting upload. [Change a video's visibility](https://support.google.com/youtube/answer/157177).
 
 ```sh
 python3 -m fastest_delivery --channel youtube-shorts corrections \

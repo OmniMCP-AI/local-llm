@@ -13,6 +13,7 @@ import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
 import { SourceCatalog } from "./catalog";
 import { CostPage } from "./costs";
+import { navigationHref } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
 import { MethodsPage } from "./methods";
 import { LocaleControls, LocaleProvider, LocaleStatus, quoteCurrency, useLocale } from "./locale";
@@ -25,6 +26,7 @@ const states = {
 const routes = {
   Explorer: "explorer", Compare: "goals", Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
 };
+const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__);
 const chineseRoutes = { Explorer: "探索", Compare: "目标对比", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
 const chineseWorkload = { text: "文本生成", image: "图像生成", agent: "智能体任务" };
 const defaults = {
@@ -113,11 +115,15 @@ function Modes({ active, onChoose }) {
     { id: "expert", icon: SlidersHorizontal, title: t("Expert compare", "高级对比"), line: t("Explore matched benchmarks and evidence.", "查看同条件下的评测与证据。") },
   ];
   return <div className="modes" aria-label="Choose a starting point">
-    {items.map(({ id, icon: Icon, title, line }) => <button key={id} className={"mode " + (active === id ? "active" : "")} aria-pressed={active === id} onClick={() => onChoose(id)}>
-      <span className="mode-icon"><Icon size={19} aria-hidden="true" /></span>
-      <span className="mode-text"><strong>{title}</strong><small>{line}</small></span>
-      <ArrowUpRight size={17} className="mode-arrow" aria-hidden="true" />
-    </button>)}
+    {items.map(({ id, icon: Icon, title, line }) => {
+      const content = <><span className="mode-icon"><Icon size={19} aria-hidden="true" /></span>
+        <span className="mode-text"><strong>{title}</strong><small>{line}</small></span>
+        <ArrowUpRight size={17} className="mode-arrow" aria-hidden="true" /></>;
+      const classes = "mode " + (active === id ? "active" : "");
+      return __FASTEST_RELEASE_ORIGIN__
+        ? <a key={id} className={classes} href={hrefFor("goals") + "?entry=" + (id === "shop" ? "budget" : id)}>{content}</a>
+        : <button key={id} className={classes} aria-pressed={active === id} onClick={() => onChoose(id)}>{content}</button>;
+    })}
   </div>;
 }
 
@@ -127,7 +133,13 @@ function Header({ page, navigate }) {
     <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); navigate("Explorer", true); }}>
       <span className="brand-mark"><Activity size={19} strokeWidth={2.4} aria-hidden="true" /></span>fastest<span>.ai</span>
     </a>
-    <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => <a key={name} href={__FASTEST_PAGES__ && route === "prices" ? "/prices" : "#" + route} aria-current={page === name ? "page" : undefined} onClick={(e) => { if (__FASTEST_PAGES__ && route === "prices") return; e.preventDefault(); navigate(name, true); }}>{t(name, chineseRoutes[name])}</a>)}</nav>
+    <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => {
+      const href = hrefFor(route);
+      const internal = href.startsWith("#");
+      return <a key={name} href={href} aria-current={internal && page === name ? "page" : undefined}
+        onClick={internal ? (event) => { event.preventDefault(); navigate(name, true); } : undefined}>
+        {t(name, chineseRoutes[name])}</a>;
+    })}</nav>
     <LocaleControls />
   </div></header>;
 }
@@ -140,7 +152,9 @@ function Hero({ onExplore, onMethod }) {
       <h1>{t("Find your fastest", "找到最快的")}<br />{t("local AI setup.", "本地 AI 配置。")}</h1>
       <p>{t("Compare what fits, how it performs, and what it costs.", "对比模型适配性、运行性能和总体成本。")}</p>
       <div className="hero-actions">
-        <button className="btn mint" onClick={onExplore}>{t("Explore benchmarks", "探索性能评测")} <ArrowDown size={16} aria-hidden="true" /></button>
+        {__FASTEST_RELEASE_ORIGIN__
+          ? <a className="btn mint" href={hrefFor("explorer")}>{t("Explore benchmarks", "探索性能评测")} <ArrowUpRight size={16} aria-hidden="true" /></a>
+          : <button className="btn mint" onClick={onExplore}>{t("Explore benchmarks", "探索性能评测")} <ArrowDown size={16} aria-hidden="true" /></button>}
         <button className="hero-link" onClick={onMethod}>{t("How we compare", "了解对比方法")} <ArrowUpRight size={15} aria-hidden="true" /></button>
       </div>
     </div>
@@ -466,7 +480,9 @@ function App() {
         <section id="explore" className="explore-section">
           <div className="section-heading">
             <div><h2>{state.flow === "machine" ? t("What can my machine run?", "我的设备能运行哪些模型？") : state.flow === "shop" ? t("Find a build in your budget", "查找预算内的配置") : t(wikiEntry("explorer").title, "探索硬件与性能")}</h2><p>{state.flow === "machine" ? t("Choose a setup to see fit, benchmark evidence, and missing runs.", "选择配置后查看模型适配性、测试证据及缺失测试。") : t(wikiEntry("explorer").summary, "以工作负载、预算和测试条件为依据比较配置。")}</p></div>
-            <div className="section-cta"><button className="btn dark" onClick={() => go("#goals")}><SlidersHorizontal size={16} /> {t("Compare by goals", "按目标对比")}</button><button className="btn outline" onClick={share}><ExternalLink size={16} /> {t("Share view", "分享视图")}</button></div>
+            <div className="section-cta"><a className="btn dark" href={hrefFor("goals")}
+              onClick={__FASTEST_RELEASE_ORIGIN__ ? undefined : (event) => { event.preventDefault(); go("#goals"); }}>
+              <SlidersHorizontal size={16} /> {t("Compare by goals", "按目标对比")}</a><button className="btn outline" onClick={share}><ExternalLink size={16} /> {t("Share view", "分享视图")}</button></div>
           </div>
           {state.flow === "machine" && <div className="machine-select"><Select label="Your machine" value={state.machine} onChange={(e) => { set({ machine: e.target.value }); setSelectedId(e.target.value); }}>{configurations.filter((row) => row.kind !== "cloud").map((row) => <option key={row.id} value={row.id}>{row.name} / {row.detail.split(" · ").at(-1)}</option>)}</Select></div>}
           <Filters state={state} set={set} activeCount={matching.length} target={target} />

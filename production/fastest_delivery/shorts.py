@@ -9,7 +9,7 @@ from zipfile import ZipFile, ZipInfo
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
-from .package import retain_package, verify_story
+from .package import require_current_story, retain_package, story_lineage, verify_story
 from .shorts_render import SCENE_SECONDS, render
 
 
@@ -149,6 +149,7 @@ def export(store, package_path, approval_path, delivery_dir):
         for name, body in files.items():
             archive.writestr(ZipInfo(name), body)
     verify_story(store, package["draft"])
+    require_current_story(store, package["draft"])
     require_window(approval, datetime.now(timezone.utc))
     handoff = retain(directory / ARCHIVE, archive_bytes.getvalue())
     return _receipt_path(directory, approval) or handoff
@@ -195,7 +196,7 @@ def record_receipt(approval_path, delivery_dir, *, account, url, published_at, o
 
 
 def corrections(store, delivery_dir):
-    """Route withdrawn evidence to the operator of each recorded live Short."""
+    """Route withdrawn or superseded evidence to each live Short operator."""
     tasks = []
     for path in sorted(delivery_dir.glob("*/receipt.json")):
         receipt = read_sealed(path, "receipt_id")
@@ -203,16 +204,29 @@ def corrections(store, delivery_dir):
             continue
         if receipt["delivery_id"] != path.parent.name:
             raise ValueError(f"receipt is in the wrong delivery directory: {path}")
-        if store.read(receipt["release_id"])["status"] != "withdrawn":
+        reason, replacement = story_lineage(store, receipt["release_id"])
+        if reason is None:
             continue
+        path_for_task = path.with_name("correction.json")
+        if path_for_task.exists():
+            prior = read_sealed(path_for_task, "correction_id")
+            if prior["receipt_id"] != receipt["receipt_id"]:
+                raise ValueError("correction does not match the recorded live receipt")
+            if prior["reason"] == reason and prior.get("replacement_release_id") == replacement:
+                tasks.append(path_for_task.resolve())
+                continue
+            # Keep the immutable original task when the evidence changes again.
+            suffix = replacement or "withdrawn"
+            path_for_task = path.with_name(f"correction-{suffix}.json")
         task = seal({
             "schema_version": 1,
             "status": "needs_correction",
-            "reason": "withdrawn_release",
+            "reason": reason,
+            **({"replacement_release_id": replacement} if replacement else {}),
             "action": "make_private_or_replace_with_approved_correction",
             **{key: receipt[key] for key in (
                 "channel", "account", "delivery_id", "receipt_id", "release_id", "claim_ids", "post_id", "url",
             )},
         }, "correction_id")
-        tasks.append(retain(path.with_name("correction.json"), json_bytes(task)))
+        tasks.append(retain(path_for_task, json_bytes(task)))
     return tasks

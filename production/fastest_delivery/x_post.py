@@ -11,7 +11,7 @@ from zipfile import ZipFile, ZipInfo
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
-from .package import retain_package, verify_story
+from .package import require_current_story, retain_package, verify_story
 
 
 ARCHIVE = "x-post.zip"
@@ -173,6 +173,7 @@ def export(store, package_path, approval_path, delivery_dir):
     with ZipFile(output, "w") as archive:
         for name, body in files.items():
             archive.writestr(ZipInfo(name), body)
+    require_current_story(store, package["draft"])
     require_window(approval, datetime.now(timezone.utc))
     handoff = retain(directory / ARCHIVE, output.getvalue())
     return _receipt_path(directory, approval) or handoff

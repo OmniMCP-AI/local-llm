@@ -236,6 +236,17 @@ class ContributorTest(unittest.TestCase):
         with self.assertRaises(ReleaseError):
             self.intake.review(receipt, 3, decision("reject"))
 
+    def test_missing_or_malformed_amendment_owner_cannot_advance_an_owned_receipt(self):
+        record = submission()
+        receipt = self.intake.submit(json.dumps(record))["receipt"]
+        authorization = {key: value for key, value in record["authorization"].items() if key != "contributor_id"}
+        for invalid in (authorization, {**authorization, "contributor_id": []}):
+            with self.subTest(authorization=invalid):
+                with self.assertRaisesRegex(ReleaseError, "original contributor ID"):
+                    self.intake.submit(json.dumps({**record, "version": 2, "authorization": invalid}))
+        revisions = self.intake.review(receipt, 1, decision())["revisions"]
+        self.assertEqual([(item["version"], item["status"]) for item in revisions], [(1, "published")])
+
     def test_publication_and_editor_decision_commit_together(self):
         record = submission()
         original_decision = decision()

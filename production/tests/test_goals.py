@@ -31,7 +31,7 @@ def read_price(release_id):
 
 
 @contextmanager
-def fixture_service(*, price=read_price, modify_record=None, privacy="local-only"):
+def fixture_service(*, price=read_price, modify_record=None, privacy="local-only", rights_path=None):
     with TemporaryDirectory(prefix="fastest-goals-fixtures-") as temp:
         root = Path(temp)
         for name, backend, prefill, decode in (
@@ -60,7 +60,16 @@ def fixture_service(*, price=read_price, modify_record=None, privacy="local-only
         }
         path = root / "cohort.json"
         path.write_text(json.dumps(manifest))
-        yield GoalService(path, price_reader=price)
+        service = GoalService(path, price_reader=price, rights_path=rights_path or root / "rights.json")
+        if rights_path is None:
+            allow_observations(service)
+        yield service
+
+
+def allow_observations(service):
+    service.rights_path.write_text(json.dumps({"schema_version": 1, "observations": {
+        key: "allow" for lane in service.observation_digests.values() for key in lane.values()
+    }}))
 
 
 def rows(result):
@@ -106,6 +115,28 @@ class GoalTests(unittest.TestCase):
         self.assertIsNone(result["recommendation"])
         self.assertEqual(result["chart"]["points"], [])
         self.assertEqual({row["status"] for row in result["rows"]}, {"unknown"})
+
+    def test_live_observation_withdrawal_blocks_pinned_goal_and_text_companions(self):
+        with TemporaryDirectory(prefix="fastest-goal-rights-") as temp:
+            rights = Path(temp) / "rights.json"
+            with fixture_service(rights_path=rights) as service:
+                allowed = {key: "allow" for key in service.observation_digests["text"].values()}
+                rights.write_text(json.dumps({"schema_version": 1, "observations": allowed}))
+                with server(service) as base:
+                    route = f"/goals/{service.release_id}"
+                    api = f"/api/v1/comparison?budget=1500&revision={service.release_id}"
+                    with urlopen(base + api, timeout=5) as response:
+                        self.assertEqual(json.load(response)["recommendation"], "apple-m4")
+                    allowed[service.observation_digests["text"]["apple-m4"]] = "withdrawn"
+                    rights.write_text(json.dumps({"schema_version": 1, "observations": allowed}))
+                    for path in (route, route + ".json", route + "/text-pilot.html", route + "/text-pilot.md",
+                                 route + "/text-pilot.json", route + "/manifest.json", api):
+                        with self.subTest(path=path), self.assertRaises(HTTPError) as error:
+                            urlopen(base + path, timeout=5)
+                        with error.exception as response:
+                            self.assertEqual(response.code, 410)
+                            self.assertEqual(response.headers["Cache-Control"], "no-store")
+                            self.assertNotIn("fictional", response.read().decode())
 
     def test_entries_share_exact_cohort_and_directional_priority_is_independent(self):
         with fixture_service() as service:
