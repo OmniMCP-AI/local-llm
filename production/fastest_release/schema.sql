@@ -20,6 +20,19 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO fastest_release.metric_definition
+    (metric_key, version, unit, statistic, boundary)
+VALUES
+    ('llama-bench-decode', 1, 'tok/s', 'median',
+      'llama-bench synchronized time for 128 single-token steps starting at empty KV.'),
+    ('llama-bench-prefill', 1, 'tok/s', 'median',
+      'llama-bench synchronized prompt processing time for 1,024 prompt tokens with empty initial KV.'),
+    ('comfyui-seconds-per-accepted-image', 1, 's/image', 'ratio',
+      'Sum of repeat elapsed times including failed and rejected attempts divided by accepted repeats.'),
+    ('comfyui-median-completion', 1, 's', 'median',
+      'Use a monotonic client clock on the same host. Start just before POST /prompt. End when the complete PNG is read from /view or when a terminal error or the deadline is observed. Record offsets for the first execution events for sampler, decode and save, followed by successful execution completion. Time includes local transport and PNG retrieval. Exclude setup before POST, inter-attempt recovery and offline review.')
+ON CONFLICT DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS fastest_release.observation_revision (
     evidence_id uuid NOT NULL,
     revision integer NOT NULL CHECK (revision > 0),
