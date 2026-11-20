@@ -1,13 +1,22 @@
-import reports from "./catalog-topology.json" with { type: "json" };
+import previewReports from "./catalog-topology.json" with { type: "json" };
 import hardwareSources from "./catalog-hardware-sources.json" with { type: "json" };
 import identities from "./catalog-identities.json" with { type: "json" };
 
-export const topologyPresets = [
+export const topologyReports = typeof __FASTEST_TOPOLOGY_REPORTS__ === "undefined"
+  ? previewReports
+  : __FASTEST_TOPOLOGY_REPORTS__;
+
+export function selectTopologyPresets(reports) {
+  return [
   ["One card", "V005-HP-TEST"],
   ["Two cards", "V021-HP-C001"],
   ["Four cards", "V028-HP-E03"],
   ["Mixed cards", "V007-HP-E01"],
-].map(([label, id]) => ({ label, report: reports.find((row) => row.id === id) }));
+].map(([label, id]) => ({ label, report: reports.find((row) => row.id === id) }))
+    .filter(({ report }) => report);
+}
+
+export const topologyPresets = selectTopologyPresets(topologyReports);
 
 export const inferenceStages = [
   { title: "Load the model", note: "The host prepares weights, cache and workspace for the devices selected by the runtime." },

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CircuitBoard, Cpu, FileText, GitBranch, Monitor, Search } from "lucide-react";
 import { configurations } from "./scenarios";
 import { ProfileBenchmarks } from "./profile-benchmarks";
-import topologyReports from "./catalog-topology.json";
+import { topologyReports } from "./topology.mjs";
 import { TechnologyDiagram } from "./technology";
 import { ResearchLibrary, useResearchLabels } from "./research-library";
 import { quoteCurrency, useLocale } from "./locale";

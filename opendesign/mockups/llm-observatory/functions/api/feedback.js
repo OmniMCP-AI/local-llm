@@ -1,5 +1,5 @@
 import {
-  feedbackCategories, feedbackId, maxFeedbackContextLength, maxFeedbackLength, minFeedbackLength,
+  evidenceUpdatePath, feedbackCategories, feedbackId, maxFeedbackContextLength, maxFeedbackLength, minFeedbackLength,
 } from "../../feedback-policy.mjs";
 
 const maxBodyBytes = 12 * 1024;
@@ -89,16 +89,22 @@ export async function onRequestGet({ request, env }) {
   if (!id || !feedbackId.test(id)) return json({ error: "receipt_not_found" }, 404);
   let receipt;
   try {
-    receipt = await env.FEEDBACK_DB.prepare("SELECT id, status FROM feedback_submission WHERE id = ?").bind(id).first();
+    receipt = await env.FEEDBACK_DB.prepare(`SELECT feedback_submission.id, status, public_path
+      FROM feedback_submission LEFT JOIN feedback_resolution ON feedback_resolution.receipt_id = feedback_submission.id
+      WHERE feedback_submission.id = ?`).bind(id).first();
   } catch {
     return json({ error: "feedback_unavailable" }, 503);
   }
   if (!receipt) return json({ error: "receipt_not_found" }, 404);
-  if (!request.headers.get("Accept")?.includes("text/html")) return json(receipt, 200);
-  const status = receipt.status === "reviewed" ? "Reviewed" : "Queued for review";
+  const resolution = receipt.public_path && evidenceUpdatePath.test(receipt.public_path) ? receipt.public_path : null;
+  const reviewed = resolution || receipt.status === "reviewed";
+  const result = { id: receipt.id, status: reviewed ? "reviewed" : "queued", ...(resolution && { resolution }) };
+  if (!request.headers.get("Accept")?.includes("text/html")) return json(result, 200);
+  const status = reviewed ? "Reviewed" : "Queued for review";
+  const resolutionLink = resolution ? `<p><a href="${resolution}">Read the public resolution</a></p>` : "";
   return new Response(`<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Feedback status</title><main><h1>Feedback status</h1><p>${status}</p><p>Receipt <bdi>${id}</bdi></p></main>`, {
+<title>Feedback status</title><main><h1>Feedback status</h1><p>${status}</p>${resolutionLink}<p>Receipt <bdi>${id}</bdi></p></main>`, {
     headers: { ...responseHeaders, "Content-Type": "text/html; charset=utf-8" },
   });
 }

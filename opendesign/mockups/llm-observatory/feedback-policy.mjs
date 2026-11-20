@@ -3,3 +3,4 @@ export const feedbackId = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[
 export const minFeedbackLength = 10;
 export const maxFeedbackLength = 1200;
 export const maxFeedbackContextLength = 180;
+export const evidenceUpdatePath = /^\/wiki\/evidence-updates#[a-f0-9]{64}$/;

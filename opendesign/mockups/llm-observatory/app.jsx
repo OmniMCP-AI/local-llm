@@ -512,7 +512,7 @@ function App() {
     <Drawer panel={panel} close={() => setPanel(null)} state={state} onCompare={onCompare} onEvidence={onEvidence} go={go} />
     {!!toast && <div className="toast" role="status"><Check size={18} />{toast}</div>}
     {!!manualCopy && <div className="overlay"><div className="copy-dialog" role="dialog" aria-modal="true" aria-labelledby="copy-title"><h3 id="copy-title">Copy this value</h3><textarea aria-label="Value to copy" readOnly autoFocus onFocus={(e) => e.currentTarget.select()} value={manualCopy} /><button className="btn dark" onClick={() => setManualCopy("")}>Done</button></div></div>}
-    <FeedbackBubble page={page} entity={slug} release={release} onCopy={copy} />
+    <FeedbackBubble page={page} entity={slug} release={__FASTEST_PAGES__ && slug === "research" ? __FASTEST_RESEARCH_INDEX__.release : release} onCopy={copy} />
   </>;
 }
 

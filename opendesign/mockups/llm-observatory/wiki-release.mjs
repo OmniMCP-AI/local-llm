@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
-import { inferenceStages, topologyPresets, topologyView } from "./topology.mjs";
+import { inferenceStages, selectTopologyPresets, topologyPresets, topologyView } from "./topology.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -52,9 +52,9 @@ function renderBody(body, resolveLink, format) {
   }).join("\n\n");
 }
 
-export function renderTopologyReference(format) {
+export function renderTopologyReference(format, presets = topologyPresets) {
   const interactive = "/#wiki/technology";
-  const rows = topologyPresets.map(({ label, report }) => {
+  const rows = presets.map(({ label, report }) => {
     const view = topologyView(report);
     return {
       label, report,
@@ -121,7 +121,7 @@ export function activeHighlights(highlights, pages, releaseDate) {
 }
 
 export async function writeWikiRelease({
-  output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
+  output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [], topologies,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
@@ -148,7 +148,7 @@ export async function writeWikiRelease({
       source === id ? [target] : target === id ? [source] : []))]
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
     const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
-      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format) : "");
+      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, topologies && selectTopologyPresets(topologies)) : "");
     const { title, kind, summary, entity, evidence, methods, media } = doc;
     return { id, source: "wiki/pages/" + id + ".md", title, kind, summary, entity, evidence, methods, media,
       aliases, neighbors, html: body("html"), md: body("md") };
@@ -162,7 +162,7 @@ export async function writeWikiRelease({
     `${research.html}\n  Link: <${origin + research.md}>; rel="alternate"; type="text/markdown"`,
     `${research.md}\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin + research.html}>; rel="alternate"; type="text/html"`,
     `/index.md\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin}/>; rel="alternate"; type="text/html"`,
-    ...["robots.txt", "sitemap.xml", "llms.txt"].map((file) => `/${file}\n  Cache-Control: no-store`),
+    ...["robots.txt", "sitemap.xml", "llms.txt", "index.md", "evidence-quarantine.json"].map((file) => `/${file}\n  Cache-Control: no-store`),
   ];
   const files = {
     "/404.html": '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -184,7 +184,7 @@ ${pageHead({ origin, route, alternate, title: title + " | fastest.ai", summary, 
 <h1>${escape(title)}</h1>
 <p>${escape(summary)}</p>
 ${html}
-${id === "research" ? `<p><a href="${research.html}">Open the released research library</a> · <a href="${research.md}">Library Markdown</a></p>` : ""}
+${id === "research" ? `<p><a href="${research.html}">Open the released research library</a> · <a href="${research.md}">Library Markdown</a> · <a href="/wiki/evidence-updates">Evidence updates</a></p>` : ""}
 ${backlinksHtml}
 <p class="wiki-release-ids"><a href="/wiki/manifest.json">${release}</a> · Page ${id} · Source <code>${source}</code>${entity ? " · Entity " + escape(entity) : ""}${evidence ? " · Evidence " + escape(evidence) : ""}</p>
 </main></body></html>\n`;
@@ -192,7 +192,7 @@ ${backlinksHtml}
       title, summary, kind, page: id, route, redirects: aliases.map(wikiHtmlRoute), entity, evidence, methods, media,
       release, locale: "en", status: "published", source,
     }) + `\n# ${markdown(title)}\n\n${markdown(summary)}\n\n[HTML](${route}) · [Release manifest](/wiki/manifest.json)\n\n${md}\n`
-      + (id === "research" ? `\n[Open the released research library](${research.md})\n` : "")
+      + (id === "research" ? `\n[Open the released research library](${research.md}) · [Evidence updates](/wiki/evidence-updates.md)\n` : "")
       + (neighbors.length
         ? "\n## Graphify backlinks\n\n" + neighbors.map((target) => `- [${markdown(pages[target].title)}](${mdRoute(target)})\n`).join("")
         : "");
@@ -220,6 +220,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
 
   const canonicalRoutes = ["/", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
   const citationUrls = [
+    `- [Evidence updates](${origin}/wiki/evidence-updates.md)`,
     `- [Current wiki release](${origin}/wiki/manifest.json)`,
     `- [Research library](${origin + research.md}): Approved research references and timestamped methods`,
     `- [Research release manifest](${origin + researchRoot}manifest.json)`,
@@ -236,9 +237,10 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
     highlights: availableHighlights.map(({ id, type, href, markdown, priority, starts, ends, source }) =>
       ({ id, type, href, markdown, priority, starts, ends, source })),
   }, null, 2) + "\n";
-  // Only the explorer needs the visitor locale middleware. Discovery assets use Pages routing and headers directly.
   files["/_routes.json"] = JSON.stringify({
-    version: 1, include: ["/", "/api/feedback", "/catalog/*"], exclude: [],
+    version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
+      "/research/*", "/wiki/*", "/catalog/*", "/catalog-data/*", "/downloads/*",
+      "/robots.txt", "/sitemap.xml", "/llms.txt", "/evidence-quarantine.json"], exclude: [],
   }, null, 2) + "\n";
   files["/_redirects"] = [...redirects].flatMap(([old, id]) => [
     `/wiki/${old} ${wikiHtmlRoute(id)} 301`, `${wikiHtmlRoute(old)} ${wikiHtmlRoute(id)} 301`,

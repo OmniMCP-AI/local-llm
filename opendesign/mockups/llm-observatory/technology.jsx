@@ -1,8 +1,7 @@
 import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, CircuitBoard, Cpu, Monitor, Pause, Play, StepForward, Terminal } from "lucide-react";
-import reports from "./catalog-topology.json";
 import { catalogPath } from "./catalog-paths.mjs";
-import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, topologyPresets, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
 
 const hardware = __FASTEST_HARDWARE_DIRECTORY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
@@ -225,7 +224,7 @@ export function TechnologyDiagram({ images = {}, focus, options }) {
     ?? sourceChoices.find(matchesPhoto);
   const example = !options && !source && cardPhotoExample(focus, hardware.cards);
   const choices = example ? [...sourceChoices, example] : sourceChoices;
-  const initial = source || example || (options ? choices[0] : topologyPresets[0].report);
+  const initial = source || example || (options ? choices[0] : topologyPresets[0]?.report || fitScenario);
   const [profile, setProfile] = useState(initial.id);
   const report = choices.find((row) => row.id === profile) ?? initial;
   return <section className="tech-lab" aria-labelledby={id + "-title"}>
