@@ -1,0 +1,92 @@
+{
+  "revision": "illustrative-text-economics-v1",
+  "price_basis": {
+    "market": "US (illustrative delivery)",
+    "currency": "USD",
+    "as_of": "2026-11-21",
+    "method": "Fictional landed replacement values and cash prices. No seller, offer or live tariff.",
+    "source_path": "production/fastest_cost/illustrative.json",
+    "electricity": {"revision": "illustrative-electricity-v1", "per_kwh": "0.20"}
+  },
+  "options": {
+    "keep": {
+      "configuration": "Existing example workstation",
+      "purchase": {
+        "revision": "illustrative-existing-bom-v1",
+        "parts": [
+          {"sku": "Example GPU A", "kind": "gpu", "condition": "used", "quantity": 1, "unit_price": "250", "reused": true},
+          {"sku": "Example CPU", "kind": "cpu", "condition": "used", "quantity": 1, "unit_price": "150", "reused": true},
+          {"sku": "Example memory kit", "kind": "memory", "condition": "used", "quantity": 1, "unit_price": "100", "reused": true},
+          {"sku": "Example SSD", "kind": "storage", "condition": "used", "quantity": 1, "unit_price": "50", "reused": true},
+          {"sku": "Example PSU A", "kind": "power supply", "condition": "used", "quantity": 1, "unit_price": "75", "reused": true},
+          {"sku": "Example board and case", "kind": "platform", "condition": "used", "quantity": 1, "unit_price": "125", "reused": true}
+        ]
+      },
+      "service": {
+        "revision": "illustrative-keep-service-v1",
+        "quality": "pass", "privacy": "pass", "p95_latency_ms": 22000,
+        "seconds_per_attempt": "18", "acceptance_rate": "0.90",
+        "available_hours": "100", "utilization": "0.80"
+      },
+      "operation": {
+        "revision": "illustrative-keep-operation-v1", "load_watts": "200", "idle_watts": "50",
+        "external_cooling_ratio": "0.20", "monthly_maintenance": "4", "terminal_residual": "30"
+      }
+    },
+    "upgrade": {
+      "configuration": "Example workstation with replacement GPU and PSU",
+      "purchase": {
+        "revision": "illustrative-upgrade-bom-v1",
+        "parts": [
+          {"sku": "Example GPU B", "kind": "gpu", "condition": "new", "quantity": 1, "unit_price": "500", "reused": false},
+          {"sku": "Example CPU", "kind": "cpu", "condition": "used", "quantity": 1, "unit_price": "150", "reused": true},
+          {"sku": "Example memory kit", "kind": "memory", "condition": "used", "quantity": 1, "unit_price": "100", "reused": true},
+          {"sku": "Example SSD", "kind": "storage", "condition": "used", "quantity": 1, "unit_price": "50", "reused": true},
+          {"sku": "Example PSU B", "kind": "power supply", "condition": "new", "quantity": 1, "unit_price": "100", "reused": false},
+          {"sku": "Example board and case", "kind": "platform", "condition": "used", "quantity": 1, "unit_price": "125", "reused": true}
+        ]
+      },
+      "service": {
+        "revision": "illustrative-upgrade-service-v1",
+        "quality": "pass", "privacy": "pass", "p95_latency_ms": 12000,
+        "seconds_per_attempt": "9", "acceptance_rate": "0.90",
+        "available_hours": "100", "utilization": "0.80"
+      },
+      "operation": {
+        "revision": "illustrative-upgrade-operation-v1", "load_watts": "300", "idle_watts": "60",
+        "external_cooling_ratio": "0.20", "monthly_maintenance": "2", "terminal_residual": "100"
+      }
+    },
+    "rental": {
+      "configuration": "Example hourly single-GPU endpoint",
+      "service": {
+        "revision": "illustrative-rental-service-v1",
+        "quality": "pass", "privacy": "pass", "p95_latency_ms": 13000,
+        "seconds_per_attempt": "9", "acceptance_rate": "0.90",
+        "available_hours": "100", "utilization": "0.80"
+      },
+      "operation": {
+        "revision": "illustrative-rental-tariff-v1",
+        "eligibility": "Example on-demand account in the stated market.",
+        "billing": "Prorated hours, including paid idle time, plus monthly storage and transfer.",
+        "hourly_rate": "0.75", "paid_idle_hours": "2", "monthly_storage": "2", "monthly_transfer": "0"
+      }
+    },
+    "api": {
+      "configuration": "Example token-metered text endpoint",
+      "service": {
+        "revision": "illustrative-api-service-v1",
+        "quality": "pass", "privacy": "pass", "p95_latency_ms": 6000,
+        "seconds_per_attempt": "5", "acceptance_rate": "0.90",
+        "available_hours": "100", "utilization": "0.80"
+      },
+      "operation": {
+        "revision": "illustrative-api-tariff-v1",
+        "eligibility": "Example standard account, single tariff tier. No committed use.",
+        "billing": "Billed per million tokens with a separate eligible cached input tier, plus any fixed monthly fee.",
+        "input_per_million": "1", "cached_input_per_million": "0.20", "output_per_million": "10",
+        "cached_input_ratio": "0.25", "monthly_fee": "0"
+      }
+    }
+  }
+}
