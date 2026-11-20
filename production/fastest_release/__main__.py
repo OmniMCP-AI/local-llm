@@ -5,6 +5,8 @@ from pathlib import Path
 import sys
 
 from fastest_fit import FitEngineError
+from fastest_goals import GoalService
+from fastest_prices import PriceStore
 
 from . import ReleaseError, ReleaseNotFound, ReleaseStore
 from .http import CONTENT_TYPES, make_server
@@ -34,6 +36,8 @@ def main(argv=None):
     serve.add_argument("--profile-release", action="append", default=[], help="Include a reviewed observation release UUID in the profile comparison.")
     serve.add_argument("--profile-archive", action="append", default=[], metavar="UUID,UUID,...",
                        help="Keep a prior profile release available from its comma-separated observation release UUIDs.")
+    serve.add_argument("--goal-cohort", type=Path, action="append", default=[],
+                       help="Keep a reviewed goals cohort available. The last manifest becomes current.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -62,9 +66,12 @@ def main(argv=None):
         elif args.command == "research-read":
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
+            price_reader = PriceStore(args.database_url).read if args.database_url else None
+            goal_history = [GoalService(manifest, price_reader=price_reader) for manifest in args.goal_cohort]
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
                              profile_releases=args.profile_release,
-                             profile_archives=[archive.split(",") for archive in args.profile_archive]) as server:
+                             profile_archives=[archive.split(",") for archive in args.profile_archive],
+                             goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1]) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

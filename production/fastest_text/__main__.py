@@ -188,7 +188,7 @@ def render(dataset, data_hash):
     return "\n\n".join(md) + "\n", "\n".join(html + ["</main></html>"]) + "\n"
 
 
-def build(target, records, demo):
+def load_dataset(records=(), demo=False):
     dataset = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
     kind = "synthetic" if demo else "measured"
     dataset["evidence_kind"] = kind if records else "planned"
@@ -205,10 +205,18 @@ def build(target, records, demo):
         cells[cell_id] = apply_record(record, dataset, cells[cell_id], kind)
         seen.add(cell_id)
     dataset["cells"] = list(cells.values())
+    return dataset
+
+
+def text_artifacts(dataset):
     payload = json_text(dataset)
     markdown, html = render(dataset, digest(payload))
-    files = {"text-pilot.json": payload, "text-pilot.md": markdown, "text-pilot.html": html}
-    write_bundle(target, dataset["id"], files)
+    return {"text-pilot.json": payload, "text-pilot.md": markdown, "text-pilot.html": html}
+
+
+def build(target, records, demo):
+    dataset = load_dataset(records, demo)
+    write_bundle(target, dataset["id"], text_artifacts(dataset))
 
 
 def main():

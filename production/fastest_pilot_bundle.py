@@ -12,9 +12,12 @@ def digest(text):
     return sha256(text.encode("utf-8")).hexdigest()
 
 
+def bundle_manifest(release_id, files):
+    return json_text({"id": release_id, "files": {name: digest(content) for name, content in files.items()}})
+
+
 def write_bundle(target, release_id, files):
-    manifest = {"id": release_id, "files": {name: digest(content) for name, content in files.items()}}
     target.mkdir()
     for name, content in files.items():
         (target / name).write_bytes(content.encode("utf-8"))
-    (target / "manifest.json").write_bytes(json_text(manifest).encode("utf-8"))
+    (target / "manifest.json").write_bytes(bundle_manifest(release_id, files).encode("utf-8"))
