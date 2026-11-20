@@ -6,6 +6,9 @@ export const topologyReports = typeof __FASTEST_TOPOLOGY_REPORTS__ === "undefine
   ? previewReports
   : __FASTEST_TOPOLOGY_REPORTS__;
 
+export const scalingUnavailable = "No reviewed 1→N GPU pair is available here.";
+export const scalingReportUrl = typeof __FASTEST_SCALING_URL__ === "undefined" ? null : __FASTEST_SCALING_URL__;
+
 export function selectTopologyPresets(reports) {
   return [
   ["One card", "V005-HP-TEST"],
