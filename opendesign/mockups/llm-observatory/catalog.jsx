@@ -18,7 +18,7 @@ const manifestPath = (catalogRelease || localCatalogRelease) &&
   `${catalogRelease ? "" : "local-catalog/"}catalog/${catalogRelease || localCatalogRelease}/manifest.json`;
 const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
-const machineKinds = ["Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
+const machineKinds = ["Complete factory configuration", "Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
 const runtimeCategories = [...new Set(runtimes.map(row => row.category))].sort();
 const modelById = new Map(modelCatalog.models.map(row => [row.id, row]));
 const modelStats = new Map([...discovery.popular, ...discovery.small].map(row => [row.id, row]));
@@ -36,8 +36,8 @@ const tabs = [
   {
     key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Machine and component records",
     titleZh: "整机", scopeZh: "整机与部件记录",
-    description: "Browse partial configurations, standalone component references and llmfit example presets.",
-    descriptionZh: "浏览部分配置、独立部件资料和 llmfit 示例配置。",
+    description: "Browse complete factory configurations, partial configurations, component and system references, and llmfit example presets.",
+    descriptionZh: "浏览厂商完整出厂配置、部分配置、部件和整机资料，以及 llmfit 示例配置。",
   },
   {
     key: "models", title: "Models", icon: List, rows: modelCatalog.models, scope: "Model metadata records",
@@ -55,6 +55,8 @@ const tabs = [
 const licenseTags = Array.from(new Set(modelCatalog.models.map(({ license }) => license).filter(Boolean))).sort();
 const validKind = (kind) => tabs.some((tab) => tab.key === kind) ? kind : "cards";
 const sourceLabelsZh = {
+  "Complete factory configuration": "完整出厂配置",
+  "Manufacturer system reference": "厂商整机资料",
   "Partial configuration": "部分配置",
   "Component reference": "部件资料",
   "llmfit example preset": "llmfit 示例配置",
@@ -322,9 +324,10 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         {t("Snapshot {date}", "快照日期 {date}", { date: asOf })} ·{" "}
         {active === "cards" ? t("{cards} card references, {unresolved} unresolved", "共 {cards} 条显卡资料，其中 {unresolved} 条型号待确认", {
           cards: number.format(coverage.cards), unresolved: number.format(coverage.unresolvedCardReferences),
-        }) : t("{complete} complete builds, {partial} partial configurations, {components} component references, {presets} example presets", "完整配置 {complete} 条、部分配置 {partial} 条、部件资料 {components} 条、示例配置 {presets} 条", {
+        }) : t("{complete} complete factory configurations, {partial} partial configurations, {components} component references, {systems} system references, {presets} example presets", "完整出厂配置 {complete} 条、部分配置 {partial} 条、部件资料 {components} 条、整机资料 {systems} 条、示例配置 {presets} 条", {
           complete: number.format(coverage.completeBuilds), partial: number.format(coverage.partialMachines),
-          components: number.format(coverage.researchComponentReferences), presets: number.format(coverage.upstreamPresets),
+          components: number.format(coverage.researchComponentReferences),
+          systems: number.format(coverage.manufacturerMachines - coverage.completeBuilds), presets: number.format(coverage.upstreamPresets),
         })} ·{" "}
         {active === "cards" && <>{t("{specs} with manufacturer or board-partner specs", "{specs} 条附有厂商或板卡合作伙伴规格", {
           specs: number.format(coverage.cardsWithVendorSpecs),

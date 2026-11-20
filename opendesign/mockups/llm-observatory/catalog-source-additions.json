@@ -1327,6 +1327,225 @@
         "allocation": null
       },
       "gpu": "NVIDIA GB10 integrated GPU"
+    },
+    {
+      "id": "apple-mac-mini-m4-24gb-512gb",
+      "name": "Apple Mac mini M4 · 24 GB / 512 GB",
+      "kind": "Complete factory configuration",
+      "detail": "MCYT4LL/A · Apple M4 with integrated GPU",
+      "configuration": "MCYT4LL/A",
+      "source": "https://www.apple.com/education/pricelists/pdfs/Apple_US_Education_Institution_Price_List.pdf",
+      "locator": "Apple U.S. Education Price List, April 1, 2026 edition · p. 1 · Mac mini · MCYT4LL/A",
+      "cardIds": [],
+      "memory": {
+        "system": "24 GB unified memory",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "documentedPower": {
+        "label": "Maximum continuous system power",
+        "value": "155 W",
+        "source": "https://support.apple.com/en-us/121555",
+        "locator": "Electrical and Operating Requirements"
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "Apple M4 SoC, 10-core CPU",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/121555",
+          "locator": "Chip · Apple M4"
+        },
+        {
+          "category": "GPU",
+          "part": "Apple M4 integrated 10-core GPU",
+          "quantity": "1 integrated GPU",
+          "source": "https://support.apple.com/en-us/121555",
+          "locator": "Chip · Apple M4"
+        },
+        {
+          "category": "Memory",
+          "part": "24 GB unified memory",
+          "quantity": "1 shared pool",
+          "source": "https://www.apple.com/education/pricelists/pdfs/Apple_US_Education_Institution_Price_List.pdf",
+          "locator": "April 1, 2026 edition · p. 1 · Mac mini · MCYT4LL/A"
+        },
+        {
+          "category": "Storage",
+          "part": "512 GB SSD",
+          "quantity": "1",
+          "source": "https://www.apple.com/education/pricelists/pdfs/Apple_US_Education_Institution_Price_List.pdf",
+          "locator": "April 1, 2026 edition · p. 1 · Mac mini · MCYT4LL/A"
+        },
+        {
+          "category": "Platform",
+          "part": "Apple Mac mini (2024) logic board and housing",
+          "quantity": "1 system",
+          "source": "https://support.apple.com/en-us/121008",
+          "locator": "Exploded View and Orderable Parts · Logic board and Housing"
+        },
+        {
+          "category": "Power supply",
+          "part": "Internal Apple power supply",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/121508",
+          "locator": "Procedures · Power Supply"
+        },
+        {
+          "category": "Cooling",
+          "part": "Active cooling fan",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/121508",
+          "locator": "Procedures · Fan"
+        }
+      ]
+    },
+    {
+      "id": "apple-mac-mini-m6-24gb-512gb",
+      "name": "Apple Mac mini M6 · 24 GB / 512 GB",
+      "kind": "Complete factory configuration",
+      "detail": "MHQM4LL/A · Apple M6 with integrated GPU",
+      "configuration": "MHQM4LL/A",
+      "source": "https://www.apple.com/education/purchase/contracts/docs/NASPO_PSS_Apple_Branded.pdf",
+      "locator": "Apple NASPO product schedule, September 2026 edition · p. 1 · Mac mini · MHQM4LL/A",
+      "cardIds": [],
+      "memory": {
+        "system": "24 GB unified memory",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "documentedPower": {
+        "label": "Maximum continuous system power",
+        "value": "155 W",
+        "source": "https://support.apple.com/en-us/128108",
+        "locator": "Electrical and Operating Requirements"
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "Apple M6 SoC, 12-core CPU",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/128108",
+          "locator": "Chip · Apple M6"
+        },
+        {
+          "category": "GPU",
+          "part": "Apple M6 integrated 12-core GPU",
+          "quantity": "1 integrated GPU",
+          "source": "https://support.apple.com/en-us/128108",
+          "locator": "Chip · Apple M6"
+        },
+        {
+          "category": "Memory",
+          "part": "24 GB unified memory",
+          "quantity": "1 shared pool",
+          "source": "https://www.apple.com/education/purchase/contracts/docs/NASPO_PSS_Apple_Branded.pdf",
+          "locator": "September 2026 edition · p. 1 · Mac mini · MHQM4LL/A"
+        },
+        {
+          "category": "Storage",
+          "part": "512 GB SSD",
+          "quantity": "1",
+          "source": "https://www.apple.com/education/purchase/contracts/docs/NASPO_PSS_Apple_Branded.pdf",
+          "locator": "September 2026 edition · p. 1 · Mac mini · MHQM4LL/A"
+        },
+        {
+          "category": "Platform",
+          "part": "Apple Mac mini M6 logic board and housing",
+          "quantity": "1 system",
+          "source": "https://support.apple.com/en-us/127958",
+          "locator": "Exploded View and Orderable Parts · Logic board and Housing"
+        },
+        {
+          "category": "Power supply",
+          "part": "Internal Apple power supply",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/148521",
+          "locator": "Procedures · Power Supply"
+        },
+        {
+          "category": "Cooling",
+          "part": "Active cooling fan",
+          "quantity": "1",
+          "source": "https://support.apple.com/en-us/148521",
+          "locator": "Procedures · Fan"
+        }
+      ]
+    },
+    {
+      "id": "nvidia-dgx-spark-128gb-4tb",
+      "name": "NVIDIA DGX Spark · 128 GB / 4 TB",
+      "kind": "Complete factory configuration",
+      "detail": "128 GB unified memory · 4 TB NVMe SSD · NVIDIA GB10",
+      "configuration": "128 GB unified memory / 4 TB SSD",
+      "source": "https://marketplace.nvidia.com/en-us/enterprise/personal-ai-supercomputers/dgx-spark/",
+      "locator": "NVIDIA Marketplace U.S. · NVIDIA DGX Spark product specifications",
+      "cardIds": [],
+      "memory": {
+        "system": "128 GB LPDDR5X unified system memory",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "documentedPower": {
+        "label": "External power supply rating",
+        "value": "240 W",
+        "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+        "locator": "Power and Thermal Management · Power Requirements"
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "NVIDIA GB10 Grace Blackwell SoC, 20-core Arm CPU",
+          "quantity": "1",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "System Overview · Component Specifications"
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GB10 integrated Blackwell GPU",
+          "quantity": "1 integrated GPU",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "System Overview · Component Specifications"
+        },
+        {
+          "category": "Memory",
+          "part": "128 GB LPDDR5X coherent unified system memory",
+          "quantity": "1 shared pool",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "System Overview · Component Specifications"
+        },
+        {
+          "category": "Storage",
+          "part": "4 TB self-encrypting NVMe M.2 SSD",
+          "quantity": "1",
+          "source": "https://marketplace.nvidia.com/en-us/enterprise/personal-ai-supercomputers/dgx-spark/",
+          "locator": "NVIDIA DGX Spark product specifications · Storage"
+        },
+        {
+          "category": "Platform",
+          "part": "NVIDIA DGX Spark small-form-factor platform and chassis",
+          "quantity": "1 system",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "System Overview and Physical Specifications · Form Factor"
+        },
+        {
+          "category": "Power supply",
+          "part": "240 W external NVIDIA power supply",
+          "quantity": "1",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "Power and Thermal Management · Power Requirements"
+        },
+        {
+          "category": "Cooling",
+          "part": "Integrated thermal management system",
+          "quantity": "1 system",
+          "source": "https://docs.nvidia.com/dgx/dgx-spark/hardware.html",
+          "locator": "Power and Thermal Management · Thermal Management"
+        }
+      ]
     }
   ],
   "capturedAt": "2026-11-21"

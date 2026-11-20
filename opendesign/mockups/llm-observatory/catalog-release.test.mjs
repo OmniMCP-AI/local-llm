@@ -13,10 +13,10 @@ import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
 const here = dirname(fileURLToPath(import.meta.url));
 const host = "https://example.test";
 
-async function buildFixture(t) {
+async function buildFixture(t, hardware) {
   const output = await mkdtemp(join(tmpdir(), "fastest-catalog-"));
   t.after(() => rm(output, { recursive: true, force: true }));
-  const release = await writeCatalogRelease(here, output);
+  const release = await writeCatalogRelease(here, output, hardware);
 
   return {
     release,
@@ -171,7 +171,7 @@ function assertProfileFieldsAgree(html, markdown, id) {
 
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 111], ["machines", 120]]) {
+  for (const [kind, count] of [["cards", 111], ["machines", 123]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -185,6 +185,55 @@ test("every released hardware row resolves in both formats", async (t) => {
       }));
       assertProfileFieldsAgree(html, markdown, id);
     }
+  }
+});
+
+const factoryProfiles = [
+  ["apple-mac-mini-m4-24gb-512gb", "MCYT4LL/A", "April 1, 2026", "Maximum continuous system power", "155 W", "Active cooling fan"],
+  ["apple-mac-mini-m6-24gb-512gb", "MHQM4LL/A", "September 2026", "Maximum continuous system power", "155 W", "Active cooling fan"],
+  ["nvidia-dgx-spark-128gb-4tb", "128 GB unified memory / 4 TB SSD", "NVIDIA Marketplace U.S.", "External power supply rating", "240 W", "Integrated thermal management system"],
+];
+
+function assertFactoryProfile(html, markdown, [id, configuration, locator, powerLabel, powerValue, cooling]) {
+  assertProfileFieldsAgree(html, markdown, id);
+  for (const body of [html, markdown]) {
+    assert.match(body, /Complete factory configuration/);
+    assert.ok(body.includes(configuration), id);
+    assert.ok(body.includes(locator), id);
+    assert.match(body, /System bill of materials/);
+    assert.ok(body.includes(cooling), id);
+    assert.match(body, /Runtime-usable GPU memory.*Unknown/);
+    assert.match(body, /Measured system power.*Unavailable/);
+    assert.ok(body.includes(powerLabel) && body.includes(powerValue), id);
+    assert.match(body, /Untested in this release/);
+  }
+}
+
+test("released factory profiles show sourced parts and documented power in both formats", async (t) => {
+  const { read, request } = await buildFixture(t);
+  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 3);
+  for (const profile of factoryProfiles) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(async ext => {
+      const response = await request(`machines/${profile[0]}.${ext}`);
+      assert.equal(response.status, 200);
+      return response.text();
+    }));
+    assertFactoryProfile(html, markdown, profile);
+  }
+});
+
+test("a replacement release omits profiles whose required factory evidence was withdrawn", async (t) => {
+  const source = "https://docs.nvidia.com/dgx/dgx-spark/hardware.html";
+  const hardware = await readHardwareCatalog(here, value => value === source);
+  const { read, readData, request } = await buildFixture(t, hardware);
+  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 2);
+  const machines = await readData("machines.json");
+  assert.ok(!JSON.stringify(machines).includes(source));
+  for (const ext of ["html", "md"]) {
+    assert.equal((await request("machines/nvidia-dgx-spark-128gb-4tb." + ext)).status, 404);
+    const family = await request("machines/nvidia-dgx-spark." + ext);
+    assert.equal(family.status, 200);
+    assert.match(await family.text(), /64 GB or 128 GB/);
   }
 });
 
@@ -306,7 +355,7 @@ test("the offline catalog rejects repository IDs that escape the release layout"
 });
 
 const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
-test("the local PostgreSQL snapshot exports one pair per ranked repository", { skip: !testDatabase }, async (t) => {
+test("the local PostgreSQL snapshot exports ranked repositories and complete factory profiles", { skip: !testDatabase }, async (t) => {
   const output = await mkdtemp(join(tmpdir(), "fastest-local-model-pg-"));
   t.after(() => rm(output, { recursive: true, force: true }));
   const hardware = await readHardwareCatalog(here);
@@ -315,6 +364,12 @@ test("the local PostgreSQL snapshot exports one pair per ranked repository", { s
   const root = join(output, "catalog", release);
   const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, imported.snapshotId);
+  assert.equal(manifest.hardware.coverage.completeBuilds, 3);
+  for (const profile of factoryProfiles) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
+      readFile(join(root, "machines", profile[0] + "." + ext), "utf8")));
+    assertFactoryProfile(html, markdown, profile);
+  }
   assert.equal(manifest.models.inventory, 19_192);
   assert.equal(manifest.models.profiles, 300);
   assert.equal(manifest.models.popular, 300);

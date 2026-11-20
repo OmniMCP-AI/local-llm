@@ -188,23 +188,41 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
     };
   }
 
+  const factory = row.kind === "Complete factory configuration";
   const sections = [{
     title: "Memory",
     fields: [
       ["Installed system memory", row.memory.system ?? "Unknown"],
-      ["Reported nominal VRAM per device", row.memory.perDevice ?? "Unknown"],
-      ["Reported aggregate VRAM inventory", row.memory.aggregate ?? "Unknown"],
-      ["Reported allocation or limit", row.memory.allocation ?? "Unknown"],
-      ["Runtime-usable memory", "Unknown"],
+      ...(factory ? [
+        ["Dedicated VRAM", "None (integrated GPU uses shared memory)"],
+        ["Runtime-usable GPU memory", "Unknown"],
+      ] : [
+        ["Reported nominal VRAM per device", row.memory.perDevice ?? "Unknown"],
+        ["Reported aggregate VRAM inventory", row.memory.aggregate ?? "Unknown"],
+        ["Reported allocation or limit", row.memory.allocation ?? "Unknown"],
+        ["Runtime-usable memory", "Unknown"],
+      ]),
       ...(row.sourceMemory?.length ? [["Memory wording in source notes", row.sourceMemory.join(" · "), row.capture]] : []),
     ],
   }];
   if (row.bom?.length) {
     sections.push({
-      title: "Reported components",
-      fields: row.bom.map(({ category, part, quantity, source }) => [
-        category, [part ?? "Part unknown", quantity ? `quantity ${quantity}` : "quantity unknown"].join(" · "), source,
+      title: factory ? "System bill of materials" : "Reported components",
+      fields: row.bom.map(({ category, part, quantity, source, locator }) => [
+        category, [part ?? "Part unknown", quantity ? `quantity ${quantity}` : "quantity unknown", locator]
+          .filter(Boolean).join(" · "), source,
       ]),
+    });
+  }
+  if (row.documentedPower) {
+    const { label, value, source, locator } = row.documentedPower;
+    sections.push({
+      title: "Power",
+      fields: [
+        [label, value, source],
+        ["Source locator", locator, source],
+        ["Measured system power", "Unavailable"],
+      ],
     });
   }
   return {
@@ -212,7 +230,11 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
     kind: row.kind,
     source: row.source,
     fields: [
-      ...common,
+      ...(factory ? [
+        ["Catalog ID", row.id],
+        ["Manufacturer configuration", row.configuration, row.source],
+        ["Source locator", row.locator, row.source],
+      ] : common),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [
@@ -221,7 +243,7 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
         ["Interconnect", row.interconnect ?? "Unknown"],
       ] : []),
       ...row.cardIds.map((id) => ["Linked card reference", id, path("cards", id)]),
-      ...(row.cardIds.length ? [] : [["Card identity", "No unambiguous discrete-card link in this snapshot"]]),
+      ...(!factory && !row.cardIds.length ? [["Card identity", "No unambiguous discrete-card link in this snapshot"]] : []),
     ],
     sections,
     evidence: row.associations
