@@ -13,6 +13,7 @@ import re
 import signal
 import socket
 import subprocess
+from tempfile import TemporaryDirectory
 import time
 from uuid import uuid4
 
@@ -85,7 +86,8 @@ def run_attempt(complete, context, trial, number, settings):
         if isinstance(reply, dict) and set(reply) == {"tool", "resource"} and all(
             isinstance(value, str) for value in reply.values()
         ):
-            if len(attempt["tool_reads"]) == BUDGET["tool_reads_per_attempt"]:
+            if (len(attempt["tool_reads"]) == BUDGET["tool_reads_per_attempt"]
+                    or attempt["generated_tokens"] == BUDGET["generated_tokens_per_attempt"]):
                 break
             try:
                 result = read_tool(context["id"], reply["tool"], reply["resource"])
@@ -179,7 +181,9 @@ def local_server(directory, binary, model, device, settings, env):
         "--parallel", str(settings["parallel_requests"]),
     ]
 
-    with (directory / "server.log").open("wb") as output:
+    with TemporaryDirectory(dir=directory, prefix="slot-cache-") as cache_dir, (directory / "server.log").open("wb") as output:
+        # b5163 requires a slot storage path even for the in-memory erase operation.
+        command += ["--slot-save-path", cache_dir]
         child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, env=env)
         try:
             event(directory, {"event": "server_started", "pid": child.pid, "command": command})
@@ -214,7 +218,7 @@ def capture_host(path):
         commands += [
             ["sw_vers"],
             ["sysctl", "hw.model", "hw.memsize", "hw.logicalcpu", "vm.swapusage"],
-            ["top", "-l", "2", "-s", "1", "-n", "0"],
+            ["top", "-l", "2", "-s", "1", "-n", "8", "-o", "cpu"],
             ["system_profiler", "SPDisplaysDataType", "-json"],
         ]
     else:
@@ -224,6 +228,10 @@ def capture_host(path):
         output.flush()
         for command in commands:
             subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, timeout=20, check=False)
+        if platform.system() == "Darwin":
+            registry = subprocess.check_output(["ioreg", "-r", "-c", "IOAccelerator", "-d", "1"], timeout=10)
+            utilization = re.findall(rb'"(?:Device|Renderer) Utilization %"=[0-9]+', registry)
+            output.write(b"\n".join(utilization) + b"\n")
 
 
 def run(directory, binary, model, hardware, os_build, backend, device):
@@ -268,30 +276,40 @@ def run(directory, binary, model, hardware, os_build, backend, device):
     }
 
     capture_host(directory / "host-before.txt")
-    with local_server(directory, binary, model, device, protocol["settings"], env) as listener:
-        def complete(body, timeout):
-            return exchange(listener, "/v1/chat/completions", timeout, body)
+    try:
+        with local_server(directory, binary, model, device, protocol["settings"], env) as listener:
+            def complete(body, timeout):
+                return exchange(listener, "/v1/chat/completions", timeout, body)
 
-        def attempt(name, trial, number, warmup=False):
-            raw = run_attempt(complete, contexts[name], trial, number, protocol["settings"])
-            event(directory, {"event": "attempt", "warmup": warmup, **raw})
-            return raw
+            def attempt(name, trial, number, warmup=False):
+                erased = exchange(listener, "/slots/0?action=erase", 5, {})
+                if erased.get("id_slot") != 0 or type(erased.get("n_erased")) is not int:
+                    raise RuntimeError("llama.cpp did not confirm the attempt's KV reset")
+                event(directory, {"event": "kv_reset", "context_id": name, "trial": trial,
+                                  "attempt": number, "warmup": warmup, "response": erased,
+                                  "completed_monotonic_ns": time.monotonic_ns()})
+                raw = run_attempt(complete, contexts[name], trial, number, protocol["settings"])
+                event(directory, {"event": "attempt", "warmup": warmup, **raw})
+                return raw
 
-        for name in contexts:
-            attempt(name, 1, 1, warmup=True)
+            for name in contexts:
+                attempt(name, 1, 1, warmup=True)
 
-        for name, trial in (("bundle", 1), ("split", 1), ("split", 2), ("bundle", 2)):
-            record = records[name]
-            for number in range(1, BUDGET["retries_per_trial"] + 2):
-                raw = attempt(name, trial, number)
-                record["attempts"].append(raw["attempt"])
-                evaluate_attempts(record["attempts"], contexts[name], demo=False)
-                write_json(directory / f"{name}-draft.json", record)
-                if raw["outcome"] == "accepted":
-                    break
+            for name, trial in (("bundle", 1), ("split", 1), ("split", 2), ("bundle", 2)):
+                record = records[name]
+                for number in range(1, BUDGET["retries_per_trial"] + 2):
+                    raw = attempt(name, trial, number)
+                    record["attempts"].append(raw["attempt"])
+                    evaluate_attempts(record["attempts"], contexts[name], demo=False)
+                    write_json(directory / f"{name}-draft.json", record)
+                    if raw["outcome"] == "accepted":
+                        break
 
-    capture_host(directory / "host-after.txt")
-    write_review_packet(directory, contexts)
+    finally:
+        capture_host(directory / "host-after.txt")
+        captured = {name: context for name, context in contexts.items() if records[name]["attempts"]}
+        if captured:
+            write_review_packet(directory, captured)
 
 
 def write_review_packet(directory, contexts):
