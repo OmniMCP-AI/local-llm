@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Cpu, Layers3, List, Search } from "lucide-react";
-import hardwareCatalog from "./catalog-hardware.json";
 import modelIdentities from "./catalog-identities.json";
 import modelCatalog from "./catalog-models.json";
 import runtimes from "./catalog-runtimes.json";
@@ -10,19 +9,21 @@ import { useLocale } from "./locale";
 
 const pageSize = 30;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
+const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
+const machineKinds = ["Partial configuration", "Component reference", "llmfit example preset"];
 
 const tabs = [
   {
     key: "cards", title: "Cards", icon: Cpu, rows: hardwareCatalog.cards, scope: "Graphics card references",
     titleZh: "显卡", scopeZh: "显卡资料",
-    description: "Card names and source records from the research inventory and llmfit lookup. A catalog entry is not a measured result.",
-    descriptionZh: "显卡名称与来源来自研究资料和 llmfit 硬件表。目录条目可能尚无实测数据。",
+    description: "Card identities and variants from the research inventory and pinned llmfit lookup.",
+    descriptionZh: "显卡型号与版本来自研究资料和固定版本的 llmfit 硬件表。",
   },
   {
-    key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Research profile records",
-    titleZh: "整机", scopeZh: "整机配置记录",
-    description: "Machine and configuration records in the research source. Partial profiles remain visible and may omit some build components.",
-    descriptionZh: "浏览研究来源中的整机与配置记录。信息尚不完整的配置也会保留，部分配件可能未记录。",
+    key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Machine and component records",
+    titleZh: "整机", scopeZh: "整机与部件记录",
+    description: "Browse partial configurations, standalone component references and llmfit example presets.",
+    descriptionZh: "浏览部分配置、独立部件资料和 llmfit 示例配置。",
   },
   {
     key: "models", title: "Models", icon: List, rows: modelCatalog.models, scope: "Model metadata records",
@@ -40,6 +41,9 @@ const tabs = [
 const licenseTags = Array.from(new Set(modelCatalog.models.map(({ license }) => license).filter(Boolean))).sort();
 const validKind = (kind) => tabs.some((tab) => tab.key === kind) ? kind : "cards";
 const sourceLabelsZh = {
+  "Partial configuration": "部分配置",
+  "Component reference": "部件资料",
+  "llmfit example preset": "llmfit 示例配置",
   "llmfit hardware lookup; no research benchmark linked": "llmfit 硬件表，暂无关联研究测试",
   "Reported component in research notes": "研究笔记中记录的部件",
   "GPU product/configuration reference;not a complete tested build": "显卡产品或配置资料，整机未作完整测试",
@@ -170,15 +174,18 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   const { rows, total: resultCount, pages, current, start } = useMemo(() => {
     if (tab.key === "models") return queryModelCatalog(tab.rows, modelIdentities, filters);
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-    const filtered = terms.length ? tab.rows.filter((row) => {
-      const text = [row.id, row.name, row.detail, row.detailZh, row.tag].join(" ").toLowerCase();
+    const filtered = terms.length || tag ? tab.rows.filter((row) => {
+      if (tag && row.kind !== tag) return false;
+      const text = [row.id, row.name, row.detail, row.tag, ...(row.aliases ?? [])].join(" ").toLowerCase();
       return terms.every((term) => text.includes(term));
     }) : tab.rows;
     const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const current = Math.min(page, pages);
     const start = (current - 1) * pageSize;
     return { rows: filtered.slice(start, start + pageSize), total: filtered.length, pages, current, start };
-  }, [tab, filters, query, page]);
+  }, [tab, filters, query, page, tag]);
+  const hardwareTab = active === "cards" || active === "machines";
+  const { asOf, coverage } = hardwareCatalog;
   const scope = t(tab.scope, tab.scopeZh);
   const search = t("Search " + tab.title.toLowerCase(), "搜索" + tab.titleZh);
   const interval = `${number.format(start + 1)}–${number.format(start + rows.length)}`;
@@ -234,11 +241,27 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           {t("llmfit snapshot", "llmfit 快照")} <code>{modelCatalog.commit.slice(0, 8)}</code>
         </SourceLink>}
       </div>
+      {hardwareTab && <p className="catalog-muted">
+        {t("Snapshot {date}", "快照日期 {date}", { date: asOf })} ·{" "}
+        {active === "cards" ? t("{cards} card references, {unresolved} unresolved", "共 {cards} 条显卡资料，其中 {unresolved} 条型号待确认", {
+          cards: number.format(coverage.cards), unresolved: number.format(coverage.unresolvedCardReferences),
+        }) : t("{complete} complete builds, {partial} partial configurations, {components} component references, {presets} example presets", "完整配置 {complete} 条、部分配置 {partial} 条、部件资料 {components} 条、示例配置 {presets} 条", {
+          complete: number.format(coverage.completeBuilds), partial: number.format(coverage.partialMachines),
+          components: number.format(coverage.researchComponentReferences), presets: number.format(coverage.upstreamPresets),
+        })} ·{" "}{t("No reviewed benchmark results", "暂无经过审核的基准测试结果")}
+        {catalogRelease && <> · <a className="catalog-source-link" href={`catalog/${catalogRelease}/manifest.json`}>{t("Snapshot sources and counts", "快照来源与数量")}</a></>}
+      </p>}
       <div className="catalog-tools" ref={tableTop}>
         <label className="deep-search">
           <Search size={16} aria-hidden="true" />
           <input type="search" aria-label={search} placeholder={active === "models" ? t("Search owner/model or metadata", "搜索组织名、模型名或元数据") : search} value={query} onChange={(event) => updateFilters({ query: event.target.value })} />
         </label>
+        {active === "machines" && <label className="catalog-filter"><span>{t("Record type", "记录类型")}</span>
+          <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
+            <option value="">{t("Any", "全部")}</option>
+            {machineKinds.map((value) => <option key={value} value={value}>{t(value, sourceLabelsZh[value])}</option>)}
+          </select>
+        </label>}
         {active === "models" && <label className="catalog-filter"><span>{t("Task or format", "任务或格式")}</span>
           <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
             <option value="">{t("Any", "全部")}</option>
@@ -264,7 +287,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           <tbody>{rows.map((row) => {
             const separator = row.id.indexOf("/");
             const modelId = active === "models" && separator > 0;
-            const card = catalogRelease && (modelId || active === "runtimes") ? catalogPath(catalogRelease, active, row.id) : undefined;
+            const card = catalogRelease && (modelId || active === "runtimes" || hardwareTab) ? catalogPath(catalogRelease, active, row.id) : undefined;
             return <tr key={row.id}>
               <th scope="row">{modelId ? <a className="catalog-model-id" href={card ?? safeSource(row.source)} target={card ? undefined : "_blank"} rel={card ? undefined : "noopener noreferrer"}><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
                 <strong>{card ? <a className="catalog-model-id" href={card}>{row.name}</a> : row.name}</strong>
