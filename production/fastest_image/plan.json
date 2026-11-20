@@ -101,7 +101,7 @@
         "path": "requirements-mps.txt",
         "sha256": "55b6ccb0a13bc0379c394c86dac0cb2ba85cc140381f73c59e7d7888d661f52c"
       },
-      "blocker": "The checked Apple M4 host has 24 GiB of unified memory. The checked executable paths, package environment and standard model caches had no pinned ComfyUI installation or exact checkpoint ready to run."
+      "blocker": "The pinned workflow completed a private warmup and all five exploratory repeats on the 24 GiB Apple M4. Background CPU and GPU activity and critical memory pressure prevent a quiet-host comparison. A qualifying run and rights-cleared public evidence are pending. The accepted-image rate also requires blind review."
     },
     {
       "id": "rtx-4090",
