@@ -1,0 +1,26 @@
+{
+  "updated_Asia_Shanghai": "2026-11-20T21:41:13.332271+08:00",
+  "counts": {
+    "videos_with_notes": 30,
+    "profiles": 116,
+    "profile_component_rows": 487,
+    "reported_part_rows": 164,
+    "linked_observations": 293,
+    "preserved_claim_rows": 450,
+    "preserved_hardware_fact_rows": 99,
+    "test_series": 242,
+    "unassigned_observations": 157,
+    "complete_reproducible_builds_claimed": 0
+  },
+  "checks": {
+    "original450claimCSV_byte_identical": true,
+    "original99hardwareCSV_byte_identical": true,
+    "screening_inventory_byte_identical": true,
+    "all30notes_profiles_and_series": true,
+    "all450observations_preserved_in_series": true,
+    "no_LCZ_numeric_dataset_imported": true,
+    "no_fullcaptions_delivered": true,
+    "no_completebuild_claimed": true
+  },
+  "limits": "Caption-only;incompleteBOMs,ASRconflicts,unknownversions/conditions;not controlledbenchmarks;missing9/ambiguous3;hidden4;video42tail"
+}

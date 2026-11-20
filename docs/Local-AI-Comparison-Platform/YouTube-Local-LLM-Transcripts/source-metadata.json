@@ -1,0 +1,36 @@
+{
+  "playlist_url": "https://www.youtube.com/playlist?list=PLGNDPzFYQ1G2lQk9lgUaqgCi_M6hchZqG",
+  "counts": {
+    "positions": 142,
+    "unique_videos": 141,
+    "captioned_selected": 30,
+    "performance_claim_rows": 450,
+    "machine_configuration_rows": 40,
+    "product_specification_rows": 59,
+    "delivered_full_transcripts": 0,
+    "unreviewed_candidates_exported": 0,
+    "generated_Asia_Shanghai": "2026-11-20T21:21:52.847561+08:00"
+  },
+  "source": "TubeAlfred authorized retrieval;offline caption context review",
+  "scope": "caption-derived facts and original selective summaries,not full transcripts",
+  "credits": "No additional connector calls for this revision;previous retrieval remaining10credits",
+  "historical_counts": "Browser showed146,142visible positions,141unique;four hidden IDs unknown",
+  "copyright": "Third-party video rights remain with their owners;no full captions or exhaustive reconstructed prose included",
+  "hardware_profile_revision": {
+    "updated_Asia_Shanghai": "2026-11-20T21:41:13.332271+08:00",
+    "counts": {
+      "videos_with_notes": 30,
+      "profiles": 116,
+      "profile_component_rows": 487,
+      "reported_part_rows": 164,
+      "linked_observations": 293,
+      "preserved_claim_rows": 450,
+      "preserved_hardware_fact_rows": 99,
+      "test_series": 242,
+      "unassigned_observations": 157,
+      "complete_reproducible_builds_claimed": 0
+    },
+    "method": "Offline caption context review;LCZ references are schemaonly;originalfacts preserved",
+    "saved_base_commit": "e558ee5921283da2dc7061bfbc144e364e94ac7f"
+  }
+}
