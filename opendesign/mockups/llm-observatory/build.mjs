@@ -6,6 +6,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
+import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
+import highlights from "./wiki/highlights.json" with { type: "json" };
 
 const here = (name) => new URL(name, import.meta.url);
 const require = createRequire(import.meta.url);
@@ -46,9 +48,10 @@ for (const [name, expected] of Object.entries(fullGraph.graph.research_inputs)) 
   if (createHash("sha256").update(bytes).digest("hex") !== expected) throw new Error("Research tags are stale: " + name + ". Run wiki/rebuild_graph.py.");
 }
 let researchIndex;
+let approvals = {};
 if (pages) {
   const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
-  const approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
+  approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
   researchIndex = await writeResearchRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/")), approvals);
 }
 const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
@@ -65,6 +68,22 @@ const hardwareDirectory = {
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, fileURLToPath(here("dist/")), hardware) : "";
+const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+const wikiRelease = pages ? await writeWikiRelease({
+  output: fileURLToPath(here("dist/")),
+  origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
+  researchRelease: researchIndex.release,
+  catalogRelease,
+  documents,
+  edges: graph.edges,
+  highlights,
+  releaseDate,
+  withdrawn: Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id),
+}) : null;
+const wikiDocuments = wikiRelease
+  ? { ...wikiRelease.publicPages, ...Object.fromEntries(Object.entries(documents).filter(([, doc]) => doc.status === "preview")) }
+  : documents;
+const releaseHighlights = wikiRelease?.highlights ?? activeHighlights(highlights, documents, releaseDate);
 const result = await build({
   entryPoints: [fileURLToPath(here("app.jsx"))],
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
@@ -80,7 +99,12 @@ const result = await build({
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex ?? null),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
-    __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(documents),
+    __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
+    __FASTEST_WIKI_PUBLIC_ROUTES__: JSON.stringify(Object.fromEntries(Object.keys(wikiRelease?.publicPages ?? {})
+      .map((id) => [id, wikiHtmlRoute(id)]))),
+    __FASTEST_WIKI_HIGHLIGHTS__: JSON.stringify(releaseHighlights.map((entry) => ({
+      ...entry, href: pages ? entry.href : entry.previewHref,
+    }))),
     __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
     __FASTEST_HERO_IMAGE__: JSON.stringify("data:image/png;base64," + image.toString("base64")),
@@ -88,18 +112,19 @@ const result = await build({
   legalComments: "inline",
 });
 const script = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
+const previewHead = '<meta name="description" content="Interactive prototype for comparing local AI hardware, performance, and cost.">\n'
+  + "<title>fastest.ai | Local AI benchmark explorer</title>";
 const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Interactive prototype for comparing local AI hardware, performance, and cost.">
-<title>fastest.ai | Local AI benchmark explorer</title>
+${wikiRelease?.homeHead ?? previewHead}
 <style>${stylesheets.join("\n")}</style>
 </head>
 <body>
 <div id="root"></div>
-<noscript>This prototype requires JavaScript. Open this file in a browser with JavaScript enabled.</noscript>
+${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open this file in a browser with JavaScript enabled.</noscript>"}
 <script>${script}</script>
 </body>
 </html>
@@ -107,7 +132,6 @@ const html = `<!doctype html>
 if (pages) {
   await mkdir(here("dist/"), { recursive: true });
   await writeFile(here("dist/index.html"), html);
-  await writeFile(here("dist/_headers"), "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff\n");
   for (const name of await readdir(here("dist/research/"))) {
     if (name !== researchIndex.release && /^v1-[a-f0-9]{16}$/.test(name)) {
       await rm(here("dist/research/" + name), { recursive: true, force: true });

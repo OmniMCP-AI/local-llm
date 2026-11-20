@@ -1,5 +1,6 @@
 ---
 title: Price watch
+status: published
 kind: page
 summary: Follow comparable whole-build quotes over time.
 ---

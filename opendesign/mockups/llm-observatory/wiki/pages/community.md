@@ -1,5 +1,6 @@
 ---
 title: Help build fastest.ai
+status: published
 kind: guide
 use_cases: community-contribution, evidence-research
 summary: Submit a correction, request a benchmark, or explain a comparison that needs work.

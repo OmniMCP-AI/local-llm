@@ -1,3 +1,4 @@
+import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
 import React, { useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CircuitBoard, Cpu, FileText, GitBranch, Monitor, Search } from "lucide-react";
 import { configurations } from "./scenarios";
@@ -8,6 +9,7 @@ import { ResearchLibrary, useResearchLabels } from "./research-library";
 import { quoteCurrency, useLocale } from "./locale";
 
 const documents = __FASTEST_WIKI_DOCUMENTS__;
+const publicRoutes = __FASTEST_WIKI_PUBLIC_ROUTES__;
 const graph = __FASTEST_WIKI_GRAPH__;
 const pictures = __FASTEST_HARDWARE_ASSETS__;
 export const wikiEntry = (slug) => documents[slug];
@@ -56,24 +58,20 @@ function Link({ to, go, children, className }) {
 }
 
 function renderInline(line, go) {
-  const chunks = line.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|\x60[^\x60]+\x60)/g);
-  return chunks.map((chunk, i) => {
-    const link = chunk.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (link && /^#[a-z0-9/-]+$/i.test(link[2])) return <Link key={i} to={link[2]} go={go}>{link[1]}</Link>;
-    if (link && /^https:\/\//i.test(link[2])) return <a key={i} href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>;
-    if (link) return link[1];
-    if (chunk.startsWith("**")) return <strong key={i}>{chunk.slice(2,-2)}</strong>;
-    if (chunk.startsWith("\x60")) return <code key={i}>{chunk.slice(1,-1)}</code>;
-    return chunk;
+  return markdownInline(line).map(({ type, text, href }, i) => {
+    if (type === "link" && /^#[a-z0-9/-]+$/i.test(href)) return <Link key={i} to={href} go={go}>{text}</Link>;
+    if (type === "link" && /^https:\/\//i.test(href)) return <a key={i} href={href} target="_blank" rel="noreferrer">{text}</a>;
+    if (type === "strong") return <strong key={i}>{text}</strong>;
+    if (type === "code") return <code key={i}>{text}</code>;
+    return text;
   });
 }
 
 function Markdown({ doc, go }) {
-  return <div className="wiki-prose">{doc?.body.trim().split(/\r?\n\s*\r?\n/g).filter(Boolean).map((block, i) => {
-    if (block.startsWith("## ")) return <h3 key={i}>{renderInline(block.slice(3).trim(), go)}</h3>;
-    const lines = block.split(/\r?\n/);
-    if (lines.every((line) => line.startsWith("- "))) return <ul key={i}>{lines.map((line, j) => <li key={j}>{renderInline(line.slice(2), go)}</li>)}</ul>;
-    return <p key={i}>{renderInline(block.replace(/\r?\n/g," "), go)}</p>;
+  return <div className="wiki-prose">{markdownBlocks(doc.body).map(({ type, text, items }, i) => {
+    if (type === "heading") return <h3 key={i}>{renderInline(text, go)}</h3>;
+    if (type === "list") return <ul key={i}>{items.map((item, j) => <li key={j}>{renderInline(item, go)}</li>)}</ul>;
+    return <p key={i}>{renderInline(text, go)}</p>;
   })}</div>;
 }
 
@@ -92,6 +90,7 @@ export function WikiDetails({ slug, go, onCopy, initiallyOpen = false }) {
   return <details className="wiki-details" open={initiallyOpen || undefined}>
     <summary><BookOpen size={16} aria-hidden="true" /> Wiki notes and sources</summary>
     <Markdown doc={doc} go={go} />
+    {publicRoutes[slug] && <a href={publicRoutes[slug]}>Permalink to this wiki article</a>}
     <GraphLinks slug={slug} go={go} />
     <details className="wiki-source"><summary>View Markdown</summary>
       <pre><code>{doc.raw}</code></pre>

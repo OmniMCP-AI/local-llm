@@ -97,7 +97,8 @@ export async function writeResearchRelease(directory, output, approvals = {}) {
 
   const taxonomyVersion = sourceIndex.taxonomyVersion;
   const sources = selectSources(sourceIndex, approvals);
-  const methods = readMethods(methodsMarkdown, vocabulary);
+  const methods = readMethods(methodsMarkdown, vocabulary).filter(({ url }) =>
+    approvals["youtube/" + new URL(url).searchParams.get("v")]?.status !== "withdrawn");
   const publicGraph = selectGraph(graph, sources, vocabulary);
   const input = { taxonomyVersion, vocabulary, sources, methods };
   const release = "v1-" + sha256(json([input, publicGraph, client, filter, renderer, builder])).slice(0, 16);

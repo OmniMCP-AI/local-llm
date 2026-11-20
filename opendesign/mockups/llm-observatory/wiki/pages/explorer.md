@@ -1,5 +1,6 @@
 ---
 title: Performance vs. price
+status: published
 kind: page
 summary: Explore complete local setups for the same workload.
 ---

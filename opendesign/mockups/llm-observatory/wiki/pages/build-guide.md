@@ -1,5 +1,6 @@
 ---
 title: Plan a local build
+status: published
 kind: guide
 use_cases: hardware-selection, model-fit, ownership-cost
 summary: A parts and compatibility checklist for desktop and unified-memory systems.

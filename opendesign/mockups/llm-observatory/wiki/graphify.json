@@ -2,8 +2,8 @@
   "directed": true,
   "multigraph": false,
   "graph": {
-    "source_sha256": "a304f4b5b4d6100ca663fc28cd89a2ba3313fbd84542e9d1f9a1be3e874f4abc",
-    "research_index_sha256": "18e99971f8870d390d97514c2ab543a8461c73e889da5a252fe631442343bb77",
+    "source_sha256": "5895f5799cce1a3f9f5c63f8ef3b5ebdf5f6ef9d8fd6fd6804718eb34829ab2f",
+    "research_index_sha256": "850dfa012c814c73cbe79e0ea64e39657360a8eb6d57770566c0ef148ee9b9e4",
     "taxonomy_version": 1,
     "research_inputs": {
       "video-topics.json": "280800b53a8c79d6418435f6d48071869ba8ca348d983a737c9ebf854f998abd",
@@ -21,7 +21,7 @@
       "publisher": "fastest.ai",
       "date": null,
       "url": "#wiki/agent-discovery",
-      "context": "How the planned hosted site will make reviewed evidence discoverable and citeable.",
+      "context": "Retrieve and cite the wiki and research library through stable public URLs.",
       "language": "en",
       "id": "agent-discovery",
       "community": null,
@@ -224,6 +224,14 @@
       "id": "research",
       "community": null,
       "norm_label": "research library"
+    },
+    {
+      "label": "Dual RTX 2080 Ti with optional NVLink",
+      "file_type": "document",
+      "source_file": "pages/rtx-2080-ti-nvlink.md",
+      "id": "rtx-2080-ti-nvlink",
+      "community": null,
+      "norm_label": "dual rtx 2080 ti with optional nvlink"
     },
     {
       "label": "GeForce RTX 3060",
@@ -11107,17 +11115,17 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/agent-discovery.md",
-      "source_location": "L16",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "agent-discovery",
-      "target": "agents"
+      "target": "research"
     },
     {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/agent-discovery.md",
-      "source_location": "L16",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "agent-discovery",
       "target": "evidence-guide"
@@ -11161,7 +11169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/agents.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "agents",
       "target": "evidence-guide"
@@ -11171,7 +11179,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/agents.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "agents",
       "target": "benchmark-method"
@@ -11181,7 +11189,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/agents.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "agents",
       "target": "agent-discovery"
@@ -11191,7 +11199,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/arc-b580.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "arc-b580",
       "target": "qwen25-7b"
@@ -11201,7 +11209,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/arc-b580.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "arc-b580",
       "target": "benchmark-method"
@@ -11211,7 +11219,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/arc-b580.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "arc-b580",
       "target": "technology"
@@ -11221,7 +11229,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/benchmark-method.md",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "benchmark-method",
       "target": "explorer"
@@ -11231,7 +11239,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/benchmark-method.md",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "benchmark-method",
       "target": "evidence-guide"
@@ -11241,7 +11249,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/benchmark-method.md",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0,
       "source": "benchmark-method",
       "target": "comparison-methods"
@@ -11285,7 +11293,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/build-guide.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "build-guide",
       "target": "benchmark-method"
@@ -11295,7 +11303,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/build-guide.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "build-guide",
       "target": "prices"
@@ -11305,7 +11313,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/build-guide.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "build-guide",
       "target": "rtx-4090"
@@ -11315,7 +11323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/build-guide.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "build-guide",
       "target": "rtx-3090"
@@ -11325,7 +11333,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/build-guide.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "build-guide",
       "target": "m4-pro"
@@ -11381,7 +11389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "catalog",
       "target": "machines"
@@ -11391,7 +11399,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "catalog",
       "target": "models"
@@ -11401,7 +11409,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "catalog",
       "target": "runtimes"
@@ -11411,7 +11419,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "catalog",
       "target": "goals"
@@ -11421,7 +11429,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "catalog",
       "target": "community"
@@ -11431,7 +11439,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "catalog",
       "target": "gpu-topology"
@@ -11441,7 +11449,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/community.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "community",
       "target": "evidence-guide"
@@ -11451,7 +11459,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/community.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "community",
       "target": "catalog"
@@ -11495,7 +11503,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/comparison-methods.md",
-      "source_location": "L41",
+      "source_location": "L43",
       "weight": 1.0,
       "source": "comparison-methods",
       "target": "benchmark-method"
@@ -11505,7 +11513,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/comparison-methods.md",
-      "source_location": "L41",
+      "source_location": "L43",
       "weight": 1.0,
       "source": "comparison-methods",
       "target": "evidence-guide"
@@ -11515,7 +11523,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/comparison-methods.md",
-      "source_location": "L44",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "comparison-methods",
       "target": "gpu-topology"
@@ -11525,7 +11533,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/comparison-methods.md",
-      "source_location": "L44",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "comparison-methods",
       "target": "technology"
@@ -11641,7 +11649,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/evidence-guide.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "evidence-guide",
       "target": "benchmark-method"
@@ -11651,7 +11659,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/evidence-guide.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "evidence-guide",
       "target": "agents"
@@ -11695,7 +11703,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/explorer.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "explorer",
       "target": "qwen25-7b"
@@ -11705,20 +11713,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/explorer.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "explorer",
       "target": "benchmark-method"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/explorer.md",
-      "source_location": "L18",
-      "weight": 1.0,
-      "source": "explorer",
-      "target": "prices"
     },
     {
       "relation": "references",
@@ -11728,6 +11726,16 @@
       "source_location": "L19",
       "weight": 1.0,
       "source": "explorer",
+      "target": "prices"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/explorer.md",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "explorer",
       "target": "build-guide"
     },
     {
@@ -11735,7 +11743,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/goals.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "goals",
       "target": "benchmark-method"
@@ -11745,7 +11753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/goals.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "goals",
       "target": "catalog"
@@ -11755,7 +11763,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/goals.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "goals",
       "target": "community"
@@ -11765,7 +11773,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/gpu-topology.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "gpu-topology",
       "target": "benchmark-method"
@@ -11775,7 +11783,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/gpu-topology.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "gpu-topology",
       "target": "runtimes"
@@ -11785,7 +11793,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/gpu-topology.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "gpu-topology",
       "target": "technology"
@@ -11841,7 +11849,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "index",
       "target": "research"
@@ -11851,7 +11859,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "index",
       "target": "benchmark-method"
@@ -11861,7 +11869,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "index",
       "target": "comparison-methods"
@@ -11871,7 +11879,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "index",
       "target": "build-guide"
@@ -11881,7 +11889,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "index",
       "target": "evidence-guide"
@@ -11891,7 +11899,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "index",
       "target": "catalog"
@@ -11901,7 +11909,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "index",
       "target": "goals"
@@ -11911,7 +11919,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "index",
       "target": "community"
@@ -11921,7 +11929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "index",
       "target": "machines"
@@ -11931,7 +11939,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "index",
       "target": "models"
@@ -11941,7 +11949,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "index",
       "target": "explorer"
@@ -11951,7 +11959,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "index",
       "target": "prices"
@@ -11961,7 +11969,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "index",
       "target": "rtx-4090"
@@ -11971,7 +11979,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "index",
       "target": "m4-pro"
@@ -11981,7 +11989,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "index",
       "target": "qwen25-7b"
@@ -11991,7 +11999,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "index",
       "target": "qwen25-14b"
@@ -12001,20 +12009,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "index",
-      "target": "llama31-8b"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
       "source_location": "L27",
       "weight": 1.0,
       "source": "index",
-      "target": "agents"
+      "target": "llama31-8b"
     },
     {
       "relation": "references",
@@ -12031,7 +12029,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/llama31-8b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "llama31-8b",
       "target": "rtx-4090"
@@ -12041,7 +12039,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/llama31-8b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "llama31-8b",
       "target": "rtx-3060"
@@ -12051,7 +12049,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/llama31-8b.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "llama31-8b",
       "target": "benchmark-method"
@@ -12061,7 +12059,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/llama31-8b.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "llama31-8b",
       "target": "qwen25-7b"
@@ -12071,7 +12069,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/m4-max.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "m4-max",
       "target": "qwen25-7b"
@@ -12081,7 +12079,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/m4-max.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "m4-max",
       "target": "evidence-guide"
@@ -12091,7 +12089,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/m4-pro.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "m4-pro",
       "target": "qwen25-7b"
@@ -12101,7 +12099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/m4-pro.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "m4-pro",
       "target": "benchmark-method"
@@ -12111,7 +12109,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/machines.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "machines",
       "target": "rtx-4090"
@@ -12121,7 +12119,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/machines.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "machines",
       "target": "rtx-3090"
@@ -12131,7 +12129,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/machines.md",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "machines",
       "target": "m4-pro"
@@ -12141,7 +12139,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/machines.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "machines",
       "target": "build-guide"
@@ -12151,7 +12149,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/machines.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "machines",
       "target": "models"
@@ -12161,7 +12159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/models.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "models",
       "target": "qwen25-7b"
@@ -12171,7 +12169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/models.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "models",
       "target": "qwen25-14b"
@@ -12181,7 +12179,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/models.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "models",
       "target": "llama31-8b"
@@ -12191,7 +12189,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/models.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "models",
       "target": "benchmark-method"
@@ -12201,7 +12199,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/models.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "models",
       "target": "machines"
@@ -12211,7 +12209,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/prices.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "prices",
       "target": "build-guide"
@@ -12221,7 +12219,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/prices.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "prices",
       "target": "explorer"
@@ -12231,7 +12229,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/prices.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "prices",
       "target": "comparison-methods"
@@ -12241,20 +12239,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-14b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "qwen25-14b",
       "target": "rtx-4090"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/qwen25-14b.md",
-      "source_location": "L12",
-      "weight": 1.0,
-      "source": "qwen25-14b",
-      "target": "rtx-3090"
     },
     {
       "relation": "references",
@@ -12264,6 +12252,16 @@
       "source_location": "L13",
       "weight": 1.0,
       "source": "qwen25-14b",
+      "target": "rtx-3090"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/qwen25-14b.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "qwen25-14b",
       "target": "evidence-guide"
     },
     {
@@ -12271,7 +12269,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-14b.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "qwen25-14b",
       "target": "qwen25-7b"
@@ -12281,7 +12279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-7b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "qwen25-7b",
       "target": "rtx-4090"
@@ -12291,7 +12289,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-7b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "qwen25-7b",
       "target": "rtx-3090"
@@ -12301,7 +12299,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-7b.md",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "qwen25-7b",
       "target": "m4-pro"
@@ -12311,7 +12309,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-7b.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "qwen25-7b",
       "target": "benchmark-method"
@@ -12321,7 +12319,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/qwen25-7b.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "qwen25-7b",
       "target": "qwen25-14b"
@@ -12331,7 +12329,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/research.md",
-      "source_location": "L9",
+      "source_location": "L10",
       "weight": 1.0,
       "source": "research",
       "target": "benchmark-method"
@@ -12341,7 +12339,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/research.md",
-      "source_location": "L9",
+      "source_location": "L10",
       "weight": 1.0,
       "source": "research",
       "target": "evidence-guide"
@@ -12350,21 +12348,11 @@
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
-      "source_file": "pages/rtx-3060.md",
-      "source_location": "L17",
+      "source_file": "pages/rtx-2080-ti-nvlink.md",
+      "source_location": "L12",
       "weight": 1.0,
-      "source": "rtx-3060",
-      "target": "qwen25-7b"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/rtx-3060.md",
-      "source_location": "L17",
-      "weight": 1.0,
-      "source": "rtx-3060",
-      "target": "benchmark-method"
+      "source": "rtx-2080-ti-nvlink",
+      "target": "gpu-topology"
     },
     {
       "relation": "references",
@@ -12374,6 +12362,26 @@
       "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-3060",
+      "target": "qwen25-7b"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/rtx-3060.md",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "rtx-3060",
+      "target": "benchmark-method"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/rtx-3060.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "rtx-3060",
       "target": "llama31-8b"
     },
     {
@@ -12381,7 +12389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3060.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "rtx-3060",
       "target": "technology"
@@ -12391,7 +12399,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3090.md",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "rtx-3090",
       "target": "prices"
@@ -12401,7 +12409,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-3090",
       "target": "qwen25-7b"
@@ -12411,7 +12419,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-3090",
       "target": "qwen25-14b"
@@ -12421,7 +12429,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-3090",
       "target": "build-guide"
@@ -12431,7 +12439,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-3090.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "rtx-3090",
       "target": "technology"
@@ -12441,7 +12449,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "qwen25-7b"
@@ -12451,7 +12459,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "qwen25-14b"
@@ -12461,7 +12469,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "llama31-8b"
@@ -12471,7 +12479,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "benchmark-method"
@@ -12481,7 +12489,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "build-guide"
@@ -12491,7 +12499,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-4090.md",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "source": "rtx-4090",
       "target": "technology"
@@ -12501,7 +12509,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-5090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-5090",
       "target": "qwen25-7b"
@@ -12511,7 +12519,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-5090.md",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "rtx-5090",
       "target": "evidence-guide"
@@ -12521,7 +12529,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/rtx-5090.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "rtx-5090",
       "target": "build-guide"
@@ -12531,7 +12539,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/runtimes.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "runtimes",
       "target": "catalog"
@@ -12541,7 +12549,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/runtimes.md",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "runtimes",
       "target": "goals"
@@ -12551,7 +12559,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/technology.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "technology",
       "target": "gpu-topology"
@@ -12561,7 +12569,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/technology.md",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "source": "technology",
       "target": "benchmark-method"
@@ -12571,7 +12579,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/technology.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "technology",
       "target": "rtx-3090"
@@ -12581,7 +12589,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/technology.md",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "technology",
       "target": "runtimes"

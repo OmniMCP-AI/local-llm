@@ -1,5 +1,7 @@
 ---
 title: Comparison methods
+status: published
+redirects: methods, costs
 kind: guide
 use_cases: hardware-selection, model-fit, model-evaluation, retrieval, multi-user-serving, distributed-inference, runtime-tuning, ownership-cost
 summary: Twenty ways to compare hardware, inference, model quality, and ownership costs.
