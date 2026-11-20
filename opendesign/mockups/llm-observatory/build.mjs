@@ -8,6 +8,7 @@ const here = (name) => new URL(name, import.meta.url);
 const require = createRequire(import.meta.url);
 const { build } = require("esbuild");
 const openccRoot = resolve(dirname(require.resolve("opencc-js")), "../..");
+const pages = process.argv.includes("--pages");
 const openccNotices = await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
 const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
@@ -57,6 +58,7 @@ const result = await build({
   target: ["es2022"],
   define: {
     "process.env.NODE_ENV": '"production"',
+    __FASTEST_PAGES__: String(pages),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(documents),
     __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
@@ -81,7 +83,7 @@ const html = `<!doctype html>
 </body>
 </html>
 `;
-if (process.argv.includes("--pages")) {
+if (pages) {
   await mkdir(here("dist/"), { recursive: true });
   await writeFile(here("dist/index.html"), html);
 } else {
