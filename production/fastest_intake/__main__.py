@@ -17,23 +17,30 @@ def table_counts(store):
             'batches', (SELECT count(*) FROM fastest_intake.batch),
             'source_probes', (SELECT count(*) FROM fastest_intake.source_probe),
             'price_candidates', (SELECT count(*) FROM fastest_intake.price_candidate),
-            'model_evaluations', (SELECT count(*) FROM fastest_intake.model_evaluation)
+            'model_evaluations', (SELECT count(*) FROM fastest_intake.model_evaluation),
+            'tariff_candidates', (SELECT count(*) FROM fastest_intake.tariff_candidate)
         );
     """))
 
 
 def ingest(store, bundle):
-    if not isinstance(bundle, dict) or bundle.keys() != {"checked_at", "note", "sources", "prices", "evaluations"}:
-        raise ValueError("Expected checked_at, note, sources, prices, and evaluations.")
+    required = {"checked_at", "note", "sources", "prices", "evaluations"}
+    if not isinstance(bundle, dict) or bundle.keys() - {"tariffs"} != required:
+        raise ValueError("Expected checked_at, note, sources, prices, evaluations, and optional tariffs.")
     if datetime.fromisoformat(bundle["checked_at"]).utcoffset() is None:
         raise ValueError("checked_at must specify a time zone.")
-    for key, identity in (("sources", "source"), ("prices", "id"), ("evaluations", "id")):
-        rows = bundle[key]
+    for key, identity in (("sources", "source"), ("prices", "id"), ("evaluations", "id"), ("tariffs", "id")):
+        rows = bundle.get(key, [])
         if not isinstance(rows, list) or len(rows) > 10_000:
             raise ValueError(f"{key} must be a list of up to 10,000 records.")
         ids = {row.get(identity) for row in rows if isinstance(row, dict) and isinstance(row.get(identity), str)}
         if "" in ids or len(ids) != len(rows):
             raise ValueError(f"{key} must have distinct, nonempty {identity} values.")
+    captured = {row["source"] for row in bundle["sources"] if row.get("status") == "captured"}
+    for tariff in bundle.get("tariffs", []):
+        source = tariff.get("source")
+        if not isinstance(source, str) or source not in captured:
+            raise ValueError("Each tariff candidate must reference a captured source probe in its batch.")
     packed = json.dumps(bundle, sort_keys=True, ensure_ascii=False, allow_nan=False)
     batch_id = sha256(packed.encode("utf-8")).hexdigest()
     payload = _sql_text(packed)
@@ -61,6 +68,13 @@ def ingest(store, bundle):
         jsonb_to_recordset(document->'evaluations')
             AS item(id text, source text, locator text, model text, revision text, benchmark text,
                     benchmark_version text, metric text, amount numeric, unit text, evidence_class text, context jsonb)
+        ON CONFLICT DO NOTHING;
+        INSERT INTO fastest_intake.tariff_candidate
+        SELECT '{batch_id}', item.* FROM intake_payload,
+        jsonb_to_recordset(document->'tariffs')
+            AS item(id text, source text, locator text, kind text, provider text, offering text,
+                    revision text, market text, region text, currency text, amount numeric, unit text,
+                    component text, effective_from date, effective_until date, qualification text)
         ON CONFLICT DO NOTHING;
         COMMIT;
     """)
