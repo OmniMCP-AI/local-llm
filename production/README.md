@@ -281,6 +281,13 @@ GeForce RTX 4090 cells for one pinned ComfyUI workflow. It reports completion
 time, accepted images and access blockers from the same ledger in Markdown,
 HTML and typed JSON.
 
+## Compare image team economics
+
+The [image team comparison](fastest_image_team/README.md) models local, cloud
+and hybrid capacity, labor and cash payback for one shared aggregate workload
+and deadline. Its default report records the missing consented case. An
+explicit fictional example exercises all three plans and the sensitivity cases.
+
 ## Browse reciprocal machine and model profiles
 
 From `production`, run `python3 -B -m fastest_release serve` and open
