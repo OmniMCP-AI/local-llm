@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
+import { withLocalPages } from "./pages-test-server.mjs";
 import sourceIndex from "./wiki/research-index.json" with { type: "json" };
 
 const run = promisify(execFile);
@@ -14,7 +15,7 @@ const evidenceId = "youtube/09GB4LtXUok";
 const source = sourceIndex.sources.find(({ id }) => id === evidenceId);
 const receipt = "16660254-d91d-498d-8c9c-91ec112b211b";
 
-test("an opted-in report stages withdrawal of a released source with exact export and discovery hashes", async (t) => {
+test("an opted-in withdrawal retires prior exports and verifies the reviewed release over Pages HTTP", { timeout: 90_000 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "fastest-evidence-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const previous = join(root, "previous");
@@ -30,8 +31,9 @@ test("an opted-in report stages withdrawal of a released source with exact expor
   const old = JSON.parse(await readFile(join(previous, "wiki/manifest.json"))).researchRelease;
   const exportPath = "downloads/earlier-library.md";
   const markdown = await readFile(join(previous, "research", old, "library.md"));
-  await mkdir(join(previous, "downloads"));
+  await mkdir(join(previous, "downloads", "earlier-guide"), { recursive: true });
   await writeFile(join(previous, exportPath), markdown);
+  await writeFile(join(previous, "downloads/earlier-guide/index.html"), "<h1>Archived export</h1>");
   await writeFile(requestPath, JSON.stringify({
     action: "withdraw",
     evidenceId,
@@ -70,6 +72,34 @@ test("an opted-in report stages withdrawal of a released source with exact expor
   assert.ok(policy.paths.includes("/research/" + old + "/*"));
   assert.ok(policy.paths.includes("/" + exportPath));
   assert.match(await read("wiki/evidence-updates.md"), /Withdrawn/);
+  const verifier = "verify-evidence-resolution.mjs";
+  const plan = await run(process.execPath, [verifier, "--purge-plan", join(candidate, "review.json"), "https://fastest.ai"]);
+  const urls = new Set(plan.stdout.trim().split("\n"));
+  for (const path of ["/", "/index.html", "/index", "/sitemap.xml", "/" + exportPath,
+    "/downloads/earlier-guide/", "/downloads/earlier-guide/index.html", "/research/" + old + "/library"]) {
+    assert.ok(urls.has("https://fastest.ai" + path), path);
+  }
+  assert.doesNotMatch(plan.stdout, /\*|\/_headers|\/_redirects|\/_routes\.json/);
+
+  const pages = join(candidate, "pages");
+  await mkdir(join(pages, "downloads"));
+  await writeFile(join(pages, exportPath), markdown);
+  await withLocalPages(pages, t.signal, async (origin) => {
+    const { stdout } = await run(process.execPath, [verifier, join(candidate, "review.json"), origin], { signal: t.signal });
+    assert.match(stdout, /Verified withdrawal/);
+    const stale = join(root, "stale-review.json");
+    const sitemap = report.changes.find(({ path }) => path === "/sitemap.xml");
+    sitemap.after = sitemap.before;
+    for (const { artifacts } of report.history) {
+      for (const artifact of artifacts) {
+        if (artifact.path === sitemap.path) artifact.after = sitemap.after;
+      }
+    }
+    report.diffSha256 = digest(JSON.stringify(report.changes, null, 2) + "\n");
+    await writeFile(stale, JSON.stringify(report));
+    await assert.rejects(run(process.execPath, [verifier, stale, origin], { signal: t.signal }),
+      /sitemap\.xml differs from reviewed bytes/);
+  });
 });
 
 test("Pages denies stale conditional reads before cache or asset lookup", async () => {
@@ -102,7 +132,7 @@ test("Pages denies stale conditional reads before cache or asset lookup", async 
   assert.equal(result.headers.get("ETag"), null);
 });
 
-test("a reviewed correction preserves its prior pin and links the revised source from the wiki", async (t) => {
+test("a reviewed correction preserves its prior pin and links the revised source over Pages HTTP", { timeout: 90_000 }, async (t) => {
   const { writeResearchRelease } = await import("./research-release-build.mjs");
   const { writeWikiRelease } = await import("./wiki-release.mjs");
   const root = await mkdtemp(join(tmpdir(), "fastest-correction-test-"));
@@ -151,6 +181,10 @@ test("a reviewed correction preserves its prior pin and links the revised source
   assert.ok(report.notificationDraft.includes(digest(pinnedBytes)));
 
   const corrected = join(output, "pages");
+  await withLocalPages(corrected, t.signal, async (origin) => {
+    const { stdout } = await run(process.execPath, ["verify-evidence-resolution.mjs", join(output, "review.json"), origin], { signal: t.signal });
+    assert.match(stdout, /Verified correction/);
+  });
   const correctedState = join(corrected, "evidence-quarantine.json");
   const rebuilt = join(root, "fresh-build");
   await run(process.execPath, ["build.mjs", "--pages", "--output", rebuilt], { env: {

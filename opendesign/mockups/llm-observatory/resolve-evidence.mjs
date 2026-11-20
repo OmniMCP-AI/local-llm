@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { emptyEvidenceState, isPublicIssue, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
+import { checkedPagesFile, pagesFileRoutes } from "./evidence-public-paths.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { feedbackId } from "./feedback-policy.mjs";
 import { allowedResearchPin, digest, readJson, readResearchPin, readResearchSnapshot as snapshot, writeResearchPin } from "./research-released-snapshot.mjs";
@@ -72,13 +73,6 @@ async function resolveBenchmark(benchmark, action, sourceLocator, output) {
   } finally {
     await rm(decision, { force: true });
   }
-}
-
-function deniedRoutes(path) {
-  const routes = [path];
-  if (path.endsWith("/index.html")) routes.push(path.slice(0, -"/index.html".length), path.slice(0, -"index.html".length));
-  else if (path.endsWith(".html")) routes.push(path.slice(0, -".html".length));
-  return routes;
 }
 
 async function stageResolution(request, previous, output, approvalPath, archiveRoots) {
@@ -150,7 +144,9 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
             paths.add(`/catalog-data/${capturedWiki.catalogRelease}/*`);
           }
           for (const path of earlier.keys()) {
-            if (!stagedHashes.has(path)) for (const route of deniedRoutes(path)) paths.add(route);
+            if (checkedPagesFile(path) && !stagedHashes.has(path)) {
+              for (const route of pagesFileRoutes(path)) paths.add(route);
+            }
           }
         }
       } else if (!Object.hasOwn(priorState.researchPins, index.release)) {
@@ -181,6 +177,9 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
     }
     const oldHashes = await hashes(previous);
     const newHashes = await hashes(candidate);
+    for (const { artifacts } of history) {
+      for (const entry of artifacts) entry.after = newHashes.get(entry.path) ?? null;
+    }
     const pagesChanges = [...new Set([...oldHashes.keys(), ...newHashes.keys()])].sort().flatMap((path) => {
       const before = oldHashes.get(path) ?? null;
       const after = newHashes.get(path) ?? null;
@@ -199,10 +198,11 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
       ...earlierHashes,
     ].join("\n");
     const cachePurgePaths = new Set([...changes, ...history.flatMap(({ artifacts }) => artifacts)]
-      .flatMap(({ path, before }) => before ? deniedRoutes(path) : []));
+      .flatMap(({ path, before }) => before && checkedPagesFile(path) ? pagesFileRoutes(path) : []));
     if (benchmark) {
-      cachePurgePaths.add("/api/v1/evidence?evidence_id=" + request.benchmark.evidenceId);
+      cachePurgePaths.add("/api/v1/evidence?evidence_id=" + request.benchmark.evidenceId.toLowerCase());
       for (const path of Object.keys(benchmark.earlierExports)) {
+        cachePurgePaths.add(path);
         const [, , release, file] = path.split("/");
         cachePurgePaths.add("/api/v1/evidence?release=" + release);
         cachePurgePaths.add("/releases/current/" + file);
@@ -213,7 +213,10 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
       candidate: { wiki: wiki.release, research: current.release }, resolutionPath, changes, diffSha256: digest(json(changes)),
       history, historicalResearch: Object.keys(researchPins).sort().map((release) => `/research/${release}/*`),
       cachePurgePaths: [...cachePurgePaths].sort(),
-      ...(benchmark && { benchmarkRelease: benchmark.release }),
+      ...(benchmark && {
+        benchmarkRelease: benchmark.release, benchmarkEvidenceId: request.benchmark.evidenceId.toLowerCase(),
+        benchmarkEarlierExports: benchmark.earlierExports,
+      }),
       notificationDraft, receiptUpdate: receiptUpdate(intake, resolutionPath),
     }), { mode: 0o600 });
     completed = true;

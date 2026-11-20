@@ -42,16 +42,17 @@ export async function onRequestGet(context) {
       return retirementNotice(request, 503, "Public evidence unavailable.\n");
     }
   }
+  const sensitive = check || path === policyPath;
   const requestHeaders = new Headers(request.headers);
-  if (check) {
+  if (sensitive) {
     for (const name of conditionals) requestHeaders.delete(name);
     requestHeaders.set("Cache-Control", "no-cache");
   }
-  const response = check ? await context.next(new Request(request, { headers: requestHeaders })) : await context.next();
-  if (check && response.status === 304) return retirementNotice(request, 503, "Public evidence unavailable.\n");
+  const response = sensitive ? await context.next(new Request(request, { headers: requestHeaders })) : await context.next();
+  if (sensitive && response.status === 304) return retirementNotice(request, 503, "Public evidence unavailable.\n");
   const contentType = response.headers.get("Content-Type")?.split(";", 1)[0].trim().toLowerCase();
   const html = response.status === 200 && contentType === "text/html";
-  if (!check && !html && path !== policyPath) return response;
+  if (!sensitive && !html) return response;
 
   const language = html && request.method === "GET" && languageForCountry(request.cf?.country);
   const headers = new Headers(response.headers);
