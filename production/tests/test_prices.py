@@ -147,6 +147,7 @@ class PriceTest(unittest.TestCase):
         original = offer("nov-01", 2, "2026-11-01T12:00:00Z", "240.00", "2026-11-02T00:00:00Z")
         correction = offer("nov-01", 3, "2026-11-01T12:00:00Z", "241.00", "2026-11-02T00:00:00Z")
         renewed = offer("nov-04", 1, "2026-11-04T12:00:00Z", "225.00", "2026-11-06T00:00:00Z")
+        self.cohort["data_class"] = "authorized_observations"
         self.store.approve(self.cohort)
         key = self.cohort["id"]
         register(self.store, key, {
@@ -213,6 +214,12 @@ class PriceTest(unittest.TestCase):
         self.assertIn('<circle cx="30.00"', html)
         self.assertIn('<circle cx="610.00"', html)
         self.assertEqual(html.count("<circle "), 2)
+        with api_client(price_reader=self.store.read) as request:
+            status, _, historical = request(f"/api/v1/historical-offers?release={current['release_id']}")
+            self.assertEqual(status, 200)
+            self.assertTrue(historical["offers"][0]["comparable_asking_quote"])
+            self.assertEqual(historical["offers"][0]["availability"], "expired")
+            self.assertEqual(historical["offers"][0]["expires_at"], "2026-11-02T00:00:00Z")
         self.assertEqual(self.store.read(before["release_id"]), before)
         self.assertEqual(self.store.read(pending["release_id"]), pending)
 
