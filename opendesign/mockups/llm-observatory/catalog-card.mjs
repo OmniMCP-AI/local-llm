@@ -5,8 +5,9 @@ import { profileStyles } from "./catalog-profile-styles.mjs";
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[char]);
 const escapeMarkdown = (value) => value.replace(/[\n\r]/g, " ").replace(/[\\`*_{}\[\]<>|]/g, "\\$&");
+const count = new Intl.NumberFormat("en");
 
-export function modelCard(row, release, { local = false } = {}) {
+export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture } = {}) {
   const { family, familySource, revision, artifacts = [] } = row.identity ?? {};
   const artifactSections = artifacts.map((artifact) => {
     const base = `https://huggingface.co/${artifact.repository}`;
@@ -30,7 +31,9 @@ export function modelCard(row, release, { local = false } = {}) {
     ["Safetensors", "SGLang", "sglang"],
     ["Safetensors", "vLLM", "vllm"],
   ].filter(([format]) => artifacts.some((artifact) => artifact.format === format))
-    .map(([format, name, id]) => [`Documented ${format} support`, name, (local ? "local-catalog/" : "/") + catalogPath(release, "runtimes", id)]);
+    .map(([format, name, id]) => [`Documented ${format} support`, name, `${runtimeRoot}/runtimes/${id}.html`]);
+  const { popular, small } = row.discovery ?? {};
+  const ranked = popular ?? small;
   return {
     title: row.id,
     kind: "Model repository",
@@ -44,7 +47,21 @@ export function modelCard(row, release, { local = false } = {}) {
       ["Model license tag", row.license || "Model license unavailable"],
       ...runtimeFields,
     ],
-    sections: artifactSections,
+    sections: [
+      ...(ranked && discoveryCapture ? [{
+        title: "Hugging Face model discovery",
+        fields: [
+          ...(ranked.family ? [["Hub ranking family", ranked.family]] : []),
+          ["Downloads in the Hub snapshot", count.format(ranked.downloads)],
+          ["SafeTensors parameters", count.format(ranked.parameters)],
+          ["Repository access", ranked.gated ? "Access approval required" : "Open"],
+          ...(popular ? [["Popular rank", count.format(popular.rank)]] : []),
+          ...(small ? [["Small rank", count.format(small.rank)]] : []),
+          ["Ranking snapshot", discoveryCapture.capturedAt, discoveryCapture.source],
+        ],
+      }] : []),
+      ...artifactSections,
+    ],
     evidence: "Catalog metadata provides discovery. Tested compatibility, fit estimates and eligible benchmark results are unavailable in this catalog card.",
   };
 }
@@ -261,13 +278,14 @@ ${points.map(point => `<tr${current(point)}><th scope="row"><a href="${escapeHtm
 }
 
 export function renderCard(card, { release, pathname, markdown, local = false }) {
-  const root = local ? ".." : `/catalog/${release}`;
+  const depth = pathname.startsWith("catalog/") ? pathname.split("/").length - 3 : 1;
+  const root = local ? Array(depth).fill("..").join("/") : `/catalog/${release}`;
   const linksFrom = local ? pathname.split("/").at(-1) : pathname;
   const htmlLink = linksFrom.replace(/\.(md|html)$/, ".html");
   const mdLink = linksFrom.replace(/\.(md|html)$/, ".md");
   const licenseLink = root + "/LICENSE.txt";
   const manifestLink = root + "/manifest.json";
-  const home = local ? "../../../../fastest-ai.html" : "/";
+  const home = local ? root + "/../../../fastest-ai.html" : "/";
   const sections = card.sections ?? [];
   const visuals = card.visuals ?? [];
   const photos = card.photos ?? [];

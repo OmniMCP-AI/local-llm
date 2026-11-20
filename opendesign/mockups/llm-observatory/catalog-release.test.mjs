@@ -6,7 +6,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
-import { writeLocalHardwareProfiles } from "./catalog-local-build.mjs";
+import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
+import { importLocalCatalog } from "./catalog-pg.mjs";
 import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -232,7 +233,7 @@ test("the offline catalog generates linked HTML and Markdown for every GPU", asy
   const output = await mkdtemp(join(tmpdir(), "fastest-local-catalog-"));
   t.after(() => rm(output, { recursive: true, force: true }));
   const hardware = await readHardwareCatalog(here);
-  const release = await writeLocalHardwareProfiles(output, hardware, "Test license");
+  const release = await writeLocalCatalogProfiles(output, hardware, "Test license");
   for (const { id, source } of hardware.catalog.cards) {
     const root = join(output, "catalog", release, "cards", id);
     const [html, markdown] = await Promise.all(["html", "md"].map(ext => readFile(root + "." + ext, "utf8")));
@@ -243,5 +244,89 @@ test("the offline catalog generates linked HTML and Markdown for every GPU", asy
     assert.ok(html.includes("No approved observation is available") &&
       markdown.includes("No approved observation is available"), id);
     assertProfileFieldsAgree(html, markdown, id);
+  }
+});
+
+test("the offline catalog writes ranked model pairs with relative companion and runtime links", async (t) => {
+  const temporary = await mkdtemp(join(tmpdir(), "fastest-local-model-"));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  const output = join(temporary, "local-catalog");
+  const id = "Owner/Model.1";
+  const release = await writeLocalCatalogProfiles(output, {
+    snapshotId: "a".repeat(64),
+    catalog: {
+      models: [{
+        id,
+        source: "https://huggingface.co/" + id,
+        detail: "<draft> & text",
+        identity: { revision: "resolved", artifacts: [{
+          repository: id, revision: "resolved", path: "Q4_K_M.gguf", sha256: "digest", format: "GGUF", license: "MIT",
+        }] },
+        discovery: { popular: { rank: 11, downloads: 900, parameters: 500_000_000, gated: true }, small: { rank: 4 } },
+      }],
+    },
+    manifest: {},
+    modelManifest: {
+      inventory: 2, popular: 1, small: 1,
+      discovery: { source: "https://huggingface.co/api/models", capturedAt: "2026-11-20T21:34:32+00:00" },
+    },
+    runtimes: [{ id: "llama.cpp", name: "llama.cpp", source: "https://example.test/llama.cpp", tag: "v1", published: "2026-11-20", workload: "Text", formats: "GGUF", backends: "CPU" }],
+  }, "Test license");
+  const root = join(output, "catalog", release);
+  const files = ["html", "md"].map(ext => join(root, "models", id + "." + ext));
+  const [html, markdown] = await Promise.all(files.map(file => readFile(file, "utf8")));
+  assertProfileFieldsAgree(html, markdown, id);
+  assert.match(html, /&lt;draft&gt; &amp; text/);
+  assert.match(markdown, /\\<draft\\> & text/);
+  assert.match(html, /<a href="Model\.1\.md">Markdown<\/a>/);
+  assert.match(markdown, /\[HTML card\]\(Model\.1\.html\)/);
+  assert.match(html, /<a href="\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/fastest-ai\.html#catalog\/models">Models<\/a>/);
+  assert.match(html, /<a href="\.\.\/\.\.\/runtimes\/llama\.cpp\.html">llama\.cpp<\/a>/);
+  for (const link of ["../../manifest.json", "../../LICENSE.txt", "../../runtimes/llama.cpp.html"]) {
+    assert.ok(html.includes(link) && markdown.includes(link), link);
+    assert.ok(await readFile(join(dirname(files[0]), link), "utf8"));
+  }
+  for (const body of [html, markdown]) {
+    assert.match(body, /Popular rank.*11/);
+    assert.match(body, /Small rank.*4/);
+    assert.match(body, /500,000,000/);
+    assert.match(body, /Access approval/);
+    assert.match(body, /https:\/\/huggingface\.co\/api\/models/);
+  }
+  const { models } = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
+  assert.deepEqual([models.inventory, models.profiles, models.popular, models.small], [2, 1, 1, 1]);
+});
+
+test("the offline catalog rejects repository IDs that escape the release layout", async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-local-model-path-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  await assert.rejects(writeLocalCatalogProfiles(output, {
+    snapshotId: "a".repeat(64), catalog: { models: [{ id: "Owner/../escape" }] },
+  }, "Test license"), /Invalid local model identity/);
+});
+
+const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
+test("the local PostgreSQL snapshot exports one pair per ranked repository", { skip: !testDatabase }, async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-local-model-pg-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  const hardware = await readHardwareCatalog(here);
+  const imported = await importLocalCatalog(hardware, testDatabase);
+  const release = await writeLocalCatalogProfiles(output, imported, imported.modelLicenseNotice);
+  const root = join(output, "catalog", release);
+  const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
+  assert.equal(manifest.snapshotId, imported.snapshotId);
+  assert.equal(manifest.models.inventory, 19_192);
+  assert.equal(manifest.models.profiles, 300);
+  assert.equal(manifest.models.popular, 300);
+  assert.equal(manifest.models.small, 75);
+  assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
+  assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
+  for (const ext of ["html", "md"]) {
+    const body = await readFile(join(root, "models/Qwen/Qwen2.5-0.5B-Instruct." + ext), "utf8");
+    assert.match(body, /Popular rank.*11/);
+    assert.match(body, /Small rank.*4/);
+    assert.match(body, /7ae557604adf67be50417f59c2c2f167def9a775/);
+    assert.match(body, /74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db/);
+    await assert.rejects(readFile(join(root, "models/Corianas/1.3b." + ext), "utf8"), { code: "ENOENT" });
   }
 });
