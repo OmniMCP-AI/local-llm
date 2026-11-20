@@ -90,6 +90,7 @@
   line-height: 1.45;
 }
 .feedback-hint { margin: 0 0 6px; }
+.feedback-error { margin-top: 9px; color: var(--color-ink); font-size: 12px; line-height: 1.45; }
 .feedback-length { display: block; margin: 4px 0 8px; text-align: right; }
 .feedback-context {
   display: flex;
@@ -131,7 +132,7 @@
   color: var(--color-accent);
   font-size: 13px;
 }
-.feedback-status p { margin-top: 3px; color: var(--color-muted); font: 11px/1.45 var(--font-numeric); }
+.feedback-status p { margin-top: 3px; color: var(--color-muted); font: 11px/1.45 var(--font-numeric); overflow-wrap: anywhere; }
 .feedback-reply { margin-top: 13px; }
 .feedback-reply h3 { font-size: 15px; }
 .feedback-reply p { margin-top: 4px; color: var(--color-ink-2); font-size: 13px; line-height: 1.52; }

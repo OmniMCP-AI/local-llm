@@ -1,9 +1,12 @@
-import React, { useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, MessageCircle, X } from "lucide-react";
+import { feedbackId, maxFeedbackContextLength, maxFeedbackLength, minFeedbackLength } from "./feedback-policy.mjs";
 import { useLocale } from "./locale";
 
 const storeKey = "fastest-feedback-v1";
 const publicIssue = "https://github.com/OmniMCP-AI/local-llm/issues/new";
+const feedbackEndpoint = "/api/feedback";
+const hosted = __FASTEST_PAGES__ && location.protocol !== "file:";
 const categories = {
   correction: {
     label: ["Correct a result", "更正结果"],
@@ -30,20 +33,6 @@ const categories = {
   },
 };
 
-function viewContext(page, context) {
-  const snapshot = { page: String(page || "Explorer") };
-  if (context && typeof context === "object" && !Array.isArray(context)) {
-    for (const [label, value] of Object.entries(context)) {
-      if (typeof value === "string" || typeof value === "boolean" || Number.isFinite(value)) {
-        snapshot[label] = String(value).slice(0, 180);
-      }
-    }
-  } else if (typeof context === "string") {
-    snapshot.view = context.slice(0, 180);
-  }
-  return snapshot;
-}
-
 function newId() {
   const suffix = globalThis.crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(16).slice(2, 10);
   return "FB-" + suffix.toUpperCase();
@@ -60,39 +49,77 @@ function saveLocal(note) {
   }
 }
 
-export function FeedbackBubble({ page, context, onCopy }) {
+export function FeedbackBubble({ page, entity, release, onCopy }) {
   const { language, t } = useLocale();
   const dialog = useRef(null);
   const launch = useRef(null);
+  const topic = useRef(null);
+  const title = useRef(null);
+  const attempt = useRef(null);
   const id = useId();
   const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
-  const [includeView, setIncludeView] = useState(false);
+  const [attachedContext, setAttachedContext] = useState(null);
+  const [delivery, setDelivery] = useState("");
   const [receipt, setReceipt] = useState(null);
   const guide = categories[category];
   const receiptGuide = receipt ? categories[receipt.note.category] : undefined;
   const number = new Intl.NumberFormat(language);
-  const snapshot = viewContext(page, context);
-  const preview = Object.entries(snapshot).map(([key, value]) => key + ": " + value).join("\n");
+  const snapshot = { page: (page || "Explorer").slice(0, maxFeedbackContextLength) };
+  if (entity) snapshot.entity = entity.slice(0, maxFeedbackContextLength);
+  if (release) snapshot.release = release.slice(0, maxFeedbackContextLength);
+  const formatContext = (context) => Object.entries(context).map(([key, value]) => key + ": " + value).join("\n");
+  const valid = !!guide && message.trim().length >= minFeedbackLength;
+  const sending = delivery === "sending";
 
-  const submit = (event) => {
+  useEffect(() => {
+    if (dialog.current?.open) (receipt ? title : topic).current?.focus();
+  }, [receipt]);
+
+  const submit = async (event) => {
     event.preventDefault();
-    const trimmed = message.trim();
-    if (!guide || trimmed.length < 10) return;
-    const note = {
-      id: newId(),
+    if (!valid || sending) return;
+    const payload = {
       category,
-      message: trimmed,
-      createdAt: new Date().toISOString(),
-      ...(includeView ? { context: snapshot } : {}),
+      message: message.trim(),
+      ...(attachedContext ? { context: attachedContext } : {}),
     };
-    setReceipt({ note, saved: saveLocal(note) });
+    if (!hosted) {
+      const note = { ...payload, id: newId(), createdAt: new Date().toISOString() };
+      setReceipt({ note, saved: saveLocal(note) });
+      return;
+    }
+    setDelivery("sending");
+    try {
+      const serialized = JSON.stringify(payload);
+      if (attempt.current?.serialized !== serialized) {
+        attempt.current = { serialized, requestId: crypto.randomUUID() };
+      }
+      const response = await fetch(feedbackEndpoint, {
+        method: "POST",
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, requestId: attempt.current.requestId }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!response.ok) throw new Error("Feedback write failed");
+      const { id: receiptId, status } = await response.json();
+      if (typeof receiptId !== "string" || !feedbackId.test(receiptId) || !["queued", "reviewed"].includes(status)) {
+        throw new Error("Invalid feedback receipt");
+      }
+      attempt.current = null;
+      setDelivery("");
+      setReceipt({ note: { ...payload, id: receiptId }, status });
+    } catch {
+      setDelivery("failed");
+    }
   };
 
   const reset = () => {
     setCategory("");
     setMessage("");
-    setIncludeView(false);
+    setAttachedContext(null);
     setReceipt(null);
   };
 
@@ -100,58 +127,78 @@ export function FeedbackBubble({ page, context, onCopy }) {
     if (!receipt || !onCopy) return;
     const { note } = receipt;
     const attached = note.context
-      ? "\n\n" + t("View context", "页面状态") + "\n" + Object.entries(note.context).map(([key, value]) => key + ": " + value).join("\n")
+      ? "\n\n" + t("View context", "页面状态") + "\n" + formatContext(note.context)
       : "";
     dialog.current?.close();
     onCopy(note.id + " / " + t(...categories[note.category].label) + "\n\n" + note.message + attached, t("Feedback note copied", "已复制反馈"));
   };
 
   return <div className="feedback-widget">
-    <button ref={launch} type="button" className="feedback-launch" aria-haspopup="dialog" onClick={() => dialog.current?.showModal()}>
+    <button ref={launch} type="button" className="feedback-launch" aria-haspopup="dialog" onClick={() => {
+      dialog.current?.showModal();
+      (receipt ? title : topic).current?.focus();
+    }}>
       <MessageCircle size={18} aria-hidden="true" /><span>{t("Feedback", "反馈")}</span>
     </button>
     <dialog ref={dialog} className="feedback-dialog" aria-labelledby={id + "-title"} onClose={() => launch.current?.focus()}>
       <div className="feedback-head">
-        <div><p>{t("Community feedback", "社区反馈")}</p><h2 id={id + "-title"}>{receipt ? t("Your feedback note", "你的反馈") : t("Help build fastest.ai", "一起建设 fastest.ai")}</h2></div>
+        <div><p>{t("Community feedback", "社区反馈")}</p><h2 ref={title} tabIndex={-1} id={id + "-title"}>{receipt ? t("Your feedback note", "你的反馈") : t("Help build fastest.ai", "一起建设 fastest.ai")}</h2></div>
         <button type="button" className="btn outline feedback-close" aria-label={t("Close feedback", "关闭反馈")} onClick={() => dialog.current?.close()}><X size={16} aria-hidden="true" /></button>
       </div>
       {receipt ? <div className="feedback-receipt">
         <div className="feedback-status" role="status">
           <Check size={16} aria-hidden="true" />
-          <div><strong>{receipt.saved ? t("Saved on this device", "已保存在此设备") : t("Available for this session", "仅在本次会话中可用")}</strong>
-            <p><bdi>{receipt.note.id}</bdi> / {receipt.saved ? t("Nothing was sent.", "内容尚未发送。") : t("Browser storage wasn’t available. Copy your note to keep it.", "浏览器存储不可用。请复制反馈以便保留。")}</p>
+          <div><strong>{receipt.status ? t("Feedback received", "已收到反馈") : receipt.saved ? t("Saved on this device", "已保存在此设备") : t("Available for this session", "仅在本次会话中可用")}</strong>
+            <p><bdi>{receipt.note.id}</bdi></p>
+            <p>{receipt.status === "queued" ? t("Queued for review", "等待审核")
+              : receipt.status === "reviewed" ? t("Reviewed", "已审核")
+              : receipt.saved ? t("Nothing was sent.", "内容尚未发送。")
+              : t("Browser storage wasn’t available. Copy your note to keep it.", "浏览器存储不可用。请复制反馈以便保留。")}</p>
           </div>
         </div>
         <div className="feedback-reply">
-          <h3>{t("Instant suggestion", "即时建议")}</h3>
+          <h3>{t("Automated suggestion", "自动建议")}</h3>
           <p>{t(...receiptGuide.reply)}</p>
           {receiptGuide.link && <a href={receiptGuide.link.href} onClick={() => dialog.current?.close()}>
             {t(...receiptGuide.link.label)} <ArrowUpRight size={14} aria-hidden="true" />
           </a>}
         </div>
+        {receipt.status && <div className="feedback-reply">
+          <a href={feedbackEndpoint + "?id=" + receipt.note.id} target="_blank" rel="noreferrer">
+            {t("Check receipt status", "查看回执状态")} <ArrowUpRight size={14} aria-hidden="true" />
+          </a>
+        </div>}
         <div className="feedback-actions">
           <button type="button" className="btn outline" onClick={reset}>{t("Write another note", "再写一条")}</button>
           {onCopy && <button type="button" className="btn dark" onClick={copy}><Copy size={14} aria-hidden="true" />{t("Copy note", "复制反馈")}</button>}
         </div>
       </div> : <form className="feedback-form" onSubmit={submit}>
         <label htmlFor={id + "-category"}>{t("Topic", "主题")}</label>
-        <select id={id + "-category"} value={category} onChange={(event) => setCategory(event.target.value)} required>
+        <select ref={topic} id={id + "-category"} value={category} onChange={(event) => setCategory(event.target.value)} disabled={sending} required>
           <option value="">{t("Choose a topic", "选择主题")}</option>
           {Object.entries(categories).map(([key, option]) => <option key={key} value={key}>{t(...option.label)}</option>)}
         </select>
         <label htmlFor={id + "-note"}>{t("Your feedback", "反馈内容")}</label>
         <p className="feedback-hint" id={id + "-hint"}>{guide ? t(...guide.prompt) : t("Tell us what to fix, measure, or explain.", "告诉我们需要更正、测试或解释什么。")}</p>
         <textarea id={id + "-note"} aria-describedby={id + "-hint " + id + "-length"} dir="auto" value={message}
-          minLength="10" maxLength="1200" rows="4" required onChange={(event) => setMessage(event.target.value)} />
-        <small id={id + "-length"} className="feedback-length">{t("{count} / {max} characters", "{count} / {max} 字符", { count: number.format(message.length), max: number.format(1200) })}</small>
+          minLength={minFeedbackLength} maxLength={maxFeedbackLength} rows="4" readOnly={sending} required onChange={(event) => setMessage(event.target.value)} />
+        <small id={id + "-length"} className="feedback-length">{t("{count} / {max} characters", "{count} / {max} 字符", { count: number.format(message.length), max: number.format(maxFeedbackLength) })}</small>
         <label className="feedback-context">
-          <input type="checkbox" checked={includeView} onChange={(event) => setIncludeView(event.target.checked)} />
+          <input type="checkbox" aria-describedby={id + "-context"} checked={!!attachedContext} disabled={sending}
+            onChange={(event) => setAttachedContext(event.target.checked ? snapshot : null)} />
           <span>{t("Add current view details", "附上当前页面的设置")}</span>
         </label>
-        {includeView && <pre className="feedback-preview">{preview}</pre>}
+        <pre id={id + "-context"} className="feedback-preview">{formatContext(attachedContext ?? snapshot)}</pre>
+        {delivery === "failed" && <p className="feedback-error" role="alert">
+          {t("Delivery could not be confirmed. Your draft is still here.", "暂时无法确认送达。草稿仍保留在这里。")}
+        </p>}
         <div className="feedback-actions">
-          <p>{t("Prototype only. Feedback stays on this device.", "原型版的反馈只保存在此设备。")}</p>
-          <button type="submit" className="btn dark" disabled={!guide || message.trim().length < 10}>{t("Save feedback", "保存反馈")}</button>
+          <p>{hosted ? t("Your feedback goes to the maintainers.", "反馈将发送给维护者。")
+            : t("Prototype only. Feedback stays on this device.", "原型版的反馈只保存在此设备。")}</p>
+          <button type="submit" className="btn dark" disabled={!valid} aria-disabled={sending || undefined}>
+            {!hosted ? t("Save feedback", "保存反馈") : sending ? t("Sending feedback…", "正在发送反馈…")
+              : delivery === "failed" ? t("Retry sending", "重试发送") : t("Send feedback", "发送反馈")}
+          </button>
         </div>
       </form>}
       <div className="feedback-public">
