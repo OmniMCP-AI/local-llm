@@ -133,7 +133,7 @@ test("Pages denies stale conditional reads before cache or asset lookup", async 
 });
 
 test("a reviewed correction preserves its prior pin and links the revised source over Pages HTTP", { timeout: 90_000 }, async (t) => {
-  const { writeResearchRelease } = await import("./research-release-build.mjs");
+  const { readResearchApprovals, writeResearchRelease } = await import("./research-release-build.mjs");
   const { writeWikiRelease } = await import("./wiki-release.mjs");
   const root = await mkdtemp(join(tmpdir(), "fastest-correction-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -153,6 +153,7 @@ test("a reviewed correction preserves its prior pin and links the revised source
   await writeFile(join(fixture, "wiki/graphify.json"), JSON.stringify(earlierGraph));
   const previous = join(root, "previous");
   const earlier = await writeResearchRelease(fixture, previous, {
+    ...await readResearchApprovals(),
     [evidenceId]: { status: "approved-metadata", review: "earlier fixture", sha256: digest(JSON.stringify(earlierSource)) },
   });
   await writeWikiRelease({
