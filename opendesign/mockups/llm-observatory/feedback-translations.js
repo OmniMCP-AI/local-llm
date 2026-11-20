@@ -1,4 +1,14 @@
 export const feedbackTranslations = {
+  "Feedback received": ["प्रतिक्रिया मिल गई", "Comentario recibido", "وصلت ملاحظاتك", "Commentaire reçu", "মতামত পাওয়া গেছে"],
+  "Queued for review": ["समीक्षा की प्रतीक्षा में", "Pendiente de revisión", "بانتظار المراجعة", "En attente de révision", "পর্যালোচনার অপেক্ষায়"],
+  "Reviewed": ["समीक्षा हो गई", "Revisado", "تمت المراجعة", "Examiné", "পর্যালোচনা হয়েছে"],
+  "Automated suggestion": ["स्वचालित सुझाव", "Sugerencia automática", "اقتراح آلي", "Suggestion automatique", "স্বয়ংক্রিয় পরামর্শ"],
+  "Check receipt status": ["रसीद की स्थिति देखें", "Consultar el estado del recibo", "تحقق من حالة الإيصال", "Consulter l’état du reçu", "প্রাপ্তিস্বীকারের অবস্থা দেখুন"],
+  "Delivery could not be confirmed. Your draft is still here.": ["भेजने की पुष्टि नहीं हो सकी। आपका मसौदा अभी भी यहाँ है।", "No se pudo confirmar el envío. Tu borrador sigue aquí.", "تعذّر تأكيد الإرسال. ما زالت مسودتك هنا.", "L’envoi n’a pas pu être confirmé. Votre brouillon est toujours ici.", "পাঠানো হয়েছে কি না নিশ্চিত করা যায়নি। আপনার খসড়া এখানে আছে।"],
+  "Your feedback goes to the maintainers.": ["आपकी प्रतिक्रिया अनुरक्षकों को भेजी जाएगी।", "Tu comentario se envía al equipo de mantenimiento.", "تُرسل ملاحظاتك إلى القائمين على المشروع.", "Votre commentaire est envoyé aux responsables du projet.", "আপনার মতামত রক্ষণাবেক্ষণকারীদের কাছে যাবে।"],
+  "Sending feedback…": ["प्रतिक्रिया भेजी जा रही है…", "Enviando comentario…", "جارٍ إرسال الملاحظات…", "Envoi du commentaire…", "মতামত পাঠানো হচ্ছে…"],
+  "Retry sending": ["दोबारा भेजें", "Reintentar el envío", "أعد محاولة الإرسال", "Réessayer l’envoi", "আবার পাঠান"],
+  "Send feedback": ["प्रतिक्रिया भेजें", "Enviar comentario", "أرسل ملاحظاتك", "Envoyer le commentaire", "মতামত পাঠান"],
   Feedback: ["फ़ीडबैक", "Comentarios", "الملاحظات", "Commentaires", "মতামত"],
   "Community feedback": ["समुदाय की प्रतिक्रिया", "Comentarios de la comunidad", "ملاحظات المجتمع", "Retours de la communauté", "কমিউনিটির মতামত"],
   "Help build fastest.ai": ["fastest.ai को बेहतर बनाने में मदद करें", "Ayuda a mejorar fastest.ai", "ساهم في تطوير fastest.ai", "Aidez à améliorer fastest.ai", "fastest.ai উন্নত করতে সাহায্য করুন"],
@@ -108,6 +118,16 @@ export const feedbackTranslations = {
 
 // Japanese, Korean, German.
 export const eastAsianGermanFeedbackTranslations = {
+  "Feedback received": ["フィードバックを受け付けました", "피드백을 받았습니다", "Feedback erhalten"],
+  "Queued for review": ["確認待ち", "검토 대기 중", "Wartet auf Prüfung"],
+  "Reviewed": ["確認済み", "검토 완료", "Geprüft"],
+  "Automated suggestion": ["自動提案", "자동 제안", "Automatischer Vorschlag"],
+  "Check receipt status": ["受付状況を確認", "접수 상태 확인", "Status der Meldung ansehen"],
+  "Delivery could not be confirmed. Your draft is still here.": ["送信を確認できませんでした。下書きはここに残っています。", "전송을 확인할 수 없습니다. 작성 내용은 여기에 남아 있습니다.", "Die Zustellung konnte nicht bestätigt werden. Ihr Entwurf ist weiterhin hier."],
+  "Your feedback goes to the maintainers.": ["フィードバックは運営担当者に送信されます。", "피드백은 프로젝트 관리자에게 전송됩니다.", "Ihr Feedback wird an die Verantwortlichen des Projekts gesendet."],
+  "Sending feedback…": ["フィードバックを送信中…", "피드백 전송 중…", "Feedback wird gesendet…"],
+  "Retry sending": ["再送信", "다시 보내기", "Erneut senden"],
+  "Send feedback": ["フィードバックを送信", "피드백 보내기", "Feedback senden"],
   Feedback: ["フィードバック", "피드백", "Feedback"],
   "Community feedback": ["コミュニティからのフィードバック", "커뮤니티 피드백", "Feedback aus der Community"],
   "Help build fastest.ai": ["fastest.aiの改善にご協力ください", "fastest.ai 개선에 참여하세요", "fastest.ai mitgestalten"],
