@@ -5,8 +5,12 @@ import signal
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import time
 import unittest
+from urllib.error import HTTPError
+from urllib.request import urlopen
+from uuid import uuid4
 
 from fastest_prices import PriceError, PriceStore
 
@@ -180,6 +184,37 @@ class PriceTest(unittest.TestCase):
             self.assertNotIn("private withdrawal", artifact)
         with self.assertRaisesRegex(PriceError, "withdrawn"):
             self.store.capture(self.cohort["id"], self.fixture["captures"][0])
+
+    def test_release_origin_serves_exact_quotes_and_immediate_withdrawal(self):
+        from fastest_release.http import make_server
+
+        self.store.ingest(self.fixture)
+        release_id = self.store.publish(self.cohort["id"], "2026-11-01", "2026-11-04")
+        with make_server(None, port=0, price_reader=self.store.read) as server:
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            base = f"http://127.0.0.1:{server.server_port}/price-releases/"
+            try:
+                with urlopen(f"{base}{release_id}/prices.json") as response:
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                    result = json.load(response)
+                    self.assertEqual(result, self.store.read(release_id))
+                    self.assertEqual(result["market"], "US")
+                    self.assertEqual(result["offers"][0]["price"], "240.00")
+                with self.assertRaises(HTTPError) as missing:
+                    urlopen(f"{base}{uuid4()}/prices.json")
+                self.assertEqual(missing.exception.code, 404)
+                missing.exception.close()
+
+                self.store.withdraw(self.cohort["id"], "private authorization update")
+                with self.assertRaises(HTTPError) as withdrawn:
+                    urlopen(f"{base}{release_id}/prices.json")
+                self.assertEqual(withdrawn.exception.code, 410)
+                with withdrawn.exception as response:
+                    self.assertNotIn("offers", json.load(response))
+            finally:
+                server.shutdown()
+                worker.join(timeout=5)
 
     def test_public_reader_cannot_read_private_inputs_or_write(self):
         self.store.approve(self.cohort)

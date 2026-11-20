@@ -182,7 +182,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);
 
-  const canonicalRoutes = ["/", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
+  const canonicalRoutes = ["/", "/prices", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
   const citationUrls = [
     `- [Current wiki release](${origin}/wiki/manifest.json)`,
     `- [Research library](${origin + research.md}): Approved research references and timestamped methods`,
@@ -200,9 +200,9 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
     highlights: availableHighlights.map(({ id, type, href, markdown, priority, starts, ends, source }) =>
       ({ id, type, href, markdown, priority, starts, ends, source })),
   }, null, 2) + "\n";
-  // Only the explorer needs the visitor locale middleware. Discovery assets use Pages routing and headers directly.
+  // Personalized pages and live APIs use Functions. Static discovery uses Pages headers.
   files["/_routes.json"] = JSON.stringify({
-    version: 1, include: ["/", "/api/feedback", "/catalog/*"], exclude: [],
+    version: 1, include: ["/", "/prices", "/prices/", "/prices.html", "/api/price-comparison", "/api/feedback", "/catalog/*"], exclude: [],
   }, null, 2) + "\n";
   files["/_redirects"] = [...redirects].flatMap(([old, id]) => [
     `/wiki/${old} ${wikiHtmlRoute(id)} 301`, `${wikiHtmlRoute(old)} ${wikiHtmlRoute(id)} 301`,
