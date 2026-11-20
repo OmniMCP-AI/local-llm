@@ -13,6 +13,7 @@ import tempfile
 from threading import Thread
 import time
 import unittest
+from uuid import uuid4
 
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
 from fastest_release.research import SEED_ROOT
@@ -275,6 +276,103 @@ class ReleaseTest(unittest.TestCase):
             text=True,
             timeout=30,
         )
+
+    def test_pinned_profile_round_trip_through_a_rights_filtered_reviewed_release(self):
+        from fastest_release.http import make_server
+
+        # All measurements in this disposable PostgreSQL cluster are invented test values.
+        # The positive fixture uses the reviewed-row shape to exercise the production read.
+        plan = json.loads(Path(FIXTURE.parents[1], "fastest_text", "plan.json").read_text())
+        artifact = plan["artifact"]
+        releases = []
+        ids = {}
+        for cell, values in zip(plan["cells"], [("12.125", "850.500"), ("42.000", "1200")]):
+            run_id, hardware_id = str(uuid4()), str(uuid4())
+            ids[cell["id"]] = run_id
+            for phase, value in zip(("decode", "prefill"), values):
+                observation = {
+                    "evidence_id": str(uuid4()), "kind": "measured",
+                    "hardware": {"revision_id": hardware_id, "revision": 1, "name": cell["name"],
+                                 "configuration": "Synthetic test setup with known hardware and runtime settings"},
+                    "artifact": {"artifact_id": "4b4a731f-3d6e-4b15-a8d5-9997bc93fd3d", "repository": artifact["repository"],
+                                 "revision": artifact["revision"], "format": "GGUF", "quantization": artifact["quantization"],
+                                 "path": artifact["shards"][0]["path"], "sha256": artifact["shards"][0]["sha256"]},
+                    "workload": {"id": "llama-bench-solo-empty-kv", "version": 1, "description": "Fixture protocol"},
+                    "metric": {"id": f"llama-bench-{phase}", "version": 1, "unit": "tok/s", "statistic": "median",
+                               "boundary": plan["protocol"]["phases"][phase]["boundary"], "sample_count": 20, "value": value},
+                    "source": {"label": "Synthetic test fixture", "locator": "https://example.invalid/fixture", "revision": "fixture-v1"},
+                    "rights": self.observation["rights"],
+                    "fields": {key: {"value": value, "rights": "allow", "status": "known"} for key, value in {
+                        "profile_cell": cell["id"], "backend": cell["backend"], "run_id": run_id,
+                        "runtime_revision": plan["runtime"]["revision"], "artifact_companion_sha256": artifact["shards"][1]["sha256"],
+                    }.items()},
+                }
+                releases.append(self.store.publish(observation))
+                if cell["id"] == "rtx-4090" and phase == "decode":
+                    withdrawn_evidence = observation["evidence_id"]
+                    for field, value in [("kind", "synthetic"), ("sample_count", 2), ("artifact_companion_sha256", "a" * 64)]:
+                        invalid = json.loads(json.dumps(observation))
+                        invalid["evidence_id"] = str(uuid4())
+                        invalid["fields"]["run_id"]["value"] = str(uuid4())
+                        invalid["metric"]["value"] = "9999.125"
+                        if field == "kind":
+                            invalid[field] = value
+                        elif field == "sample_count":
+                            invalid["metric"][field] = value
+                        else:
+                            invalid["fields"][field]["value"] = value
+                        releases.append(self.store.publish(invalid))
+
+        server = make_server(self.store, port=0, profile_releases=releases)
+        worker = Thread(target=server.serve_forever)
+        worker.start()
+        try:
+            def get(path, expected=200):
+                with closing(http.client.HTTPConnection(*server.server_address, timeout=5)) as client:
+                    client.request("GET", path)
+                    response = client.getresponse()
+                    self.assertEqual(response.status, expected)
+                    self.assertEqual(response.getheader("Cache-Control"), "no-store")
+                    return response.getheader("Location"), response.read().decode()
+
+            index, _ = get("/profiles", 307)
+            base = index.removesuffix("index.html")
+            model = base + "models/qwen2.5-7b-instruct"
+            _, raw = get(model + ".json")
+            cohort = json.loads(raw)["cohorts"][0]
+            selected = ids["rtx-4090"]
+            self.assertEqual(cohort["ranking"], [selected, ids["apple-m4"]])
+            self.assertEqual(cohort["map"], cohort["ranking"])
+            self.assertNotIn("9999.125", raw)
+            self.assertEqual([entry["status"] for entry in cohort["exclusions"]], ["artifact_mismatch", "insufficient_samples", "synthetic"])
+            row = cohort["rows"][0]
+            self.assertEqual(row["metrics"]["llama-bench-decode"]["value"], "42.000")
+            self.assertEqual(row["model_url"], f"{model}.html?run={selected}#run-{selected}")
+            _, machine_html = get(row["machine_url"].split("#")[0])
+            self.assertIn(f'data-run-id="{selected}"', machine_html)
+            self.assertIn(f'id="run-{selected}" open', machine_html)
+            self.assertIn(row["model_url"], machine_html)
+            self.assertIn("42.000", machine_html)
+            _, model_html = get(row["model_url"].split("#")[0])
+            self.assertIn(f'id="run-{selected}" open', model_html)
+            self.assertGreaterEqual(model_html.count(f'data-run-id="{selected}"'), 3)
+            self.assertIn("850.500", model_html)
+            _, markdown = get(model + ".md")
+            self.assertIn("42.000", markdown)
+            self.assertIn(row["machine_url"], markdown)
+
+            self.store.withdraw(withdrawn_evidence, "Fixture withdrawal")
+            _, raw = get(model + ".json")
+            after = json.loads(raw)["cohorts"][0]
+            self.assertEqual(after["ranking"], [ids["apple-m4"]])
+            self.assertEqual(after["map"], after["ranking"])
+            self.assertNotIn("42.000", raw)
+            self.assertIn("withdrawn", {entry["status"] for entry in after["exclusions"]})
+        finally:
+            server.shutdown()
+            worker.join(5)
+            server.server_close()
+            self.assertFalse(worker.is_alive())
 
     def test_public_routes_pin_current_and_quarantine_withdrawn_evidence(self):
         from fastest_release.http import make_server

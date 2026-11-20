@@ -56,6 +56,18 @@ class ReleaseStore:
             raise ReleaseNotFound(release_id or "current")
         return json.loads(result)
 
+    def read_many(self, release_ids):
+        """Read explicitly pinned observations with one rights snapshot."""
+        if not release_ids:
+            return []
+        identifiers = ",".join(f"'{uuid.UUID(release_id)}'::uuid" for release_id in release_ids)
+        query = f"""
+            SELECT jsonb_agg(coalesce(fastest_release.read_release(id),
+                         jsonb_build_object('release_id', id, 'status', 'unavailable')) ORDER BY id)
+            FROM unnest(ARRAY[{identifiers}]) AS source(id);
+        """
+        return json.loads(self._query(query))
+
     def artifact(self, release_id, name):
         try:
             return build_artifacts(self.read(release_id))[name]

@@ -174,7 +174,7 @@ th, td {{ border-bottom: 1px solid #bac2cc; }}
 <body>
 <main>
 {rendered}
-<p><a href="./benchmark.md">Read as Markdown</a></p>
+<p><a href="./benchmark.md">Read as Markdown</a> · <a href="/profiles">Machine and model comparisons</a></p>
 </main>
 </body>
 </html>
