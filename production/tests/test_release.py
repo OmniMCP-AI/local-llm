@@ -1,11 +1,12 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing
+from contextlib import closing, contextmanager
 from hashlib import sha256
 import http.client
 import json
 from pathlib import Path
 import os
+import select
 import shutil
 import signal
 import subprocess
@@ -14,9 +15,12 @@ import tempfile
 from threading import Thread
 import time
 import unittest
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
+from fastest_prices import PriceStore
 from fastest_release.research import SEED_ROOT
 from test_mcp import HAS_SDK, get as get_public, mcp_client
 from test_public_api import api_client, api_server
@@ -39,6 +43,8 @@ class ReleaseTest(unittest.TestCase):
         self.addCleanup(lambda: self.assertFalse(Path(sandbox.name).exists()))
         workspace = self.enterContext(sandbox)
         cluster = Path(workspace, "db")
+        self.socket_path = Path(workspace, "socket")
+        self.socket_path.mkdir(mode=0o755)
         subprocess.run(
             ["initdb", "-D", str(cluster), "--auth=trust", "--encoding=UTF8", "--no-locale"],
             check=True,
@@ -47,12 +53,12 @@ class ReleaseTest(unittest.TestCase):
         )
         with open(Path(workspace, "postgres.log"), "w") as log:
             postgres = subprocess.Popen(
-                ["postgres", "-D", str(cluster), "-k", workspace, "-c", "listen_addresses="],
+                ["postgres", "-D", str(cluster), "-k", str(self.socket_path), "-c", "listen_addresses="],
                 stdout=log,
                 stderr=subprocess.STDOUT,
             )
         self.addCleanup(self.stop_postgres, postgres)
-        self.database_url = f"host={workspace} dbname=postgres"
+        self.database_url = f"host={self.socket_path} dbname=postgres"
         for _ in range(100):
             probe = subprocess.run(["pg_isready", "-d", self.database_url], capture_output=True)
             if probe.returncode == 0:
@@ -77,6 +83,131 @@ class ReleaseTest(unittest.TestCase):
                 postgres.wait(timeout=10)
         # Popen.wait reaps the owned postmaster before the cluster directory is removed.
         assert postgres.returncode is not None
+
+    @contextmanager
+    def deployed_origin(self):
+        image = os.environ.get("FASTEST_ORIGIN_TEST_IMAGE")
+        if image:
+            name = "fastest-origin-" + uuid4().hex
+            port = "8077"
+            try:
+                subprocess.run(
+                    ["docker", "run", "--detach", "--read-only", "--name", name, "--health-interval", "1s",
+                     "-p", f"127.0.0.1::{port}", "-e", f"PORT={port}",
+                     "-e", "FASTEST_DATABASE_URL=host=/reader dbname=postgres user=origin_reader",
+                     "--mount", f"type=bind,src={self.socket_path},dst=/reader,readonly",
+                     image, "--trusted-host", "origin.example"],
+                    check=True, capture_output=True, text=True, timeout=30,
+                )
+                for _ in range(100):
+                    state = subprocess.check_output(
+                        ["docker", "inspect", "-f", "{{.State.Health.Status}}", name],
+                        text=True, timeout=5,
+                    ).strip()
+                    if state == "healthy":
+                        break
+                    if state == "unhealthy":
+                        self.fail(subprocess.check_output(
+                            ["docker", "inspect", "-f", "{{json .State.Health}}", name], text=True, timeout=5,
+                        ))
+                    time.sleep(0.1)
+                else:
+                    self.fail("The release image did not become healthy")
+                address = subprocess.check_output(
+                    ["docker", "port", name, port], text=True, timeout=5,
+                ).strip()
+                yield "http://" + address, "origin.example"
+            finally:
+                subprocess.run(["docker", "rm", "-f", name], capture_output=True, timeout=15)
+                leftover = subprocess.check_output(
+                    ["docker", "ps", "-aq", "--filter", f"name=^/{name}$"], timeout=5,
+                )
+                self.assertFalse(leftover)
+            return
+
+        env = {**os.environ, "FASTEST_DATABASE_URL": self.database_url + " user=origin_reader"}
+        with subprocess.Popen(
+            [sys.executable, "-m", "fastest_release", "serve", "--port", "0"],
+            cwd=FIXTURE.parents[1], env=env, stderr=subprocess.PIPE, text=True,
+        ) as server:
+            try:
+                self.assertTrue(select.select([server.stderr], [], [], 10)[0], "The release listener did not start")
+                address = server.stderr.readline().strip()
+                self.assertRegex(address, r"^Listening on 127\.0\.0\.1:[0-9]+$")
+                yield "http://" + address.removeprefix("Listening on "), None
+            finally:
+                server.terminate()
+                try:
+                    server.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    server.kill()
+                    server.wait(timeout=5)
+
+    def test_deployed_origin_replays_published_values_after_restart(self):
+        self.observation["kind"] = "measured"
+        release = self.store.publish(self.observation)
+        prices = PriceStore(self.database_url)
+        prices.migrate()
+        fixture = json.loads(FIXTURE.with_name("synthetic-price-cohort.json").read_text(encoding="utf-8"))
+        fixture["cohort"]["data_class"] = "authorized_observations"
+        cohort = prices.ingest(fixture)
+        offerings = prices.publish(cohort, "2026-11-01", "2026-11-04")
+        self.store._query("""
+            CREATE ROLE origin_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_release, fastest_prices TO origin_reader;
+            GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid),
+                fastest_release.read_evidence(uuid), fastest_prices.read_release(uuid) TO origin_reader;
+        """)
+
+        def replay(origin, host):
+            def get(path, *, decode=True):
+                headers = {"Host": host} if host else {}
+                with urlopen(Request(origin + path, headers=headers), timeout=5) as response:
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                    return json.load(response) if decode else response.read().decode()
+
+            catalog = get("/.well-known/api-catalog")
+            spec = get(catalog["linkset"][0]["service-desc"][0]["href"])
+            self.assertEqual(spec["info"]["version"], "1.0.0")
+            self.assertIn("/api/v1/evidence", spec["paths"])
+            self.assertIn("/api/v1/historical-offers", spec["paths"])
+            evidence = get(f"/api/v1/evidence?evidence_id={self.observation['evidence_id']}")
+            self.assertEqual(evidence["release_id"], release)
+            self.assertEqual(evidence["metric"]["value"], "37.625")
+            self.assertEqual(evidence["metric"]["unit"], "tok/s")
+            self.assertEqual(evidence["conditions"]["driver_version"]["status"], "missing")
+            self.assertIn("37.625", get(evidence["url"], decode=False))
+            path = f"/api/v1/historical-offers?release={offerings}&limit=1"
+            first = get(path)
+            self.assertEqual(first["offers"][0]["price"], "240.00")
+            second = get(path + f"&offset={first['pagination']['next_offset']}")
+            self.assertEqual(second["offers"][0]["landed_price"], "253.80")
+            self.assertEqual(get(second["url"])["offers"][1]["landed_price"], "253.80")
+            costs = get("/api/v1/calculator?scenario=illustrative")
+            self.assertEqual(costs["options"]["upgrade"]["totals"]["nominal_cost"], "589.472")
+            self.assertIn("589.472", get(costs["url"], decode=False))
+            return evidence, first, second, costs
+
+        with self.deployed_origin() as (origin, host):
+            initial = replay(origin, host)
+            if host is None:
+                healthcheck = [sys.executable, "-m", "fastest_release.healthcheck", origin]
+                subprocess.run(healthcheck, cwd=FIXTURE.parents[1], check=True, timeout=15)
+                self.store._query("REVOKE EXECUTE ON FUNCTION fastest_prices.read_release(uuid) FROM origin_reader;")
+                offline = subprocess.run(healthcheck, cwd=FIXTURE.parents[1], capture_output=True, timeout=15)
+                self.assertEqual(offline.returncode, 1)
+                self.assertIn(b"503", offline.stderr)
+                self.store._query("GRANT EXECUTE ON FUNCTION fastest_prices.read_release(uuid) TO origin_reader;")
+        with self.deployed_origin() as (origin, host):
+            self.assertEqual(replay(origin, host), initial)
+            self.store.withdraw(self.observation["evidence_id"], "Private fixture withdrawal")
+            headers = {"Host": host} if host else {}
+            path = f"/api/v1/evidence?release={release}"
+            with self.assertRaises(HTTPError) as refused:
+                urlopen(Request(origin + path, headers=headers), timeout=5).close()
+            with refused.exception as response:
+                self.assertEqual(response.code, 410)
+                self.assertNotIn(b"37.625", response.read())
 
     def test_scaling_uses_only_approved_fields_from_pinned_postgres_rows(self):
         fixture = fixture_releases()

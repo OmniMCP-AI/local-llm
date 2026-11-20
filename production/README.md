@@ -92,6 +92,54 @@ releases. Evidence and historical-offer queries then return 410 with no
 measurement or offer rows. Profile and goals pages reflect the resulting
 coverage or budget gaps.
 
+## Deploy the release origin
+
+Build the image from a clean checkout at the repository root. It runs the
+release listener as UID 10001 with Python and the PostgreSQL client. Run the
+observation and price migrations from the checkout as the schema owner. Give
+the serving login only the schema and function grants above.
+
+```sh
+docker build -f production/fastest_release/Dockerfile -t fastest-release .
+docker run --rm --read-only --publish 127.0.0.1:8000:8000 \
+  --env FASTEST_DATABASE_URL --env PGPASSFILE=/run/secrets/pgpass \
+  --env PGSSLROOTCERT=/run/secrets/pg-ca.crt \
+  --mount "type=bind,src=$FASTEST_READER_PGPASS,dst=/run/secrets/pgpass,readonly" \
+  --mount "type=bind,src=$FASTEST_READER_CA,dst=/run/secrets/pg-ca.crt,readonly" \
+  fastest-release --trusted-host "$FASTEST_RELEASE_HOST"
+```
+
+Use the reader connection settings in `FASTEST_DATABASE_URL`, with
+`sslmode=verify-full` for remote PostgreSQL. Supply absolute host paths to
+the password file and database CA. Make the password file readable by UID
+10001 with mode 0600. The image listens on port 8000 by default. To use a
+different container port, set `PORT` and update the port mapping. For reviewed
+goals, cost scenarios and live rights files, mount the corresponding files
+read-only and pass the existing `serve` flags. A deployment with fit enabled
+also mounts the pinned fit executable and passes `--fit-engine`.
+
+Terminate TLS in the reverse proxy and forward the canonical `Host` header
+through to the listener. Set `FASTEST_RELEASE_HOST` to that header value,
+including any explicit port. Preserve `Cache-Control: no-store` through
+the proxy so withdrawals take effect on the next read.
+
+Run the same readiness check that the image uses against the deployed HTTPS
+origin. It follows the catalog to OpenAPI and verifies that the public
+evidence and historical-offer routes can use their configured readers.
+
+```sh
+cd production
+python3 -m fastest_release.healthcheck "$FASTEST_RELEASE_ORIGIN"
+```
+
+Use that verified HTTPS origin as `FASTEST_RELEASE_ORIGIN` in the Pages
+build and Functions environments. To verify publication, replay an approved
+evidence ID and price release from the API on that origin and compare their
+returned values with the pinned pages linked in the responses. The Release
+origin CI workflow checks that replay with PostgreSQL fixtures before and
+after restarting the container, including reader permissions, pagination,
+withdrawal and calculator parity.
+
 ## Connect an MCP client
 
 The local adapter uses MCP **2025-11-25** over **stdio**. The verified client
