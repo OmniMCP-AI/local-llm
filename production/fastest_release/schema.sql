@@ -87,7 +87,15 @@ DECLARE
     published_id uuid;
     prior_id uuid;
     next_revision integer;
+    expiry text := input #>> '{rights,expires_at}';
 BEGIN
+    IF input->'rights' ? 'expires_at' THEN
+        IF expiry IS NULL OR expiry !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$' THEN
+            RAISE EXCEPTION 'Rights expiry requires a UTC timestamp';
+        END IF;
+        PERFORM expiry::timestamptz;
+    END IF;
+
     SELECT current.release_id INTO prior_id
     FROM fastest_release.current_release AS current
     WHERE singleton
@@ -132,8 +140,8 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
         'previous_release_id', released.previous_release_id,
         'schema_version', released.schema_version,
         'revision', released.revision,
-        'status', CASE WHEN withdrawn.evidence_id IS NULL THEN 'published' ELSE 'withdrawn' END
-    ) || CASE WHEN withdrawn.evidence_id IS NULL THEN jsonb_build_object(
+        'status', CASE WHEN rights.available THEN 'published' ELSE 'withdrawn' END
+    ) || CASE WHEN rights.available THEN jsonb_build_object(
         'row', jsonb_build_object(
             'evidence_id', observation.evidence_id,
             'kind', observation.document->'kind',
@@ -156,7 +164,21 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
     FROM fastest_release.data_release AS released
     JOIN fastest_release.observation_revision AS observation USING (evidence_id, revision)
     LEFT JOIN fastest_release.evidence_withdrawal AS withdrawn USING (evidence_id)
+    CROSS JOIN LATERAL (
+        SELECT withdrawn.evidence_id IS NULL AND coalesce(
+            (observation.document #>> '{rights,expires_at}')::timestamptz > statement_timestamp(), true
+        ) AS available
+    ) AS rights
     WHERE released.id = coalesce(requested, (SELECT release_id FROM fastest_release.current_release));
+$$;
+
+CREATE OR REPLACE FUNCTION fastest_release.read_evidence(requested uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog AS $$
+    SELECT fastest_release.read_release(released.id)
+    FROM fastest_release.data_release AS released
+    WHERE released.evidence_id = requested
+    ORDER BY released.revision DESC
+    LIMIT 1;
 $$;
 
 CREATE OR REPLACE FUNCTION fastest_release.withdraw_evidence(evidence uuid, withdrawal_reason text)
@@ -178,6 +200,7 @@ $$;
 
 REVOKE ALL ON FUNCTION fastest_release.publish_observation(jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fastest_release.read_release(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION fastest_release.read_evidence(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fastest_release.withdraw_evidence(uuid, text) FROM PUBLIC;
 
 COMMIT;
