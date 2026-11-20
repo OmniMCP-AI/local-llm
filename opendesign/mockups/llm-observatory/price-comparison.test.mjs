@@ -36,7 +36,7 @@ test("the edge preserves original offers, exact market, pinned release and decis
   const paths = new Map([
     [`/price-releases/${releaseId}/prices.json`, price],
     [goalPath, decision],
-    [costPath, economics],
+    ["/costs.json?scenario=illustrative", economics],
   ]);
   const fetchMock = t.mock.method(globalThis, "fetch", async (url, options) => {
     assert.equal(url.origin, origin);

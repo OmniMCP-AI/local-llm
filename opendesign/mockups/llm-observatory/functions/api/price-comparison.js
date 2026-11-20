@@ -55,7 +55,8 @@ export async function onRequestGet({ request, env }) {
   const costPath = pinnedPath(query.get("cost"), origin);
   const revision = costPath?.searchParams.get("revision");
   if ((query.has("goal") && !goalId)
-      || (query.has("cost") && (costPath?.pathname !== "/costs.json" || !costRevision.test(revision)))) {
+      || (query.has("cost") && (costPath?.pathname !== "/costs.json" || !costRevision.test(revision)
+        || costPath.searchParams.getAll("revision").length !== 1))) {
     return json({ status: "invalid", releaseId }, 400);
   }
 
@@ -67,6 +68,7 @@ export async function onRequestGet({ request, env }) {
       || price.release_id !== releaseId || price.status !== "published" || !Array.isArray(price.offers)) {
     return json({ status: "unavailable", releaseId }, 503);
   }
+  costPath?.searchParams.delete("revision");
   const [goal, cost] = await Promise.all([
     goalId && readJSON(goalPath).then(({ value }) => value),
     revision && readJSON(costPath).then(({ value }) => value),
@@ -79,6 +81,6 @@ export async function onRequestGet({ request, env }) {
   return json({
     status: "published", releaseId, price,
     decision: matchingDecision ? goal : null,
-    economics: revision && cost?.revision === revision ? cost : null,
+    economics: revision && cost?.revision === revision && Array.isArray(cost.payback) ? cost : null,
   });
 }
