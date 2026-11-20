@@ -64,8 +64,10 @@ svg { flex-shrink: 0; }
   gap: 24px;
   align-items: center;
 }
-.wordmark { display: inline-flex; align-items: center; justify-self: start; font-size: 26px; font-weight: 750; letter-spacing: -.08em; white-space: nowrap; }
-.wordmark > span:last-child { color: var(--color-accent); }
+.wordmark { display: inline-flex; align-items: center; justify-self: start; min-height: 44px; white-space: nowrap; }
+.site-names { display: grid; gap: 3px; font-size: 26px; font-weight: 750; letter-spacing: -.08em; line-height: 1; }
+.site-name-suffix { color: var(--color-accent); }
+.site-name-alternate { color: var(--color-muted); font-size: 12px; font-weight: 600; letter-spacing: normal; line-height: 1.2; }
 .brand-mark { display: grid; place-items: center; width: 28px; height: 28px; margin-right: 9px; border: 1px solid var(--color-rule); color: var(--color-accent); }
 .nav-inner nav { height: 100%; display: flex; gap: 28px; }
 .nav-inner nav a { display: flex; align-items: center; margin-top: 2px; border-bottom: 2px solid transparent; color: var(--color-muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -371,7 +373,7 @@ code, .mono { font-family: var(--font-numeric); }
 }
 @media (max-width: 530px) {
   .nav-inner { display: flex; flex-wrap: wrap; gap: 0; padding-top: 7px; min-height: 0; }
-  .wordmark { min-height: 38px; order: 0; }
+  .wordmark { order: 0; }
   .edition { margin-left: auto; order: 1; }
   .nav-inner nav { order: 2; width: 100%; gap: 22px; }
   .nav-inner nav a { min-height: 44px; }

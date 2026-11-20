@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { datedDisplayRate } from "./display-fx.mjs";
 import { LocaleControls, useLocale } from "./locale";
 import { priceCopy } from "./price-comparison-copy.mjs";
+import { SiteName } from "./site-name";
 
 const dataRoute = "/api/price-comparison";
 
@@ -122,7 +123,7 @@ export function HostedPrices() {
   if (data?.releaseId) query.set("release", data.releaseId);
   return <main className="main-shell hosted-prices">
     <header className="price-toolbar">
-      <a className="wordmark" href="/">fastest.ai</a>
+      <a className="wordmark" href="/"><SiteName /></a>
       <LocaleControls datedRatesOnly sourceCurrency={price?.currency} />
     </header>
     <div className="page-heading"><h1>{copy.title}</h1></div>

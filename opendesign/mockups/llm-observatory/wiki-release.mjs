@@ -156,8 +156,9 @@ export async function writeWikiRelease({
     return { id, source: "wiki/pages/" + id + ".md", title, kind, summary, entity, evidence, methods, media,
       aliases, neighbors, html: body("html"), md: body("md") };
   });
+  const alternateName = "localdecode.com";
   const release = "wiki-" + createHash("sha256")
-    .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease]))
+    .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName]))
     .digest("hex").slice(0, 16);
   const headers = [
     "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
@@ -207,7 +208,7 @@ ${backlinksHtml}
     title: "fastest.ai | Local AI benchmark explorer",
     summary: "Compare local AI hardware, models, and costs. Read the methods and evidence behind each comparison." };
   const homeBody = `<main class="wiki-release release-fallback">
-<h1>fastest.ai</h1><p>${home.summary}</p>
+<h1>fastest.ai</h1><p>Also known as ${alternateName}.</p><p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
 <a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a></nav>
 ${availableHighlights.length ? `<section><h2>Research highlights</h2><ul>
@@ -216,7 +217,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",
-  }) + `\n# fastest.ai\n\n${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)\n`
+  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)\n`
     + (availableHighlights.length ? "\n## Research highlights\n\n" + availableHighlights.map((entry) =>
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);

@@ -17,6 +17,7 @@ import { navigationHref } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
 import { MethodsPage } from "./methods";
 import { LocaleControls, LocaleProvider, LocaleStatus, quoteCurrency, useLocale } from "./locale";
+import { SiteName } from "./site-name";
 
 const release = "Demo snapshot, Nov 20, 2026";
 const states = {
@@ -131,7 +132,8 @@ function Header({ page, navigate }) {
   const { t } = useLocale();
   return <header className="site-header"><div className="nav-inner">
     <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); navigate("Explorer", true); }}>
-      <span className="brand-mark"><Activity size={19} strokeWidth={2.4} aria-hidden="true" /></span>fastest<span>.ai</span>
+      <span className="brand-mark"><Activity size={19} strokeWidth={2.4} aria-hidden="true" /></span>
+      <SiteName />
     </a>
     <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => {
       const href = hrefFor(route);

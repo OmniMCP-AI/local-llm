@@ -21,7 +21,7 @@ Build out from that case. A source-linked catalog supports browsing even where m
 | Research library | Graphify indexes 30 video research notes, eight wiki guides, two articles, one blog entry and one forum post. All 450 observations keep their source series and measurement context. One hundred have a more specific task annotation. | Review new sources and case labels by evidence locator, track extraction errors and publish tag revisions with the release. |
 | Feedback, agents and languages | The bubble gives local guidance and a device-local receipt, with a public GitHub Issues handoff. The agent page illustrates the response. The locale picker, independent display currency and Pages edge adapter are present. | Verify durable server receipts, live collection, hosted discovery files, public API/MCP, and editorial delivery in their assigned milestones. A local preview cannot verify a domain deployment. |
 
-The domain study informs the working name **fastest.ai**. The decision criteria on the site include quality, latency, capacity, price and energy. The domain alternatives in that study are historical research.
+The site uses **fastest.ai** as its working name and **localdecode.com** as an alternate name. The domain study records the naming research. The decision criteria on the site include quality, latency, capacity, price and energy.
 
 ## Milestones and acceptance
 
