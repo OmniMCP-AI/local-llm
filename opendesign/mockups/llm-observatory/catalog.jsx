@@ -1,27 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Cpu, Layers3, List, Search } from "lucide-react";
 import hardwareCatalog from "./catalog-hardware.json";
+import modelIdentities from "./catalog-identities.json";
 import modelCatalog from "./catalog-models.json";
+import runtimes from "./catalog-runtimes.json";
+import { catalogPath } from "./catalog-paths.mjs";
+import { modelTags, queryModelCatalog } from "./catalog-search.mjs";
 import { useLocale } from "./locale";
 
 const pageSize = 30;
-const runtimes = [
-  {
-    id: "llama.cpp", name: "llama.cpp", detail: "Local inference / GGUF runtime",
-    detailZh: "本地推理，支持 GGUF 模型",
-    source: "https://github.com/ggml-org/llama.cpp",
-  },
-  {
-    id: "sglang", name: "SGLang", detail: "Model serving / request scheduling and batching",
-    detailZh: "模型服务，支持请求调度和批处理",
-    source: "https://github.com/sgl-project/sglang",
-  },
-  {
-    id: "vllm", name: "vLLM", detail: "Model serving / concurrency and KV-cache management",
-    detailZh: "模型服务，支持并发推理和 KV 缓存管理",
-    source: "https://github.com/vllm-project/vllm",
-  },
-];
+const catalogRelease = __FASTEST_CATALOG_RELEASE__;
 
 const tabs = [
   {
@@ -66,6 +54,40 @@ const sourceLabelsZh = {
   "Sentence similarity": "句子相似度",
   "Image to text": "图像转文本",
 };
+
+const taskAndFormatTags = Array.from(new Set(modelCatalog.models
+  .flatMap((row) => modelTags(row, modelIdentities[row.id]))
+  .filter((value) => !value.endsWith(" parameters")))).sort();
+const emptyFilters = { query: "", tag: "", license: "", page: 1 };
+
+function modelFiltersFromLocation() {
+  const params = new URLSearchParams(location.hash.split("?")[1]);
+  const page = Number(params.get("page"));
+  return {
+    query: params.get("q") ?? "",
+    tag: params.get("tag") ?? "",
+    license: params.get("license") ?? "",
+    page: Number.isSafeInteger(page) && page > 0 ? page : 1,
+  };
+}
+
+function saveModelFilters(filters, paginate) {
+  const params = new URLSearchParams();
+  if (filters.query) params.set("q", filters.query);
+  if (filters.tag) params.set("tag", filters.tag);
+  if (filters.license) params.set("license", filters.license);
+  if (filters.page > 1) params.set("page", String(filters.page));
+  const route = location.hash.split("?")[0] || "#catalog/models";
+  const query = params.toString();
+  const hash = route + (query ? "?" + query : "");
+  if (hash === location.hash) return;
+  try {
+    if (paginate) history.pushState(null, "", hash);
+    else history.replaceState(null, "", hash);
+  } catch {
+    location.hash = hash;
+  }
+}
 
 function formatSourceDetail(row, t) {
   const build = row.detail.match(/^(.*) \/ (\d+) of 6 build fields reported$/);
@@ -130,47 +152,53 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   const { language, t } = useLocale();
   const number = useMemo(() => new Intl.NumberFormat(language), [language]);
   const [active, setActive] = useState(() => validKind(initialKind));
-  const [query, setQuery] = useState("");
-  const [license, setLicense] = useState("");
-  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(() => initialKind === "models" ? modelFiltersFromLocation() : emptyFilters);
+  const { query, tag, license, page } = filters;
   const tableTop = useRef(null);
   useEffect(() => {
-    if (!initialKind) return;
-    setActive(validKind(initialKind));
-    setQuery("");
-    setLicense("");
-    setPage(1);
-  }, [initialKind]);
+    if (active !== "models") return;
+    const restore = () => setFilters(modelFiltersFromLocation());
+    window.addEventListener("popstate", restore);
+    window.addEventListener("hashchange", restore);
+    return () => {
+      window.removeEventListener("popstate", restore);
+      window.removeEventListener("hashchange", restore);
+    };
+  }, [active]);
 
   const tab = tabs.find((entry) => entry.key === active);
-  const filtered = useMemo(() => {
+  const { rows, total: resultCount, pages, current, start } = useMemo(() => {
+    if (tab.key === "models") return queryModelCatalog(tab.rows, modelIdentities, filters);
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-    if (terms.length === 0 && !license) return tab.rows;
-    return tab.rows.filter((row) => {
-      if (license === "__missing" && row.license) return false;
-      if (license && license !== "__missing" && row.license !== license) return false;
-      const text = [row.id, row.name, row.detail, row.detailZh].join(" ").toLowerCase();
+    const filtered = terms.length ? tab.rows.filter((row) => {
+      const text = [row.id, row.name, row.detail, row.detailZh, row.tag].join(" ").toLowerCase();
       return terms.every((term) => text.includes(term));
-    });
-  }, [query, license, tab]);
-  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const current = Math.min(page, pages);
-  const start = (current - 1) * pageSize;
-  const rows = filtered.slice(start, start + pageSize);
+    }) : tab.rows;
+    const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const current = Math.min(page, pages);
+    const start = (current - 1) * pageSize;
+    return { rows: filtered.slice(start, start + pageSize), total: filtered.length, pages, current, start };
+  }, [tab, filters, query, page]);
   const scope = t(tab.scope, tab.scopeZh);
   const search = t("Search " + tab.title.toLowerCase(), "搜索" + tab.titleZh);
   const interval = `${number.format(start + 1)}–${number.format(start + rows.length)}`;
-  const matches = number.format(filtered.length);
+  const matches = number.format(resultCount);
   const total = number.format(tab.rows.length);
 
   function selectTab(key) {
     if (key === active) return;
     setActive(key);
-    setQuery("");
-    setLicense("");
-    setPage(1);
+    setFilters(emptyFilters);
     go?.("#catalog/" + key);
   }
+
+  function updateFilters(patch, paginate = false) {
+    const next = { ...filters, page: 1, ...patch };
+    setFilters(next);
+    if (active === "models") saveModelFilters(next, paginate);
+  }
+
+  const setPage = (newPage) => updateFilters({ page: newPage }, true);
 
   function pageFromBottom(next) {
     setPage(next);
@@ -209,20 +237,23 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
       <div className="catalog-tools" ref={tableTop}>
         <label className="deep-search">
           <Search size={16} aria-hidden="true" />
-          <input type="search" aria-label={search} placeholder={active === "models" ? t("Search owner/model or metadata", "搜索组织名、模型名或元数据") : search} value={query} onChange={(event) => {
-            setQuery(event.target.value);
-            setPage(1);
-          }} />
+          <input type="search" aria-label={search} placeholder={active === "models" ? t("Search owner/model or metadata", "搜索组织名、模型名或元数据") : search} value={query} onChange={(event) => updateFilters({ query: event.target.value })} />
         </label>
+        {active === "models" && <label className="catalog-filter"><span>{t("Task or format", "任务或格式")}</span>
+          <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
+            <option value="">{t("Any", "全部")}</option>
+            {taskAndFormatTags.map((value) => <option key={value} value={value}>{t(value, sourceLabelsZh[value] ?? value)}</option>)}
+          </select>
+        </label>}
         {active === "models" && <label className="catalog-filter"><span>{t("License tag", "许可证")}</span>
-          <select value={license} onChange={(event) => { setLicense(event.target.value); setPage(1); }}>
+          <select value={license} onChange={(event) => updateFilters({ license: event.target.value })}>
             <option value="">{t("Any", "全部")}</option><option value="__missing">{t("Not listed", "未列出")}</option>
             {licenseTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
           </select>
         </label>}
         <p className="catalog-count" role="status" aria-atomic="true">
           {rows.length ? t("{interval} of {matches}", "第 {interval} 条，共 {matches} 条", { interval, matches }) : t("No results", "没有结果")}
-          {(query.trim() || license) && <span>{t(" / {total} in catalog", " / 目录共 {total} 条", { total })}</span>}
+          {(query.trim() || tag || license) && <span>{t(" / {total} in catalog", " / 目录共 {total} 条", { total })}</span>}
         </p>
         {pages > 1 && <Pager page={current} pages={pages} onPage={setPage} number={number} label={t("Catalog pages at top", "顶部目录分页")} />}
       </div>
@@ -233,15 +264,17 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           <tbody>{rows.map((row) => {
             const separator = row.id.indexOf("/");
             const modelId = active === "models" && separator > 0;
+            const card = catalogRelease && (modelId || active === "runtimes") ? catalogPath(catalogRelease, active, row.id) : undefined;
             return <tr key={row.id}>
-              <th scope="row">{modelId ? <a className="catalog-model-id" href={safeSource(row.source)} target="_blank" rel="noopener noreferrer"><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
-                <strong>{row.name}</strong>{row.id !== row.name && <small>{row.id}</small>}
+              <th scope="row">{modelId ? <a className="catalog-model-id" href={card ?? safeSource(row.source)} target={card ? undefined : "_blank"} rel={card ? undefined : "noopener noreferrer"}><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
+                <strong>{card ? <a className="catalog-model-id" href={card}>{row.name}</a> : row.name}</strong>
+                {row.tag ? <small>{row.tag}</small> : row.id !== row.name && <small>{row.id}</small>}
               </>}</th>
               <td>{active === "models" ? <div className="catalog-tags">
-                {row.detail.split(" · ").filter(Boolean).map((value, index) => <span key={index}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
+                {modelTags(row, modelIdentities[row.id]).map((value) => <span key={value}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
                 {row.license && <span title={t("Model license metadata from the source catalog", "源目录中的模型许可证元数据")}>{row.license}</span>}
               </div> : formatSourceDetail(row, t)}</td>
-              <td><SourceLink href={row.source} label={t("Open source for {name}", "查看 {name} 的来源", { name: row.name })}>{active === "models" ? "Hugging Face" : t("Open source", "查看来源")}</SourceLink></td>
+              <td><SourceLink href={row.tag ? row.source + "/releases/tag/" + row.tag : row.source} label={t("Open source for {name}", "查看 {name} 的来源", { name: row.name })}>{active === "models" ? "Hugging Face" : t("Open source", "查看来源")}</SourceLink></td>
             </tr>;
           })}</tbody>
         </table>
@@ -253,6 +286,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         <summary>{t("Source, coverage, and MIT notice", "来源、收录范围和 MIT 声明")}</summary>
         <p>{t(modelCatalog.note, "模型元数据来自固定版本的 llmfit 目录，每条记录链接至原始 Hugging Face 仓库。目录许可证不适用于模型权重。模型许可信息以原始仓库为准。")}</p>
         <p>{t("{count} upstream records at", "上游共 {count} 条记录，版本", { count: number.format(modelCatalog.sourceRows) })} <code>{modelCatalog.commit}</code></p>
+        {catalogRelease && <p><a className="catalog-source-link" href={`catalog/${catalogRelease}/manifest.json`}>{t("Release coverage and provenance", "发布版覆盖范围与来源")}</a></p>}
         <SourceLink href={modelCatalog.catalogLicenseUrl}>{t("Upstream license", "上游许可证")}</SourceLink>
         <pre>{modelCatalog.licenseNotice}</pre>
         {onCopy && <button type="button" className="btn outline" onClick={() => onCopy(modelCatalog.licenseNotice, t("MIT notice copied", "已复制 MIT 声明"))}>{t("Copy MIT notice", "复制 MIT 声明")}</button>}

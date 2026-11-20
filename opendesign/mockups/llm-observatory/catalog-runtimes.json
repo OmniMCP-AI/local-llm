@@ -1,0 +1,47 @@
+[
+  {
+    "id": "llama.cpp",
+    "name": "llama.cpp",
+    "detail": "Local inference / GGUF runtime",
+    "detailZh": "本地推理，支持 GGUF 模型",
+    "source": "https://github.com/ggml-org/llama.cpp",
+    "tag": "v1.0.0",
+    "published": "2026-11-13",
+    "docs": "https://github.com/ggml-org/llama.cpp/tree/v1.0.0/docs",
+    "formats": "GGUF",
+    "formatSource": "https://github.com/ggml-org/llama.cpp/blob/v1.0.0/README.md",
+    "backends": "CPU, NVIDIA CUDA, Apple Metal and Vulkan",
+    "backendSource": "https://github.com/ggml-org/llama.cpp/blob/v1.0.0/docs/build.md",
+    "workload": "Local text inference and serving"
+  },
+  {
+    "id": "sglang",
+    "name": "SGLang",
+    "detail": "Model serving / request scheduling and batching",
+    "detailZh": "模型服务，支持请求调度和批处理",
+    "source": "https://github.com/sgl-project/sglang",
+    "tag": "v0.5.23",
+    "published": "2026-11-02",
+    "docs": "https://github.com/sgl-project/sglang/blob/v0.5.23/README.md",
+    "formats": "Safetensors",
+    "formatSource": "https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/model_loader/loader.py",
+    "backends": "NVIDIA, AMD Instinct, Intel, TPU, NPU, CPU and Apple Silicon are documented. Consult the platform and model requirements.",
+    "backendSource": "https://github.com/sgl-project/sglang/blob/v0.5.23/README.md",
+    "workload": "Text and vision-language model serving"
+  },
+  {
+    "id": "vllm",
+    "name": "vLLM",
+    "detail": "Model serving / concurrency and KV-cache management",
+    "detailZh": "模型服务，支持并发推理和 KV 缓存管理",
+    "source": "https://github.com/vllm-project/vllm",
+    "tag": "v0.34.0",
+    "published": "2026-11-16",
+    "docs": "https://docs.vllm.ai/en/v0.34.0/",
+    "formats": "Safetensors",
+    "formatSource": "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/model_executor/model_loader/default_loader.py",
+    "backends": "GPU, CPU and TPU installation targets. Consult backend-specific model support.",
+    "backendSource": "https://docs.vllm.ai/en/v0.34.0/getting_started/installation/",
+    "workload": "Offline inference and online serving"
+  }
+]

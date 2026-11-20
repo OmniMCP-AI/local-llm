@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeCatalogRelease } from "./catalog-release-build.mjs";
 
 const here = (name) => new URL(name, import.meta.url);
 const require = createRequire(import.meta.url);
@@ -47,6 +48,7 @@ const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).ma
   const jpeg = await readFile(here("hardware-assets/" + asset.file));
   return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
 })));
+const catalogRelease = pages ? await writeCatalogRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/"))) : "";
 const result = await build({
   entryPoints: [fileURLToPath(here("app.jsx"))],
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
@@ -59,6 +61,7 @@ const result = await build({
   define: {
     "process.env.NODE_ENV": '"production"',
     __FASTEST_PAGES__: String(pages),
+    __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(documents),
     __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
