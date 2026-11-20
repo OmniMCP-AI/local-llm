@@ -2,6 +2,8 @@
 
 PostgreSQL stores reviewed observation revisions and the current release pointer. The service publishes one observation per release. Its Markdown page, HTML chart and table, JSON datasets, and SHA-256 manifest use the same approved row. The example is synthetic. Its value demonstrates the pipeline, and its artifact checksum refers to the checked-in fixture bytes.
 
+The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream releases and authored card applicability. It links matched retests to approved benchmark releases.
+
 ## Run the example
 
 Use Python 3.11 or later, PostgreSQL 13 or later, and `psql` on your path. From this directory, point the publisher at a writable PostgreSQL database. The connection can use libpq keyword syntax, a service name, or a PostgreSQL URL. Keep passwords in a libpq password file or service configuration.
@@ -164,6 +166,13 @@ native models and zero community submissions.
 The [text pilot](fastest_text/README.md) builds a public report for the planned
 Apple M4 and GeForce RTX 4090 cells. It documents the pinned throughput protocol,
 Chinese task rubric, machine access blockers and reviewed runner intake.
+
+## Build the two-machine image pilot
+
+The [image pilot](fastest_image/README.md) uses the same planned Apple M4 and
+GeForce RTX 4090 cells for one pinned ComfyUI workflow. It reports completion
+time, accepted images and access blockers from the same ledger in Markdown,
+HTML and typed JSON.
 
 ## Controlled agent-task comparison
 
