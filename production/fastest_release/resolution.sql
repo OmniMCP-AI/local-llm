@@ -43,8 +43,8 @@ BEGIN
         IF EXISTS (SELECT FROM fastest_release.data_release WHERE id = outcome AND revision <= (previous->>'revision')::integer) THEN
             RAISE EXCEPTION 'Correction must publish a new revision';
         END IF;
-        before_snapshots := '[]'::jsonb;
-        after_snapshots := jsonb_build_array(fastest_release.read_release(outcome));
+        before_snapshots := jsonb_build_array(previous);
+        after_snapshots := jsonb_build_array(previous, fastest_release.read_release(outcome));
     ELSIF action = 'withdraw' THEN
         SELECT jsonb_agg(fastest_release.read_release(id) ORDER BY revision) INTO before_snapshots
         FROM fastest_release.data_release WHERE evidence_id = evidence;

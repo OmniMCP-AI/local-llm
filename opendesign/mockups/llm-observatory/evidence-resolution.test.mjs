@@ -101,3 +101,51 @@ test("Pages denies stale conditional reads before cache or asset lookup", async 
   assert.equal(result.headers.get("Cache-Control"), "no-store");
   assert.equal(result.headers.get("ETag"), null);
 });
+
+test("a reviewed correction preserves its prior pin and links the revised source from the wiki", async (t) => {
+  const { writeResearchRelease } = await import("./research-release-build.mjs");
+  const { writeWikiRelease } = await import("./wiki-release.mjs");
+  const root = await mkdtemp(join(tmpdir(), "fastest-correction-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const fixture = join(root, "fixture");
+  await mkdir(join(fixture, "wiki", "pages"), { recursive: true });
+  for (const name of ["research-release-client.mjs", "research-filter.mjs", "research-release-render.mjs",
+    "research-release-build.mjs", "wiki/context-vocabulary.json", "wiki/pages/comparison-methods.md"]) {
+    await writeFile(join(fixture, name), await readFile(name));
+  }
+  const earlierIndex = structuredClone(sourceIndex);
+  const earlierSource = earlierIndex.sources.find(({ id }) => id === evidenceId);
+  earlierSource.context = "Earlier wording in the reviewed source.";
+  const earlierBytes = JSON.stringify(earlierIndex);
+  const earlierGraph = JSON.parse(await readFile("wiki/graphify.json"));
+  earlierGraph.graph.research_index_sha256 = digest(earlierBytes);
+  await writeFile(join(fixture, "wiki/research-index.json"), earlierBytes);
+  await writeFile(join(fixture, "wiki/graphify.json"), JSON.stringify(earlierGraph));
+  const previous = join(root, "previous");
+  const earlier = await writeResearchRelease(fixture, previous, {
+    [evidenceId]: { status: "approved-metadata", review: "earlier fixture", sha256: digest(JSON.stringify(earlierSource)) },
+  });
+  await writeWikiRelease({
+    output: previous, origin: "https://fastest.ai", researchRelease: earlier.release, releaseDate: "2026-11-21",
+    documents: { research: { title: "Research", summary: "Research", status: "published", body: "Read evidence." } },
+    edges: [], highlights: [],
+  });
+  const approvals = join(root, "approved.json");
+  await writeFile(approvals, JSON.stringify({
+    [evidenceId]: { status: "approved-metadata", review: "new fixture", sha256: digest(JSON.stringify(source)) },
+  }));
+  const request = join(root, "request.json");
+  await writeFile(request, JSON.stringify({
+    action: "correct", evidenceId, sourceId: evidenceId, sourceLocator: source.url,
+    intake: { issue: "https://github.com/OmniMCP-AI/local-llm/issues/24" },
+  }));
+  const output = join(root, "output");
+  await run(process.execPath, ["resolve-evidence.mjs", request, previous, output, approvals]);
+  const report = JSON.parse(await readFile(join(output, "review.json")));
+  assert.notEqual(report.candidate.research, earlier.release);
+  assert.equal(report.receiptUpdate, null);
+  assert.match(await readFile(join(output, "pages/wiki/evidence-updates.md"), "utf8"), /\[Reviewed source\]\(https:\/\/www\.youtube\.com\/watch\?v=09GB4LtXUok\)/);
+  const pinned = join(output, "pages/research", earlier.release, "library.md");
+  assert.match(await readFile(pinned, "utf8"), /Earlier wording in the reviewed source/);
+  assert.ok(report.notificationDraft.includes(digest(await readFile(pinned))));
+});

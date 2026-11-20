@@ -8,7 +8,7 @@ import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
-import { writeEvidenceState } from "./evidence-state.mjs";
+import { emptyEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
 
@@ -55,9 +55,17 @@ for (const [name, expected] of Object.entries(fullGraph.graph.research_inputs)) 
 }
 let researchIndex;
 let approvals = {};
+let evidenceState = emptyEvidenceState;
 if (pages) {
   const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
   approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
+  const stateFile = process.env.FASTEST_EVIDENCE_STATE;
+  if (stateFile) evidenceState = JSON.parse(await readFile(stateFile, "utf8"));
+  const blocked = new Set(Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn")
+    .map((id) => createHash("sha256").update(id).digest("hex")));
+  if (evidenceState.withdrawnSources?.some((hash) => !blocked.has(hash))) {
+    throw new Error("Build approvals would restore a withdrawn research source");
+  }
   researchIndex = await writeResearchRelease(fileURLToPath(here(".")), output, approvals);
 }
 const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
@@ -85,7 +93,7 @@ const hardwareDirectory = {
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
 const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
 const wikiRelease = pages ? await writeWikiRelease({
-  output: output,
+  output,
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
   researchRelease: researchIndex.release,
   catalogRelease,
@@ -155,8 +163,7 @@ ${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open t
 if (pages) {
   await mkdir(output, { recursive: true });
   await writeFile(join(output, "index.html"), html);
-  const stateFile = process.env.FASTEST_EVIDENCE_STATE;
-  await writeEvidenceState(output, stateFile ? JSON.parse(await readFile(stateFile, "utf8")) : undefined);
+  await writeEvidenceState(output, evidenceState);
   const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
   await writeFile(join(output, "prices.html"), `<!doctype html>
 <html lang="en">

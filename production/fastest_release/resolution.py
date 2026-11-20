@@ -39,6 +39,7 @@ def resolve_benchmark(store, request):
     after = _artifact_hashes(result["after"])
     return {
         "release": result["release"],
+        "earlierExports": before,
         "changes": [
             {"path": path, "before": before.get(path), "after": after.get(path)}
             for path in sorted(before.keys() | after.keys())
