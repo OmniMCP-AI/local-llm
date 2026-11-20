@@ -6,6 +6,8 @@ The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream r
 
 [Regional price cohorts](fastest_prices/README.md) publish dated reviewed offers and a historical range when the sample qualifies.
 
+[Text workload costs](fastest_cost/README.md) compare keeping a machine, upgrading, hourly rental, and a token-metered API at the same service targets.
+
 ## Run the example
 
 Use Python 3.11 or later, PostgreSQL 13 or later, and `psql` on your path. From this directory, point the publisher at a writable PostgreSQL database. The connection can use libpq keyword syntax, a service name, or a PostgreSQL URL. Keep passwords in a libpq password file or service configuration.
@@ -227,3 +229,62 @@ The [inventory agent task](fastest_agent_task/README.md) compares time and succe
 for one pinned task under two read-only tool policies. It builds a synthetic demo
 or a measured release from reviewed operator-owned records, with matching HTML,
 Markdown, JSON and a checksum manifest.
+
+## Compare setups against goals
+
+Run `python3 -B -m fastest_release serve` from `production/` and open
+[Compare setups by goal](http://127.0.0.1:8000/goals). Machine, budget and expert
+entry points use the same pinned text cohort. Start with minimum prefill and
+decode rates and add a whole-build budget if applicable. Change the sort
+preference and chart axes independently. Share the pinned URL to preserve the
+selection. Each chart marker links to its exact table row. The built-in cohort
+lists the two planned cells and their access blockers.
+
+To serve reviewed records, pass `--goal-cohort PATH` with a trusted operator
+manifest using this shape. The identifiers in this example illustrate the
+format.
+
+```json
+{
+  "schema_version": 1,
+  "records": ["reviewed-m4.json"],
+  "market": {
+    "market": "US",
+    "destination": "US-CA, ZIP 95814",
+    "currency": "USD",
+    "condition": "new"
+  },
+  "candidates": {
+    "apple-m4": {
+      "build_revision": "reviewed-m4-build-revision",
+      "price_release": "ee436650-1a1d-45e4-995d-c3be9b443f0d",
+      "privacy": {
+        "value": "local-only",
+        "source": "public locator for the approved execution/privacy review"
+      }
+    }
+  }
+}
+```
+
+Record paths are relative to the manifest. Use the
+[reviewed text intake](fastest_text/README.md) for the two planned cells.
+A public-safe privacy review of the exact text workflow reports `local-only`
+or `external`. Quality passes when every reviewed output passes the pinned
+rubric. A successful partial run can supply the phase it measured. Only rows
+with reviewed measurements and passing quality and privacy gates can compete
+on the chart. Chart points also require values on both selected axes.
+
+Add a price UUID only after matching the tested machine to that exact
+whole-build revision. Configure `FASTEST_DATABASE_URL` with permission to
+execute `fastest_prices.read_release(uuid)`. Budget uses the lowest eligible
+individual landed asking quote in the pinned release, compared in its original
+currency. Each response reads price rights again. Quote freshness is relative
+to the dated price release. Keep price pins current by publishing a new cohort
+when authorized quotes change. A withdrawn quote becomes unknown on its next
+read. Fit links open the separate fit estimator when configured.
+
+Repeat `--goal-cohort` to retain earlier reviewed manifests and their pinned
+URLs. The last manifest becomes current. Keep each retained manifest with its
+exact reviewed records. Remove affected manifests from the serving config and
+restart the service if a text or privacy permission is withdrawn.

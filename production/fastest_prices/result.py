@@ -36,7 +36,7 @@ def _landed(offer):
     return total
 
 
-def _eligible(offer):
+def eligible_offer(offer):
     return (
         offer["kind"] == "asking" and offer["stock"] == "in_stock"
         and offer["confirmation"] == "seller_confirmed" and offer["discount"] == "unconditional"
@@ -117,7 +117,7 @@ def build_result(snapshot):
         offers_by_day[day].append(offer)
         # The database orders the deduplicated rows by observation day.
         latest[(offer["seller"], offer["listing_id"], offer["kind"])] = offer
-        if _eligible(offer):
+        if eligible_offer(offer):
             comparable_days.add(day)
             if allowed:
                 key = (day, offer["seller"])
