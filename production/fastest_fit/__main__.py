@@ -17,7 +17,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     build = commands.add_parser("build", help="Build and retain the native executable.")
     build.add_argument("destination", type=Path)
-    commands.add_parser("verify", help="Build the native executable and run the public request fixtures.")
+    verify = commands.add_parser("verify", help="Build the native executable and run the public request fixtures.")
+    verify.add_argument("--report", type=Path, help="Save comparable fit.json fixture responses.")
     args = parser.parse_args()
     hardware = json.loads((CATALOG / "catalog-hardware-sources.json").read_bytes())["upstream"]
     if hardware["commit"] != UPSTREAM_COMMIT:
@@ -46,13 +47,20 @@ def main():
                 staged.replace(destination)
             print(destination)
         else:
+            production = Path(__file__).resolve().parents[1]
             environment["FASTEST_FIT_TEST_ENGINE"] = str(binary)
             environment["PYTHONDONTWRITEBYTECODE"] = "1"
             run_owned(
                 [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_fit.py", "-v"],
-                cwd=Path(__file__).resolve().parents[1],
+                cwd=production,
                 env=environment,
             )
+            if args.report is not None:
+                run_owned(
+                    [sys.executable, "tests/capture_fit_parity.py", str(binary), str(args.report.absolute())],
+                    cwd=production,
+                    env=environment,
+                )
 
 
 if __name__ == "__main__":

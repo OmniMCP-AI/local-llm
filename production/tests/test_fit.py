@@ -21,6 +21,8 @@ REQUEST = {
     "ram_reserved_gib": "8",
     "vram_reserved_gib": "2",
 }
+OFFLOAD = {**REQUEST, "vram_reserved_gib": "23.5", "cpu_cores": "8"}
+MISSING = {"machine": REQUEST["machine"]}
 Q4 = "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
 
 
@@ -29,19 +31,22 @@ def read_estimate(base, selection):
         return json.load(response)
 
 
+@contextmanager
+def fit_server(engine):
+    with make_server(None, port=0, fit_engine=engine) as server:
+        worker = threading.Thread(target=server.serve_forever)
+        worker.start()
+        try:
+            yield f"http://127.0.0.1:{server.server_port}"
+        finally:
+            server.shutdown()
+            worker.join()
+
+
 @unittest.skipUnless(os.environ.get("FASTEST_FIT_TEST_ENGINE"), "run the pinned fit fixture verifier")
 class FitRequestTests(unittest.TestCase):
-    @contextmanager
     def server(self):
-        engine = Path(os.environ["FASTEST_FIT_TEST_ENGINE"])
-        with make_server(None, port=0, fit_engine=engine) as server:
-            worker = threading.Thread(target=server.serve_forever)
-            worker.start()
-            try:
-                yield f"http://127.0.0.1:{server.server_port}"
-            finally:
-                server.shutdown()
-                worker.join()
+        return fit_server(Path(os.environ["FASTEST_FIT_TEST_ENGINE"]))
 
     def test_selected_machine_and_artifact_fit_on_the_public_path(self):
         with self.server() as base:
@@ -73,7 +78,6 @@ class FitRequestTests(unittest.TestCase):
         self.assertRegex(result["id"], r"^[0-9a-f]{64}$")
 
     def test_worker_settings_do_not_change_cpu_offload_estimates(self):
-        offload = {**REQUEST, "vram_reserved_gib": "23.5", "cpu_cores": "8"}
         with self.server() as base, TemporaryDirectory(prefix="fastest-fit-worker-") as temp:
             worker_model = Path(temp) / "models.json"
             worker_model.write_text(json.dumps([{
@@ -89,9 +93,9 @@ class FitRequestTests(unittest.TestCase):
                 "use_case": "chat",
             }]), encoding="utf-8")
             with patch.dict(os.environ, {"LLMFIT_DDR_BANDWIDTH": "12", "LLMFIT_CUSTOM_MODELS": str(worker_model)}):
-                first = read_estimate(base, offload)
+                first = read_estimate(base, OFFLOAD)
             with patch.dict(os.environ, {"LLMFIT_DDR_BANDWIDTH": "750", "LLMFIT_CUSTOM_MODELS": "/nonexistent"}):
-                second = read_estimate(base, offload)
+                second = read_estimate(base, OFFLOAD)
 
         self.assertEqual(first, second)
         self.assertEqual(first["status"], "estimated")
@@ -103,7 +107,7 @@ class FitRequestTests(unittest.TestCase):
     def test_partial_profiles_and_missing_artifact_inputs_are_qualified(self):
         with self.server() as base:
             partial = read_estimate(base, {**REQUEST, "machine": "V001-HP-G001"})
-            missing = read_estimate(base, {"machine": REQUEST["machine"]})
+            missing = read_estimate(base, MISSING)
             unknown_quant = read_estimate(base, {
                 **REQUEST,
                 "artifact": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe",
