@@ -44,8 +44,18 @@ Regenerate or remove any separately distributed copy after a withdrawal.
 (
   set -eu
   discovery_demo=$(mktemp -d)
-  trap 'rm -rf "$discovery_demo"' EXIT
-  discoveries() { python3 -B -m fastest_discoveries --db "$discovery_demo/history.sqlite3" "$@"; }
+  discovery_db="$discovery_demo/history.sqlite3"
+  cleanup() {
+    for file in "$discovery_db" "$discovery_db-journal"; do
+      if [ -e "$file" ]; then rm -- "$file"; fi
+    done
+    rmdir -- "$discovery_demo"
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
+  discoveries() { python3 -B -m fastest_discoveries --db "$discovery_db" "$@"; }
 
   for fixture in cross-post original discovery-only deleted; do
     discoveries submit "fixtures/discoveries/$fixture.json" > /dev/null
