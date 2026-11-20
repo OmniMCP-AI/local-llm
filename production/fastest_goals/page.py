@@ -4,7 +4,7 @@ from decimal import Decimal
 from html import escape
 from urllib.parse import urlsplit
 
-from . import ENTRIES, PRIVACY_LABELS
+from . import ENTRIES, PRIVACY_LABELS, SERVING_ENTRY
 
 
 STYLE = """
@@ -55,25 +55,38 @@ def _form(service, result):
     selection, metrics = result["selection"], result["metrics"]
     entry = selection["entry"]
     nav = []
-    for key, label in ENTRIES.items():
+    for key, label in {**ENTRIES, SERVING_ENTRY: "Team serving"}.items():
         options = {**selection, "entry": key}
         if key != entry:
-            for setting in ("x", "y", "priority"):
-                del options[setting]
-            if not options["budget"]:
-                del options["budget"]
-            if not options["machine"]:
-                del options["machine"]
+            if SERVING_ENTRY in {entry, key}:
+                options = {"entry": key, "privacy": selection["privacy"]}
+                if selection["machine"]:
+                    options["machine"] = selection["machine"]
+            else:
+                for setting in ("x", "y", "priority"):
+                    del options[setting]
+                if not options["budget"]:
+                    del options["budget"]
+                if not options["machine"]:
+                    del options["machine"]
         link = service.url(service.selection(options))
         current = ' aria-current="page"' if key == entry else ""
         nav.append(f'<a href="{escape(link)}"{current}>{label}</a>')
     machine_label = "Your current setup" if entry == "machine" else "Highlight a setup"
     fields = [_select("machine", machine_label, selection["machine"], [("", "No setup selected"), *service.machines.items()])]
-    goals = (
-        ("budget", "Maximum build price", False), ("decode", "Minimum decode", True), ("prefill", "Minimum prefill", True),
-    ) if entry == "budget" else (
-        ("decode", "Minimum decode", True), ("prefill", "Minimum prefill", True), ("budget", "Maximum build price", False),
-    )
+    if entry == SERVING_ENTRY:
+        goals = (
+            ("user_p95", "Maximum worst-user p95", True), ("capacity", "Minimum aggregate output", True),
+            ("wall_energy", "Maximum wall energy per accepted request", False),
+        )
+        help_text = "An empty wall-energy limit leaves energy open. Capacity counts only accepted output."
+    else:
+        goals = (
+            ("budget", "Maximum build price", False), ("decode", "Minimum decode", True), ("prefill", "Minimum prefill", True),
+        ) if entry == "budget" else (
+            ("decode", "Minimum decode", True), ("prefill", "Minimum prefill", True), ("budget", "Maximum build price", False),
+        )
+        help_text = "An empty build-price field leaves the budget open. Quality requires every reviewed output to meet the pinned rubric."
     fields.extend(_number(name, f"{label} ({metrics[name]['unit']})", selection[name], required)
                   for name, label, required in goals)
     controls = [
@@ -88,7 +101,7 @@ def _form(service, result):
         f'<form action="/goals/{service.release_id}" method="get" aria-labelledby="goal-form">'
         f'<input type="hidden" name="entry" value="{entry}">'
         '<div class="controls">' + "".join(fields + controls) + '</div>'
-        '<small>An empty build-price field leaves the budget open. Quality requires every reviewed output to meet the pinned rubric.</small>'
+        f'<small>{help_text}</small>'
         '<details><summary>Chart axes</summary><div class="controls">'
         + _select("x", "Horizontal axis", selection["x"], axes)
         + _select("y", "Vertical axis", selection["y"], axes)
@@ -119,7 +132,7 @@ def _summary(result, fit_enabled):
     if result["selection"]["machine"]:
         own = rows[result["selection"]["machine"]]
         output.append(f'<p>Selected setup · <a href="#goal-{own["id"]}">{escape(own["name"])}</a></p>')
-        if fit_enabled and own["id"] == "rtx-4090":
+        if fit_enabled and result["selection"]["entry"] != SERVING_ENTRY and own["id"] == "rtx-4090":
             output.append('<p><a href="/fit?machine=llmfit-nvidia-rtx-4090">Open the RTX 4090 fit estimate</a> '
                           'to choose a model file and context.</p>')
     return "".join(output)
@@ -133,6 +146,34 @@ def _source(locator):
     if parsed.scheme in {"http", "https"} and parsed.netloc:
         return f'<a href="{escape(locator)}">{escape(locator)}</a>'
     return escape(locator)
+
+
+def _serving_evidence(evidence):
+    counts = evidence["counts"]
+    parts = [
+        f'<small>{counts["attempted"]} of {counts["planned"]} requests recorded · {counts["accepted"]} accepted · '
+        f'{counts["failed"]} failed · {counts["timeout"]} timed out · {counts["rejected"]} rejected · '
+        f'{counts["unrecorded"]} unrecorded</small>',
+    ]
+    if evidence["captured_duration_ms"] is not None:
+        parts.append(f'<small>{evidence["accepted_output_tokens"]} accepted output tokens in '
+                     f'{evidence["captured_duration_ms"]} ms of captured time</small>')
+    for user in evidence["users"]:
+        wait = f'{user["p95_ms"]} ms' if user["p95_ms"] is not None else "unavailable"
+        parts.append(f'<small>User {user["user"]} · {user["accepted"]} accepted · p95 {wait}</small>')
+    if evidence["wall_joules"] is not None:
+        power = evidence["power"]
+        parts.append(f'<small>{evidence["wall_joules"]} J total · {escape(power["boundary"])} · '
+                     f'{escape(power["meter"])} · {power["start_ms"]}–{power["end_ms"]} ms</small>')
+    failures = [attempt for attempt in evidence["attempts"] if attempt["outcome"] != "accepted"]
+    if failures:
+        parts.append('<details><summary>Unsuccessful requests</summary><ul>')
+        for attempt in failures:
+            parts.append(f'<li>User {attempt["user"]}, request {attempt["request"]} · {attempt["outcome"]} · '
+                         f'{attempt["elapsed_ms"]} ms · {attempt["output_tokens"]} output tokens · '
+                         f'{escape(attempt["reason"])}</li>')
+        parts.append("</ul></details>")
+    return "".join(parts)
 
 
 def _table(result):
@@ -162,7 +203,7 @@ def _table(result):
             reason = check["reason"] if check and check["status"] != "pass" else observation["reason"]
             if reason:
                 parts.append(f'<small>{escape(reason)}</small>')
-            if observation.get("sample_count"):
+            if observation.get("sample_count") and "serving" not in row:
                 parts.append(f'<small>{observation["sample_count"]} successful timed samples</small>')
             parts.append("</td>")
         parts.append('<td class="evidence">')
@@ -174,8 +215,10 @@ def _table(result):
         if row["run_source"]:
             evidence = row["run_source"]
             parts.append(f'<small>Run source · {_source(evidence["locator"])} · {escape(evidence["revision"])}</small>')
-        quote = row["metrics"]["budget"]
-        if quote["value"] is not None:
+        if "serving" in row:
+            parts.append(_serving_evidence(row["serving"]))
+        quote = row["metrics"].get("budget")
+        if quote and quote["value"] is not None:
             parts.append('<details><summary>Price evidence</summary>'
                          f'<small>{escape(quote["seller"])} · {escape(quote["observed_at"])}</small>'
                          f'<small>Quote · {_source(quote["source_locator"])}</small>'
@@ -224,23 +267,32 @@ def _chart(result):
 
 def render_goals(service, result, fit_enabled=False):
     selection = result["selection"]
-    market = result["market"]
-    terms = f"{market['market']} · {market['currency']} · {market['condition'].replace('_', ' ')}"
-    if market["destination"]:
-        terms += f" · {market['destination']}"
+    if selection["entry"] == SERVING_ENTRY:
+        protocol = result["serving_protocol"]
+        terms = f'{protocol["users"]} simultaneous users · {protocol["requests_per_user"]} requests per user'
+        details = '<p>Protocol ' + escape(result["protocol"]) + '</p>' + "".join(
+            f'<p>{escape(protocol[field])}</p>'
+            for field in ("acceptance", "latency_boundary", "capacity_boundary", "wall_boundary")
+        )
+        text_link = ""
+    else:
+        market = result["market"]
+        terms = f"One fixed text workload · {market['market']} · {market['currency']} · {market['condition'].replace('_', ' ')}"
+        if market["destination"]:
+            terms += f" · {market['destination']}"
+        details = f'<p class="muted">Protocol {escape(result["protocol"])} · Quality rubric {escape(result["quality_rubric"])}</p>'
+        text_link = f' · <a href="/goals/{service.release_id}/text-pilot.html">Text pilot evidence</a>'
     priority = result["metrics"][selection["priority"]]
     sort = f"{priority['direction']} {priority['label'].lower()}"
     return (
         '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         f'<title>Compare setups by goal · fastest.ai</title><style>{STYLE}</style><main>'
         '<p><a href="/">fastest.ai</a></p><h1>Compare setups by goal</h1>'
-        f'<p>One fixed text workload · {escape(terms)} · sorted within results by {escape(sort)}</p>'
+        f'<p>{escape(terms)} · sorted within results by {escape(sort)}</p>'
         f'<p><a href="{escape(service.url(selection))}">Share this pinned view</a> · '
-        f'<a href="{escape(service.url(selection, ".json"))}">Exact data (JSON)</a> · '
-        f'<a href="/goals/{service.release_id}/text-pilot.html">Text pilot evidence</a></p>'
+        f'<a href="{escape(service.url(selection, ".json"))}">Exact data (JSON)</a>{text_link}</p>'
         '<div class="layout"><div class="panel">' + _form(service, result) + '</div>'
         '<div class="panel result">' + _summary(result, fit_enabled) + '</div></div>'
         '<section aria-labelledby="goal-detail-title"><h2 id="goal-detail-title">Compare the evidence</h2>'
-        f'<p class="muted">Protocol {escape(result["protocol"])} · Quality rubric {escape(result["quality_rubric"])}</p>'
-        + _table(result) + '</section>' + _chart(result) + '</main></html>\n'
+        + details + _table(result) + '</section>' + _chart(result) + '</main></html>\n'
     )
