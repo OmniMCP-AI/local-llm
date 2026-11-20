@@ -4,6 +4,7 @@ import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 
 const here = (name) => new URL(name, import.meta.url);
@@ -55,7 +56,15 @@ const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).ma
   const jpeg = await readFile(here("hardware-assets/" + asset.file));
   return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
 })));
-const catalogRelease = pages ? await writeCatalogRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/"))) : "";
+const catalogDirectory = fileURLToPath(here("."));
+const hardware = await readHardwareCatalog(catalogDirectory);
+const hardwareDirectory = {
+  asOf: hardware.manifest.asOf,
+  coverage: hardware.manifest.coverage,
+  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source }) => ({ id, name, detail, aliases, source })),
+  machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
+};
+const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, fileURLToPath(here("dist/")), hardware) : "";
 const result = await build({
   entryPoints: [fileURLToPath(here("app.jsx"))],
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
@@ -70,6 +79,7 @@ const result = await build({
     __FASTEST_PAGES__: String(pages),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex ?? null),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
+    __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(documents),
     __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
