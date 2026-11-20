@@ -165,8 +165,8 @@ export async function writeWikiRelease({
     "/wiki/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
     `${research.html}\n  Link: <${origin + research.md}>; rel="alternate"; type="text/markdown"`,
     `${research.md}\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin + research.html}>; rel="alternate"; type="text/html"`,
-    `/index.md\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin}/>; rel="alternate"; type="text/html"`,
-    ...["robots.txt", "sitemap.xml", "llms.txt", "index.md", "evidence-quarantine.json"].map((file) => `/${file}\n  Cache-Control: no-store`),
+    `/index.md\n  Cache-Control: no-store\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin}/>; rel="alternate"; type="text/html"`,
+    ...["robots.txt", "sitemap.xml", "llms.txt", "evidence-quarantine.json"].map((file) => `/${file}\n  Cache-Control: no-store`),
   ];
   const files = {
     "/404.html": '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
