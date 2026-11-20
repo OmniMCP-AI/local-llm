@@ -89,6 +89,10 @@
       "title": "Research library"
     },
     {
+      "id": "rtx-2080-ti-nvlink",
+      "title": "Dual RTX 2080 Ti with optional NVLink"
+    },
+    {
       "id": "rtx-3060",
       "title": "GeForce RTX 3060"
     },
@@ -116,11 +120,11 @@
   "edges": [
     {
       "source": "agent-discovery",
-      "target": "agents"
+      "target": "evidence-guide"
     },
     {
       "source": "agent-discovery",
-      "target": "evidence-guide"
+      "target": "research"
     },
     {
       "source": "agents",
@@ -273,10 +277,6 @@
     {
       "source": "gpu-topology",
       "target": "technology"
-    },
-    {
-      "source": "index",
-      "target": "agents"
     },
     {
       "source": "index",
@@ -477,6 +477,10 @@
     {
       "source": "research",
       "target": "evidence-guide"
+    },
+    {
+      "source": "rtx-2080-ti-nvlink",
+      "target": "gpu-topology"
     },
     {
       "source": "rtx-3060",

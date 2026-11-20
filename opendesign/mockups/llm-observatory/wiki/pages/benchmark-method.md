@@ -1,5 +1,6 @@
 ---
 title: Benchmark method
+status: published
 kind: guide
 use_cases: model-evaluation, evidence-research
 summary: Which results can be compared, and what each metric measures.

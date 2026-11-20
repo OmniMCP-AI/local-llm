@@ -92,3 +92,12 @@ test("the 20 method entries link reviewed topics, release gates, and video times
     assert.match(body, /M1–M4 release gates/);
   }
 });
+
+test("withdrawing a source removes related method entries from research publication", async (t) => {
+  const { index, read } = await buildRelease(t, { [fixture]: { status: "withdrawn" } });
+  assert.ok(!index.sources.some(({ id }) => id === fixture));
+  assert.ok(!index.methods.some(({ id }) => id === "method-15"));
+  for (const artifact of ["library.html", "library.md", "index.json", "graphify.json"]) {
+    assert.doesNotMatch(await read(artifact), /09GB4LtXUok/);
+  }
+});

@@ -1,5 +1,6 @@
 ---
 title: Source catalog
+status: published
 kind: page
 summary: Look up a card, machine, model or runtime, even when a matched benchmark is unavailable.
 ---
