@@ -154,6 +154,47 @@ test("the CLI holds out the annotated Chinese source and both reviewed cross-pos
   assert.ok(report.facets.dimension.recall > 0);
 });
 
+test("the operator replay scores local annotations without adding them to the released corpus", async (t) => {
+  const { root, index } = await released(t);
+  const liveState = join(root, "live-state.json");
+  await writeFile(liveState, JSON.stringify({ withdrawnSources: [] }));
+  const execute = async (...args) => JSON.parse((await run(process.execPath,
+    ["research-context-cli.mjs", root, ...args],
+    { cwd: directory, env: { ...process.env, FASTEST_EVIDENCE_STATE: liveState } },
+  )).stdout);
+  const publicReport = await execute("evaluate");
+  assert.equal(publicReport.facets.task.subjects, 0);
+  await assert.rejects(execute("suggest", noteId), /not eligible/);
+
+  const report = await execute("evaluate-local");
+  assert.equal(report.scope, "operator-local-annotations");
+  assert.equal(report.researchRelease, index.release);
+  assert.match(report.annotationIndexSha256, /^[a-f0-9]{64}$/);
+  assert.equal(report.heldOutFamilies, 8);
+  assert.equal(report.unavailableHeldOut, 0);
+  assert.equal(report.development, 3);
+  assert.deepEqual(report.missingCoverage.formats, []);
+  assert.deepEqual(report.coverage.languages.en, { heldOut: 14, development: 2 });
+  assert.deepEqual(report.coverage.languages.zh, { heldOut: 2, development: 1 });
+  assert.deepEqual(report.coverage.formats.video, { heldOut: 5, development: 3 });
+  assert.equal(report.facets.task.subjects, 103);
+  assert.equal(report.facets.task.wrongScope.articleToCase, 0);
+  assert.equal(report.facets.dimension.wrongScope.forecastAsMeasurement, 0);
+  assert.equal(report.facetsByLanguage.zh.topic.recall, 0);
+  assert.equal(report.facetsByLanguage.zh.task.abstentions, 24);
+  assert.equal(report.facetsByLanguage.zh.dimension.subjects, 24);
+  assert.equal(report.facetsByFormat.blog.topic.tp, 2);
+  assert.equal(report.facetsByFormat.blog.task.subjects, 0);
+  assert.equal(report.facetsByFormat.video.dimension.subjects, 103);
+  assert.equal(report.automaticPromotion, false);
+
+  await writeFile(liveState, JSON.stringify({ withdrawnSources: [digest(chineseId)] }));
+  const afterWithdrawal = await execute("evaluate-local");
+  assert.equal(afterWithdrawal.unavailableHeldOut, 1);
+  assert.equal(afterWithdrawal.coverage.languages.zh.heldOut, 1);
+  assert.equal(afterWithdrawal.facetsByLanguage.zh.dimension.subjects, 13);
+});
+
 test("a reviewed vocabulary rollback restores the prior suggestions through the CLI", async (t) => {
   const { root, index } = await released(t);
   const file = (name) => join(root, name + ".json");
