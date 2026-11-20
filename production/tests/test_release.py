@@ -20,6 +20,8 @@ from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
 from fastest_release.research import SEED_ROOT
 from test_mcp import HAS_SDK, get as get_public, mcp_client
 from test_public_api import api_client, api_server
+from test_scaling import BASELINE, COMPARISON, fixture_releases
+from fastest_release.scaling import scaling_report
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -75,6 +77,30 @@ class ReleaseTest(unittest.TestCase):
                 postgres.wait(timeout=10)
         # Popen.wait reaps the owned postmaster before the cluster directory is removed.
         assert postgres.returncode is not None
+
+    def test_scaling_uses_only_approved_fields_from_pinned_postgres_rows(self):
+        fixture = fixture_releases()
+        baseline = fixture[BASELINE]["row"]
+        comparison = fixture[COMPARISON]["row"]
+        for row in (baseline, comparison):
+            for field in row["fields"].values():
+                field["rights"] = "allow"
+        one = self.store.publish(baseline)
+        comparison["fields"]["gpu_scaling_v1"]["rights"] = "deny"
+        private = self.store.publish(comparison)
+        self.assertEqual(scaling_report(self.store, (one, private))["reason"], "metadata")
+
+        comparison["fields"]["gpu_scaling_v1"]["rights"] = "allow"
+        many = self.store.publish(comparison)
+        report = scaling_report(self.store, (one, many))
+        self.assertEqual(report["comparison"]["release_id"], many)
+        self.assertEqual(report["speedup"]["numerator"], "50000000000001")
+        self.assertEqual(scaling_report(self.store, (one, private))["reason"], "metadata")
+
+        self.store.withdraw(baseline["evidence_id"], "Synthetic fixture withdrawal")
+        withdrawn = scaling_report(self.store, (one, many))
+        self.assertEqual(withdrawn["reason"], "baseline_withdrawn")
+        self.assertIsNone(withdrawn["speedup"])
 
     def test_public_snapshot_carries_one_observation_into_all_surfaces(self):
         release_id = self.store.publish(self.observation)

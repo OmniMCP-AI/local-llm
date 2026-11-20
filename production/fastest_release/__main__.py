@@ -36,6 +36,8 @@ def main(argv=None):
     serve.add_argument("--profile-release", action="append", default=[], help="Include a reviewed observation release UUID in the profile comparison.")
     serve.add_argument("--profile-archive", action="append", default=[], metavar="UUID,UUID,...",
                        help="Keep a prior profile release available from its comma-separated observation release UUIDs.")
+    serve.add_argument("--scaling-pair", nargs=2, default=(), metavar=("BASELINE", "COMPARISON"),
+                       help="Compare one reviewed one-GPU release to one reviewed multi-GPU release.")
     serve.add_argument("--goal-cohort", type=Path, action="append", default=[],
                        help="Keep a reviewed goals cohort available. The last manifest becomes current.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
@@ -72,7 +74,7 @@ def main(argv=None):
                              profile_releases=args.profile_release,
                              profile_archives=[archive.split(",") for archive in args.profile_archive],
                              goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1],
-                             price_reader=price_reader) as server:
+                             price_reader=price_reader, scaling_pair=args.scaling_pair) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

@@ -84,3 +84,10 @@ test("the canonical technology wiki can render a static topology inventory", () 
   assert.match(html, /Load the model/);
   assert.match(renderTopologyReference("md"), /V028-HP-E03/);
 });
+
+test("static topology surfaces link to a configured scaling reader and report missing coverage by default", () => {
+  const href = "https://releases.example/topology/scaling";
+  assert.match(renderTopologyReference("html", topologyPresets, href), /href="https:\/\/releases\.example\/topology\/scaling"/);
+  assert.ok(renderTopologyReference("md", topologyPresets, href).includes(href));
+  assert.match(renderTopologyReference("html"), /No reviewed 1→N GPU pair is available here/);
+});

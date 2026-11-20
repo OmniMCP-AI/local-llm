@@ -18,6 +18,7 @@ from . import ReleaseError, ReleaseNotFound
 from .api import PublicApi
 from .artifacts import build_artifacts
 from .profiles import ProfileRelease, RUN_ID
+from .scaling import ROUTE as SCALING_ROUTE, render_scaling, scaling_report
 
 
 CONTENT_TYPES = {
@@ -44,8 +45,16 @@ GOALS_ROUTE = re.compile(
 
 
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
-                profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None):
+                profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
+                scaling_pair=()):
     """Bind a read-only HTTP server that checks rights on every release request."""
+    scaling_pair = tuple(scaling_pair)
+    if scaling_pair and (
+        store is None or len(scaling_pair) != 2 or len(set(scaling_pair)) != 2
+        or not all(RUN_ID.fullmatch(identifier) for identifier in scaling_pair)
+    ):
+        raise ValueError("A scaling pair requires a release store and two distinct pinned release UUIDs.")
+    scaling_url = SCALING_ROUTE + "/" + "/".join(scaling_pair) if scaling_pair else SCALING_ROUTE
     fit = FitService(fit_engine) if fit_engine is not None else None
     planned = ProfileRelease()
     profiles = ProfileRelease(store, profile_releases) if profile_releases else planned
@@ -83,6 +92,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             price_match = PRICE_ROUTE.fullmatch(path)
             if price_match and price_reader is not None:
                 return self._price(price_match[1])
+            if path in {SCALING_ROUTE, SCALING_ROUTE + ".json", scaling_url, scaling_url + ".json"}:
+                return self._scaling(path)
             if path in COST_ROUTES:
                 return self._cost(path, query)
             if api.handles(path):
@@ -119,7 +130,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<title>fastest.ai</title><h1>fastest.ai</h1>'
                     '<p><a href="/profiles">Machine and model comparisons</a></p>'
                     '<p><a href="/goals">Compare setups by goal</a></p>'
-                    '<p><a href="/costs">Compare text workload costs</a></p>' + fit_link + benchmark,
+                    '<p><a href="/costs">Compare text workload costs</a></p>'
+                    f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
                 )
             match = RELEASE_ROUTE.fullmatch(path)
@@ -141,6 +153,21 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _scaling(self, path):
+            is_json = path.endswith(".json")
+            if scaling_pair and path.removesuffix(".json") == SCALING_ROUTE:
+                return self._respond(307, location=scaling_url + (".json" if is_json else ""))
+            try:
+                report = scaling_report(store, scaling_pair)
+            except (ReleaseError, TimeoutExpired, OSError):
+                logging.exception("Cannot read a pinned GPU scaling pair")
+                return self._respond(503, "GPU scaling release service unavailable.\n")
+            status = 410 if (report["reason"] or "").endswith("_withdrawn") else 200
+            if is_json:
+                return self._respond(status, json.dumps(report, ensure_ascii=False, allow_nan=False) + "\n",
+                                     CONTENT_TYPES["table.json"])
+            return self._respond(status, render_scaling(report), CONTENT_TYPES["benchmark.html"])
 
         def _price(self, release_id):
             try:
