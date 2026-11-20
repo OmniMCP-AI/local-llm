@@ -165,3 +165,23 @@ class AgentTaskMeasurementTest(unittest.TestCase):
         self.assertTrue(all(not request["cache_prompt"] for request in requests))
         self.assertEqual(json.loads(requests[-1]["messages"][2]["content"])["rows"][0]["units"], 8)
         self.assertEqual(json.loads(requests[-1]["messages"][4]["content"])["rows"][0]["units"], 9)
+
+    def test_denied_request_ends_attempt_and_stays_out_of_public_ledger(self):
+        from fastest_agent_task.harness import plan
+        from fastest_agent_task.measure import run_attempt
+
+        protocol = plan()
+        context = next(context for context in protocol["contexts"] if context["id"] == "bundle")
+        denied = {"tool": "read_page", "resource": "a"}
+
+        def completion(request, timeout):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(denied)}}],
+                "usage": {"completion_tokens": 13},
+            }
+
+        measured = run_attempt(completion, context, 1, 1, protocol["settings"])
+        self.assertEqual(measured["outcome"], "tool_denied")
+        self.assertEqual(measured["attempt"]["tool_reads"], [])
+        self.assertIsNone(measured["attempt"]["answer"])
+        self.assertEqual([turn["denied_tool"] for turn in measured["turns"]], [denied])
