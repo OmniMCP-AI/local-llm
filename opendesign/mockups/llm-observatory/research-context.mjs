@@ -63,6 +63,11 @@ function facetMetrics(samples) {
   };
 }
 
+function reportFacets(samples) {
+  return Object.fromEntries(facets.map((facet) =>
+    [facet, facetMetrics(samples.filter(({ proposal }) => proposal.facet === facet))]));
+}
+
 export function createContextReview(index, rules, knownCrossPosts = []) {
   const { taxonomyVersion, vocabulary, sources } = index;
   const validTags = { topic: vocabulary.topics, task: vocabulary.topics, dimension: vocabulary.dimensions };
@@ -133,7 +138,7 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
     bySource.set(source.id, rows);
   }
 
-  function evaluate(plan) {
+  function evaluate(plan, { includeBreakdowns = false } = {}) {
     const { requested, unavailable, heldOutFamilies } = calibrationSplit(sources, plan, knownCrossPosts);
     const heldOut = sources.filter(({ id }) => requested.has(id)).map(({ id }) => id).sort();
     const samples = heldOut.flatMap((id) => bySource.get(id));
@@ -142,17 +147,23 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
         development: sources.filter((source) => keyFor(source) === key && !requested.has(source.id)).length },
     ]));
     const coverage = {
-      languages: counts(["en", "zh", "es", "ja", "ko", "de", "hi", "fr", "ar"], language),
+      languages: counts([...rules.languages, "en", "zh", "es", "ja", "ko", "de", "hi", "fr", "ar"], language),
       formats: counts(Object.keys(vocabulary.formats), ({ format }) => format),
     };
     const missingCoverage = Object.fromEntries(Object.entries(coverage).map(([kind, values]) =>
       [kind, Object.keys(values).filter((key) => values[key].heldOut === 0)]));
-    const metrics = Object.fromEntries(facets.map((facet) =>
-      [facet, facetMetrics(samples.filter(({ proposal }) => proposal.facet === facet))]));
+    const metrics = reportFacets(samples);
+    const groupedFacets = (keyFor) => Object.fromEntries(Array.from(
+      Map.groupBy(samples, ({ source }) => keyFor(source)), ([key, rows]) => [key, reportFacets(rows)],
+    ));
     return {
       researchRelease: index.release, taxonomyVersion, rulesVersion: rules.version, ruleDigest,
       heldOut, heldOutFamilies, unavailableHeldOut: unavailable, development: sources.length - heldOut.length, coverage, missingCoverage,
       facets: metrics, untestedFacets: facets.filter((facet) => metrics[facet].recall === null),
+      ...(includeBreakdowns && {
+        facetsByLanguage: groupedFacets(language),
+        facetsByFormat: groupedFacets(({ format }) => format),
+      }),
       automaticPromotion: false, modelTraining: false,
     };
   }
