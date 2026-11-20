@@ -24,6 +24,7 @@ RUN_ID = re.compile(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
 EXCLUSIONS = {
     "artifact_mismatch": "The exact artifact repository, revision, file or digest differs from the pin.",
     "backend_mismatch": "The approved backend differs from the planned backend for this machine.",
+    "contributor": "The release labels this measurement contributor-reported. It is excluded from controlled comparisons.",
     "insufficient_samples": "The observation has fewer samples than the cohort requires.",
     "metric_mismatch": "The metric definition differs from the pinned unit, statistic or measurement boundary.",
     "missing_primary": "The approved run lacks the ranking metric.",
@@ -67,6 +68,8 @@ def public_field(row, key):
 
 
 def exclusion_reason(plan, cell, row, metrics):
+    if row["kind"] == "contributor":
+        return "contributor"
     if row["kind"] != "measured":
         return "synthetic"
     if not RUN_ID.fullmatch(public_field(row, "run_id") or ""):
