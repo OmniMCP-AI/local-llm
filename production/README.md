@@ -96,3 +96,9 @@ and the embedded loader returns 18,044 after normalization. The upstream
 community loader supplies 546 submissions that pass its Draft 7 schema. The
 140 video-scoped model references remain partial and the seed emits zero
 native models and zero community submissions.
+
+## Build the two-machine text pilot
+
+The [text pilot](fastest_text/README.md) builds a public report for the planned
+Apple M4 and GeForce RTX 4090 cells. It documents the pinned throughput protocol,
+Chinese task rubric, machine access blockers and reviewed runner intake.
