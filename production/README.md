@@ -169,6 +169,13 @@ The [text pilot](fastest_text/README.md) builds a public report for the planned
 Apple M4 and GeForce RTX 4090 cells. It documents the pinned throughput protocol,
 Chinese task rubric, machine access blockers and reviewed runner intake.
 
+## Build the two-machine image pilot
+
+The [image pilot](fastest_image/README.md) uses the same planned Apple M4 and
+GeForce RTX 4090 cells for one pinned ComfyUI workflow. It reports completion
+time, accepted images and access blockers from the same ledger in Markdown,
+HTML and typed JSON.
+
 ## Controlled agent-task comparison
 
 The [inventory agent task](fastest_agent_task/README.md) compares time and success

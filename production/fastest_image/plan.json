@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "id": "two-machine-image-pilot-v1",
+  "access_checked_on": "2026-11-21",
+  "workflow": {
+    "path": "workflow.json",
+    "sha256": "809e36aeab6a4ab469852147a40f8629e268a3c901f00ad1dcbdeec616700b64",
+    "reference": "https://comfy.org/hub/workflows/sdxl-turbo-9c0e04762e99/",
+    "width": 512,
+    "height": 512,
+    "batch_size": 1,
+    "sampler": "euler_ancestral",
+    "scheduler": "SDTurboScheduler",
+    "steps": 1,
+    "cfg": 1.0,
+    "denoise": 1,
+    "sampler_node": "7",
+    "output_node": "9"
+  },
+  "artifact": {
+    "repository": "stabilityai/sdxl-turbo",
+    "revision": "cf0e5cbf9cb1ce0f632875ea8e1b996a9df869d8",
+    "path": "sd_xl_turbo_1.0_fp16.safetensors",
+    "bytes": 6938081905,
+    "sha256": "e869ac7d6942cb327d68d5ed83a40447aadf20e0c3358d98b2cc9e270db0da26",
+    "source": "https://huggingface.co/stabilityai/sdxl-turbo/blob/cf0e5cbf9cb1ce0f632875ea8e1b996a9df869d8/sd_xl_turbo_1.0_fp16.safetensors",
+    "license": "sai-nc-community at the pinned revision",
+    "components": "The single checkpoint contains the model, both text encoders and the VAE. The graph uses core nodes only.",
+    "license_source": "https://huggingface.co/stabilityai/sdxl-turbo/blob/cf0e5cbf9cb1ce0f632875ea8e1b996a9df869d8/LICENSE.TXT"
+  },
+  "runtime": {
+    "name": "ComfyUI",
+    "tag": "v0.3.28",
+    "revision": "a14c2fc3565277dfe8ab0ecb22a86c1d0a1f72cf",
+    "source": "https://github.com/Comfy-Org/ComfyUI/tree/a14c2fc3565277dfe8ab0ecb22a86c1d0a1f72cf",
+    "python": "3.11",
+    "flags": [
+      "--disable-all-custom-nodes",
+      "--cache-classic",
+      "--fp16-unet",
+      "--fp32-vae",
+      "--fp32-text-enc",
+      "--preview-method",
+      "none"
+    ]
+  },
+  "protocol": {
+    "id": "comfyui-sdxl-turbo-solo@1",
+    "warmup_seed": 731000,
+    "repeat_seeds": [
+      731001,
+      731002,
+      731003,
+      731004,
+      731005
+    ],
+    "timeout_s": 180,
+    "method": "Start one clean ComfyUI process on a quiet host. Queue one warmup, then submit each repeat in seed order with one active accelerator and no other queued jobs. Keep the process and default residency policy between requests. Fixed graph inputs can use the classic node cache. Each unique seed forces sampling, decoding and saving again.",
+    "boundary": "Use a monotonic client clock on the same host. Start just before POST /prompt. End when the complete PNG is read from /view or when a terminal error or the deadline is observed. Record offsets for the first execution events for sampler, decode and save, followed by successful execution completion. Time includes local transport and PNG retrieval. Exclude setup before POST, inter-attempt recovery and offline review.",
+    "phase_endpoints": [
+      {
+        "id": "sampler",
+        "node": "7",
+        "boundary": "Receive executing node 7. Includes queueing and any upstream conditioning or loading."
+      },
+      {
+        "id": "decode",
+        "node": "8",
+        "boundary": "Receive executing node 8. Time since sampler start covers sampling as observed by the client."
+      },
+      {
+        "id": "save",
+        "node": "9",
+        "boundary": "Receive executing node 9. Time since decode start covers VAE decoding as observed by the client."
+      },
+      {
+        "id": "complete",
+        "node": null,
+        "boundary": "Receive executing with a null node after SaveImage for the same prompt. Time since save start covers PNG encoding and the server completion event."
+      }
+    ]
+  },
+  "rubric": {
+    "id": "blue-mug-image-review@1",
+    "method": "Give a reviewer the exact prompt and each retrieved PNG under an opaque ID without machine or timing details. Score each criterion as pass or fail without editing the image. A repeat is accepted only if all criteria pass. Review is outside the timing boundary.",
+    "criteria": {
+      "technical": "The file decodes as a 512 × 512 PNG with a populated, visible image.",
+      "subject": "One cobalt blue ceramic mug is visible, with one recognizable intact handle and no duplicate mug.",
+      "framing": "The mug is fully in frame and approximately centered against a plain light gray background.",
+      "presentable": "There are no visible words, logos, watermarks or major image artifacts that require retouching."
+    },
+    "provenance": "Original project prompt and visual rubric for a fictional unbranded product."
+  },
+  "cells": [
+    {
+      "id": "apple-m4",
+      "name": "Apple M4",
+      "backend": "Metal",
+      "platform": "macOS 14 or later on arm64 with PyTorch MPS",
+      "lock": {
+        "path": "requirements-mps.txt",
+        "sha256": "55b6ccb0a13bc0379c394c86dac0cb2ba85cc140381f73c59e7d7888d661f52c"
+      },
+      "blocker": "The checked Apple M4 host has 24 GiB of unified memory. The checked executable paths, package environment and standard model caches had no pinned ComfyUI installation or exact checkpoint ready to run."
+    },
+    {
+      "id": "rtx-4090",
+      "name": "GeForce RTX 4090",
+      "backend": "CUDA",
+      "platform": "Linux x86-64 with glibc 2.28 or later and PyTorch CUDA 12.4",
+      "lock": {
+        "path": "requirements-cuda.txt",
+        "sha256": "098d845f12381f082c3a8a11ba1bfadff44a9c52333c6162dbfc3fcb75399c65"
+      },
+      "blocker": "No authorized GeForce RTX 4090 host or operator-run evidence was available."
+    }
+  ]
+}

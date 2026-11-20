@@ -1,9 +1,10 @@
 import argparse
-from hashlib import sha256
 from html import escape
 import json
 from pathlib import Path
 import re
+
+from fastest_pilot_bundle import digest, json_text, write_bundle
 
 from .intake import apply_record
 
@@ -15,14 +16,6 @@ LATENCY_METRICS = {
         "Time to first visible answer", "Client request start to first visibly rendered answer text."
     ),
 }
-
-
-def json_text(data):
-    return json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n"
-
-
-def digest(text):
-    return sha256(text.encode("utf-8")).hexdigest()
 
 
 def missing(label, unit, boundary, reason):
@@ -215,11 +208,7 @@ def build(target, records, demo):
     payload = json_text(dataset)
     markdown, html = render(dataset, digest(payload))
     files = {"text-pilot.json": payload, "text-pilot.md": markdown, "text-pilot.html": html}
-    manifest = {name: digest(content) for name, content in files.items()}
-    target.mkdir()
-    for name, content in files.items():
-        (target / name).write_bytes(content.encode("utf-8"))
-    (target / "manifest.json").write_text(json_text({"id": dataset["id"], "files": manifest}), encoding="utf-8")
+    write_bundle(target, dataset["id"], files)
 
 
 def main():
