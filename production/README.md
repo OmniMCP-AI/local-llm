@@ -243,11 +243,15 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m fastest_fit verify
 The build uses the same archive pin and checked Cargo lockfile as the research
 contract verifier. A candidate update must review the preset and catalog
 payload hashes, run both verifiers, and compare the reviewed GPU and CPU
-offload outputs. The fixtures exercise the same real HTTP path with different
-worker bandwidth and model settings on one physical host. For a cross-host
-check, run the verifier on a second worker. Keep the prior deployment and
-its revision-named executable together for rollback. The server checks the
-executable's llmfit revision on startup.
+offload outputs. The [llmfit parity workflow](../.github/workflows/llmfit-parity.yml)
+builds and verifies the pinned engine on Linux x64 and macOS arm64. It checks
+that the complete `/fit.json` responses for GPU, CPU offload, and missing input
+are identical after sorting JSON keys. To reproduce the check on other
+workers, run `python3 -m fastest_fit verify --report fit-report.json` on each
+worker and compare the two reports with `diff -u`.
+
+Keep the prior deployment and its revision-named executable together for
+rollback. The server checks the executable's llmfit revision on startup.
 
 ## Reconcile the private video research seed
 
