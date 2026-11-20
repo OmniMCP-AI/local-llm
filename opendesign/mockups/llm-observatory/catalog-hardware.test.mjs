@@ -56,3 +56,10 @@ test("an image source withdrawal preserves its separately sourced board specific
   assert.equal(board.vendorSpec.gallery, undefined);
   assert.ok(catalog.cards.find(({ id }) => id === "intel-arc-a770-16gb").variants.some(({ id }) => id === board.id));
 });
+
+test("a source withdrawal removes boards whose parent identity disappears", async () => {
+  const { catalog } = await readHardwareCatalog(here, value => value?.endsWith("/hardware-profiles/V001-HP-G013.md"));
+  assert.ok(catalog.cards.some(({ id }) => id === "amd-radeon-rx-9070-xt"));
+  assert.ok(!catalog.cards.some(({ id }) => id === "amd-radeon-rx-9060-xt-16gb"));
+  assert.ok(!catalog.cards.some(({ id }) => id === "asus-dual-rx9060xt-16g"));
+});
