@@ -124,7 +124,8 @@ export function activeHighlights(highlights, pages, releaseDate) {
 }
 
 export async function writeWikiRelease({
-  output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [], topologies, scalingUrl,
+  output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
+  topologies, scalingUrl, advisorUrl,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
@@ -210,7 +211,7 @@ ${backlinksHtml}
   const homeBody = `<main class="wiki-release release-fallback">
 <h1>fastest.ai</h1><p>Also known as ${alternateName}.</p><p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
-<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a></nav>
+<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
 ${availableHighlights.length ? `<section><h2>Research highlights</h2><ul>
 ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">${escape(title)}</a> · ${escape(summary)}</li>`).join("\n")}
 </ul></section>` : ""}

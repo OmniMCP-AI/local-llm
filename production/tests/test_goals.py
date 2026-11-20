@@ -31,7 +31,7 @@ def read_price(release_id):
 
 
 @contextmanager
-def fixture_service(*, price=read_price, modify_record=None, privacy="local-only", rights_path=None):
+def fixture_service(*, price=read_price, price_release=PRICE_ID, modify_record=None, privacy="local-only", rights_path=None):
     with TemporaryDirectory(prefix="fastest-goals-fixtures-") as temp:
         root = Path(temp)
         for name, backend, prefill, decode in (
@@ -53,7 +53,7 @@ def fixture_service(*, price=read_price, modify_record=None, privacy="local-only
             "records": ["apple-m4.json", "rtx-4090.json"],
             "market": {"market": "US", "destination": "US-CA, ZIP 95814", "currency": "USD", "condition": "new"},
             "candidates": {
-                "apple-m4": {"build_revision": "fixture-m4-build-v1", "price_release": PRICE_ID,
+                "apple-m4": {"build_revision": "fixture-m4-build-v1", "price_release": price_release,
                              "privacy": {"value": privacy, "source": "fixture execution review"}},
                 "rtx-4090": {"privacy": {"value": "local-only", "source": "fixture execution review"}},
             },

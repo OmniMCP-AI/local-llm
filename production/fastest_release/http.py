@@ -16,7 +16,8 @@ from fastest_goals.page import render_goals
 from fastest_prices import PriceError, PriceReleaseNotFound
 
 from . import ReleaseError, ReleaseNotFound
-from .api import PublicApi
+from .advisor_page import ROUTE as ADVISOR_ROUTE, render as render_advisor
+from .api import ADVISOR_PATH, PublicApi
 from .artifacts import build_artifacts
 from .profiles import ProfileRelease, RUN_ID
 from .scaling import ROUTE as SCALING_ROUTE, render_scaling, scaling_report
@@ -70,6 +71,13 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
+        def log_request(self, code="-", size="-"):
+            path = self.path.partition("?")[0]
+            if path in {ADVISOR_ROUTE, ADVISOR_PATH}:
+                self.log_message('"%s %s %s" %s %s', self.command, path, self.request_version, code, size)
+            else:
+                super().log_request(code, size)
+
         def _respond(self, status, body="", content_type="text/plain; charset=utf-8", location=None, *, profile_script=False):
             encoded = body.encode("utf-8")
             self.send_response(status)
@@ -98,6 +106,10 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._scaling(path)
             if path in COST_ROUTES:
                 return self._cost(path, query)
+            if path == ADVISOR_ROUTE:
+                status, selection, result = api.advisor_form(query)
+                service = goal_versions.get(selection.get("revision"), goals)
+                return self._respond(status, render_advisor(service, selection, result), CONTENT_TYPES["benchmark.html"])
             if api.handles(path):
                 status, result, content_type = api.get(path, query)
                 body = json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n"
@@ -132,6 +144,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<title>fastest.ai</title><h1>fastest.ai</h1>'
                     '<p><a href="/profiles">Machine and model comparisons</a></p>'
                     '<p><a href="/goals">Compare setups by goal</a></p>'
+                    '<p><a href="/advisor">Guided advisor</a></p>'
                     '<p><a href="/costs">Compare text workload costs</a></p>'
                     f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],

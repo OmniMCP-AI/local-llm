@@ -41,10 +41,11 @@ def _select(name, label, selected, options):
     return f'<label>{escape(label)}<select name="{name}">{choices}</select></label>'
 
 
-def _number(name, label, value, required):
+def _number(name, label, value, required, *, minimum=0, maximum="999999999999.99999999", step="any"):
     extra = " required" if required else ""
+    inputmode = "numeric" if step == 1 else "decimal"
     return (f'<label>{escape(label)}<input name="{name}" type="number" value="{escape(value)}" '
-            f'min="0" max="999999999999.99999999" step="any" inputmode="decimal"{extra}></label>')
+            f'min="{minimum}" max="{maximum}" step="{step}" inputmode="{inputmode}"{extra}></label>')
 
 
 def _label(metric):
@@ -287,7 +288,7 @@ def render_goals(service, result, fit_enabled=False):
     return (
         '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         f'<title>Compare setups by goal · fastest.ai</title><style>{STYLE}</style><main>'
-        '<p><a href="/">fastest.ai</a></p><h1>Compare setups by goal</h1>'
+        '<p><a href="/">fastest.ai</a> · <a href="/advisor">Guided advisor</a></p><h1>Compare setups by goal</h1>'
         f'<p>{escape(terms)} · sorted within results by {escape(sort)}</p>'
         f'<p><a href="{escape(service.url(selection))}">Share this pinned view</a> · '
         f'<a href="{escape(service.url(selection, ".json"))}">Exact data (JSON)</a>{text_link}</p>'

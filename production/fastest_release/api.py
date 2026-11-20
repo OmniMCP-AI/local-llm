@@ -24,6 +24,7 @@ from .advisor import advise
 
 
 BASE = "/api/v1"
+ADVISOR_PATH = BASE + "/advisor"
 DESCRIPTION = BASE + "/openapi.json"
 CATALOG = "/.well-known/api-catalog"
 VERSION = "1.0.0"
@@ -133,7 +134,7 @@ class Operation:
     required: tuple = ()
 
 
-def _params(query, operation):
+def _params(query, operation, *, blank_as_missing=()):
     if len(query) > 4096:
         raise ValueError("Query exceeds 4096 characters.")
     pairs = parse_qsl(query, keep_blank_values=True, strict_parsing=True, errors="strict",
@@ -141,6 +142,7 @@ def _params(query, operation):
     selection = dict(pairs)
     if len(selection) != len(pairs) or selection.keys() - operation.parameters.keys():
         raise ValueError("Unknown or repeated API parameter.")
+    selection = {key: value for key, value in selection.items() if value or key not in blank_as_missing}
     if set(operation.required) - selection.keys():
         raise ValueError("A required API parameter is missing.")
     for key, value in selection.items():
@@ -210,7 +212,7 @@ class PublicApi:
                     "url": "string", "citations": "array", "rights": "object",
                 },
             ),
-            BASE + "/advisor": Operation(
+            ADVISOR_PATH: Operation(
                 self._advisor, "Guide one released configuration or cost decision",
                 ADVISOR_PARAMS, {
                     "decision": "string", "status": "string", "message": "string", "missing": _array({"type": "string"}),
@@ -291,6 +293,21 @@ class PublicApi:
 
     def handles(self, path):
         return path in {CATALOG, BASE} or path.startswith(BASE + "/")
+
+    def advisor_form(self, query):
+        """Interpret empty browser controls as missing before dispatching through the public API."""
+        if not query:
+            return 200, {}, None
+        try:
+            selection = _params(query, self.operations[ADVISOR_PATH], blank_as_missing=(
+                "budget", "decode", "machine", "months", "monthly_accepted", "prefill", "privacy",
+            ))
+        except ValueError:
+            return 400, {}, {"error": ERRORS[400]}
+        status, result, _ = self.get(ADVISOR_PATH, urlencode(selection))
+        if status == 400:
+            result = {"error": ERRORS[400]}
+        return status, selection, result
 
     def get(self, path, query):
         if path in {DESCRIPTION, CATALOG}:
