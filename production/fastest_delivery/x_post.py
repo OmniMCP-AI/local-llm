@@ -10,10 +10,11 @@ from zipfile import ZipFile, ZipInfo
 
 from fastest_release.validation import plain_text
 
-from .approval import create_approval, instant, json_bytes, read_sealed, require_window, retain, seal
+from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
 from .package import retain_package, verify_story
 
 
+ARCHIVE = "x-post.zip"
 PAYLOAD_FILES = ("post.txt", "chart.png", "chart-alt.txt")
 COPY = {
     "en": (
@@ -99,11 +100,11 @@ def prepare(store, draft_path, output_dir):
     return retain_package(output_dir, package["payload_sha256"], files)
 
 
-def _load_package(path):
-    package = read_sealed(path / "package.json", "payload_sha256")
+def _load_package(read):
+    package = decode_sealed(read("package.json"), "payload_sha256", "package.json")
     if package["schema_version"] != 1 or package["channel"] != "x" or set(package["files"]) != set(PAYLOAD_FILES):
         raise ValueError("unsupported X package")
-    files = {name: (path / name).read_bytes() for name in PAYLOAD_FILES}
+    files = {name: read(name) for name in PAYLOAD_FILES}
     if any(sha256(body).hexdigest() != package["files"][name] for name, body in files.items()):
         raise ValueError("package bytes differ from the reviewed payload")
     return package, files
@@ -113,7 +114,7 @@ def approve(package_path, approval_dir, *, account, payload_sha256, window_start
             approved_by, rights_reference):
     if not re.fullmatch(r"@[a-zA-Z0-9_]{1,15}", account):
         raise ValueError("account must be an X @handle")
-    package, _ = _load_package(package_path)
+    package, _ = _load_package(lambda name: (package_path / name).read_bytes())
     if payload_sha256 != package["payload_sha256"]:
         raise ValueError("reviewed payload digest differs from the requested approval")
     approval = create_approval(
@@ -152,7 +153,7 @@ def _receipt_path(directory, approval):
 
 def export(store, package_path, approval_path, delivery_dir):
     approval = _read_approval(approval_path)
-    package, files = _load_package(package_path)
+    package, files = _load_package(lambda name: (package_path / name).read_bytes())
     if (
         package["payload_sha256"] != approval["payload_sha256"]
         or package["draft"]["draft_revision"] != approval["story_revision"]
@@ -173,7 +174,7 @@ def export(store, package_path, approval_path, delivery_dir):
         for name, body in files.items():
             archive.writestr(ZipInfo(name), body)
     require_window(approval, datetime.now(timezone.utc))
-    handoff = retain(directory / "x-post.zip", output.getvalue())
+    handoff = retain(directory / ARCHIVE, output.getvalue())
     return _receipt_path(directory, approval) or handoff
 
 
@@ -193,7 +194,7 @@ def record_receipt(approval_path, delivery_dir, *, url, published_at, operator):
         raise ValueError("publication timestamp is in the future")
 
     directory = delivery_dir / approval["delivery_id"]
-    with ZipFile(directory / "x-post.zip") as archive:
+    with ZipFile(directory / ARCHIVE) as archive:
         if archive.read("approval.json") != json_bytes(approval):
             raise ValueError("the recorded handoff used a different approval")
     post_id = post[1]

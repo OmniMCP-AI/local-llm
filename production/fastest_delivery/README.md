@@ -1,5 +1,7 @@
 # Editorial handoffs
 
+Use the [seven-day distribution pilot guide](PILOT.md) to collect and audit the X and Shorts records.
+
 ## X pilot
 
 Run from `production/` with Python 3.11 or later. The preparation step also requires Pillow (`python3 -m pip install 'Pillow>=10.1,<13'`). Preparation and export use the same read-only PostgreSQL login and `FASTEST_EDITORIAL_DATABASE_URL` as the [editorial draft generator](../fastest_editorial/README.md).
