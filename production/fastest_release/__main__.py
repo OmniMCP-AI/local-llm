@@ -6,6 +6,7 @@ import sys
 
 from . import ReleaseError, ReleaseNotFound, ReleaseStore
 from .http import CONTENT_TYPES, make_server
+from .research import SEED_ROOT, import_seed, read_seed
 
 
 def main(argv=None):
@@ -27,6 +28,12 @@ def main(argv=None):
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", default=8000, type=int)
     serve.add_argument("--trusted-host", action="append", default=[], help="Allowed HTTP Host header, including its port if present.")
+    research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
+    research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
+    research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
+    research_read.add_argument("seed_id")
+    research_read.add_argument("kind", nargs="?")
+    research_read.add_argument("identifier", nargs="?")
     args = parser.parse_args(argv)
 
     if not args.database_url:
@@ -43,6 +50,10 @@ def main(argv=None):
             sys.stdout.write(store.artifact(args.release_id, args.name))
         elif args.command == "withdraw":
             store.withdraw(args.evidence_id, args.reason)
+        elif args.command == "research-import":
+            print(json.dumps(import_seed(store, args.seed_dir), ensure_ascii=False, indent=2))
+        elif args.command == "research-read":
+            print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
             with make_server(store, args.host, args.port, args.trusted_host) as server:
                 host, port = server.server_address
