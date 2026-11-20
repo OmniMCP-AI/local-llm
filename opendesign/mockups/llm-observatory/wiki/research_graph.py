@@ -69,7 +69,8 @@ def add_research(nodes, edges, guides):
             elif relation == "describes_task":
                 edge["annotation_file"] = "case-tasks.json"
             else:
-                edge["annotation_file"] = "research_graph.py#DIMENSIONS"
+                edge["annotation_file"] = (source_file if source_file == "editorial-sources.json"
+                                           else "research_graph.py#DIMENSIONS")
         edges.append(edge)
 
     def publication(key, title, fmt, publisher, published, url, context, source_file, language):
@@ -98,10 +99,23 @@ def add_research(nodes, edges, guides):
 
     for entry in read_json(HERE / "editorial-sources.json"):
         key, url = entry["id"], entry["url"]
+        source = "editorial-sources.json"
         metadata[key] = publication(key, entry["title"], entry["format"], entry["publisher"],
-                                    entry["date"], url, entry["context"], "editorial-sources.json", entry["language"])
+                                    entry["date"], url, entry["context"], source, entry["language"])
         for topic in entry["topics"]:
-            link(key, "topics/"+topic, "discusses", "editorial-sources.json", url)
+            link(key, "topics/"+topic, "discusses", source, url)
+        if "license" in entry:
+            metadata[key]["license"] = entry["license"]
+        for run in entry.get("series", []):
+            sid = run["id"]
+            node(sid, sid, source, url=run["url"])
+            link(key, sid, "reports_series", source, run["url"])
+            for record in run["records"]:
+                oid = record["id"]
+                fields = {name: value for name, value in record.items() if name not in ("id", "metric", "dimension")}
+                node(oid, record["metric"], source, **fields)
+                link(sid, oid, "contains_observation", source, record["url"])
+                link(oid, "dimensions/"+record["dimension"], "has_dimension", source, record["url"])
 
     video_topics = read_json(HERE / "video-topics.json")
     by_position = {}
@@ -185,6 +199,8 @@ def public_index(graph, source_ids):
         source = {k: n[k] for k in ("publisher", "date", "context", "url", "language")}
         if n.get("note"):
             source["note"] = n["note"]
+        if n.get("license"):
+            source["license"] = n["license"]
         source.update(id=key, title=n["label"], format=targets(key, "has_format")[0][0].split("/")[1],
                       topics={t.split("/")[1]: loc for t, loc in targets(key, "discusses")}, records=[])
         for sid, _ in targets(key, "reports_series"):

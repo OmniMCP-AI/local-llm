@@ -49,6 +49,7 @@ function renderSourceHtml(index, source) {
 <h2>${anchor(source.title, source.url)}</h2>
 <p class="metadata">${sourceFields(index, source).map(([, value]) => escape(value)).join(" · ")}</p>
 <p>${escape(source.context)}</p>
+${source.license ? `<p>${anchor(source.license.spdx + " license", source.license.url)} · ${escape(source.license.attribution)}</p>` : ""}
 <p class="metadata">${escape(source.id)}${source.note ? " · " + anchor("Source note", source.note) : ""}</p>
 <h3>Discussed use cases</h3>
 <ul class="topics">${tags(index, source).map(({ id, label, url, locator }) =>
@@ -117,6 +118,7 @@ export function renderResearchMarkdown(index) {
     `${sourceFields(index, source).map(([key, value]) => `**${key}** ${markdown(value)}`).join(" · ")}`,
     "", `Source ID \`${source.id}\`${source.note ? " · " + link("Source note", source.note) : ""}`,
     "", markdown(source.context),
+    ...(source.license ? ["", link(source.license.spdx + " license", source.license.url) + " · " + markdown(source.license.attribution)] : []),
     "", "**Discussed use cases**", "",
     ...tags(index, source).map(({ id, label, url, locator }) =>
       `- ${link(label, url)} (\`${id}\`${locator === url ? "" : " · " + markdown(locator)})`),

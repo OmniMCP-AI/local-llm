@@ -7,6 +7,12 @@ import { renderResearchHtml, renderResearchMarkdown } from "./research-release-r
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
 
+export async function readResearchApprovals(path) {
+  const defaults = JSON.parse(await readFile(new URL("./wiki/research-approvals.json", import.meta.url), "utf8"));
+  const overrides = path ? JSON.parse(await readFile(path, "utf8")) : {};
+  return { ...defaults, ...overrides };
+}
+
 // Reviewed editorial associations for the methods already described in the wiki.
 const methodTopics = [
   ["hardware-selection", "model-fit"], ["hardware-selection", "distributed-inference"],

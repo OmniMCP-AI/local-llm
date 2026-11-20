@@ -57,5 +57,60 @@
     ],
     "context": "The author compares capability and speed on a Radeon R9700. The model quantization and RAM loading policy both change, limiting what the reported differences can establish about either setting.",
     "language": null
+  },
+  {
+    "id": "llama-bench-jsonl-example",
+    "format": "article",
+    "title": "llama-bench prompt processing and generation example",
+    "publisher": "llama.cpp project",
+    "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L60-L70",
+    "date": "2025-04-28",
+    "topics": [
+      "evidence-research",
+      "runtime-tuning"
+    ],
+    "context": "The project documentation shows separate prompt processing and generation runs in its JSONL output example. The rows give average throughput and variation for each phase. Application task, quality, and artifact digest are unspecified.",
+    "language": "en",
+    "license": {
+      "spdx": "MIT",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/LICENSE",
+      "attribution": "Copyright (c) 2023-2024 The ggml authors"
+    },
+    "series": [
+      {
+        "id": "llama-bench-jsonl-series",
+        "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L280-L288",
+        "records": [
+          {
+            "id": "llama-bench-jsonl-prefill",
+            "dimension": "prefill",
+            "metric": "Prompt processing throughput (tokens/s)",
+            "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L287",
+            "timestamp": "2025-04-24T11:59:33Z",
+            "task": null,
+            "hardware": "NVIDIA GeForce RTX 4080 and AMD Ryzen 7 7800X3D",
+            "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf (reported filename)",
+            "runtime": "llama-bench build 5163 (8cf427ff), CUDA",
+            "quant": "Q4_K_M",
+            "conditions": "512 prompt tokens and 0 generated tokens. 0 preloaded KV tokens. Batch 2048, microbatch 512, 8 CPU threads, f16 keys and values, Flash Attention disabled, 99 GPU layers requested. Five repetitions.",
+            "evidence": "Project-reported documentation example"
+          },
+          {
+            "id": "llama-bench-jsonl-generation",
+            "dimension": "generation",
+            "metric": "Text generation throughput (tokens/s)",
+            "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L288",
+            "timestamp": "2025-04-24T11:59:33Z",
+            "task": null,
+            "hardware": "NVIDIA GeForce RTX 4080 and AMD Ryzen 7 7800X3D",
+            "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf (reported filename)",
+            "runtime": "llama-bench build 5163 (8cf427ff), CUDA",
+            "quant": "Q4_K_M",
+            "conditions": "0 prompt tokens and 128 generated tokens. 0 preloaded KV tokens. Batch 2048, microbatch 512, 8 CPU threads, f16 keys and values, Flash Attention disabled, 99 GPU layers requested. Five repetitions.",
+            "evidence": "Project-reported documentation example"
+          }
+        ]
+      }
+    ]
   }
 ]

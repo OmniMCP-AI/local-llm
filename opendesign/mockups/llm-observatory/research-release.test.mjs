@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,6 +33,51 @@ test("a public library emits the editorial references and excludes private video
   assert.equal(manifest.release, index.release);
   for (const [name, sha256] of Object.entries(manifest.artifacts)) {
     assert.equal(digest(await read(name)), sha256);
+  }
+});
+
+test("the public release preserves the cited llama-bench prefill and generation example", async (t) => {
+  const { readResearchApprovals } = await import("./research-release-build.mjs");
+  const { index, read } = await buildRelease(t, await readResearchApprovals());
+  const { filterResearch, readResearchFilters, researchReleaseUrl } = await import("./research-filter.mjs");
+  const published = JSON.parse(await read("index.json"));
+  const id = "llama-bench-jsonl-example";
+  const pin = "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4";
+  const loc = pin + "/examples/llama-bench/README.md";
+  const source = published.sources.find((entry) => entry.id === id);
+  assert.ok(source, "the reviewed upstream example is included by default");
+  assert.equal(source.publicationScope, "approved-metadata");
+  assert.equal(source.date, "2025-04-28");
+  assert.equal(source.language, "en");
+  assert.equal(source.license.url, pin + "/LICENSE");
+  assert.deepEqual(source.records.map(({ dimension, task, topics, url, metric }) =>
+    [dimension, task, topics, url, metric]), [
+    ["prefill", null, [], loc + "#L287", "Prompt processing throughput (tokens/s)"],
+    ["generation", null, [], loc + "#L288", "Text generation throughput (tokens/s)"],
+  ]);
+  const filter = (filters) => {
+    const url = new URL(researchReleaseUrl(index.release, filters), "https://fastest.ai");
+    const parsed = readResearchFilters(url.searchParams, published.vocabulary);
+    return filterResearch(published.sources, parsed, "en", (facet, tag) => tag)
+      .flatMap(({ records }) => records.map(({ dimension }) => dimension));
+  };
+  assert.deepEqual(filter({ topic: "runtime-tuning", task: "unspecified", dimension: "prefill" }), ["prefill"]);
+  assert.deepEqual(filter({ topic: "runtime-tuning", task: "runtime-tuning", dimension: "prefill" }), []);
+  const graph = JSON.parse(await read("graphify.json"));
+  for (const record of source.records) {
+    assert.ok(graph.links.some((edge) => edge.source === record.id && edge.target === "dimensions/" + record.dimension &&
+      edge.source_location === record.url));
+    assert.ok(!graph.links.some((edge) => edge.source === record.id && edge.relation === "describes_task"));
+  }
+  for (const artifact of ["library.html", "library.md"]) {
+    const body = await read(artifact);
+    assert.match(body, /Project-reported documentation example/);
+    assert.match(body, /MIT/);
+    assert.match(body, /0 preloaded KV tokens/);
+    assert.match(body, /8cf427ff/);
+  }
+  for (const artifact of ["library.html", "library.md", "index.json", "graphify.json"]) {
+    assert.doesNotMatch(await read(artifact), /7263\.609157|119\.844681|90\.940578|0\.699739/);
   }
 });
 
@@ -99,5 +144,19 @@ test("withdrawing a source removes related method entries from research publicat
   assert.ok(!index.methods.some(({ id }) => id === "method-15"));
   for (const artifact of ["library.html", "library.md", "index.json", "graphify.json"]) {
     assert.doesNotMatch(await read(artifact), /09GB4LtXUok/);
+  }
+});
+
+test("an operator withdrawal overrides the checked-in approval", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "fastest-research-approval-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const path = join(directory, "overrides.json");
+  const id = "llama-bench-jsonl-example";
+  await writeFile(path, JSON.stringify({ [id]: { status: "withdrawn" } }));
+  const { readResearchApprovals } = await import("./research-release-build.mjs");
+  const { index, read } = await buildRelease(t, await readResearchApprovals(path));
+  assert.ok(!index.sources.some((source) => source.id === id));
+  for (const artifact of ["library.html", "library.md", "index.json", "graphify.json"]) {
+    assert.doesNotMatch(await read(artifact), /llama-bench-jsonl|Project-reported documentation example/);
   }
 });
