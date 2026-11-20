@@ -15,6 +15,7 @@ from fastest_goals.page import render_goals
 from fastest_prices import PriceError, PriceReleaseNotFound
 
 from . import ReleaseError, ReleaseNotFound
+from .api import PublicApi
 from .artifacts import build_artifacts
 from .profiles import ProfileRelease, RUN_ID
 
@@ -54,6 +55,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     default_goals = GoalService()
     goals = goals or default_goals
     goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
+    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
@@ -83,6 +85,10 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._price(price_match[1])
             if path in COST_ROUTES:
                 return self._cost(path, query)
+            if api.handles(path):
+                status, result, content_type = api.get(path, query)
+                body = json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n"
+                return self._respond(status, body, content_type)
             if path == "/profiles/interaction.js":
                 return self._respond(200, profile_script, "text/javascript; charset=utf-8")
             if path in {"/profiles", "/profiles/current"}:

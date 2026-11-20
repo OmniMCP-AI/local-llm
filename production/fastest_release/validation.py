@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 import uuid
 
@@ -18,6 +19,16 @@ def plain_text(value):
         and value == value.strip()
         and all(character.isprintable() for character in value)
     )
+
+
+def valid_expiry(value):
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z", value):
+        return False
+    try:
+        datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def _text(value, label):
@@ -81,7 +92,10 @@ def validate(observation):
     _strings(source, "source", "label locator revision")
 
     rights = observation["rights"]
-    keys(rights, "decision_id destination core basis", "rights")
+    expires = isinstance(rights, dict) and "expires_at" in rights
+    keys(rights, "decision_id destination core basis" + (" expires_at" if expires else ""), "rights")
+    if expires and not valid_expiry(rights["expires_at"]):
+        raise InvalidObservation("rights.expires_at must be a UTC timestamp at second precision")
     _uuid(rights["decision_id"], "rights.decision_id")
     _text(rights["basis"], "rights.basis")
     if rights["destination"] != "public-release" or rights["core"] != "allow":

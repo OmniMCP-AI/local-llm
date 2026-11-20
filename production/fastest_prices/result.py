@@ -190,6 +190,7 @@ def build_result(snapshot):
             "condition", "currency", "data_class", "stale_after_days",
         )},
         "authorization_decision_id": snapshot["decision_id"],
+        **({"authorization_expires_at": snapshot["expires_at"]} if snapshot.get("expires_at") else {}),
         "start": snapshot["start"],
         "as_of": snapshot["as_of"],
         "last_success_at": last_success,

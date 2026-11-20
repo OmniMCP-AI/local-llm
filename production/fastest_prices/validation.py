@@ -3,6 +3,8 @@
 from datetime import date, datetime
 import re
 
+from fastest_release.validation import valid_expiry
+
 
 class PriceError(ValueError):
     """The price input or requested release is invalid."""
@@ -98,7 +100,11 @@ def cohort(value):
         raise PriceError("a direct seller cohort must identify one canonical seller")
 
     rights = value["authorization"]
-    _fields(rights, "authorization", "decision_id record status collect retain display export aggregate")
+    expires = isinstance(rights, dict) and "expires_at" in rights
+    fields = "decision_id record status collect retain display export aggregate"
+    _fields(rights, "authorization", fields + (" expires_at" if expires else ""))
+    if expires and not valid_expiry(rights["expires_at"]):
+        raise PriceError("authorization.expires_at must be a UTC timestamp at second precision")
     _text(rights["decision_id"], "authorization decision")
     _text(rights["record"], "authorization record")
     _choice(rights["status"], "authorization status", ("approved",))

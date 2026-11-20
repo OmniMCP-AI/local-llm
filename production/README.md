@@ -40,6 +40,51 @@ For a rights withdrawal, run `python3 -m fastest_release withdraw EVIDENCE_UUID 
 
 The Python interfaces are `ReleaseStore.migrate()`, `publish(observation)`, `read(release_id=None)`, `artifact(release_id, name)`, and `withdraw(evidence_id, reason)`. `read()` resolves the current pointer and returns the released row or a withdrawal record. Keep the release ID to access the same snapshot in other formats.
 
+## Query the public release API
+
+Run `python3 -m fastest_release serve`. The OpenAPI 3.1 description is served at
+`/api/v1/openapi.json`, and `/.well-known/api-catalog` links to it in
+[API catalog format](https://www.rfc-editor.org/rfc/rfc9727). Discovery reflects
+the readers configured on that listener. It includes the evidence operation
+when the observation database is configured and historical offers when a
+price reader is configured.
+
+| GET path | Inputs and result |
+| --- | --- |
+| `/api/v1/search` | Optional `q`, `kind=machines\|models` and profile `revision`. Returns catalog IDs and pinned profile links. |
+| `/api/v1/coverage` | `kind` and profile `id`. Returns cohort conditions, evidence references and exclusions. |
+| `/api/v1/evidence` | `evidence_id=<UUID>` resolves the most recent revision of that evidence. Use `release=<UUID>` to replay a specific release. Supplying both verifies the evidence ID in that release. |
+| `/api/v1/comparison` | The same selectors as the goals form, plus optional goals `revision`. Returns comparison values, gates, exclusions and the pinned page URL. |
+| `/api/v1/comparison/profile` | `kind` and profile `id`. Returns the controlled cohort's measurements and exclusions in display order. |
+| `/api/v1/historical-offers` | Price `release=<UUID>`. Returns reviewed quotes in their original currency, with freshness, eligibility, conditions and citations. |
+| `/api/v1/calculator` | `scenario`, `monthly_accepted` and `months` match the cost page. An optional `revision` verifies the replayed calculation. Pass `scenario=illustrative` to reproduce the clearly labeled example. |
+
+Search, coverage, profile comparisons and historical offers accept `limit`
+(1–100, default 25) and `offset` (0–10,000). Reuse the same selectors and
+resolved profile revision or price release with the returned `next_offset`.
+A null offset ends paging. Quote listings reflect display and export rights.
+Numeric aggregates require their own authorization. Missing values stay null
+with the source's status or explanation. Decimal amounts are strings. A
+listener accepts up to 120 API operation requests per rolling minute.
+
+Run the observation and price migrations against the serving database as the
+schema owner. A read-only login can resolve evidence IDs and dated offers with
+the following additional grants where those operations are configured.
+
+```sql
+GRANT EXECUTE ON FUNCTION fastest_release.read_evidence(uuid) TO fastest_release_reader;
+GRANT USAGE ON SCHEMA fastest_prices TO fastest_release_reader;
+GRANT EXECUTE ON FUNCTION fastest_prices.read_release(uuid) TO fastest_release_reader;
+```
+
+Optional `rights.expires_at` on an observation and
+`authorization.expires_at` on a price cohort accept UTC timestamps with
+seconds, for example `2027-01-01T00:00:00Z`. At and after that instant the
+canonical reader treats each affected release as withdrawn, including saved
+releases. Evidence and historical-offer queries then return 410 with no
+measurement or offer rows. Profile and goals pages reflect the resulting
+coverage or budget gaps.
+
 ## Test the integrated production code
 
 The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, and Pillow 10.1–12 for channel packaging. From `production/`, run this in a local environment with those tools. With uv, the command installs Pillow in an isolated environment.

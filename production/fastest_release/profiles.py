@@ -172,16 +172,19 @@ class ProfileRelease:
     def url(self, kind, identity, extension="html"):
         return f"{self.base}/{kind}/{quote(identity)}.{extension}"
 
-    def index(self):
-        profiles = [
-            (kind, identity, name)
+    def catalog(self):
+        return [
+            {"kind": kind, "id": identity, "name": name}
             for kind, items in (("machines", self.machines), ("models", {key: value[0] for key, value in MODELS.items()}))
             for identity, name in items.items()
         ]
+
+    def index(self):
+        profiles = self.catalog()
         groups = "".join(
             f"<section><h2>{kind.title()}</h2><ul>"
-            + "".join(f'<li><a href="{self.url(kind, identity)}">{escape(name)}</a></li>'
-                      for group, identity, name in profiles if group == kind)
+            + "".join(f'<li><a href="{self.url(kind, entry["id"])}">{escape(entry["name"])}</a></li>'
+                      for entry in profiles if entry["kind"] == kind)
             + "</ul></section>"
             for kind in ("machines", "models")
         )
