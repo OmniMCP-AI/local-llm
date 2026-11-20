@@ -1,0 +1,94 @@
+{
+  "cohort": {
+    "id": "illustrative-us-example-accelerator",
+    "source_id": "example-direct-feed",
+    "source_revision": "illustrative-v1",
+    "source_type": "seller",
+    "market": "US",
+    "destination": "US-CA, ZIP 95814",
+    "scope": {"kind": "sku", "id": "example-accelerator-16", "revision_id": "example-accelerator-16-v1"},
+    "condition": "new",
+    "currency": "USD",
+    "seller_aliases": {"Example store": "example-seller", "Example storefront": "example-seller"},
+    "data_class": "illustrative",
+    "stale_after_days": 2,
+    "minimum_samples": 3,
+    "minimum_sellers": 2,
+    "authorization": {
+      "decision_id": "illustrative-approval-only",
+      "record": "illustrative-authorization-file",
+      "status": "approved",
+      "collect": "allow",
+      "retain": "allow",
+      "display": "allow",
+      "export": "allow",
+      "aggregate": "allow"
+    }
+  },
+  "captures": [
+    {
+      "id": "november-01",
+      "source_id": "example-direct-feed",
+      "source_revision": "illustrative-v1",
+      "checked_at": "2026-11-01T13:00:00Z",
+      "status": "success",
+      "observations": [
+        {
+          "listing_id": "offer-a",
+          "seller": "Example store",
+          "market": "US",
+          "destination": "US-CA, ZIP 95814",
+          "scope": {"kind": "sku", "id": "example-accelerator-16", "revision_id": "example-accelerator-16-v1"},
+          "condition": "new",
+          "currency": "USD",
+          "kind": "asking",
+          "confirmation": "seller_confirmed",
+          "stock": "in_stock",
+          "observed_at": "2026-11-01T12:00:00Z",
+          "price": "240.00",
+          "tax": {"basis": "excluded", "amount": "19.20"},
+          "shipping": {"basis": "unknown", "amount": null},
+          "discount": "unconditional",
+          "source_locator": "example-feed/2026-11-01/offer-a",
+          "review": {"decision_id": "illustrative-offer-review-a", "status": "approved"}
+        }
+      ]
+    },
+    {
+      "id": "november-02",
+      "source_id": "example-direct-feed",
+      "source_revision": "illustrative-v1",
+      "checked_at": "2026-11-02T13:00:00Z",
+      "status": "failed",
+      "observations": []
+    },
+    {
+      "id": "november-03",
+      "source_id": "example-direct-feed",
+      "source_revision": "illustrative-v1",
+      "checked_at": "2026-11-03T13:00:00Z",
+      "status": "success",
+      "observations": [
+        {
+          "listing_id": "offer-a",
+          "seller": "Example storefront",
+          "market": "US",
+          "destination": "US-CA, ZIP 95814",
+          "scope": {"kind": "sku", "id": "example-accelerator-16", "revision_id": "example-accelerator-16-v1"},
+          "condition": "new",
+          "currency": "USD",
+          "kind": "asking",
+          "confirmation": "seller_confirmed",
+          "stock": "in_stock",
+          "observed_at": "2026-11-03T12:00:00Z",
+          "price": "235.00",
+          "tax": {"basis": "excluded", "amount": "18.80"},
+          "shipping": {"basis": "excluded", "amount": "0"},
+          "discount": "unconditional",
+          "source_locator": "example-feed/2026-11-03/offer-a",
+          "review": {"decision_id": "illustrative-offer-review-b", "status": "approved"}
+        }
+      ]
+    }
+  ]
+}

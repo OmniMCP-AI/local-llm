@@ -1,5 +1,6 @@
 ---
 title: Read an evidence record
+status: published
 kind: guide
 use_cases: evidence-research, model-fit
 summary: Distinguish measured examples, reported results, estimates, and missing runs.

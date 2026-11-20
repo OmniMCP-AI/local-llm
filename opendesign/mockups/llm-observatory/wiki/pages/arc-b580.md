@@ -1,5 +1,6 @@
 ---
 title: Intel Arc B580
+status: published
 kind: machine
 entity: arc-b580
 summary: A 12 GB desktop profile that demonstrates missing benchmark coverage.

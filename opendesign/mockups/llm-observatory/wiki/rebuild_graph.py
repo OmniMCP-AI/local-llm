@@ -30,7 +30,7 @@ def main():
         _, frontmatter, body = document.split("---", 2)
         title = TITLE.search(frontmatter)[1]
         fields = dict(line.split(": ", 1) for line in frontmatter.strip().splitlines())
-        if fields["kind"] == "guide" and path.stem != "index":
+        if fields["kind"] == "guide" and fields.get("status") == "published" and path.stem != "index":
             guides[path.stem] = fields
         nodes.append({"id": path.stem, "label": title, "file_type": "document", "source_file": source})
         for number, line in enumerate(body.splitlines(), frontmatter.count("\n") + 1):

@@ -1,5 +1,6 @@
 ---
 title: Model library
+status: published
 kind: page
 summary: Choose an exact artifact and compare how it runs across machines.
 ---

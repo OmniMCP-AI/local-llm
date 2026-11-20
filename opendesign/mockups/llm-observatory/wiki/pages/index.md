@@ -1,5 +1,6 @@
 ---
 title: Fastest.ai wiki
+status: published
 kind: guide
 summary: A field guide to choosing hardware, running models, and reading benchmark evidence.
 ---
@@ -24,6 +25,5 @@ Start with a build, a model, or a workload. Follow the links between pages to se
 - [Find a viable setup](#explorer), [compare ownership and payback](#costs), or use [Price watch](#prices) for comparable whole-build quotes.
 - Open the [RTX 4090 build](#machines/rtx-4090) or [Mac mini M4 Pro profile](#machines/m4-pro).
 - Start from [Qwen2.5 7B Instruct](#models/qwen25-7b), [Qwen2.5 14B Instruct](#models/qwen25-14b), or [Llama 3.1 8B Instruct](#models/llama31-8b) to compare machines.
-- [For agents](#agents) shows how the same evidence can be cited programmatically.
 
 Open [Technology in motion](#wiki/technology) to explore the conceptual data path and its components.
