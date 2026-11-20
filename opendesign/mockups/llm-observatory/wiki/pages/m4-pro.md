@@ -1,5 +1,6 @@
 ---
 title: Mac mini M4 Pro
+status: published
 kind: machine
 entity: m4-pro
 summary: A compact 24 GB unified-memory system profile.

@@ -1,5 +1,6 @@
 ---
 title: Machine profiles
+status: published
 kind: page
 summary: Start with a machine. Inspect its components, plan the build, and see which models have results.
 ---

@@ -1,5 +1,6 @@
 ---
 title: For agents
+status: preview
 kind: page
 summary: Review examples of external agents querying the same evidence as the website.
 ---

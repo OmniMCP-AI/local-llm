@@ -1,5 +1,6 @@
 ---
 title: Mac Studio M4 Max
+status: published
 kind: machine
 entity: m4-max
 summary: A unified-memory workstation with community context in the demo.

@@ -1,5 +1,6 @@
 ---
 title: Technology in motion
+status: published
 kind: guide
 use_cases: distributed-inference, hardware-selection
 summary: Follow the data through a local inference system and click the parts to see what they do.

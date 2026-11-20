@@ -1,5 +1,6 @@
 ---
 title: Llama 3.1 8B Instruct
+status: published
 kind: model
 entity: llama31-8b
 summary: A separate model family in the sample machine comparison.

@@ -1,5 +1,6 @@
 ---
 title: Qwen2.5 14B Instruct
+status: published
 kind: model
 entity: qwen25-14b
 summary: A larger reference artifact with partial machine coverage in the demo.

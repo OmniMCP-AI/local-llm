@@ -1,5 +1,6 @@
 ---
 title: Qwen2.5 7B Instruct
+status: published
 kind: model
 entity: qwen25-7b
 summary: The reference text artifact in the prototype comparison.

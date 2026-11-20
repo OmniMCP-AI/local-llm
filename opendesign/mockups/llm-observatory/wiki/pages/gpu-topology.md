@@ -1,5 +1,6 @@
 ---
 title: GPU topology
+status: published
 kind: guide
 use_cases: distributed-inference, model-fit, hardware-selection
 summary: Compare one card, several cards, or several machines without treating them as the same thing.

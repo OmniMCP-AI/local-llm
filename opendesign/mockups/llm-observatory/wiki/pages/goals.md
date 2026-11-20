@@ -1,5 +1,6 @@
 ---
 title: Compare by goals
+status: published
 kind: page
 summary: Set the limits you need, then see where speed, responsiveness, energy and cost pull in different directions.
 ---

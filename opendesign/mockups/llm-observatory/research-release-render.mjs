@@ -3,7 +3,7 @@ const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
 })[char]);
 const markdown = (value) => String(value).replace(/[\\`*_{}\[\]<>]/g, "\\$&").replace(/\r?\n/g, " ");
 const href = (url) => {
-  if (url.startsWith("#wiki/")) return "/" + url;
+  if (url.startsWith("#wiki/")) return "/wiki/" + url.slice("#wiki/".length) + "/";
   if (new URL(url).protocol === "https:") return url;
   throw new Error("Unsupported public research URL");
 };
@@ -69,6 +69,8 @@ ${entries.map(([id, text]) => `<option value="${escape(id)}">${escape(text)}</op
 </section>`).join("\n");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Research library | fastest.ai</title>
+<link rel="canonical" href="/research/${escape(index.release)}/library">
+<link rel="alternate" type="text/markdown" href="./library.md" title="Markdown">
 <style>
 body{color:#17212b;background:#f8f9fa;font:1rem/1.55 system-ui,sans-serif;margin:0}
 main{max-width:58rem;margin:auto;padding:1.5rem 1rem 3rem}
@@ -83,7 +85,7 @@ summary{cursor:pointer;font-weight:600} small,.metadata{color:#4b5864}
 dt{font-weight:600} dd{margin:0} #methods section{border-top:1px solid #d1d9e0;padding:.45rem 0}
 [hidden]{display:none!important}
 </style><script type="module" src="./library.mjs"></script></head><body><main>
-<nav aria-label="Research library resources"><a href="/#wiki">Wiki</a><a href="#methods">Research methods</a>
+<nav aria-label="Research library resources"><a href="/wiki/">Wiki</a><a href="#methods">Research methods</a>
 <a href="./library.md">Markdown</a><a href="./index.json">Index data</a><a href="./graphify.json">Graphify index</a>
 <a href="./manifest.json">Release manifest</a></nav>
 <h1>Research library</h1>
