@@ -18,6 +18,7 @@ async function buildFixture(t) {
   return {
     release,
     read: (name) => readFile(join(output, "catalog", release, name), "utf8"),
+    readData: (name) => readFile(join(output, "catalog-data", release, name), "utf8").then(JSON.parse),
     request: (path) => onRequestGet({
       request: new Request(host + "/catalog/" + release + "/" + path),
       params: { release, path: path.split("/") },
@@ -104,6 +105,52 @@ test("runtime cards cite pinned releases and keep documented support apart from 
       assert.ok(text.includes("Upstream documented support"));
       assert.ok(text.includes(format));
       assert.ok(text.includes("No fastest.ai compatibility test is published in this release"));
+    }
+  }
+});
+
+test("versioned hardware cards preserve uncertain memory, source links and board variants", async (t) => {
+  const { read, request } = await buildFixture(t);
+  const { hardware } = JSON.parse(await read("manifest.json"));
+  assert.equal(hardware.asOf, "2026-11-21");
+  assert.equal(hardware.coverage.cards, 102);
+  assert.equal(hardware.coverage.researchProfiles, 116);
+
+  const machine = "machines/V018-HP-C002";
+  const card = "cards/nvidia-geforce-rtx-2080-ti-colorful-modified";
+  for (const extension of ["html", "md"]) {
+    const response = await request(`${machine}.${extension}`);
+    assert.equal(response.status, 200);
+    const text = await response.text();
+    assert.match(text, /Partial configuration/);
+    assert.match(text, /20 GB system RAM limit/);
+    assert.match(text, /Installed system memory.*Unknown/);
+    assert.match(text, /Untested in this release/);
+    assert.match(text, /1PJGtLpYGOY/);
+
+    const variant = await request(`${card}.${extension}`);
+    assert.equal(variant.status, 200);
+    const variantText = await variant.text();
+    assert.match(variantText, /Colorful GeForce RTX 2080 Ti/);
+    assert.match(variantText, /capacities conflict/);
+    assert.match(variantText, /cards\/nvidia-geforce-rtx-2080-ti\.html/);
+    assert.match(variantText, /V029-HP-C001/);
+  }
+  assert.equal((await request("cards/nvidia-rtx-2080-ti-every-board.html")).status, 404);
+});
+
+test("every released hardware row resolves in both formats", async (t) => {
+  const { readData, request } = await buildFixture(t);
+  for (const [kind, count] of [["cards", 102], ["machines", 119]]) {
+    const rows = await readData(kind + ".json");
+    assert.equal(rows.length, count);
+    for (const { id, source } of rows) {
+      const detail = kind + "/" + id;
+      for (const format of ["html", "md"]) {
+        const response = await request(detail + "." + format);
+        assert.equal(response.status, 200, detail + "." + format);
+        assert.ok((await response.text()).includes(source), id + " must retain its original source");
+      }
     }
   }
 });

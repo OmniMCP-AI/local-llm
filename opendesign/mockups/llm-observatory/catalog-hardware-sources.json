@@ -1,0 +1,390 @@
+{
+  "asOf": "2026-11-21",
+  "upstream": {
+    "commit": "26450cccaf3a3f14b1822875f2473847a744a718",
+    "commitDate": "2026-11-18T14:59:13Z",
+    "lookupPath": "llmfit-core/src/hardware.rs",
+    "lookupSha256": "10186abd9095c636aedc5fd11f69c97cedab8930724fa6e9028e8e3f0c6ec94c",
+    "discreteMatchers": [
+      ["nvidia-geforce-rtx-5090", "5090", 3372],
+      ["nvidia-geforce-rtx-5080", "5080", 3375],
+      ["nvidia-geforce-rtx-5070-ti", "5070 ti", 3378],
+      ["nvidia-geforce-rtx-5070", "5070", 3381],
+      ["nvidia-geforce-rtx-5060-ti", "5060 ti", 3384],
+      ["nvidia-geforce-rtx-5060", "5060", 3387],
+      ["nvidia-geforce-rtx-4090", "4090", 3392],
+      ["nvidia-geforce-rtx-4080-super", "4080 super", 3395],
+      ["nvidia-geforce-rtx-4080", "4080", 3398],
+      ["nvidia-geforce-rtx-4070-ti-super", "4070 ti super", 3401],
+      ["nvidia-geforce-rtx-4070-ti", "4070 ti", 3404],
+      ["nvidia-geforce-rtx-4070-super", "4070 super", 3407],
+      ["nvidia-geforce-rtx-4070", "4070", 3410],
+      ["nvidia-geforce-rtx-4060-ti", "4060 ti", 3413],
+      ["nvidia-geforce-rtx-4060", "4060", 3416],
+      ["nvidia-geforce-rtx-3090-ti", "3090 ti", 3421],
+      ["nvidia-geforce-rtx-3090", "3090", 3424],
+      ["nvidia-geforce-rtx-3080-ti", "3080 ti", 3427],
+      ["nvidia-geforce-rtx-3080", "3080", 3430],
+      ["nvidia-geforce-rtx-3070-ti", "3070 ti", 3433],
+      ["nvidia-geforce-rtx-3070", "3070", 3436],
+      ["nvidia-geforce-rtx-3060-ti", "3060 ti", 3439],
+      ["nvidia-geforce-rtx-3060", "3060", 3442],
+      ["nvidia-geforce-rtx-2080-ti", "2080 ti", 3447],
+      ["nvidia-geforce-rtx-2080-super", "2080 super", 3450],
+      ["nvidia-geforce-rtx-2080", "2080", 3453],
+      ["nvidia-geforce-rtx-2070-super", "2070 super", 3456],
+      ["nvidia-geforce-rtx-2070", "2070", 3459],
+      ["nvidia-geforce-rtx-2060-super", "2060 super", 3462],
+      ["nvidia-geforce-rtx-2060", "2060", 3465],
+      ["nvidia-geforce-gtx-1660-ti", "1660 ti", 3470],
+      ["nvidia-geforce-gtx-1660-super", "1660 super", 3473],
+      ["nvidia-geforce-gtx-1660", "1660", 3476],
+      ["nvidia-geforce-gtx-1650-super", "1650 super", 3479],
+      ["nvidia-geforce-gtx-1650", "1650", 3482],
+      ["nvidia-h100-sxm", "h100 sxm", 3487],
+      ["nvidia-h100", "h100", 3490],
+      ["nvidia-h200", "h200", 3493],
+      ["nvidia-a100-sxm", "a100 sxm", 3496],
+      ["nvidia-a100", "a100", 3499],
+      ["nvidia-l40s", "l40s", 3502],
+      ["nvidia-l40", "l40", 3505],
+      ["nvidia-l4", "l4", 3508],
+      ["nvidia-a10g", "a10g", 3511],
+      ["nvidia-a10", "a10", 3514],
+      ["nvidia-tesla-t4", "t4", 3517],
+      ["nvidia-tesla-v100-sxm", "v100 sxm", 3520],
+      ["nvidia-tesla-v100", "v100", 3523],
+      ["nvidia-rtx-a6000", "a6000", 3526],
+      ["nvidia-rtx-a5000", "a5000", 3529],
+      ["nvidia-rtx-a4000", "a4000", 3532],
+      ["amd-radeon-rx-9070-xt", "9070 xt", 3551],
+      ["amd-radeon-rx-9070", "9070", 3554],
+      ["amd-radeon-rx-7900-xtx", "7900 xtx", 3559],
+      ["amd-radeon-rx-7900-xt", "7900 xt", 3562],
+      ["amd-radeon-rx-7900-gre", "7900 gre", 3565],
+      ["amd-radeon-rx-7800-xt", "7800 xt", 3568],
+      ["amd-radeon-rx-7700-xt", "7700 xt", 3571],
+      ["amd-radeon-rx-7600", "7600", 3574],
+      ["amd-radeon-rx-6950-xt", "6950 xt", 3579],
+      ["amd-radeon-rx-6900-xt", "6900 xt", 3582],
+      ["amd-radeon-rx-6800-xt", "6800 xt", 3585],
+      ["amd-radeon-rx-6800", "6800", 3588],
+      ["amd-radeon-rx-6700-xt", "6700 xt", 3591],
+      ["amd-radeon-rx-6600-xt", "6600 xt", 3594],
+      ["amd-radeon-rx-6600", "6600", 3597],
+      ["amd-instinct-mi300x", "mi300x", 3602],
+      ["amd-instinct-mi300", "mi300", 3605],
+      ["amd-instinct-mi250x", "mi250x", 3608],
+      ["amd-instinct-mi250", "mi250", 3611],
+      ["amd-instinct-mi210", "mi210", 3614],
+      ["amd-instinct-mi100", "mi100", 3617]
+    ],
+    "presets": [
+      {
+        "id": "llmfit-apple-m3-max-128gb",
+        "name": "Apple M3 Max (128 GB profile)",
+        "path": "llmfit-core/data/hardware/apple-m3-max-128gb.json",
+        "sha256": "2261808d7b4ed5db88b4a3a22ab943ddc9878ac0c15324c6691ab0cdf2019c39",
+        "gpu": "Apple M3 Max",
+        "memoryGb": 128.0,
+        "unified": true
+      },
+      {
+        "id": "llmfit-nvidia-rtx-4090",
+        "name": "NVIDIA RTX 4090 (64 GB system profile)",
+        "path": "llmfit-core/data/hardware/nvidia-rtx-4090.json",
+        "sha256": "a9e8ff17f209204d907869dbcc04f70aa3dd5273dbe654ad14d2ef6409a3b5fe",
+        "gpu": "RTX 4090",
+        "memoryGb": 64.0,
+        "unified": false
+      },
+      {
+        "id": "llmfit-ryzen-ai-max-plus-395",
+        "name": "AMD Ryzen AI Max+ 395 (128 GB profile)",
+        "path": "llmfit-core/data/hardware/ryzen-ai-max-plus-395.json",
+        "sha256": "9381c103403e101c582a78d08b958bd28a8af143860450230ab51dfd0cbcfba8",
+        "gpu": "Radeon 8060S",
+        "memoryGb": 128.0,
+        "unified": true
+      }
+    ]
+  },
+  "research": {
+    "commit": "e8202e7dec1634b1529db4c123e7b3bfc2a1072b",
+    "profilesSha256": "a9a0f172b700cc280757db8c8747c1acdd1720afe8a61f97eb316593e9e8c6ff",
+    "nativeProfilesSha256": "a174c5ecd3d2efad524aa27cce9047841d5d44c5b917ba88d59b3bb109be4102"
+  },
+  "variants": [
+    {
+      "id": "amd-radeon-rx-7600",
+      "name": "AMD Radeon RX 7600",
+      "parent": null,
+      "profiles": [],
+      "variant": "Upstream lookup by product name"
+    },
+    {
+      "id": "amd-instinct-mi300",
+      "name": "AMD Instinct MI300 family",
+      "parent": null,
+      "profiles": [],
+      "variant": "Broad lookup shared by possible MI300 products; exact SKU unresolved"
+    },
+    {
+      "id": "nvidia-tesla-v100-sxm",
+      "name": "NVIDIA Tesla V100 SXM",
+      "parent": "nvidia-tesla-v100",
+      "profiles": [],
+      "variant": "SXM calibration; memory capacity not identified by matcher"
+    },
+    {
+      "id": "nvidia-tesla-v100-16gb",
+      "name": "NVIDIA Tesla V100 16 GB",
+      "parent": "nvidia-tesla-v100",
+      "profiles": [
+        "V025-HP-G008",
+        "V028-HP-G003",
+        "V028-HP-E07"
+      ],
+      "variant": "Form factor not reported",
+      "memory": "16 GB per GPU (creator reported)"
+    },
+    {
+      "id": "nvidia-tesla-v100-32gb",
+      "name": "NVIDIA Tesla V100 32 GB",
+      "parent": "nvidia-tesla-v100",
+      "profiles": [
+        "V025-HP-G007"
+      ],
+      "variant": "Form factor not reported",
+      "memory": "32 GB per GPU (creator reported)"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti-original-11gb",
+      "name": "NVIDIA GeForce RTX 2080 Ti original 11 GB",
+      "parent": "nvidia-geforce-rtx-2080-ti",
+      "profiles": [
+        "V025-HP-G001"
+      ],
+      "variant": "Original board from the comparison",
+      "memory": "11 GB per GPU (creator reported)"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti-modified-22gb",
+      "name": "NVIDIA GeForce RTX 2080 Ti modified 22 GB",
+      "parent": "nvidia-geforce-rtx-2080-ti",
+      "profiles": [
+        "V025-HP-C001",
+        "V025-HP-E03"
+      ],
+      "variant": "Modified board, vendor unspecified",
+      "memory": "22 GB per GPU (creator reported)"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti-colorful-modified",
+      "name": "Colorful GeForce RTX 2080 Ti (modified)",
+      "parent": "nvidia-geforce-rtx-2080-ti",
+      "profiles": [
+        "V029-HP-C001"
+      ],
+      "variant": "Colorful 300 (non-A) chip variant; reported capacities conflict"
+    },
+    {
+      "id": "nvidia-cmp-170hx-hynix",
+      "name": "NVIDIA CMP 170HX Hynix variant",
+      "parent": "nvidia-cmp-170hx",
+      "profiles": [
+        "V002-HP-G001"
+      ],
+      "variant": "Hynix memory variant",
+      "memory": "8 GB stock; up to 64 GB after modification (creator reported)"
+    },
+    {
+      "id": "nvidia-cmp-170hx-samsung",
+      "name": "NVIDIA CMP 170HX Samsung variant",
+      "parent": "nvidia-cmp-170hx",
+      "profiles": [
+        "V002-HP-G001"
+      ],
+      "variant": "Samsung memory variant",
+      "memory": "10 GB stock; 40 GB reported stable after modification (creator reported)"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060-12gb",
+      "name": "NVIDIA GeForce RTX 3060 12 GB",
+      "parent": "nvidia-geforce-rtx-3060",
+      "profiles": [
+        "V014-HP-TEST",
+        "V022-HP-C002",
+        "V027-HP-TEST",
+        "V021-HP-C001",
+        "V001-HP-G005"
+      ],
+      "variant": "Memory variant; exact board vendor not stated",
+      "memory": "12 GB per GPU (creator reported)"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5060-ti-16gb",
+      "name": "NVIDIA GeForce RTX 5060 Ti 16 GB",
+      "parent": "nvidia-geforce-rtx-5060-ti",
+      "profiles": [
+        "V001-HP-G002",
+        "V007-HP-C001",
+        "V012-HP-G002",
+        "V019-HP-E01",
+        "V021-HP-E01",
+        "V025-HP-E02"
+      ],
+      "variant": "Memory variant; exact board vendor not stated",
+      "memory": "16 GB per GPU (creator reported)"
+    },
+    {
+      "id": "intel-arc-a770-16gb",
+      "name": "Intel Arc A770 16 GB",
+      "parent": "intel-arc-a770",
+      "profiles": [
+        "V001-HP-G001"
+      ],
+      "variant": "Memory variant; exact board vendor not stated",
+      "memory": "16 GB per GPU (creator reported)"
+    },
+    {
+      "id": "amd-radeon-rx-9060-xt-16gb",
+      "name": "AMD Radeon RX 9060 XT 16 GB",
+      "parent": "amd-radeon-rx-9060-xt",
+      "profiles": [
+        "V001-HP-G013"
+      ],
+      "variant": "Memory variant; exact board vendor not stated",
+      "memory": "16 GB per GPU (creator reported)"
+    },
+    {
+      "id": "t10-unresolved",
+      "name": "T10 (SKU unresolved)",
+      "parent": null,
+      "profiles": [
+        "V019-HP-TEST"
+      ],
+      "variant": "Creator-reported inference card; manufacturer and exact board unavailable",
+      "aliases": [
+        "T10"
+      ]
+    },
+    {
+      "id": "amd-radeon-instinct-mi50-16gb",
+      "name": "AMD Radeon Instinct MI50 16 GB",
+      "parent": "amd-radeon-instinct-mi50",
+      "profiles": [
+        "V025-HP-G009",
+        "V025-HP-E06"
+      ],
+      "variant": "Memory variant; exact board revision unavailable",
+      "memory": "16 GB per GPU (creator reported)"
+    },
+    {
+      "id": "amd-radeon-instinct-mi50-32gb",
+      "name": "AMD Radeon Instinct MI50 32 GB",
+      "parent": "amd-radeon-instinct-mi50",
+      "profiles": [
+        "V028-HP-G004",
+        "V028-HP-E03"
+      ],
+      "variant": "Memory variant; exact board revision unavailable",
+      "memory": "32 GB per GPU (creator reported)"
+    }
+  ],
+  "cardMetadata": {
+    "nvidia-a100": {
+      "variant": "PCIe 40 GB calibration",
+      "memory": "40 GB on the calibrated PCIe reference",
+      "name": "NVIDIA A100 PCIe",
+      "resolveShortAliases": false
+    },
+    "nvidia-a100-sxm": {
+      "variant": "SXM calibration",
+      "parent": "nvidia-a100"
+    },
+    "nvidia-h100": {
+      "variant": "PCIe calibration",
+      "name": "NVIDIA H100 PCIe",
+      "resolveShortAliases": false
+    },
+    "nvidia-h100-sxm": {
+      "variant": "SXM calibration",
+      "parent": "nvidia-h100"
+    },
+    "nvidia-tesla-v100-sxm2": {
+      "variant": "SXM2 research reference",
+      "parent": "nvidia-tesla-v100-sxm",
+      "memory": "16 GB per GPU (creator reported for the linked pair)",
+      "profiles": [
+        "V025-HP-C002"
+      ],
+      "aliases": [
+        "V100 SXM2",
+        "Tesla V100 SXM2"
+      ]
+    },
+    "nvidia-geforce-rtx-5090-d": {
+      "variant": "China-market D label as captioned; revision and capacity unresolved",
+      "parent": "nvidia-geforce-rtx-5090",
+      "aliases": [
+        "RTX 5090D"
+      ]
+    },
+    "nvidia-rtx-pro-1000-blackwell-laptop-gpu": {
+      "variant": "Laptop GPU",
+      "aliases": [
+        "RTX PRO 1000 Blackwell laptop"
+      ]
+    },
+    "amd-instinct-mi300x": {
+      "parent": "amd-instinct-mi300"
+    },
+    "amd-radeon-ai-pro-r9700": {
+      "aliases": [
+        "R9700",
+        "Radeon AI PRO R9700"
+      ]
+    },
+    "amd-radeon-instinct-mi50": {
+      "aliases": [
+        "AMD MI50",
+        "MI50",
+        "Radeon Instinct MI50"
+      ]
+    },
+    "nvidia-geforce-rtx-2080-ti-colorful-modified": {
+      "manufacturer": "Colorful"
+    },
+    "nvidia-rtx-pro-5000": {
+      "variant": "The creator reported 72 GB, with exact board and capacity awaiting verification"
+    }
+  },
+  "profileCards": {
+    "V019-HP-TEST": [
+      "t10-unresolved",
+      "amd-radeon-rx-6600-xt"
+    ],
+    "V018-HP-C001": [
+      "nvidia-geforce-rtx-5090-d"
+    ],
+    "V019-HP-E02": [
+      "nvidia-tesla-v100"
+    ],
+    "V007-HP-E01": [
+      "nvidia-geforce-rtx-4070-super",
+      "nvidia-geforce-rtx-5060-ti"
+    ]
+  },
+  "memoryNotes": {
+    "V018-HP-C002": {
+      "system": null,
+      "perDevice": null,
+      "allocation": "20 GB system RAM limit; 16 GB VRAM limit (creator reported)"
+    },
+    "V022-HP-C002": {
+      "system": null,
+      "allocation": "46 GB is ambiguous in the captions; usable and installed system capacity remain unknown"
+    }
+  }
+}
