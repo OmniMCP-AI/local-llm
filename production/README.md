@@ -34,6 +34,16 @@ For a rights withdrawal, run `python3 -m fastest_release withdraw EVIDENCE_UUID 
 
 The Python interfaces are `ReleaseStore.migrate()`, `publish(observation)`, `read(release_id=None)`, `artifact(release_id, name)`, and `withdraw(evidence_id, reason)`. `read()` resolves the current pointer and returns the released row or a withdrawal record. Keep the release ID to access the same snapshot in other formats.
 
+## Test the integrated production code
+
+The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, and Pillow 10.1–12 for channel packaging. From `production/`, run this in a local environment with those tools. With uv, the command installs Pillow in an isolated environment.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 uv run --no-project --isolated --with 'Pillow>=10.1,<13' python -B -m unittest discover -c -s tests -v
+```
+
+The HTTP fit cases need a pinned native binary. Use the fit verifier documented above to run them. The standalone benchmark-release tests need only Python and the PostgreSQL tools.
+
 ## Test locally
 
 These boundary tests start private PostgreSQL clusters on temporary Unix sockets, and the HTTP test opens one loopback listener on an available port. The tests stop the owned processes and remove their temporary clusters after use.
