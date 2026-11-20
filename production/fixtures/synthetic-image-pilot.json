@@ -1,0 +1,142 @@
+{
+  "kind": "synthetic",
+  "cell_id": "apple-m4",
+  "protocol": "comfyui-sdxl-turbo-solo@1",
+  "workflow_sha256": "809e36aeab6a4ab469852147a40f8629e268a3c901f00ad1dcbdeec616700b64",
+  "runtime_revision": "a14c2fc3565277dfe8ab0ecb22a86c1d0a1f72cf",
+  "artifact_sha256": "e869ac7d6942cb327d68d5ed83a40447aadf20e0c3358d98b2cc9e270db0da26",
+  "source": {
+    "locator": "https://example.invalid/image-pilot/synthetic",
+    "revision": "fixture-v1"
+  },
+  "rights": {
+    "decision_id": "3dca6b85-9d19-479e-afa4-f151c43d38b6",
+    "destination": "public-release",
+    "core": "allow",
+    "basis": "Original synthetic test fixture. All timings and decisions are fabricated for testing."
+  },
+  "runtime_build": {
+    "provenance": "Synthetic example of a checked runtime and verified wheel lock.",
+    "machine": "Apple M4 24 GiB (synthetic)",
+    "os_driver": "Synthetic macOS build",
+    "backend": "Metal",
+    "active_devices": [
+      "Apple M4"
+    ],
+    "effective_placement": "Synthetic MPS device",
+    "flags": [
+      "--disable-all-custom-nodes",
+      "--cache-classic",
+      "--fp16-unet",
+      "--fp32-vae",
+      "--fp32-text-enc",
+      "--preview-method",
+      "none"
+    ],
+    "lock_sha256": "55b6ccb0a13bc0379c394c86dac0cb2ba85cc140381f73c59e7d7888d661f52c"
+  },
+  "attempts": [
+    {
+      "phase": "warmup",
+      "seed": 731000,
+      "outcome": "success",
+      "elapsed_ns": 7000000000,
+      "phase_end_ns": {
+        "sampler": 100000000,
+        "decode": 500000000,
+        "save": 1000000000,
+        "complete": 1500000000
+      },
+      "output_sha256": "00000000000000000000000000000000000000000000000000000000000b2778"
+    },
+    {
+      "phase": "repeat",
+      "seed": 731001,
+      "outcome": "success",
+      "elapsed_ns": 2000000000,
+      "phase_end_ns": {
+        "sampler": 100000000,
+        "decode": 500000000,
+        "save": 1000000000,
+        "complete": 1500000000
+      },
+      "output_sha256": "00000000000000000000000000000000000000000000000000000000000b2779",
+      "review": {
+        "reviewer": "fixture-reviewer",
+        "scores": {
+          "technical": true,
+          "subject": true,
+          "framing": true,
+          "presentable": true
+        },
+        "note": "Synthetic acceptance."
+      }
+    },
+    {
+      "phase": "repeat",
+      "seed": 731002,
+      "outcome": "success",
+      "elapsed_ns": 4000000000,
+      "phase_end_ns": {
+        "sampler": 100000000,
+        "decode": 500000000,
+        "save": 1000000000,
+        "complete": 1500000000
+      },
+      "output_sha256": "00000000000000000000000000000000000000000000000000000000000b277a",
+      "review": {
+        "reviewer": "fixture-reviewer",
+        "scores": {
+          "technical": true,
+          "subject": false,
+          "framing": true,
+          "presentable": true
+        },
+        "note": "<synthetic> duplicate mug."
+      }
+    },
+    {
+      "phase": "repeat",
+      "seed": 731003,
+      "outcome": "oom",
+      "elapsed_ns": 3000000000,
+      "phase_end_ns": {
+        "sampler": 100000000
+      },
+      "reason": "Synthetic accelerator memory failure."
+    },
+    {
+      "phase": "repeat",
+      "seed": 731004,
+      "outcome": "success",
+      "elapsed_ns": 2000000000,
+      "phase_end_ns": {
+        "sampler": 100000000,
+        "decode": 500000000,
+        "save": 1000000000,
+        "complete": 1500000000
+      },
+      "output_sha256": "00000000000000000000000000000000000000000000000000000000000b277c",
+      "review": {
+        "reviewer": "fixture-reviewer",
+        "scores": {
+          "technical": true,
+          "subject": true,
+          "framing": true,
+          "presentable": true
+        },
+        "note": "Synthetic acceptance."
+      }
+    },
+    {
+      "phase": "repeat",
+      "seed": 731005,
+      "outcome": "failed",
+      "elapsed_ns": 5000000000,
+      "phase_end_ns": {
+        "sampler": 100000000
+      },
+      "reason": "Synthetic save failure."
+    }
+  ]
+}
