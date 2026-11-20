@@ -8,24 +8,30 @@ from fastest_release.http import make_server
 
 
 @contextmanager
-def api_client(store=None, **settings):
+def api_server(store=None, **settings):
     with make_server(store, port=0, **settings) as server:
         worker = Thread(target=server.serve_forever)
         worker.start()
         try:
-            with closing(http.client.HTTPConnection(*server.server_address, timeout=5)) as client:
-                def request(path, method="GET", *, decode=True):
-                    client.request(method, path)
-                    response = client.getresponse()
-                    body = response.read().decode()
-                    return response.status, response.headers, json.loads(body) if decode and body else body
-
-                yield request
+            yield server
         finally:
             server.shutdown()
             worker.join(timeout=5)
             if worker.is_alive():
                 raise RuntimeError("API test did not stop its HTTP listener")
+
+
+@contextmanager
+def api_client(store=None, **settings):
+    with api_server(store, **settings) as server:
+        with closing(http.client.HTTPConnection(*server.server_address, timeout=5)) as client:
+            def request(path, method="GET", *, decode=True):
+                client.request(method, path)
+                response = client.getresponse()
+                body = response.read().decode()
+                return response.status, response.headers, json.loads(body) if decode and body else body
+
+            yield request
 
 
 class PublicApiTest(unittest.TestCase):

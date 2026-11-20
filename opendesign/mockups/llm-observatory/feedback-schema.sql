@@ -7,3 +7,8 @@ CREATE TABLE IF NOT EXISTS feedback_submission (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'reviewed'))
 );
+
+CREATE TABLE IF NOT EXISTS feedback_resolution (
+  receipt_id TEXT PRIMARY KEY NOT NULL REFERENCES feedback_submission(id),
+  public_path TEXT NOT NULL
+);

@@ -1,3 +1,4 @@
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from hashlib import sha256
@@ -17,7 +18,8 @@ from uuid import uuid4
 
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
 from fastest_release.research import SEED_ROOT
-from test_public_api import api_client
+from test_mcp import HAS_SDK, get as get_public, mcp_client
+from test_public_api import api_client, api_server
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -142,6 +144,41 @@ class ReleaseTest(unittest.TestCase):
         manifest = json.loads(self.store.artifact(corrected, "manifest.json"))
         for name, digest in manifest["artifacts"].items():
             self.assertEqual(digest, sha256(self.store.artifact(corrected, name).encode()).hexdigest())
+
+    def test_operator_correction_and_withdrawal_account_for_exact_published_benchmark_bytes(self):
+        from fastest_release.resolution import resolve_benchmark
+
+        first = self.store.publish(self.observation)
+        evidence_id = self.observation["evidence_id"]
+        locator = self.observation["source"]["locator"]
+        original_chart = self.store.artifact(first, "chart.json")
+        self.observation["metric"]["value"] = "41.000000000001"
+        self.observation["source"]["revision"] = "fixture-v2"
+        self.observation["rights"]["decision_id"] = str(uuid4())
+        arguments = {"evidenceId": evidence_id, "sourceLocator": locator, "previousRelease": first}
+        with self.assertRaises(ReleaseError):
+            resolve_benchmark(self.store, {**arguments, "sourceLocator": "different",
+                                          "action": "correct", "correction": self.observation})
+        corrected = resolve_benchmark(self.store, {**arguments, "action": "correct", "correction": self.observation})
+        second = corrected["release"]
+        self.assertEqual(self.store.read()["previous_release_id"], first)
+        self.assertIn(sha256(original_chart.encode()).hexdigest(), corrected["earlierExports"].values())
+        self.assertIn("41.000000000001", self.store.artifact(second, "chart.json"))
+        self.assertEqual(self.store.artifact(first, "chart.json"), original_chart)
+        self.assertEqual(resolve_benchmark(self.store, {**arguments, "action": "correct", "correction": self.observation}),
+                         corrected)
+
+        withdrawal = {**arguments, "action": "withdraw"}
+        withdrawn = resolve_benchmark(self.store, withdrawal)
+        self.assertEqual(resolve_benchmark(self.store, withdrawal), withdrawn)
+        by_path = {entry["path"]: entry for entry in withdrawn["changes"]}
+        old_chart = by_path[f"/releases/{first}/chart.json"]
+        self.assertEqual(old_chart["before"], sha256(original_chart.encode()).hexdigest())
+        self.assertEqual(old_chart["after"], sha256(self.store.artifact(first, "chart.json").encode()).hexdigest())
+        self.assertIn(f"/releases/{second}/benchmark.md", by_path)
+        self.assertEqual(self.store.read()["status"], "withdrawn")
+        self.assertEqual(self.store.read(first)["status"], "withdrawn")
+        self.assertNotIn("37.625", self.store.artifact(first, "chart.json"))
 
     def test_ineligible_observation_does_not_advance_current(self):
         original = self.store.publish(self.observation)
@@ -278,9 +315,7 @@ class ReleaseTest(unittest.TestCase):
             timeout=30,
         )
 
-    def test_pinned_profile_round_trip_through_a_rights_filtered_reviewed_release(self):
-        from fastest_release.http import make_server
-
+    def reviewed_profile_fixture(self):
         # All measurements in this disposable PostgreSQL cluster are invented test values.
         # The positive fixture uses the reviewed-row shape to exercise the production read.
         plan = json.loads(Path(FIXTURE.parents[1], "fastest_text", "plan.json").read_text())
@@ -308,6 +343,7 @@ class ReleaseTest(unittest.TestCase):
                         "runtime_revision": plan["runtime"]["revision"], "artifact_companion_sha256": artifact["shards"][1]["sha256"],
                     }.items()},
                 }
+                observation["fields"]["unpublished_operator_note"] = self.observation["fields"]["unpublished_operator_note"]
                 releases.append(self.store.publish(observation))
                 if cell["id"] == "rtx-4090" and phase == "decode":
                     withdrawn_evidence = observation["evidence_id"]
@@ -323,6 +359,12 @@ class ReleaseTest(unittest.TestCase):
                         else:
                             invalid["fields"][field]["value"] = value
                         releases.append(self.store.publish(invalid))
+        return releases, ids, withdrawn_evidence
+
+    def test_pinned_profile_round_trip_through_a_rights_filtered_reviewed_release(self):
+        from fastest_release.http import make_server
+
+        releases, ids, withdrawn_evidence = self.reviewed_profile_fixture()
 
         server = make_server(self.store, port=0, profile_releases=releases)
         worker = Thread(target=server.serve_forever)
@@ -383,6 +425,81 @@ class ReleaseTest(unittest.TestCase):
             worker.join(5)
             server.server_close()
             self.assertFalse(worker.is_alive())
+
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    def test_mcp_pinned_evidence_and_comparisons_follow_live_release_rights(self):
+        from mcp import McpError
+
+        releases, ids, withdrawn_evidence = self.reviewed_profile_fixture()
+
+        async def check(port):
+            async with mcp_client(port) as client:
+                await client.initialize()
+                names = {tool.name for tool in (await client.list_tools()).tools}
+                self.assertIn("v1_evidence", names)
+                self.assertNotIn("v1_historical_offers", names)
+                templates = (await client.list_resource_templates()).resourceTemplates
+                self.assertEqual([template.uriTemplate for template in templates],
+                                 ["fastest://v1/releases/{release_id}/evidence"])
+
+                args = {"kind": "models", "id": "qwen2.5-7b-instruct"}
+                comparison = await client.call_tool("v1_profile_comparison", args)
+                self.assertFalse(comparison.isError)
+                result = comparison.structuredContent
+                args["revision"] = result["revision"]
+                status, api = get_public(port, "/api/v1/comparison/profile", args)
+                self.assertEqual(status, 200)
+                self.assertEqual(result, json.loads(api))
+                status, website = get_public(port, result["url"].removesuffix(".html") + ".json")
+                self.assertEqual(status, 200)
+                cohort = json.loads(website)["cohorts"][0]
+                self.assertEqual(cohort["ranking"], [ids["rtx-4090"], ids["apple-m4"]])
+                row = result["results"][0]
+                self.assertEqual(row["run_id"], cohort["ranking"][0])
+                excluded = [entry["status"] for entry in result["results"] if entry["type"] == "exclusion"]
+                self.assertEqual(excluded, [entry["status"] for entry in cohort["exclusions"]])
+                self.assertEqual(excluded, ["artifact_mismatch", "insufficient_samples", "synthetic"])
+                measurement = cohort["rows"][0]["metrics"]["llama-bench-decode"]
+                self.assertEqual(row["metrics"]["llama-bench-decode"]["evidence_id"], measurement["evidence_id"])
+                self.assertEqual(measurement["evidence_id"], withdrawn_evidence)
+                release_id = measurement["release_id"]
+                uri = f"fastest://v1/releases/{release_id}/evidence"
+                resource = await client.read_resource(uri)
+                saved = json.loads(resource.contents[0].text)
+                status, api = get_public(port, "/api/v1/evidence", {"release": release_id})
+                self.assertEqual(status, 200)
+                self.assertEqual(saved, json.loads(api))
+                self.assertEqual(saved["release_id"], release_id)
+                self.assertEqual(saved["evidence_id"], withdrawn_evidence)
+                self.assertEqual(saved["metric"]["value"], "42.000")
+                self.assertEqual(resource.contents[0].mimeType, "application/json")
+                status, html = get_public(port, saved["url"])
+                self.assertEqual(status, 200)
+                for value in (release_id, withdrawn_evidence, "42.000"):
+                    self.assertIn(value, html)
+                self.assertNotIn("private calibration note", resource.contents[0].text)
+                self.assertNotIn("unpublished_operator_note", resource.contents[0].text)
+                evidence = await client.call_tool("v1_evidence", {"evidence_id": withdrawn_evidence})
+                self.assertFalse(evidence.isError)
+                self.assertEqual(evidence.structuredContent, saved)
+
+                self.store.withdraw(withdrawn_evidence, "Private fixture withdrawal reason")
+                status, _ = get_public(port, saved["url"])
+                self.assertEqual(status, 410)
+                with self.assertRaises(McpError) as denied:
+                    await client.read_resource(uri)
+                self.assertIn("Public rights have ended", str(denied.exception))
+                evidence = await client.call_tool("v1_evidence", {"release": release_id})
+                self.assertTrue(evidence.isError)
+                self.assertIn("Public rights have ended", evidence.content[0].text)
+                self.assertNotIn("Private fixture withdrawal reason", evidence.content[0].text)
+                after = await client.call_tool("v1_profile_comparison", args)
+                self.assertFalse(after.isError)
+                self.assertNotIn("42.000", after.content[0].text)
+                self.assertIn("withdrawn", {entry.get("status") for entry in after.structuredContent["results"]})
+
+        with api_server(self.store, profile_releases=releases) as server:
+            asyncio.run(check(server.server_port))
 
     def test_api_evidence_projects_only_released_fields_and_honors_expiring_rights(self):
         synthetic = self.store.publish(self.observation)
@@ -479,10 +596,11 @@ class ReleaseTest(unittest.TestCase):
 
         self.store.withdraw(self.observation["evidence_id"], "Private withdrawal reason")
         self.store.withdraw(self.observation["evidence_id"], "Retry")
-        for release_id in (original, corrected):
+        for release_id in ("current", original, corrected):
             for name in ("benchmark.md", "benchmark.html", "chart.json", "table.json", "manifest.json"):
                 with self.subTest(release_id=release_id, name=name):
-                    status, headers, body = request("GET", f"/releases/{release_id}/{name}")
+                    status, headers, body = request("GET", f"/releases/{release_id}/{name}",
+                                                    **{"If-None-Match": '"prior-public-release"'})
                     self.assertEqual(status, 410)
                     self.assertEqual(headers["Cache-Control"], "no-store")
                     for private in ("37.625", "41.125", self.observation["evidence_id"], "Private withdrawal reason"):

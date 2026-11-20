@@ -2,11 +2,14 @@ import { createHash } from "node:crypto";
 import { writeResearchRelease } from "./research-release-build.mjs";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
+import { withdrawnReference } from "./evidence-provenance.mjs";
+import { emptyEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
+import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
 
 const here = (name) => new URL(name, import.meta.url);
@@ -14,6 +17,9 @@ const require = createRequire(import.meta.url);
 const { build } = require("esbuild");
 const openccRoot = resolve(dirname(require.resolve("opencc-js")), "../..");
 const pages = process.argv.includes("--pages");
+const outputArgument = process.argv.indexOf("--output");
+if (outputArgument !== -1 && (!pages || !process.argv[outputArgument + 1])) throw new Error("--output requires a Pages directory");
+const output = outputArgument === -1 ? fileURLToPath(here("dist/")) : resolve(process.argv[outputArgument + 1]);
 const openccNotices = await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
 const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
@@ -49,10 +55,18 @@ for (const [name, expected] of Object.entries(fullGraph.graph.research_inputs)) 
 }
 let researchIndex;
 let approvals = {};
+let evidenceState = emptyEvidenceState;
 if (pages) {
   const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
   approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
-  researchIndex = await writeResearchRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/")), approvals);
+  const stateFile = process.env.FASTEST_EVIDENCE_STATE;
+  if (stateFile) evidenceState = JSON.parse(await readFile(stateFile, "utf8"));
+  const blocked = new Set(Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn")
+    .map((id) => createHash("sha256").update(id).digest("hex")));
+  if (evidenceState.withdrawnSources?.some((hash) => !blocked.has(hash))) {
+    throw new Error("Build approvals would restore a withdrawn research source");
+  }
+  researchIndex = await writeResearchRelease(fileURLToPath(here(".")), output, approvals);
 }
 const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
   if (!/^[a-z0-9-]+\.jpg$/.test(asset.file)) throw new Error("Invalid hardware photo filename: " + asset.file);
@@ -60,33 +74,43 @@ const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).ma
   return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
 })));
 const catalogDirectory = fileURLToPath(here("."));
-const hardware = await readHardwareCatalog(catalogDirectory);
+const withdrawn = Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id);
+const isWithdrawn = withdrawnReference(JSON.parse(researchPayload), approvals);
+const publicTopologies = topologyReports.filter(({ source, id }) => !isWithdrawn(source) && !isWithdrawn(id));
+const publicDocuments = Object.fromEntries(Object.entries(documents)
+  .filter(([, { evidence, status }]) => !isWithdrawn(evidence) && status !== "withdrawn")
+  .map(([id, doc]) => {
+    const clean = (text) => text.split("\n").filter((line) => !isWithdrawn(line)).join("\n");
+    return [id, { ...doc, body: clean(doc.body), raw: clean(doc.raw) }];
+  }));
+const hardware = await readHardwareCatalog(catalogDirectory, isWithdrawn);
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
   cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory }) => ({ id, name, detail, aliases, source, memory })),
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
-const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, fileURLToPath(here("dist/")), hardware) : "";
+const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
 const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
 const wikiRelease = pages ? await writeWikiRelease({
-  output: fileURLToPath(here("dist/")),
+  output,
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
   researchRelease: researchIndex.release,
   catalogRelease,
-  documents,
+  documents: publicDocuments,
+  topologies: publicTopologies,
   edges: graph.edges,
-  highlights,
+  highlights: highlights.filter(({ source }) => !isWithdrawn(source)),
   releaseDate,
-  withdrawn: Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id),
+  withdrawn,
 }) : null;
 const wikiDocuments = wikiRelease
-  ? { ...wikiRelease.publicPages, ...Object.fromEntries(Object.entries(documents).filter(([, doc]) => doc.status === "preview")) }
+  ? { ...wikiRelease.publicPages, ...Object.fromEntries(Object.entries(publicDocuments).filter(([, doc]) => doc.status === "preview")) }
   : documents;
 const releaseHighlights = wikiRelease?.highlights ?? activeHighlights(highlights, documents, releaseDate);
 const result = await build({
   entryPoints: ["app", ...(pages ? ["price-entry"] : [])].map((name) => fileURLToPath(here(name + ".jsx"))),
-  outdir: fileURLToPath(here("dist/")),
+  outdir: output,
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
   bundle: true,
   minify: true,
@@ -106,7 +130,12 @@ const result = await build({
     __FASTEST_WIKI_HIGHLIGHTS__: JSON.stringify(releaseHighlights.map((entry) => ({
       ...entry, href: pages ? entry.href : entry.previewHref,
     }))),
-    __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
+    __FASTEST_WIKI_GRAPH__: JSON.stringify(pages ? {
+      nodes: graph.nodes.filter(({ id }) => Object.hasOwn(wikiDocuments, id)),
+      edges: graph.edges.filter(({ source, target }) =>
+        Object.hasOwn(wikiDocuments, source) && Object.hasOwn(wikiDocuments, target)),
+    } : graph),
+    __FASTEST_TOPOLOGY_REPORTS__: JSON.stringify(publicTopologies),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
     __FASTEST_HERO_IMAGE__: JSON.stringify("data:image/png;base64," + image.toString("base64")),
   },
@@ -132,10 +161,11 @@ ${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open t
 </html>
 `;
 if (pages) {
-  await mkdir(here("dist/"), { recursive: true });
-  await writeFile(here("dist/index.html"), html);
+  await mkdir(output, { recursive: true });
+  await writeFile(join(output, "index.html"), html);
+  await writeEvidenceState(output, evidenceState);
   const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
-  await writeFile(here("dist/prices.html"), `<!doctype html>
+  await writeFile(join(output, "prices.html"), `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -151,9 +181,9 @@ if (pages) {
 </body>
 </html>
 `);
-  for (const name of await readdir(here("dist/research/"))) {
+  for (const name of await readdir(join(output, "research"))) {
     if (name !== researchIndex.release && /^v1-[a-f0-9]{16}$/.test(name)) {
-      await rm(here("dist/research/" + name), { recursive: true, force: true });
+      await rm(join(output, "research", name), { recursive: true, force: true });
     }
   }
 } else {

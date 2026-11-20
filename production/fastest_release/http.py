@@ -129,7 +129,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             release_id, name = match.groups()
             try:
                 snapshot = store.read(release_id)
-                if release_id == "current":
+                if release_id == "current" and snapshot["status"] == "published":
                     pinned = snapshot["release_id"]
                     return self._respond(307, location=f"/releases/{pinned}/{name}")
                 body = build_artifacts(snapshot)[name]

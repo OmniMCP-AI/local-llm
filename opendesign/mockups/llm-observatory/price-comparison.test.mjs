@@ -105,12 +105,17 @@ test("the Pages middleware sends only a supported language hint on private HTML"
   }
   globalThis.HTMLRewriter = Rewriter;
   t.after(() => { delete globalThis.HTMLRewriter; });
-  const get = (country) => middleware({
-    request: { cf: { country }, headers: new Headers({ "CF-Connecting-IP": "192.0.2.10" }) },
-    next: async () => new Response('<!doctype html><html lang="en"></html>', {
-      headers: { "Content-Type": "text/html", "Cache-Control": "public, max-age=86400", ETag: "public" },
-    }),
-  });
+  const get = (country) => {
+    const request = new Request("https://fastest.example/", { headers: { "CF-Connecting-IP": "192.0.2.10" } });
+    Object.defineProperty(request, "cf", { value: { country } });
+    return middleware({
+      request,
+      env: { ASSETS: { fetch: () => Response.json({ paths: [] }) } },
+      next: async () => new Response('<!doctype html><html lang="en"></html>', {
+        headers: { "Content-Type": "text/html", "Cache-Control": "public, max-age=86400", ETag: "public" },
+      }),
+    });
+  };
   for (const [country, browsers, expected] of [
     ["TW", ["ar-SA"], "zh-Hant"],
     ["CN", ["zh-Hant"], "zh-Hans"],

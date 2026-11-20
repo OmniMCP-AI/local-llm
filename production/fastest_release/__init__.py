@@ -41,7 +41,7 @@ class ReleaseStore:
         return result.stdout.strip()
 
     def migrate(self):
-        for migration in ("schema.sql", "research.sql"):
+        for migration in ("schema.sql", "research.sql", "resolution.sql"):
             self._query(Path(__file__).with_name(migration).read_text(encoding="utf-8"))
 
     def publish(self, observation):
