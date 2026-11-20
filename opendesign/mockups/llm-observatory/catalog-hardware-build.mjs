@@ -196,7 +196,9 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const componentReferences = machines.filter((row) => row.kind === "Component reference").length;
   const upstreamOnly = [...cards.values()].filter((card) => card.lookupSource && !card.relatedProfiles.length).length;
   const researchOnly = [...cards.values()].filter(row => !row.lookupSource && row.relatedProfiles.length).length;
-  const manufacturerMachines = additions.machines.filter(row => !isWithdrawn(row.id) && !isWithdrawn(row.source));
+  const manufacturerMachines = additions.machines.filter(({ id, source, bom = [], documentedPower }) =>
+    // A factory build needs all of its component and configuration evidence.
+    ![id, source, ...bom.map(part => part.source), documentedPower?.source].some(isWithdrawn));
   const machineRows = [...machines, ...presets, ...manufacturerMachines];
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({
@@ -248,7 +250,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       partialMachines: machines.length - componentReferences,
       upstreamPresets: presets.length,
       manufacturerMachines: manufacturerMachines.length,
-      completeBuilds: 0,
+      completeBuilds: catalog.machines.filter(({ kind }) => kind === "Complete factory configuration").length,
       profilesWithCreatorReports: machines.filter((row) => row.associations > 0).length,
       profilesWithoutCreatorReports: machines.filter((row) => row.associations === 0).length,
       creatorReportedAssociations: associations,

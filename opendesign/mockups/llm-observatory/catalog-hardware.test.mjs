@@ -14,11 +14,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.researchComponentReferences, 46);
   assert.equal(manifest.coverage.partialMachines, 70);
   assert.equal(manifest.coverage.upstreamPresets, 3);
-  assert.equal(manifest.coverage.completeBuilds, 0);
+  assert.equal(manifest.coverage.completeBuilds, 3);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 120);
-  assert.equal(manifest.coverage.manufacturerMachines, 1);
+  assert.equal(catalog.machines.length, 123);
+  assert.equal(manifest.coverage.manufacturerMachines, 4);
   assert.equal(manifest.coverage.cards, 111);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 103);
   assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 82);
@@ -47,6 +47,42 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   }
   assert.equal(find(catalog.machines, "V024-HP-C001").cardIds.length, 0);
   assert.deepEqual(find(catalog.machines, "V019-HP-TEST").cardIds.sort(), ["amd-radeon-rx-6600-xt", "t10-unresolved"].sort());
+});
+
+test("exact factory configurations carry a sourced system bill of materials", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const builds = catalog.machines.filter(({ kind }) => kind === "Complete factory configuration");
+  assert.deepEqual(builds.map(({ configuration, memory, documentedPower }) =>
+    [configuration, memory.system, documentedPower.label, documentedPower.value]), [
+    ["MCYT4LL/A", "24 GB unified memory", "Maximum continuous system power", "155 W"],
+    ["MHQM4LL/A", "24 GB unified memory", "Maximum continuous system power", "155 W"],
+    ["128 GB unified memory / 4 TB SSD", "128 GB LPDDR5X unified system memory", "External power supply rating", "240 W"],
+  ]);
+  for (const build of builds) {
+    assert.deepEqual(build.cardIds, []);
+    assert.equal(build.memory.perDevice, null);
+    assert.equal(build.memory.aggregate, null);
+    assert.equal(build.memory.allocation, null);
+    assert.deepEqual(build.bom.map(({ category }) => category), [
+      "CPU", "GPU", "Memory", "Storage", "Platform", "Power supply", "Cooling",
+    ]);
+    assert.ok(build.locator && build.documentedPower.locator);
+    assert.ok(build.bom.every(({ part, quantity, source, locator }) =>
+      part && quantity && new URL(source).protocol === "https:" && locator));
+  }
+  const family = catalog.machines.find(({ id }) => id === "nvidia-dgx-spark");
+  assert.equal(family.kind, "Manufacturer system reference");
+  assert.match(family.memory.system, /64 GB or 128 GB/);
+  assert.equal(family.bom, undefined);
+});
+
+test("withdrawing a factory BOM source removes dependent builds and updates coverage", async () => {
+  const withdrawn = "https://docs.nvidia.com/dgx/dgx-spark/hardware.html";
+  const { catalog, manifest } = await readHardwareCatalog(here, value => value === withdrawn);
+  assert.equal(manifest.coverage.completeBuilds, 2);
+  assert.ok(catalog.machines.some(({ id }) => id === "nvidia-dgx-spark"));
+  assert.ok(!catalog.machines.some(({ id }) => id === "nvidia-dgx-spark-128gb-4tb"));
+  assert.ok(!JSON.stringify(catalog).includes(withdrawn));
 });
 
 test("an image source withdrawal preserves its separately sourced board specification", async () => {
