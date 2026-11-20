@@ -1,0 +1,56 @@
+{
+  "evidence_id": "c5258a75-75ec-465f-8cbc-1212b749fddd",
+  "kind": "synthetic",
+  "hardware": {
+    "revision_id": "f701c689-5f03-45da-bc5b-9e271336489e",
+    "revision": 1,
+    "name": "Synthetic single-device system",
+    "configuration": "One simulated GPU, 16 GiB nominal VRAM"
+  },
+  "artifact": {
+    "artifact_id": "d1775dd7-a10d-4aaa-8d7a-ade7c91989f6",
+    "repository": "fastest-ai/fixture-model",
+    "revision": "synthetic-v1",
+    "path": "production/fixtures/synthetic-artifact.txt",
+    "sha256": "612a54edaa817f034edb4da0e59eb761360c1165793f742d7b67a30cfb814b6b",
+    "format": "Fixture text",
+    "quantization": "Simulated Q4_K_M"
+  },
+  "workload": {
+    "id": "solo-decode",
+    "version": 1,
+    "description": "Single request, 1,024 input tokens and 128 generated tokens in the synthetic protocol."
+  },
+  "metric": {
+    "id": "decode-throughput",
+    "version": 1,
+    "value": "37.625",
+    "unit": "tok/s",
+    "statistic": "median",
+    "boundary": "Generated tokens after the first token per second of decode.",
+    "sample_count": 5
+  },
+  "source": {
+    "label": "Synthetic release fixture",
+    "locator": "production/fixtures/synthetic-observation.json#/metric",
+    "revision": "fixture-v1"
+  },
+  "rights": {
+    "decision_id": "ec133ed3-267a-410f-8776-ecc5c0961d25",
+    "destination": "public-release",
+    "core": "allow",
+    "basis": "Project-authored synthetic fixture cleared for public release."
+  },
+  "fields": {
+    "driver_version": {
+      "status": "missing",
+      "reason": "The synthetic fixture does not define a driver.",
+      "rights": "allow"
+    },
+    "unpublished_operator_note": {
+      "status": "known",
+      "value": "private calibration note",
+      "rights": "deny"
+    }
+  }
+}

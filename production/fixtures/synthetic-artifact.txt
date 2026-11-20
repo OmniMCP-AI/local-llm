@@ -1,0 +1,2 @@
+fastest.ai release fixture
+Simulated model payload for the reproducible publishing example.
