@@ -143,6 +143,42 @@ behavior, and verify the calculator's exact decimal strings.
 PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -s tests -k mcp -v
 ```
 
+## Compare one GPU with multiple GPUs
+
+The read-only topology report at `/topology/scaling` and its `.json` companion show
+unavailable coverage until a reviewed pair is configured. Set the HTTPS
+`FASTEST_RELEASE_ORIGIN` in the Pages build to link both the interactive and static
+Technology views to this report.
+
+To serve a pair, publish both reviewed observations, then give the release listener
+their exact release UUIDs in baseline and comparison order.
+
+```sh
+python3 -m fastest_release serve --scaling-pair "$baseline_release" "$comparison_release"
+```
+
+Use workload ID `llama-bench-solo-gpu-scaling`, version 1, and the decode metric
+from the [pinned text plan](fastest_text/plan.json). Both observations use the
+same physical host revision, exact artifact and embedded tokenizer, CUDA runner
+revision and binary, OS and driver, solo load, quality rubric and decode boundary.
+Publish the standard allowed `run_id`, `backend`, `runtime_revision` and
+`artifact_companion_sha256` fields. Include an allowed `gpu_scaling_v1` field
+with a JSON-encoded value containing the following keys.
+
+| Keys | Recorded evidence |
+| --- | --- |
+| `outcome` | `success`, `oom` or `failed`. A non-success observation may describe a measured attempt count rather than throughput. |
+| `binary_sha256`, `os_driver`, `settings` | Exact runner build, OS and driver, and the text plan settings with `split_mode` and `main_gpu` recorded as placement treatment below. |
+| `load`, `quality` | Load is `One foreground sequence on an otherwise idle host.` Quality contains the pinned rubric `protocol` and boolean `accepted`. |
+| `devices`, `primary_device`, `strategy`, `treatment` | Each active physical GPU supplies PCI address `id`, `slot`, `card` and effective `placement`. Give the primary GPU's address, `single-device` for the baseline or llama.cpp `layer` or `row` splitting for multiple GPUs, and a short description of the change. |
+| `transports` | Empty for the baseline. For the comparison record active GPU addresses `from` and `to`, `path` as `direct-peer` or `host-staged`, `interconnect`, `direction` as `one-way` or `bidirectional`, positive `payload_bytes`, `scope` and `method`. Supply rated and negotiated link properties as separate `rated` and `negotiated` objects with `generation`, `width` and `rate` with units. Use null where unknown. Supply measured `bandwidth_gb_s` as decimal text or null. |
+
+The configured pair URL pins both observations and checks current public rights
+on each request. The report gives exact rational speedup and efficiency and reports
+a specific exclusion for a mismatched, failed or unavailable pair. Only a synthetic
+test fixture is included for this protocol. A public measurement needs a reviewed
+pair from an authorized GPU host.
+
 ## Test the integrated production code
 
 The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, Pillow 10.1–12 for channel packaging, and the MCP SDK. From `production/`, run this in a local environment with those tools. uv installs the Python dependencies in an isolated environment.
@@ -280,6 +316,13 @@ The [image pilot](fastest_image/README.md) uses the same planned Apple M4 and
 GeForce RTX 4090 cells for one pinned ComfyUI workflow. It reports completion
 time, accepted images and access blockers from the same ledger in Markdown,
 HTML and typed JSON.
+
+## Compare image team economics
+
+The [image team comparison](fastest_image_team/README.md) models local, cloud
+and hybrid capacity, labor and cash payback for one shared aggregate workload
+and deadline. Its default report records the missing consented case. An
+explicit fictional example exercises all three plans and the sensitivity cases.
 
 ## Browse reciprocal machine and model profiles
 

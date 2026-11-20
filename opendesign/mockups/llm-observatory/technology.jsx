@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, CircuitBoard, Cpu, Monitor, Pause, Play, StepForward, Terminal } from "lucide-react";
 import { catalogPath } from "./catalog-paths.mjs";
-import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, scalingReportUrl, scalingUnavailable, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
 
 const hardware = __FASTEST_HARDWARE_DIRECTORY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
@@ -229,7 +229,11 @@ export function TechnologyDiagram({ images = {}, focus, options }) {
   const report = choices.find((row) => row.id === profile) ?? initial;
   return <section className="tech-lab" aria-labelledby={id + "-title"}>
     <header className="tech-header">
-      <div><h2 id={id + "-title"}>Explore the build topology</h2><p>Inspect the installed hardware and step through a conceptual inference request.</p></div>
+      <div>
+        <h2 id={id + "-title"}>Explore the build topology</h2>
+        <p>Inspect the installed hardware and step through a conceptual inference request.</p>
+        <p>{scalingReportUrl ? <a href={scalingReportUrl}>Open the 1→N GPU scaling report</a> : scalingUnavailable}</p>
+      </div>
       {!options && <div className="tech-switch" role="group" aria-label="GPU layouts">
         {[...topologyPresets, { label: "Fit example", report: fitScenario }].map(({ label, report: item }) => <button
           type="button" key={item.id} aria-pressed={report === item} onClick={() => setProfile(item.id)}>{label}</button>)}

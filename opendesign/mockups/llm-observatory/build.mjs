@@ -92,6 +92,17 @@ const hardwareDirectory = {
 };
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
 const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+let scalingUrl = null;
+if (process.env.FASTEST_RELEASE_ORIGIN) {
+  try {
+    const releaseUrl = new URL(process.env.FASTEST_RELEASE_ORIGIN);
+    if (releaseUrl.protocol === "https:" && releaseUrl.href === releaseUrl.origin + "/") {
+      scalingUrl = releaseUrl.origin + "/topology/scaling";
+    }
+  } catch {
+    // A missing or invalid release origin leaves the topology coverage unavailable.
+  }
+}
 const wikiRelease = pages ? await writeWikiRelease({
   output,
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
@@ -99,6 +110,7 @@ const wikiRelease = pages ? await writeWikiRelease({
   catalogRelease,
   documents: publicDocuments,
   topologies: publicTopologies,
+  scalingUrl,
   edges: graph.edges,
   highlights: highlights.filter(({ source }) => !isWithdrawn(source)),
   releaseDate,
@@ -136,6 +148,7 @@ const result = await build({
         Object.hasOwn(wikiDocuments, source) && Object.hasOwn(wikiDocuments, target)),
     } : graph),
     __FASTEST_TOPOLOGY_REPORTS__: JSON.stringify(publicTopologies),
+    __FASTEST_SCALING_URL__: JSON.stringify(scalingUrl),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
     __FASTEST_HERO_IMAGE__: JSON.stringify("data:image/png;base64," + image.toString("base64")),
   },

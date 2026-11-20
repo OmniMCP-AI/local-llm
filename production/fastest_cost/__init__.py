@@ -217,6 +217,16 @@ def _options(scenario, workload, accepted, months):
     return options
 
 
+def simple_cash_payback(upfront, recurring, baseline_upfront, baseline_recurring, months):
+    """Return status, monthly savings and months for equivalent, feasible services."""
+    savings = baseline_recurring - recurring
+    if savings <= 0:
+        return "nonpositive_savings", savings, None
+    payback = max(upfront - baseline_upfront, Decimal(0)) / savings
+    status = "beyond_horizon" if payback > months else "within_horizon"
+    return status, savings, payback
+
+
 def _payback(options, months):
     comparisons = (("upgrade", "keep"), ("upgrade", "rental"), ("upgrade", "api"),
                    ("keep", "rental"), ("keep", "api"))
@@ -231,13 +241,10 @@ def _payback(options, months):
                  for row in (left, right)):
             status = "unknown_inputs"
         else:
-            savings = right["monthly"]["recurring_cost"] - left["monthly"]["recurring_cost"]
-            if savings <= 0:
-                status = "nonpositive_savings"
-            else:
-                incremental = left["purchase"]["upfront"] - right["purchase"]["upfront"]
-                payback = max(incremental, Decimal(0)) / savings
-                status = "beyond_horizon" if payback > months else "within_horizon"
+            status, savings, payback = simple_cash_payback(
+                left["purchase"]["upfront"], left["monthly"]["recurring_cost"],
+                right["purchase"]["upfront"], right["monthly"]["recurring_cost"], months,
+            )
         rows.append({"option": target, "baseline": baseline, "status": status,
                      "monthly_savings": savings, "payback_months": payback})
     return rows
