@@ -72,7 +72,7 @@ def add_research(nodes, edges, guides):
                 edge["annotation_file"] = "research_graph.py#DIMENSIONS"
         edges.append(edge)
 
-    def publication(key, title, fmt, publisher, published, url, context, source_file):
+    def publication(key, title, fmt, publisher, published, url, context, source_file, language):
         if not url.startswith(("https://", "#wiki/")) or not context or not publisher:
             raise ValueError(f"Incomplete source {key}")
         if published:
@@ -80,7 +80,7 @@ def add_research(nodes, edges, guides):
         if key not in guides:
             node(key, title, source_file, file_type="document")
         source_ids.append(key)
-        data = dict(publisher=publisher, date=published, url=url, context=context)
+        data = dict(publisher=publisher, date=published, url=url, context=context, language=language)
         link(key, "formats/"+fmt, "has_format", source_file, url)
         return data
 
@@ -92,21 +92,18 @@ def add_research(nodes, edges, guides):
     for key, fields in guides.items():
         source = "pages/" + key + ".md"
         metadata[key] = publication(key, fields["title"], "guide", "fastest.ai", None,
-                                    "#wiki/" + key, fields["summary"], source)
+                                    "#wiki/" + key, fields["summary"], source, "en")
         for topic in fields["use_cases"].split(", "):
             link(key, "topics/"+topic, "discusses", source, "frontmatter.use_cases")
 
     for entry in read_json(HERE / "editorial-sources.json"):
         key, url = entry["id"], entry["url"]
         metadata[key] = publication(key, entry["title"], entry["format"], entry["publisher"],
-                                    entry["date"], url, entry["context"], "editorial-sources.json")
+                                    entry["date"], url, entry["context"], "editorial-sources.json", entry["language"])
         for topic in entry["topics"]:
             link(key, "topics/"+topic, "discusses", "editorial-sources.json", url)
 
     video_topics = read_json(HERE / "video-topics.json")
-    revision = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", str(RESEARCH)],
-                                       cwd=ROOT, text=True).strip()
-    archive = f"https://github.com/OmniMCP-AI/local-llm/blob/{revision}/{RESEARCH.relative_to(ROOT)}"
     by_position = {}
     case_sections = {}
     for entry in read_json(RESEARCH / "inventory.json"):
@@ -122,8 +119,10 @@ def add_research(nodes, edges, guides):
             published = datetime.strptime(published, "%Y%m%d").date().isoformat()
         key = "youtube/" + vid
         metadata[key] = publication(key, entry["title"], "video", entry["channel"], published,
-                                    entry["url"], cur["context"], source)
-        metadata[key]["note"] = archive + "/" + filename
+                                    entry["url"], cur["context"], source, entry.get("language_code"))
+        revision = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", source],
+                                           cwd=ROOT, text=True).strip()
+        metadata[key]["note"] = f"https://github.com/OmniMCP-AI/local-llm/blob/{revision}/{source}"
         by_position[str(entry["position"])] = key
         for line, heading in enumerate(note.splitlines(), start=1):
             m = re.match(r"^### (V[0-9]+-S[0-9]+) ", heading)
@@ -183,7 +182,7 @@ def public_index(graph, source_ids):
     result = []
     for key in source_ids:
         n = graph.nodes[key]
-        source = {k: n[k] for k in ("publisher", "date", "context", "url")}
+        source = {k: n[k] for k in ("publisher", "date", "context", "url", "language")}
         if n.get("note"):
             source["note"] = n["note"]
         source.update(id=key, title=n["label"], format=targets(key, "has_format")[0][0].split("/")[1],
