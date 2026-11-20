@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
   upstream.search = params.toString();
   try {
     const response = await fetch(upstream, {
-      cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000),
+      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(8000),
       headers: { Accept: "application/json" },
     });
     if ([400, 404].includes(response.status)) {
