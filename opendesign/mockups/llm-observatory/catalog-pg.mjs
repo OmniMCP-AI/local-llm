@@ -82,7 +82,8 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     "COMMIT;",
     `SELECT json_build_object(
       'cards', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.gpu WHERE snapshot_id = '${id}'),
-      'machines', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.machine WHERE snapshot_id = '${id}')
+      'machines', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.machine WHERE snapshot_id = '${id}'),
+      'runtimes', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.runtime WHERE snapshot_id = '${id}')
     );`,
   ].join("\n");
   const result = spawnSync("psql", ["-X", "-w", "-qAt", "--set=ON_ERROR_STOP=1", "--dbname", database], {
@@ -90,9 +91,9 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error("PostgreSQL catalog import failed: " + result.stderr.trim());
-  const catalog = JSON.parse(result.stdout);
+  const { runtimes: importedRuntimes, ...catalog } = JSON.parse(result.stdout);
   if (catalog.cards.length !== cards.length || catalog.machines.length !== machines.length) {
     throw new Error("PostgreSQL catalog coverage differs from the source");
   }
-  return { ...hardware, catalog, snapshotId: id };
+  return { ...hardware, catalog, snapshotId: id, runtimes: importedRuntimes };
 }

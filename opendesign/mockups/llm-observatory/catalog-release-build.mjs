@@ -11,11 +11,11 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
-export async function writeCatalogRelease(directory, output, hardware) {
+export async function writeCatalogRelease(directory, output, hardware, reviewedRuntimes) {
   const [sourceBytes, identityBytes, runtimeBytes, hardwareSource] = await Promise.all([
     readFile(join(directory, "catalog-models.json")),
     readFile(join(directory, "catalog-identities.json")),
-    readFile(join(directory, "catalog-runtimes.json")),
+    reviewedRuntimes ? Buffer.from(JSON.stringify(reviewedRuntimes)) : readFile(join(directory, "catalog-runtimes.json")),
     hardware ?? readHardwareCatalog(directory),
   ]);
   const source = JSON.parse(sourceBytes);

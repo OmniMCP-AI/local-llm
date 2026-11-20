@@ -25,11 +25,12 @@ export async function onRequestGet(context) {
   ));
   if (!asset.ok || !asset.headers.get("content-type")?.includes("application/json")) return notFound();
 
-  const row = (await asset.json()).find((entry) => entry.id === id);
+  const entries = await asset.json();
+  const row = entries.find((entry) => entry.id === id);
   if (!row) return notFound();
 
   const card = isModel ? modelCard(row, release)
-    : kind === "runtimes" ? runtimeCard(row) : hardwareCard(row, release, kind);
+    : kind === "runtimes" ? runtimeCard(row) : hardwareCard(row, release, kind, { peers: kind === "cards" ? entries : [] });
   const markdown = extension === "md";
   return new Response(renderCard(card, {
     release, pathname: "/" + catalogPath(release, kind, id, extension), markdown,

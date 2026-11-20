@@ -79,7 +79,7 @@ class FitService:
             row["id"]: {
                 "id": row["id"],
                 "tag": row["tag"],
-                "source": f"{row['source']}/releases/tag/{row['tag']}",
+                "source": row.get("releaseUrl") or f"{row['source']}/releases/tag/{row['tag']}",
                 "backend_source": row["backendSource"],
             }
             for row in _load("catalog-runtimes.json")

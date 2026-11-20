@@ -12,7 +12,8 @@
     "formatSource": "https://github.com/ggml-org/llama.cpp/blob/v1.0.0/README.md",
     "backends": "CPU, NVIDIA CUDA, Apple Metal and Vulkan",
     "backendSource": "https://github.com/ggml-org/llama.cpp/blob/v1.0.0/docs/build.md",
-    "workload": "Local text inference and serving"
+    "workload": "Local text inference and serving",
+    "category": "Engine"
   },
   {
     "id": "sglang",
@@ -27,7 +28,8 @@
     "formatSource": "https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/model_loader/loader.py",
     "backends": "NVIDIA, AMD Instinct, Intel, TPU, NPU, CPU and Apple Silicon are documented. Consult the platform and model requirements.",
     "backendSource": "https://github.com/sgl-project/sglang/blob/v0.5.23/README.md",
-    "workload": "Text and vision-language model serving"
+    "workload": "Text and vision-language model serving",
+    "category": "Serving"
   },
   {
     "id": "vllm",
@@ -42,7 +44,8 @@
     "formatSource": "https://github.com/vllm-project/vllm/blob/v0.34.0/vllm/model_executor/model_loader/default_loader.py",
     "backends": "GPU, CPU and TPU installation targets. Consult backend-specific model support.",
     "backendSource": "https://docs.vllm.ai/en/v0.34.0/getting_started/installation/",
-    "workload": "Offline inference and online serving"
+    "workload": "Offline inference and online serving",
+    "category": "Serving"
   },
   {
     "id": "ollama",
@@ -57,7 +60,8 @@
     "formatSource": "https://github.com/ollama/ollama/tree/v0.40.16",
     "backends": "Consult the project's supported GPU and platform documentation",
     "backendSource": "https://github.com/ollama/ollama/tree/v0.40.16",
-    "workload": "Local LLM and vision-language inference"
+    "workload": "Local LLM and vision-language inference",
+    "category": "Desktop app"
   },
   {
     "id": "mlx-lm",
@@ -72,7 +76,8 @@
     "formatSource": "https://github.com/ml-explore/mlx-lm/tree/v0.32.2",
     "backends": "Apple silicon and MLX",
     "backendSource": "https://github.com/ml-explore/mlx-lm/tree/v0.32.2",
-    "workload": "Local language model inference and fine-tuning"
+    "workload": "Local language model inference and fine-tuning",
+    "category": "Engine"
   },
   {
     "id": "tensorrt-llm",
@@ -87,7 +92,8 @@
     "formatSource": "https://github.com/NVIDIA/TensorRT-LLM/tree/v1.3.0",
     "backends": "NVIDIA GPUs. Check model and precision support",
     "backendSource": "https://github.com/NVIDIA/TensorRT-LLM/tree/v1.3.0",
-    "workload": "Accelerated language model inference and serving"
+    "workload": "Accelerated language model inference and serving",
+    "category": "Serving"
   },
   {
     "id": "comfyui",
@@ -102,7 +108,8 @@
     "formatSource": "https://github.com/Comfy-Org/ComfyUI/tree/v0.46.0",
     "backends": "Consult platform and hardware requirements",
     "backendSource": "https://github.com/Comfy-Org/ComfyUI/tree/v0.46.0",
-    "workload": "Image and video generation workflows"
+    "workload": "Image and video generation workflows",
+    "category": "Media workflow"
   },
   {
     "id": "openvino",
@@ -117,6 +124,364 @@
     "formatSource": "https://github.com/openvinotoolkit/openvino.genai/tree/2026.4.1.0",
     "backends": "Consult the OpenVINO device and model requirements",
     "backendSource": "https://github.com/openvinotoolkit/openvino.genai/tree/2026.4.1.0",
-    "workload": "Local generative AI pipelines"
+    "workload": "Local generative AI pipelines",
+    "category": "Toolkit"
+  },
+  {
+    "id": "strata",
+    "name": "Strata",
+    "category": "Engine",
+    "detail": "Model-specific local inference and API server",
+    "source": "https://github.com/Niko1221/Strata",
+    "tag": "v0.2.17",
+    "published": "2026-11-20",
+    "releaseUrl": "https://github.com/Niko1221/Strata/releases/tag/v0.2.17",
+    "docs": "https://github.com/Niko1221/Strata/tree/v0.2.17",
+    "formats": "Qwen3.8-Flash-Next GGUF packages",
+    "formatSource": "https://github.com/Niko1221/Strata/tree/v0.2.17",
+    "backends": "Windows and Linux; supported NVIDIA and AMD GPUs",
+    "backendSource": "https://github.com/Niko1221/Strata/tree/v0.2.17",
+    "workload": "Model-specific local inference and API server",
+    "references": [
+      {
+        "label": "Strata Coder tested · YouTube research 024",
+        "href": "https://www.youtube.com/watch?v=09GB4LtXUok"
+      }
+    ]
+  },
+  {
+    "id": "project-maya",
+    "name": "Project Maya",
+    "category": "Engine",
+    "detail": "Strata-derived inference for selected MoE models",
+    "source": "https://github.com/mw00/project-maya",
+    "tag": "v1.1.70",
+    "published": "2026-11-20",
+    "releaseUrl": "https://github.com/mw00/project-maya/releases/tag/v1.1.70",
+    "docs": "https://github.com/mw00/project-maya/tree/v1.1.70",
+    "formats": "Project-supported GGUF and other model packages",
+    "formatSource": "https://github.com/mw00/project-maya/tree/v1.1.70",
+    "backends": "Linux and Windows; hardware requirements differ by engine",
+    "backendSource": "https://github.com/mw00/project-maya/tree/v1.1.70",
+    "workload": "Strata-derived inference for selected MoE models",
+    "references": [
+      {
+        "label": "Project Maya and Strata · YouTube research 026",
+        "href": "https://www.youtube.com/watch?v=GLXGqbNBq9s"
+      }
+    ]
+  },
+  {
+    "id": "ninfer",
+    "name": "NInfer",
+    "category": "Engine",
+    "detail": "Specialized single-GPU inference",
+    "source": "https://github.com/Neroued/ninfer",
+    "tag": "ebdc67e584bc",
+    "published": "2026-11-16",
+    "releaseUrl": "https://github.com/Neroued/ninfer/commit/ebdc67e584bcd9ebe16ee63af9abeb2118bac6cd",
+    "revisionKind": "commit",
+    "docs": "https://github.com/Neroued/ninfer/tree/ebdc67e584bcd9ebe16ee63af9abeb2118bac6cd",
+    "formats": "Project-specific converted checkpoints",
+    "formatSource": "https://github.com/Neroued/ninfer/tree/ebdc67e584bcd9ebe16ee63af9abeb2118bac6cd",
+    "backends": "Review the checkpoint and GPU support matrix",
+    "backendSource": "https://github.com/Neroued/ninfer/tree/ebdc67e584bcd9ebe16ee63af9abeb2118bac6cd",
+    "workload": "Specialized single-GPU inference",
+    "references": [
+      {
+        "label": "NInfer on an RTX 4090 · YouTube research 045",
+        "href": "https://www.youtube.com/watch?v=MhZABCEOUWY&t=250s"
+      }
+    ]
+  },
+  {
+    "id": "splash",
+    "name": "Inco Splash",
+    "category": "Engine",
+    "detail": "Model-specialized local inference on Mac",
+    "source": "https://github.com/incoai/splash",
+    "tag": "1.7.0",
+    "published": "2026-11-17",
+    "releaseUrl": "https://github.com/incoai/splash/releases/tag/1.7.0",
+    "docs": "https://github.com/incoai/splash/tree/1.7.0",
+    "formats": "Supported GGUF and MLX checkpoints",
+    "formatSource": "https://github.com/incoai/splash/tree/1.7.0",
+    "backends": "Apple silicon; device and model requirements apply",
+    "backendSource": "https://github.com/incoai/splash/tree/1.7.0",
+    "workload": "Model-specialized local inference on Mac"
+  },
+  {
+    "id": "koboldcpp",
+    "name": "KoboldCpp",
+    "category": "Desktop app",
+    "detail": "Local GGUF inference and browser UI",
+    "source": "https://github.com/LostRuins/koboldcpp",
+    "tag": "v1.124.2",
+    "published": "2026-10-31",
+    "releaseUrl": "https://github.com/LostRuins/koboldcpp/releases/tag/v1.124.2",
+    "docs": "https://github.com/LostRuins/koboldcpp/tree/v1.124.2",
+    "formats": "GGUF",
+    "formatSource": "https://github.com/LostRuins/koboldcpp/tree/v1.124.2",
+    "backends": "CPU and documented GPU acceleration backends",
+    "backendSource": "https://github.com/LostRuins/koboldcpp/tree/v1.124.2",
+    "workload": "Local GGUF inference and browser UI"
+  },
+  {
+    "id": "ktransformers",
+    "name": "KTransformers",
+    "category": "Engine",
+    "detail": "CPU–GPU execution and expert offload for selected models",
+    "source": "https://github.com/kvcache-ai/ktransformers",
+    "tag": "v0.7.2",
+    "published": "2026-10-15",
+    "releaseUrl": "https://github.com/kvcache-ai/ktransformers/releases/tag/v0.7.2",
+    "docs": "https://github.com/kvcache-ai/ktransformers/tree/v0.7.2",
+    "formats": "Model-specific transformers checkpoints",
+    "formatSource": "https://github.com/kvcache-ai/ktransformers/tree/v0.7.2",
+    "backends": "Review the CPU instruction, GPU, and quantization requirements",
+    "backendSource": "https://github.com/kvcache-ai/ktransformers/tree/v0.7.2",
+    "workload": "CPU–GPU execution and expert offload for selected models"
+  },
+  {
+    "id": "exllamav3",
+    "name": "ExLlamaV3",
+    "category": "Engine",
+    "detail": "Quantized text-model inference",
+    "source": "https://github.com/turboderp-org/exllamav3",
+    "tag": "v1.6.7",
+    "published": "2026-11-13",
+    "releaseUrl": "https://github.com/turboderp-org/exllamav3/releases/tag/v1.6.7",
+    "docs": "https://github.com/turboderp-org/exllamav3/tree/v1.6.7",
+    "formats": "EXL3",
+    "formatSource": "https://github.com/turboderp-org/exllamav3/tree/v1.6.7",
+    "backends": "NVIDIA CUDA; consult the GPU and model requirements",
+    "backendSource": "https://github.com/turboderp-org/exllamav3/tree/v1.6.7",
+    "workload": "Quantized text-model inference"
+  },
+  {
+    "id": "tabbyapi",
+    "name": "TabbyAPI",
+    "category": "Serving",
+    "detail": "OpenAI-compatible API for ExLlama backends",
+    "source": "https://github.com/theroyallab/tabbyAPI",
+    "tag": "47281587fafb",
+    "published": "2026-11-14",
+    "releaseUrl": "https://github.com/theroyallab/tabbyAPI/commit/47281587fafbd69e50aaf77c7626f390811126b6",
+    "revisionKind": "commit",
+    "docs": "https://github.com/theroyallab/tabbyAPI/tree/47281587fafbd69e50aaf77c7626f390811126b6",
+    "formats": "EXL2 and EXL3",
+    "formatSource": "https://github.com/theroyallab/tabbyAPI/tree/47281587fafbd69e50aaf77c7626f390811126b6",
+    "backends": "Dependent on the installed ExLlama backend",
+    "backendSource": "https://github.com/theroyallab/tabbyAPI/tree/47281587fafbd69e50aaf77c7626f390811126b6",
+    "workload": "OpenAI-compatible API for ExLlama backends"
+  },
+  {
+    "id": "mistral.rs",
+    "name": "mistral.rs",
+    "category": "Engine",
+    "detail": "Rust engine for language and multimodal inference",
+    "source": "https://github.com/EricLBuehler/mistral.rs",
+    "tag": "v0.9.5",
+    "published": "2026-10-19",
+    "releaseUrl": "https://github.com/EricLBuehler/mistral.rs/releases/tag/v0.9.5",
+    "docs": "https://github.com/EricLBuehler/mistral.rs/tree/v0.9.5",
+    "formats": "Project-supported GGUF and SafeTensors models",
+    "formatSource": "https://github.com/EricLBuehler/mistral.rs/tree/v0.9.5",
+    "backends": "CPU, Metal and CUDA builds are documented",
+    "backendSource": "https://github.com/EricLBuehler/mistral.rs/tree/v0.9.5",
+    "workload": "Rust engine for language and multimodal inference"
+  },
+  {
+    "id": "mlc-llm",
+    "name": "MLC LLM",
+    "category": "Toolkit",
+    "detail": "Compile and deploy language models across devices",
+    "source": "https://github.com/mlc-ai/mlc-llm",
+    "tag": "09096c660dde",
+    "published": "2026-11-20",
+    "releaseUrl": "https://github.com/mlc-ai/mlc-llm/commit/09096c660ddedec3e2e75c607f6107ee306a7c0d",
+    "revisionKind": "commit",
+    "docs": "https://github.com/mlc-ai/mlc-llm/tree/09096c660ddedec3e2e75c607f6107ee306a7c0d",
+    "formats": "MLC compiled model libraries and weights",
+    "formatSource": "https://github.com/mlc-ai/mlc-llm/tree/09096c660ddedec3e2e75c607f6107ee306a7c0d",
+    "backends": "Browser, desktop and mobile targets have different requirements",
+    "backendSource": "https://github.com/mlc-ai/mlc-llm/tree/09096c660ddedec3e2e75c607f6107ee306a7c0d",
+    "workload": "Compile and deploy language models across devices"
+  },
+  {
+    "id": "llama-box",
+    "name": "llama-box",
+    "category": "Serving",
+    "detail": "Server for local model inference based on llama.cpp",
+    "source": "https://github.com/gpustack/llama-box",
+    "tag": "v0.0.171",
+    "published": "2025-08-16",
+    "releaseUrl": "https://github.com/gpustack/llama-box/releases/tag/v0.0.171",
+    "docs": "https://github.com/gpustack/llama-box/tree/v0.0.171",
+    "formats": "Project-supported GGUF models",
+    "formatSource": "https://github.com/gpustack/llama-box/tree/v0.0.171",
+    "backends": "Consult the build-specific accelerator support",
+    "backendSource": "https://github.com/gpustack/llama-box/tree/v0.0.171",
+    "workload": "Server for local model inference based on llama.cpp"
+  },
+  {
+    "id": "localai",
+    "name": "LocalAI",
+    "category": "Serving",
+    "detail": "Local API gateway with pluggable inference backends",
+    "source": "https://github.com/mudler/LocalAI",
+    "tag": "v5.0.1",
+    "published": "2026-11-20",
+    "releaseUrl": "https://github.com/mudler/LocalAI/releases/tag/v5.0.1",
+    "docs": "https://github.com/mudler/LocalAI/tree/v5.0.1",
+    "formats": "Backend-specific model formats",
+    "formatSource": "https://github.com/mudler/LocalAI/tree/v5.0.1",
+    "backends": "CPU and accelerator deployment depends on the selected backend",
+    "backendSource": "https://github.com/mudler/LocalAI/tree/v5.0.1",
+    "workload": "Local API gateway with pluggable inference backends"
+  },
+  {
+    "id": "omlx",
+    "name": "oMLX",
+    "category": "Serving",
+    "detail": "Local MLX model serving with cache management",
+    "source": "https://github.com/jundot/omlx",
+    "tag": "v0.8.0",
+    "published": "2026-11-18",
+    "releaseUrl": "https://github.com/jundot/omlx/releases/tag/v0.8.0",
+    "docs": "https://github.com/jundot/omlx/tree/v0.8.0",
+    "formats": "MLX model repositories",
+    "formatSource": "https://github.com/jundot/omlx/tree/v0.8.0",
+    "backends": "Apple silicon. Check the supported macOS and device requirements",
+    "backendSource": "https://github.com/jundot/omlx/tree/v0.8.0",
+    "workload": "Local MLX model serving with cache management"
+  },
+  {
+    "id": "dynamo",
+    "name": "NVIDIA Dynamo",
+    "category": "Orchestration",
+    "detail": "Distributed orchestration for model serving engines",
+    "source": "https://github.com/ai-dynamo/dynamo",
+    "tag": "v1.6.2",
+    "published": "2026-11-05",
+    "releaseUrl": "https://github.com/ai-dynamo/dynamo/releases/tag/v1.6.2",
+    "docs": "https://github.com/ai-dynamo/dynamo/tree/v1.6.2",
+    "formats": "Uses models supported by the selected serving backend",
+    "formatSource": "https://github.com/ai-dynamo/dynamo/tree/v1.6.2",
+    "backends": "NVIDIA GPU serving infrastructure",
+    "backendSource": "https://github.com/ai-dynamo/dynamo/tree/v1.6.2",
+    "workload": "Distributed orchestration for model serving engines"
+  },
+  {
+    "id": "flashinfer",
+    "name": "FlashInfer",
+    "category": "Kernel library",
+    "detail": "Attention and inference kernels for serving engines",
+    "source": "https://github.com/flashinfer-ai/flashinfer",
+    "tag": "v0.7.5.post1",
+    "published": "2026-11-20",
+    "releaseUrl": "https://github.com/flashinfer-ai/flashinfer/releases/tag/v0.7.5.post1",
+    "docs": "https://github.com/flashinfer-ai/flashinfer/tree/v0.7.5.post1",
+    "formats": "Kernel APIs rather than standalone model files",
+    "formatSource": "https://github.com/flashinfer-ai/flashinfer/tree/v0.7.5.post1",
+    "backends": "CUDA GPU requirements vary by operation",
+    "backendSource": "https://github.com/flashinfer-ai/flashinfer/tree/v0.7.5.post1",
+    "workload": "Attention and inference kernels for serving engines"
+  },
+  {
+    "id": "tensorrt-edge-llm",
+    "name": "TensorRT Edge-LLM",
+    "category": "Engine",
+    "detail": "On-device language and vision-language inference",
+    "source": "https://github.com/NVIDIA/TensorRT-Edge-LLM",
+    "tag": "v0.12.0",
+    "published": "2026-11-13",
+    "releaseUrl": "https://github.com/NVIDIA/TensorRT-Edge-LLM/releases/tag/v0.12.0",
+    "docs": "https://github.com/NVIDIA/TensorRT-Edge-LLM/tree/v0.12.0",
+    "formats": "TensorRT Edge-LLM export workflows",
+    "formatSource": "https://github.com/NVIDIA/TensorRT-Edge-LLM/tree/v0.12.0",
+    "backends": "Supported NVIDIA edge platforms",
+    "backendSource": "https://github.com/NVIDIA/TensorRT-Edge-LLM/tree/v0.12.0",
+    "workload": "On-device language and vision-language inference"
+  },
+  {
+    "id": "litert-lm",
+    "name": "LiteRT-LM",
+    "category": "Toolkit",
+    "detail": "On-device language and multimodal inference",
+    "source": "https://github.com/google-ai-edge/LiteRT-LM",
+    "tag": "v0.19.1",
+    "published": "2026-11-05",
+    "releaseUrl": "https://github.com/google-ai-edge/LiteRT-LM/releases/tag/v0.19.1",
+    "docs": "https://github.com/google-ai-edge/LiteRT-LM/tree/v0.19.1",
+    "formats": "LiteRT-LM model packages",
+    "formatSource": "https://github.com/google-ai-edge/LiteRT-LM/tree/v0.19.1",
+    "backends": "Platform and delegate availability varies",
+    "backendSource": "https://github.com/google-ai-edge/LiteRT-LM/tree/v0.19.1",
+    "workload": "On-device language and multimodal inference"
+  },
+  {
+    "id": "lemonade",
+    "name": "Lemonade",
+    "category": "Serving",
+    "detail": "Local model server with selectable inference backends",
+    "source": "https://github.com/lemonade-sdk/lemonade",
+    "tag": "v2026.47.1",
+    "published": "2026-11-18",
+    "releaseUrl": "https://github.com/lemonade-sdk/lemonade/releases/tag/v2026.47.1",
+    "docs": "https://github.com/lemonade-sdk/lemonade/tree/v2026.47.1",
+    "formats": "Backend-specific model packages",
+    "formatSource": "https://github.com/lemonade-sdk/lemonade/tree/v2026.47.1",
+    "backends": "Check the backend and hardware matrix",
+    "backendSource": "https://github.com/lemonade-sdk/lemonade/tree/v2026.47.1",
+    "workload": "Local model server with selectable inference backends"
+  },
+  {
+    "id": "transformers",
+    "name": "Transformers",
+    "category": "Toolkit",
+    "detail": "Model loading and inference in Python",
+    "source": "https://github.com/huggingface/transformers",
+    "tag": "v5.23.0",
+    "published": "2026-11-13",
+    "releaseUrl": "https://github.com/huggingface/transformers/releases/tag/v5.23.0",
+    "docs": "https://github.com/huggingface/transformers/tree/v5.23.0",
+    "formats": "Hub checkpoints and Transformers configurations",
+    "formatSource": "https://github.com/huggingface/transformers/tree/v5.23.0",
+    "backends": "Supported PyTorch devices and quantization backends",
+    "backendSource": "https://github.com/huggingface/transformers/tree/v5.23.0",
+    "workload": "Model loading and inference in Python"
+  },
+  {
+    "id": "llamafile",
+    "name": "llamafile",
+    "category": "Desktop app",
+    "detail": "Portable local language-model executable",
+    "source": "https://github.com/mozilla-ai/llamafile",
+    "tag": "0.10.6",
+    "published": "2026-09-15",
+    "releaseUrl": "https://github.com/mozilla-ai/llamafile/releases/tag/0.10.6",
+    "docs": "https://github.com/mozilla-ai/llamafile/tree/0.10.6",
+    "formats": "GGUF models and packaged llamafiles",
+    "formatSource": "https://github.com/mozilla-ai/llamafile/tree/0.10.6",
+    "backends": "CPU and platform-specific accelerator support",
+    "backendSource": "https://github.com/mozilla-ai/llamafile/tree/0.10.6",
+    "workload": "Portable local language-model executable"
+  },
+  {
+    "id": "lm-studio",
+    "name": "LM Studio",
+    "category": "Desktop app",
+    "detail": "Local desktop chat and model server",
+    "source": "https://lmstudio.ai/",
+    "tag": "0.4.28",
+    "published": "Date unavailable",
+    "releaseUrl": "https://lmstudio.ai/changelog/lmstudio",
+    "docs": "https://lmstudio.ai/docs/app",
+    "formats": "GGUF and supported MLX models",
+    "formatSource": "https://lmstudio.ai/docs/app",
+    "backends": "Consult the runtime and operating-system requirements",
+    "backendSource": "https://lmstudio.ai/changelog/lmstudio",
+    "workload": "Local chat and API access"
   }
 ]

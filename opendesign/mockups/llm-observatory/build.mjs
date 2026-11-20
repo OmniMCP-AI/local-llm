@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { writeLocalHardwareProfiles } from "./catalog-local-build.mjs";
+import { profileStyles } from "./catalog-profile-styles.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
@@ -104,10 +105,14 @@ hardware.digest = createHash("sha256").update(JSON.stringify({ catalog: hardware
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
-  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory }) => ({ id, name, detail, aliases, source, memory })),
+  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory, vendorSpec }) => ({ id, name, detail, aliases, source, memory, vendorSpec })),
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
-const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
+const runtimes = JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8")).map(({ references, ...row }) => ({
+  ...row,
+  references: (references ?? []).filter(({ href }) => !isWithdrawn(href)),
+}));
+const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware, runtimes) : "";
 let localHardwareRelease = "";
 if (!pages) {
   const localOutput = fileURLToPath(here("local-catalog/"));
@@ -153,6 +158,7 @@ const result = await build({
     __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
+    __FASTEST_RUNTIMES__: JSON.stringify(runtimes),
     __FASTEST_LOCAL_HARDWARE_RELEASE__: JSON.stringify(localHardwareRelease),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
@@ -183,7 +189,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 ${wikiRelease?.homeHead ?? previewHead}
-<style>${stylesheets.join("\n")}</style>
+<style>${stylesheets.join("\n")}${profileStyles}</style>
 </head>
 <body>
 <div id="root"></div>

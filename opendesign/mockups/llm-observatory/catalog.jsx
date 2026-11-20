@@ -4,17 +4,21 @@ import modelIdentities from "./catalog-identities.json";
 import modelCatalog from "./catalog-models.json";
 import discovery from "./model-discovery.json";
 import topics from "./catalog-topics.json";
-import runtimes from "./catalog-runtimes.json";
 import { catalogPath } from "./catalog-paths.mjs";
+import { modelCard, renderCard } from "./catalog-card.mjs";
+import { CatalogCompare } from "./catalog-compare";
 import { modelTags, queryModelCatalog } from "./catalog-search.mjs";
 import { useLocale } from "./locale";
 
 const pageSize = 30;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
 const localHardwareRelease = __FASTEST_LOCAL_HARDWARE_RELEASE__;
+const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
 const machineKinds = ["Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
+const runtimeCategories = [...new Set(runtimes.map(row => row.category))].sort();
 const modelById = new Map(modelCatalog.models.map(row => [row.id, row]));
+const modelStats = new Map([...discovery.popular, ...discovery.small].map(row => [row.id, row]));
 const rankedModels = Object.fromEntries(["popular", "small"].map(view => [view, discovery[view].map((row, index) => ({
   ...modelById.get(row.id), discovery: { ...row, rank: index + 1 },
 }))]));
@@ -41,8 +45,8 @@ const tabs = [
   {
     key: "runtimes", title: "Runtimes", icon: ArrowDownRight, rows: runtimes, scope: "Upstream runtime projects",
     titleZh: "推理框架", scopeZh: "上游推理框架",
-    description: "A starting registry of runtime projects. A project's presence does not establish support or performance on any listed machine.",
-    descriptionZh: "这是首批推理框架项目。整机兼容性与性能请查阅对应的测试记录。",
+    description: "Desktop apps, engines, servers, and libraries with pinned upstream versions and format and platform notes.",
+    descriptionZh: "查看桌面应用、推理引擎、服务器与库的固定上游版本、格式与平台信息。",
   },
 ];
 const licenseTags = Array.from(new Set(modelCatalog.models.map(({ license }) => license).filter(Boolean))).sort();
@@ -147,6 +151,35 @@ function PrototypeLink({ href, children, go }) {
   }}>{children} <ArrowUpRight size={13} aria-hidden="true" /></a>;
 }
 
+export function CatalogModelProfile({ id, go }) {
+  const { t } = useLocale();
+  const row = modelById.get(id);
+  const params = new URLSearchParams(location.hash.split("?")[1]);
+  params.delete("model");
+  const index = "#catalog/models" + (params.size ? "?" + params : "");
+  if (!row) return <section className="catalog-profile profile-shell">
+    <PrototypeLink href={index} go={go}>{t("Back to models", "返回模型目录")}</PrototypeLink>
+    <h1>{t("Model not found", "找不到模型")}</h1>
+  </section>;
+
+  const card = modelCard({ ...row, identity: modelIdentities[row.id] }, localHardwareRelease, { local: true });
+  const markdown = renderCard(card, { release: localHardwareRelease, pathname: id + ".html", markdown: true, local: true });
+  const fields = rows => <dl className="profile-fields">{rows.map(([label, value, href]) => <div key={label}>
+    <dt>{label}</dt><dd>{href ? <a href={href}>{value}</a> : value}</dd>
+  </div>)}</dl>;
+  return <article className="catalog-profile profile-shell">
+    <PrototypeLink href={index} go={go}>{t("Back to models", "返回模型目录")}</PrototypeLink>
+    <header className="profile-hero">
+      <p className="profile-kicker">{t("Model repository", "模型仓库")}</p><h1><bdi>{id}</bdi></h1>
+      <div className="profile-actions"><SourceLink href={row.source}>{t("Open source", "查看来源")}</SourceLink>
+        <a href={"data:text/markdown;charset=utf-8," + encodeURIComponent(markdown)} download={id.split("/")[1] + ".md"}>Markdown</a></div>
+    </header>
+    <section className="profile-section"><h2>{t("Repository details", "仓库详情")}</h2>{fields(card.fields)}</section>
+    {card.sections.map(({ title, fields: rows }) => <section key={title} className="profile-section"><h2>{title}</h2>{fields(rows)}</section>)}
+    <section className="profile-section"><h2>{t("Evidence", "证据")}</h2><p>{card.evidence}</p></section>
+  </article>;
+}
+
 export function CatalogTopics({ go }) {
   const { t } = useLocale();
   return <div className="deep-page source-catalog">
@@ -186,6 +219,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   const number = useMemo(() => new Intl.NumberFormat(language), [language]);
   const [active, setActive] = useState(() => validKind(initialKind));
   const [filters, setFilters] = useState(modelFiltersFromLocation);
+  const [picks, setPicks] = useState([]);
   const { query, tag, license, page, view } = filters;
   const tableTop = useRef(null);
   useEffect(() => {
@@ -205,7 +239,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
     if (tab.key === "models") return queryModelCatalog(modelRows, modelIdentities, { ...filters, ranked: view !== "all" });
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const filtered = terms.length || tag ? tab.rows.filter((row) => {
-      if (tag && row.kind !== tag) return false;
+      if (tag && (row.category ?? row.kind) !== tag) return false;
       const text = [row.id, row.name, row.detail, row.tag, ...(row.aliases ?? [])].join(" ").toLowerCase();
       return terms.every((term) => text.includes(term));
     }) : tab.rows;
@@ -215,6 +249,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
     return { rows: filtered.slice(start, start + pageSize), total: filtered.length, pages, current, start };
   }, [tab, filters, query, page, tag, view, modelRows]);
   const hardwareTab = active === "cards" || active === "machines";
+  const comparable = active === "cards" || active === "models";
   const { asOf, coverage } = hardwareCatalog;
   const scope = t(tab.scope, tab.scopeZh);
   const search = t("Search " + tab.title.toLowerCase(), "搜索" + tab.titleZh);
@@ -226,6 +261,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
     if (key === active) return;
     setActive(key);
     setFilters(emptyFilters);
+    setPicks([]);
     go?.("#catalog/" + key);
   }
 
@@ -307,6 +343,12 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
             {machineKinds.map((value) => <option key={value} value={value}>{t(value, sourceLabelsZh[value])}</option>)}
           </select>
         </label>}
+        {active === "runtimes" && <label className="catalog-filter"><span>{t("Project category", "项目分类")}</span>
+          <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
+            <option value="">{t("Any", "全部")}</option>
+            {runtimeCategories.map(category => <option key={category}>{category}</option>)}
+          </select>
+        </label>}
         {active === "models" && <label className="catalog-filter"><span>{t("Task or format", "任务或格式")}</span>
           <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
             <option value="">{t("Any", "全部")}</option>
@@ -323,21 +365,36 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           {rows.length ? t("{interval} of {matches}", "第 {interval} 条，共 {matches} 条", { interval, matches }) : t("No results", "没有结果")}
           {(query.trim() || tag || license) && <span>{t(" / {total} in catalog", " / 目录共 {total} 条", { total })}</span>}
         </p>
+        {comparable && picks.length > 0 && <a className="text-button" href="#catalog-comparison" onClick={event => {
+          event.preventDefault();
+          document.getElementById("catalog-comparison")?.scrollIntoView({ block: "start" });
+        }}>{t("Compare ({count}/4)", "对比（{count}/4）", { count: number.format(picks.length) })}</a>}
         {pages > 1 && <Pager page={current} pages={pages} onPage={setPage} number={number} label={t("Catalog pages at top", "顶部目录分页")} />}
       </div>
-
       {rows.length ? <div className="catalog-table-wrap">
         <table aria-label={scope} className="catalog-table">
-          <thead><tr><th scope="col">{active === "models" ? t("Repository", "仓库") : t("Name", "名称")}</th><th scope="col">{active === "models" ? t("Model metadata", "模型元数据") : t("Record scope", "记录范围")}</th><th scope="col">{t("Source", "来源")}</th></tr></thead>
+          <thead><tr>{comparable && <th scope="col" className="catalog-compare-column">{t("Compare", "对比")}</th>}<th scope="col">{active === "models" ? t("Repository", "仓库") : t("Name", "名称")}</th><th scope="col">{active === "models" ? t("Model metadata", "模型元数据") : t("Record scope", "记录范围")}</th><th scope="col">{t("Source", "来源")}</th></tr></thead>
           <tbody>{rows.map((row) => {
             const separator = row.id.indexOf("/");
             const modelId = active === "models" && separator > 0;
-            const card = catalogRelease && (modelId || active === "runtimes" || hardwareTab)
-              ? catalogPath(catalogRelease, active, row.id)
-              : hardwareTab && localHardwareRelease ? "local-catalog/" + catalogPath(localHardwareRelease, active, row.id) : undefined;
+            const modelQuery = new URLSearchParams(location.hash.split("?")[1]);
+            if (modelId) modelQuery.set("model", row.id);
+            const card = catalogRelease
+              ? "/" + catalogPath(catalogRelease, active, row.id)
+              : modelId ? "#catalog/models?" + modelQuery
+                : "local-catalog/" + catalogPath(localHardwareRelease, active, row.id);
+            const sourceUrl = safeSource(row.vendorSpec?.source ?? row.source);
+            const picked = picks.some(entry => entry.id === row.id);
             return <tr key={row.id}>
-              <th scope="row">{modelId ? <a className="catalog-model-id" href={card ?? safeSource(row.source)} target={card ? undefined : "_blank"} rel={card ? undefined : "noopener noreferrer"}><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
-                <strong>{card ? <a className="catalog-model-id" href={card}>{row.name}</a> : row.name}</strong>
+              {comparable && <td className="catalog-compare-column"><label>
+                <input type="checkbox" aria-label={t("Compare {name}", "对比 {name}", { name: row.name })}
+                  checked={picked} disabled={!picked && picks.length >= 4} onChange={event => {
+                    const checked = event.target.checked;
+                    setPicks(current => checked ? [...current, row] : current.filter(entry => entry.id !== row.id));
+                  }} />
+              </label></td>}
+              <th scope="row">{modelId ? <a className="catalog-model-id catalog-row-link" href={card}><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
+                <strong><a className="catalog-model-id catalog-row-link" href={card}>{row.name}</a></strong>
                 {row.tag ? <small>{row.tag}</small> : row.id !== row.name && <small>{row.id}</small>}
               </>}</th>
               <td>{active === "models" ? <div className="catalog-tags">
@@ -348,14 +405,20 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
                 </>}
                 {modelTags(row, modelIdentities[row.id]).map((value) => <span key={value}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
                 {row.license && <span title={t("Model license metadata from the source catalog", "源目录中的模型许可证元数据")}>{row.license}</span>}
-              </div> : formatSourceDetail(row, t)}</td>
-              <td><SourceLink href={row.tag ? row.source + "/releases/tag/" + row.tag : row.source} label={t("Open source for {name}", "查看 {name} 的来源", { name: row.name })}>{active === "models" ? "Hugging Face" : t("Open source", "查看来源")}</SourceLink></td>
+              </div> : <>{row.category && <small>{row.category}</small>}{formatSourceDetail(row, t)}</>}</td>
+              <td className="catalog-row-source">
+                <SourceLink href={sourceUrl} label={t("Open source for {name}", "查看 {name} 的来源", { name: row.name })}>{t("Open source", "查看来源")}</SourceLink>
+                {sourceUrl && <small title={sourceUrl}><bdi>{sourceUrl.replace("https://", "")}</bdi></small>}
+              </td>
             </tr>;
           })}</tbody>
         </table>
       </div> : <p className="catalog-empty">{t("Try a different name, ID, or detail.", "试试其他名称、ID 或关键词。")}</p>}
 
       {pages > 1 && <div className="catalog-bottom"><Pager page={current} pages={pages} onPage={pageFromBottom} number={number} label={t("Catalog pages at bottom", "底部目录分页")} /></div>}
+
+      {comparable && picks.length > 0 && <CatalogCompare kind={active} chosen={picks} modelStats={modelStats}
+        clear={() => setPicks([])} remove={id => setPicks(current => current.filter(row => row.id !== id))} />}
 
       {active === "models" && <details className="catalog-provenance">
         <summary>{t("Source, coverage, and MIT notice", "来源、收录范围和 MIT 声明")}</summary>

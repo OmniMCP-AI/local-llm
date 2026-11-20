@@ -452,3 +452,7 @@ serving lane returns 410 across the site, API, and MCP, including pinned
 text companions. Missing or malformed configured policy files make measured
 goal reads unavailable. The built-in plan and unmeasured serving cohort
 remain available.
+
+## Price and evaluation source intake
+
+Capture source checks, GPU price candidates, and published model evaluations in PostgreSQL before editorial review. [Private intake workflow](fastest_intake/README.md)

@@ -102,6 +102,8 @@ test("runtime cards cite pinned releases and keep documented support apart from 
     ["vllm", "v0.34.0", "vllm-project/vllm", "Safetensors"],
     ["ollama", "v0.40.16", "ollama/ollama", "GGUF"],
     ["mlx-lm", "v0.32.2", "ml-explore/mlx-lm", "MLX"],
+    ["strata", "v0.2.17", "Niko1221/Strata", "GGUF"],
+    ["project-maya", "v1.1.70", "mw00/project-maya", "GGUF"],
   ]) {
     for (const extension of ["html", "md"]) {
       const response = await request(`runtimes/${runtime}.${extension}`);
@@ -113,6 +115,16 @@ test("runtime cards cite pinned releases and keep documented support apart from 
       assert.ok(text.includes("No fastest.ai compatibility test is published in this release"));
     }
   }
+});
+
+test("the runtime profile links an exact commit and the relevant transcript", async (t) => {
+  const { request } = await buildFixture(t);
+  const response = await request("runtimes/ninfer.html");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Neroued\/ninfer\/commit\/ebdc67e584bcd9ebe16ee63af9abeb2118bac6cd/);
+  assert.match(html, /MhZABCEOUWY/);
+  assert.match(html, /Pinned upstream commit/);
 });
 
 test("versioned hardware cards preserve uncertain memory, source links and board variants", async (t) => {
@@ -159,6 +171,18 @@ test("every released hardware row resolves in both formats", async (t) => {
       }
     }
   }
+});
+
+test("GPU profiles highlight only identities with exact rated values", async (t) => {
+  const { request } = await buildFixture(t);
+  const html = await (await request("cards/amd-radeon-pro-w7800.html")).text();
+  const markdown = await (await request("cards/amd-radeon-pro-w7800.md")).text();
+  assert.match(html, /profile-chart-dot" href="[^"]*w7800.html" aria-current="page"/);
+  assert.match(html, /32 GB · 576 GB\/s/);
+  assert.match(markdown, /Selected GPU: 32 GB · Rated memory bandwidth \(GB\/s\): 576/);
+  const ambiguous = await (await request("cards/nvidia-geforce-rtx-3060.html")).text();
+  assert.match(ambiguous, /has no unambiguous pair of rated specifications/);
+  assert.doesNotMatch(ambiguous, /profile-chart-dot"[^>]*aria-current/);
 });
 
 test("the offline catalog generates linked HTML and Markdown for every GPU", async (t) => {

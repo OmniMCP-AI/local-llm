@@ -11,7 +11,7 @@ import { ScatterPlot, PricePlot, RankingPlot } from "./plots";
 import { ExploreLenses, KnowledgePage, WikiDetails, wikiEntry } from "./knowledge";
 import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
-import { CatalogTopics, SourceCatalog } from "./catalog";
+import { CatalogModelProfile, CatalogTopics, SourceCatalog } from "./catalog";
 import { CostPage } from "./costs";
 import { navigationHref } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
@@ -80,9 +80,11 @@ function initialState() {
 }
 
 function routeFrom(hash = location.hash) {
-  const [route, slug, focus] = hash.slice(1).split("?", 1)[0].split("/");
+  const [path, query] = hash.slice(1).split("?");
+  const [route, slug, focus] = path.split("/");
   const name = Object.keys(routes).find((entry) => routes[entry] === route) || "Explorer";
-  return { name, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
+  const model = route === "catalog" && slug === "models" ? new URLSearchParams(query).get("model") : null;
+  return { name, model, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
 }
 
 function limitReason(row, { work, context, region, condition, rule }) {
@@ -406,7 +408,7 @@ function AgentPage({ onCopy }) {
 function App() {
   const { t, locale } = useLocale();
   const [state, setState] = useState(initialState);
-  const [{ name: page, slug, focus }, setRoute] = useState(routeFrom);
+  const [{ name: page, model, slug, focus }, setRoute] = useState(routeFrom);
   const [panel, setPanel] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [toast, setToast] = useState("");
@@ -522,6 +524,7 @@ function App() {
         : page === "Methods" ? <MethodsPage go={go} />
         : page === "Costs" ? <CostPage key={slug || "costs"} initialMethod={slug} go={go} />
         : page === "Catalog" && slug === "topics" ? <CatalogTopics go={go} />
+        : page === "Catalog" && model ? <CatalogModelProfile id={model} go={go} />
         : page === "Catalog" || (page === "Models" && !slug) ? <>
           <SourceCatalog key={page + "/" + (slug || "")} initialKind={page === "Models" ? "models" : slug || "cards"} go={go} onCopy={copy} />
           <WikiDetails slug={slug === "runtimes" ? "runtimes" : page === "Models" ? "models" : "catalog"} go={go} onCopy={copy} />
