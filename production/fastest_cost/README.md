@@ -14,6 +14,15 @@ calculator, HTML and Markdown, JSON API, and advisor use the same inputs.
 The public selectors control task volume, time horizon and view. The
 configured file governs which evidence can be used.
 
+Operators can inspect tariff candidates in the private PostgreSQL intake.
+Check the source revision, effective dates, market, exact meter or endpoint,
+billing terms and workload eligibility before approving any candidate. For a
+time-of-use schedule, document how usage in each band maps to the scenario's
+single `per_kwh` input and which fixed charges are attributable to the workload.
+Assess any applicable storage, transfer and other charges before reviewing a
+base cloud rate as an operating input.
+[Private intake workflow](../fastest_intake/README.md)
+
 Use a JSON object with these fields.
 
 | Field | Required contents |

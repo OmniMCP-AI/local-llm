@@ -55,4 +55,31 @@ CREATE TABLE IF NOT EXISTS fastest_intake.model_evaluation (
     FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.tariff_candidate (
+    batch_id text,
+    id text CHECK (id <> ''),
+    source text NOT NULL,
+    locator text NOT NULL CHECK (locator <> ''),
+    kind text NOT NULL,
+    provider text NOT NULL CHECK (provider <> ''),
+    offering text NOT NULL CHECK (offering <> ''),
+    revision text NOT NULL CHECK (revision <> ''),
+    market text NOT NULL CHECK (market ~ '^[A-Z]{2}$'),
+    region text NOT NULL CHECK (region <> ''),
+    currency text NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+    amount numeric NOT NULL CHECK (amount >= 0 AND amount < 1e12),
+    unit text NOT NULL,
+    component text NOT NULL CHECK (component <> ''),
+    effective_from date,
+    effective_until date,
+    qualification text NOT NULL CHECK (qualification <> ''),
+    CHECK ((kind = 'electricity' AND unit IN ('kwh', 'month'))
+        OR (kind = 'rental' AND unit IN ('instance_hour', 'month'))
+        OR (kind = 'api' AND unit IN ('million_input_tokens', 'million_cached_input_tokens',
+                                      'million_output_tokens', 'month'))),
+    CHECK (effective_until > effective_from),
+    PRIMARY KEY (batch_id, id),
+    FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
+);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;

@@ -143,6 +143,63 @@ class ReleaseTest(unittest.TestCase):
                     server.kill()
                     server.wait(timeout=5)
 
+    def test_private_tariff_intake_preserves_legacy_batches_and_public_cost_gate(self):
+        bundle_path = self.socket_path.parent / "capture.json"
+
+        def intake(command, bundle=None, *, check=True):
+            args = [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url, command]
+            if bundle is not None:
+                bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+                args.append(str(bundle_path))
+            return subprocess.run(args, cwd=FIXTURE.parents[1], text=True, capture_output=True,
+                                  check=check, timeout=30)
+
+        old_bundle = {
+            "checked_at": "2026-11-20T00:00:00Z",
+            "note": "Fixture capture.",
+            "sources": [{"source": "fixture-utility", "url": "https://utility.example/schedule",
+                         "status": "captured", "note": "Synthetic tariff."}],
+            "prices": [],
+            "evaluations": [],
+        }
+        intake("migrate")
+        legacy = json.loads(intake("ingest", old_bundle).stdout)
+        self.assertEqual(legacy["batch_id"], "b8fcf73b7d7d0b828a9e63efa6447570029513a22210ee7866869e622f86bba7")
+        tariff = {
+            "id": "fixture-power-off-peak", "source": "fixture-utility", "locator": "Schedule A, page 2",
+            "kind": "electricity", "provider": "Fixture Energy", "offering": "Residential Schedule A",
+            "revision": "fixture-schedule-2026", "market": "US", "region": "US-CA fixture territory",
+            "currency": "USD", "amount": "0.12345", "unit": "kwh", "component": "off-peak",
+            "effective_from": "2026-01-01", "effective_until": "2027-01-01",
+            "qualification": "Residential accounts in the fixture territory.",
+        }
+        bundle = {**old_bundle, "tariffs": [tariff]}
+        with api_client(self.store) as request:
+            before = request("/api/v1/calculator")
+            imported = json.loads(intake("ingest", bundle).stdout)
+            self.assertEqual(imported["tariff_candidates"], 1)
+            self.assertEqual(imported["batches"], 2)
+            self.assertEqual(json.loads(intake("ingest", bundle).stdout), imported)
+            self.assertEqual(json.loads(intake("ingest", old_bundle).stdout)["batch_id"], legacy["batch_id"])
+            after = request("/api/v1/calculator")
+            self.assertEqual((before[0], before[2]), (after[0], after[2]))
+            self.assertEqual(after[2]["estimate_kind"], "unavailable")
+
+        self.assertEqual(self.store._query("""
+            SELECT amount, unit, currency, effective_from, effective_until, region
+            FROM fastest_intake.tariff_candidate
+        """), "0.12345|kwh|USD|2026-01-01|2027-01-01|US-CA fixture territory")
+        blocked = {**bundle, "sources": [{**old_bundle["sources"][0], "status": "no_quote"}]}
+        rejected = intake("ingest", blocked, check=False)
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn("captured source probe", rejected.stderr)
+        self.assertEqual(json.loads(intake("stats").stdout)["batches"], 2)
+        self.store._query("CREATE ROLE intake_public_reader LOGIN;")
+        with self.assertRaisesRegex(ReleaseError, "permission denied"):
+            ReleaseStore(self.database_url + " user=intake_public_reader")._query(
+                "SELECT amount FROM fastest_intake.tariff_candidate"
+            )
+
     def test_deployed_origin_replays_published_values_after_restart(self):
         self.observation["kind"] = "measured"
         release = self.store.publish(self.observation)
