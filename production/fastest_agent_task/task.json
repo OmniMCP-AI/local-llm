@@ -1,0 +1,19 @@
+{
+  "id": "open-inventory@1",
+  "prompt": "Read the fictional inventory using the declared read tools. Add units for rows with status open across the full inventory. Return a single JSON object with the integer key open_units and no other keys or prose. To request a tool, emit a JSON object with exactly the keys tool and resource and wait for its result before continuing.",
+  "rubric": {
+    "id": "exact-open-subtotal@1",
+    "expected_output": {"open_units": 17},
+    "required": "Read all fixture pages via the declared tools and return exactly the expected JSON fields and values."
+  },
+  "pages": {
+    "a": {"rows": [
+      {"sku": "fiction-01", "status": "open", "units": 8},
+      {"sku": "fiction-02", "status": "closed", "units": 15}
+    ]},
+    "b": {"rows": [
+      {"sku": "fiction-03", "status": "open", "units": 9},
+      {"sku": "fiction-04", "status": "closed", "units": 11}
+    ]}
+  }
+}

@@ -154,3 +154,10 @@ native models and zero community submissions.
 The [text pilot](fastest_text/README.md) builds a public report for the planned
 Apple M4 and GeForce RTX 4090 cells. It documents the pinned throughput protocol,
 Chinese task rubric, machine access blockers and reviewed runner intake.
+
+## Controlled agent-task comparison
+
+The [inventory agent task](fastest_agent_task/README.md) compares time and success
+for one pinned task under two read-only tool policies. It builds a synthetic demo
+or a measured release from reviewed operator-owned records, with matching HTML,
+Markdown, JSON and a checksum manifest.
