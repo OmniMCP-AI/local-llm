@@ -1,0 +1,245 @@
+"""Project one pinned text decision cohort and its rights-filtered build quotes."""
+
+from decimal import Decimal, localcontext
+import json
+import re
+from urllib.parse import urlencode
+from uuid import UUID
+
+from fastest_pilot_bundle import bundle_manifest, digest, json_text
+from fastest_prices import PriceError
+from fastest_prices.result import eligible_offer
+from fastest_release.validation import plain_text
+from fastest_text.__main__ import load_dataset, text_artifacts
+
+
+METRICS = {
+    "decode": {"label": "Decode throughput", "unit": "tok/s", "direction": "higher", "default": "40"},
+    "prefill": {"label": "Prefill throughput", "unit": "tok/s", "direction": "higher", "default": "500"},
+    "budget": {"label": "Landed whole-build price", "direction": "lower", "default": "1500"},
+}
+ENTRIES = {"machine": "Use my machine", "budget": "Shop by budget", "expert": "Expert compare"}
+PUBLIC_FIELDS = {"entry", "machine", "decode", "prefill", "budget", "priority", "privacy", "x", "y"}
+DEFAULT_MARKET = {"market": "US", "destination": None, "currency": "USD", "condition": "new"}
+PRIVACY_LABELS = {"local-only": "Require local-only execution", "allow-external": "Allow external services"}
+PRIVACY_RECORDS = {"local-only": "Local-only execution", "external": "External service use"}
+STATUSES = ("pass", "miss", "unknown", "ineligible")
+NUMBER = re.compile(r"(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,8})?")
+
+
+def _require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def _number(text, metric):
+    _require(NUMBER.fullmatch(text), f"Invalid {METRICS[metric]['label'].lower()} goal.")
+    return format(Decimal(text), "f").rstrip("0").rstrip(".") if "." in text else text
+
+
+def _item(status, reason, *, value=None, **evidence):
+    return {"status": status, "reason": reason, "value": value, **evidence}
+
+
+class GoalService:
+    def __init__(self, manifest=None, *, price_reader=None):
+        policy = json.loads(manifest.read_text(encoding="utf-8")) if manifest else {
+            "schema_version": 1, "records": [], "market": DEFAULT_MARKET, "candidates": {},
+        }
+        _require(isinstance(policy, dict) and set(policy) == {"schema_version", "records", "market", "candidates"}
+                 and type(policy["schema_version"]) is int and policy["schema_version"] == 1, "Invalid goals cohort manifest.")
+        records = policy["records"]
+        _require(isinstance(records, list) and all(plain_text(path) for path in records), "Invalid goals text records.")
+        self.text = load_dataset([manifest.parent / path for path in records])
+        self.machines = {cell["id"]: cell["name"] for cell in self.text["cells"]}
+        self.market = policy["market"]
+        _require(isinstance(self.market, dict) and self.market.keys() == DEFAULT_MARKET.keys()
+                 and re.fullmatch("[A-Z]{2}", str(self.market["market"]))
+                 and re.fullmatch("[A-Z]{3}", str(self.market["currency"]))
+                 and self.market["condition"] in ("new", "used", "refurbished", "open_box")
+                 and (self.market["destination"] is None or plain_text(self.market["destination"])),
+                 "Invalid goals market.")
+        self.candidates = policy["candidates"]
+        _require(isinstance(self.candidates, dict) and self.candidates.keys() <= self.machines.keys(),
+                 "Unknown goals cohort candidate.")
+        for candidate in self.candidates.values():
+            _require(isinstance(candidate, dict) and candidate.keys() <= {"build_revision", "price_release", "privacy"},
+                     "Invalid goals candidate metadata.")
+            if "price_release" in candidate:
+                identifier = candidate["price_release"]
+                try:
+                    canonical = str(UUID(identifier))
+                except (TypeError, ValueError, AttributeError):
+                    raise ValueError("Invalid price release ID.") from None
+                _require(canonical == identifier and plain_text(candidate.get("build_revision")) and self.market["destination"],
+                         "A price release requires a pinned whole-build revision and market destination.")
+                _require(price_reader is not None, "A pinned price release requires a price database.")
+            elif "build_revision" in candidate:
+                _require(plain_text(candidate["build_revision"]), "Invalid whole-build revision.")
+            if "privacy" in candidate:
+                privacy = candidate["privacy"]
+                _require(isinstance(privacy, dict) and set(privacy) == {"value", "source"}
+                         and privacy["value"] in tuple(PRIVACY_RECORDS) and plain_text(privacy["source"]),
+                         "Invalid reviewed privacy evidence.")
+        self.price_reader = price_reader
+        self.metrics = {metric: {**definition, **({"unit": self.market["currency"]} if metric == "budget" else {})}
+                        for metric, definition in METRICS.items()}
+        self.release_id = digest(json_text({
+            "version": 1, "text": self.text, "market": self.market, "candidates": self.candidates,
+        }))
+        self.text_artifacts = text_artifacts(self.text)
+        self.text_artifacts["manifest.json"] = bundle_manifest(self.text["id"], self.text_artifacts)
+
+    def selection(self, values):
+        _require(values.keys() <= PUBLIC_FIELDS, "Unknown goals parameter.")
+        entry = values.get("entry", "machine")
+        _require(entry in ENTRIES, "Unknown starting point.")
+        machine = values.get("machine", next(iter(self.machines)) if entry == "machine" else "")
+        _require(machine == "" or machine in self.machines, "Unknown setup.")
+        priority = values.get("priority", "budget" if entry == "budget" else "decode")
+        privacy = values.get("privacy", "local-only")
+        x = values.get("x", "budget" if entry == "budget" else "prefill")
+        y = values.get("y", "decode")
+        _require(priority in METRICS and privacy in PRIVACY_LABELS, "Unknown priority or privacy requirement.")
+        _require(x in METRICS and y in METRICS and x != y, "Choose two distinct chart axes.")
+        budget = values.get("budget", METRICS["budget"]["default"] if entry == "budget" else "")
+        return {
+            "entry": entry, "machine": machine,
+            "decode": _number(values.get("decode", METRICS["decode"]["default"]), "decode"),
+            "prefill": _number(values.get("prefill", METRICS["prefill"]["default"]), "prefill"),
+            "budget": _number(budget, "budget") if budget else "",
+            "priority": priority, "privacy": privacy, "x": x, "y": y,
+        }
+
+    def url(self, selection, suffix=""):
+        return f"/goals/{self.release_id}{suffix}?{urlencode(selection)}"
+
+    def _price(self, machine, candidate):
+        identifier = candidate.get("price_release")
+        if not identifier:
+            return _item("unknown", "No reviewed, authorized whole-build price is pinned for this setup.")
+        try:
+            price = self.price_reader(identifier)
+        except PriceError:
+            return _item("unknown", "The pinned price release is unavailable.")
+        if price["status"] == "withdrawn":
+            return _item("unknown", "The pinned price release was withdrawn.")
+        if price["data_class"] != "authorized_observations":
+            return _item("unknown", "The pinned price release is illustrative.")
+        expected_scope = {"kind": "whole_build", "id": machine, "revision_id": candidate["build_revision"]}
+        if price["scope"] != expected_scope or any(price[field] != value for field, value in self.market.items()):
+            return _item("unknown", "The pinned price does not cover this exact whole-build revision and market terms.")
+        if price["adapter_status"] != "fresh":
+            return _item("unknown", "The pinned price source is stale or has no successful check.")
+        offers = [offer for offer in price["offers"] if offer["latest_for_listing"] and eligible_offer(offer)]
+        current = [offer for offer in offers if offer["freshness"] == "fresh"]
+        if not current:
+            reason = "Every eligible whole-build quote is stale." if offers else (
+                "No fresh, unconditional, confirmed, in-stock asking quote has known tax and shipping."
+            )
+            return _item("unknown", reason)
+        quote = min(current, key=lambda offer: (Decimal(offer["landed_price"]), offer["listing_id"]))
+        return _item("available", "Lowest comparable landed asking quote in the pinned release.",
+                     value=quote["landed_price"], release_id=identifier,
+                     **{field: quote[field] for field in ("observed_at", "seller", "listing_id", "source_locator")})
+
+    def _row(self, cell, selection):
+        machine = cell["id"]
+        candidate = self.candidates.get(machine, {})
+        metrics = {
+            metric: {field: cell["metrics"][metric][field] for field in ("value", "status", "reason", "sample_count")}
+            for metric in ("decode", "prefill")
+        }
+        metrics["budget"] = self._price(machine, candidate)
+        quality = cell["quality"]
+        if quality["output_count"]:
+            accepted, total = quality["accepted_count"], quality["output_count"]
+            count = f"{accepted} of {total} reviewed outputs met every rubric criterion."
+            quality_gate = _item("pass" if accepted == total else "ineligible", count)
+        else:
+            quality_gate = _item("unknown", "No reviewed output from this setup for the pinned Chinese product-copy task.")
+
+        privacy = candidate.get("privacy")
+        privacy_required = selection["privacy"] == "local-only"
+        if not privacy:
+            privacy_gate = _item("unknown" if privacy_required else "pass", "Execution privacy is unverified.")
+        else:
+            allowed = not privacy_required or privacy["value"] == "local-only"
+            privacy_gate = _item("pass" if allowed else "ineligible", PRIVACY_RECORDS[privacy["value"]] + ".",
+                                 source=privacy["source"])
+
+        if cell["status"] == "blocked":
+            admission = _item("unknown", cell["blocker"])
+        elif cell["status"] == "failed":
+            reasons = list(dict.fromkeys(attempt["reason"] for attempt in cell["attempts"]))
+            admission = _item("ineligible", "No successful timed attempt. " + " ".join(reasons))
+        else:
+            admission = _item("pass", f"Reviewed measurements on the pinned protocol ({cell['status']} run).")
+        gates = {"admission": admission, "quality": quality_gate, "privacy": privacy_gate}
+        goals = {metric: self._check(metric, metrics[metric], selection[metric], admission)
+                 for metric in METRICS if selection[metric]}
+        gate_states = {gate["status"] for gate in gates.values()}
+        goal_states = {goal["status"] for goal in goals.values()}
+        status = next((state for state in ("ineligible", "miss", "unknown")
+                       if state in goal_states | gate_states), "pass")
+        return {
+            "id": machine, "name": cell["name"], "backend": cell["backend"], "status": status,
+            "selected_machine": machine == selection["machine"],
+            "gates": gates, "goals": goals, "metrics": metrics, "chart_eligible": gate_states == {"pass"},
+            "run_source": cell.get("source"), "build_revision": candidate.get("build_revision"),
+        }
+
+    def _check(self, metric, observation, target, admission):
+        unit = self.metrics[metric]["unit"]
+        value = observation["value"]
+        if value is None:
+            status = "ineligible" if metric != "budget" and admission["status"] == "ineligible" else "unknown"
+            reason = admission["reason"] if status == "ineligible" else observation["reason"]
+            return _item(status, reason, value=None, target=target, unit=unit, gap=None)
+        low = METRICS[metric]["direction"] == "lower"
+        with localcontext() as context:
+            context.prec = 80
+            gap = Decimal(value) - Decimal(target) if low else Decimal(target) - Decimal(value)
+        if gap > 0:
+            difference = format(gap, "f")
+            side = "over the maximum" if low else "below the minimum"
+            return _item("miss", f"{difference} {unit} {side}.", value=value, target=target, unit=unit, gap=difference)
+        return _item("pass", "At or within the required limit.", value=value, target=target, unit=unit, gap="0")
+
+    def evaluate(self, selection):
+        rows = [self._row(cell, selection) for cell in self.text["cells"]]
+
+        def rank(row):
+            metric = selection["priority"]
+            value = row["metrics"][metric]["value"]
+            return STATUSES.index(row["status"]), value is None, _axis(metric, value) if value else 0, row["id"]
+
+        rows.sort(key=rank)
+        supported = [row["id"] for row in rows if row["status"] == "pass"]
+        alternatives = [row["id"] for row in rows if row["chart_eligible"] and row["status"] in {"pass", "miss"}
+                        and (not supported or row["id"] != supported[0])]
+        return {
+            "release_id": self.release_id, "text_release": self.text["id"], "selection": selection,
+            "market": self.market, "metrics": self.metrics, "rows": rows,
+            "protocol": self.text["protocol"]["id"], "quality_rubric": self.text["rubric"]["id"],
+            "recommendation": supported[0] if supported else None, "alternatives": alternatives,
+            "chart": _chart(rows, selection["x"], selection["y"]),
+        }
+
+
+def _axis(metric, value):
+    decimal = Decimal(value)
+    return decimal if METRICS[metric]["direction"] == "lower" else decimal.copy_negate()
+
+
+def _chart(rows, x, y):
+    points = []
+    for row in rows:
+        x_value, y_value = (row["metrics"][metric]["value"] for metric in (x, y))
+        if row["chart_eligible"] and x_value is not None and y_value is not None:
+            points.append({"id": row["id"], "x": x_value, "y": y_value})
+
+    axes = [(_axis(x, point["x"]), _axis(y, point["y"])) for point in points]
+    for point, (first, second) in zip(points, axes):
+        point["pareto"] = not any(a <= first and b <= second and (a < first or b < second) for a, b in axes)
+    return {"x": x, "y": y, "points": points}
