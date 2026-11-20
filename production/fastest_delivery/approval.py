@@ -19,12 +19,16 @@ def seal(record, field):
 
 
 def read_sealed(path, field):
-    record = json.loads(path.read_bytes())
+    return decode_sealed(path.read_bytes(), field, path.name)
+
+
+def decode_sealed(body, field, name):
+    record = json.loads(body)
     if not isinstance(record, dict):
-        raise ValueError(f"{path.name} must contain a JSON object")
+        raise ValueError(f"{name} must contain a JSON object")
     identifier = record.pop(field, None)
     if identifier != digest(record):
-        raise ValueError(f"{path.name} failed {field} verification")
+        raise ValueError(f"{name} failed {field} verification")
     return {**record, field: identifier}
 
 
