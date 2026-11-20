@@ -51,6 +51,7 @@ def _write_markdown(snapshot, dataset_digest):
     introduction = {
         "synthetic": "This synthetic evidence demonstrates the release pipeline.",
         "measured": "This measurement applies to the configuration and protocol below.",
+        "contributor": "Contributor-reported measurement for the configuration and protocol below.",
     }
     details = [
         introduction[row["kind"]],

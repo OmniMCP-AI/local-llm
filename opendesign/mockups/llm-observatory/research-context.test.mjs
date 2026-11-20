@@ -1,0 +1,182 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import test from "node:test";
+import { writeResearchRelease } from "./research-release-build.mjs";
+
+const directory = fileURLToPath(new URL(".", import.meta.url));
+const digest = (value) => createHash("sha256").update(value).digest("hex");
+const json = async (path) => JSON.parse(await readFile(path, "utf8"));
+const run = promisify(execFile);
+const noteId = "youtube/09GB4LtXUok";
+const forecastId = "youtube/6YMHMU_x4Rc";
+const repostId = "youtube/kQKCp7PlVxY";
+const chineseId = "youtube/dnk_lPZ0Y-E";
+const blogId = "together-evaluation-methods";
+const plan = { heldOut: [blogId], crossPosts: [] };
+const examples = [
+  { source: "comparison-methods", subject: "comparison-methods", facet: "topic", tag: "retrieval", expected: true },
+  { source: "comparison-methods", subject: "comparison-methods", facet: "topic", tag: "coding", expected: false },
+];
+
+async function released(t, fixtureIds = []) {
+  const root = await mkdtemp(join(tmpdir(), "fastest-context-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const seed = await json(join(directory, "wiki/research-index.json"));
+  const approvals = Object.fromEntries(fixtureIds.map((id) => {
+    const source = seed.sources.find((item) => item.id === id);
+    return [id, { status: "approved-metadata", review: "TEST-ONLY", sha256: digest(JSON.stringify(source)) }];
+  }));
+  const index = await writeResearchRelease(directory, root, approvals);
+  await mkdir(join(root, "wiki"));
+  await writeFile(join(root, "wiki/manifest.json"), JSON.stringify({ researchRelease: index.release }));
+  await writeFile(join(root, "evidence-quarantine.json"), JSON.stringify({ withdrawnSources: [] }));
+  return { root, index };
+}
+
+test("suggestions preserve the locator and scope of the annotated note, forecast, and article", async (t) => {
+  const { createContextReview } = await import("./research-context.mjs");
+  const { index } = await released(t, [noteId, forecastId]);
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const context = createContextReview(index, rules);
+  const slots = context.suggest(noteId);
+  const slot = (id, facet) => slots.find((item) => item.subject === id && item.facet === facet);
+  const tags = ({ matches }) => matches.map(({ tag }) => tag);
+  assert.ok(tags(slot("V024-P009", "task")).includes("coding"));
+  assert.ok(tags(slot("V024-P007", "task")).includes("retrieval"));
+  assert.deepEqual(tags(slot("V024-P001", "task")), []);
+  assert.deepEqual(tags(slot("V024-P001", "dimension")), ["prefill"]);
+  assert.match(slot("V024-P009", "task").locator, /09GB4LtXUok&t=327s$/);
+  const forecast = context.suggest(forecastId).find(({ subject, facet }) => subject === "V021-P012" && facet === "dimension");
+  assert.deepEqual(tags(forecast), ["projection"]);
+  assert.equal(forecast.evidence, "explicit forecast,notmeasured");
+  const blog = context.suggest(blogId);
+  assert.deepEqual(blog.map(({ facet }) => facet), ["topic"]);
+  assert.ok(tags(blog[0]).includes("coding"));
+});
+
+test("calibration holds out whole sources and cross-post families and reports gaps and false transfers", async (t) => {
+  const { createContextReview } = await import("./research-context.mjs");
+  const { index } = await released(t, [noteId]);
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const note = index.sources.find(({ id }) => id === noteId);
+  const crossPost = { id: "translated-forum", format: "post", language: "zh-TW", publisher: "Another publisher",
+    records: [], url: "https://example.org/thread#original", title: "模型评估", context: "本地部署",
+    topics: { "model-evaluation": "https://example.org/thread#original" } };
+  const changedRules = { ...rules, task: { ...rules.task, coding: [...rules.task.coding, "prefill"] } };
+  const context = createContextReview({ ...index, sources: [...index.sources, crossPost] }, changedRules);
+  const crossPosts = [[noteId, crossPost.id]];
+  assert.throws(() => context.evaluate({ heldOut: [noteId], crossPosts }), /split.*cross-post/i);
+  const report = context.evaluate({ heldOut: [noteId, crossPost.id, blogId], crossPosts });
+  assert.deepEqual(report.heldOut, [blogId, crossPost.id, noteId]);
+  assert.equal(report.coverage.languages.zh.heldOut, 1);
+  assert.equal(report.coverage.languages.es.heldOut, 0);
+  assert.equal(report.coverage.formats.video.heldOut, 1);
+  assert.equal(report.facets.task.subjects, note.records.length);
+  assert.ok(report.facets.task.precision < 1);
+  assert.ok(report.facets.task.recall > 0);
+  assert.ok(report.facets.task.abstentions > 0);
+  assert.equal(report.facets.task.wrongScope.articleToCase, 4);
+  assert.equal(report.facets.dimension.wrongScope.forecastAsMeasurement, 0);
+  assert.ok(report.missingCoverage.languages.includes("es"));
+  assert.equal(report.automaticPromotion, false);
+});
+
+test("only explicit source-bound decisions enter a reviewed release and rollback checks the predecessor", async (t) => {
+  const { createContextReview } = await import("./research-context.mjs");
+  const { index } = await released(t);
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const current = createContextReview(index, rules);
+  const slot = current.suggest(blogId)[0];
+  const release1 = current.promote({
+    review: "editor/review-1", plan, examples, decisions: [
+      { proposal: slot.id, action: "accept", review: "editor/decision-1" },
+    ],
+  });
+  assert.deepEqual(release1.assignments[0].tags, ["coding", "model-evaluation"]);
+  assert.equal(release1.assignments[0].locator, slot.locator);
+
+  const next = createContextReview(index, { ...rules, version: 2 });
+  const nextSlot = next.suggest(blogId)[0];
+  assert.throws(() => next.promote({ review: "editor/review-2", plan, examples,
+    prior: release1, decisions: [{ proposal: slot.id, action: "accept", review: "stale" }] }), /proposal/i);
+  const release2 = next.promote({
+    review: "editor/review-2", plan, examples, prior: release1, decisions: [
+      { proposal: nextSlot.id, action: "correct", tags: ["evidence-research"], review: "editor/decision-2" },
+    ],
+  });
+  assert.deepEqual(release2.assignments[0].tags, ["evidence-research"]);
+  const release3 = next.promote({
+    review: "editor/review-3", plan, examples, prior: release2, decisions: [
+      { proposal: nextSlot.id, action: "unclassified", review: "editor/decision-3" },
+    ],
+  });
+  assert.deepEqual(release3.assignments[0].tags, []);
+  assert.throws(() => next.rollback(release3, release1), /predecessor/i);
+  assert.equal(next.rollback(release2, release1).id, release1.id);
+  assert.equal(next.rollback(release2, release1).rules.version, 1);
+
+  const changed = createContextReview({ ...index, sources: index.sources.filter(({ id }) => id !== blogId) }, rules);
+  assert.throws(() => changed.rollback(release2, release1), /unavailable|revision/);
+  assert.equal(index.sources.find(({ id }) => id === blogId).topics.coding, slot.locator);
+});
+
+test("the editor CLI rejects tampered snapshots and screens out current withdrawals", async (t) => {
+  const { root, index } = await released(t, [noteId]);
+  const runCLI = async (...args) => JSON.parse((await run(process.execPath,
+    ["research-context-cli.mjs", root, ...args], { cwd: directory })).stdout);
+  const { proposals } = await runCLI("suggest", noteId);
+  assert.ok(proposals.some(({ subject }) => subject === "V024-P001"));
+  await writeFile(join(root, "evidence-quarantine.json"), JSON.stringify({ withdrawnSources: [digest(noteId)] }));
+  await assert.rejects(runCLI("suggest", noteId), /not eligible/);
+  const file = join(root, "research", index.release, "index.json");
+  await writeFile(file, JSON.stringify(index));
+  await assert.rejects(runCLI("suggest", blogId), /manifest disagree/);
+});
+
+test("the CLI holds out the annotated Chinese source and both reviewed cross-posts", async (t) => {
+  const { root } = await released(t, [forecastId, repostId, chineseId]);
+  const split = join(root, "split.json");
+  const execute = async () => JSON.parse((await run(process.execPath,
+    ["research-context-cli.mjs", root, "evaluate", split], { cwd: directory })).stdout);
+  await writeFile(split, JSON.stringify({ heldOut: [forecastId, chineseId], crossPosts: [] }));
+  await assert.rejects(execute(), /split.*cross-post/i);
+  await writeFile(split, JSON.stringify({ heldOut: [forecastId, repostId, chineseId], crossPosts: [] }));
+  const report = await execute();
+  assert.equal(report.coverage.languages.zh.heldOut, 1);
+  assert.equal(report.coverage.formats.video.heldOut, 3);
+  assert.equal(report.heldOutFamilies, 2);
+  assert.ok(report.facets.dimension.recall > 0);
+});
+
+test("a reviewed vocabulary rollback restores the prior suggestions through the CLI", async (t) => {
+  const { root, index } = await released(t);
+  const file = (name) => join(root, name + ".json");
+  const put = (name, data) => writeFile(file(name), JSON.stringify(data));
+  const execute = async (active, ...args) => JSON.parse((await run(process.execPath,
+    ["research-context-cli.mjs", root, ...args],
+    { cwd: directory, env: { ...process.env, FASTEST_CONTEXT_RELEASE: active ? file(active) : "" } },
+  )).stdout);
+  const current = (await execute(null, "suggest", blogId)).proposals[0];
+  await put("first-request", { plan, examples, review: "editor/release-1",
+    decisions: [{ proposal: current.id, action: "accept", review: "editor/decision-1" }] });
+  const first = await execute(null, "promote", file("first-request"));
+  await put("first", first);
+  const rules = { ...first.rules, version: 2, topic: { ...first.rules.topic, "model-fit": ["language model"] } };
+  const { createContextReview } = await import("./research-context.mjs");
+  const candidate = createContextReview(index, rules).suggest(blogId)[0];
+  await put("next-request", { plan, examples, rules, review: "editor/release-2",
+    decisions: [{ proposal: candidate.id, action: "accept", review: "editor/decision-2" }] });
+  const second = await execute("first", "promote", file("next-request"));
+  await put("second", second);
+  const active = (await execute("second", "suggest", blogId)).proposals[0];
+  assert.ok(active.matches.some(({ tag }) => tag === "model-fit"));
+  const prior = await execute("second", "rollback", file("second"), file("first"));
+  await put("rolled-back", prior);
+  assert.deepEqual((await execute("rolled-back", "suggest", blogId)).proposals[0], current);
+});
