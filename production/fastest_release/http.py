@@ -9,6 +9,8 @@ from fastest_cost import PUBLIC_FIELDS as COST_FIELDS, calculate
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
 from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
+from fastest_goals import GoalService, PUBLIC_FIELDS as GOAL_FIELDS
+from fastest_goals.page import render_goals
 
 from . import ReleaseError, ReleaseNotFound
 from .artifacts import build_artifacts
@@ -30,7 +32,13 @@ RELEASE_ROUTE = re.compile(
 PROFILE_ROUTE = re.compile(r"/profiles/(v1-[a-f0-9]{16})/(machines|models)/([a-z0-9.-]+)\.(html|json|md)")
 
 
-def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None, profile_releases=(), profile_archives=()):
+GOALS_ROUTE = re.compile(
+    r"/goals/([a-f0-9]{64})(\.json|/(?:text-pilot\.(?:html|json|md)|manifest\.json))?"
+)
+
+
+def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
+                profile_releases=(), profile_archives=(), goals=None, goal_history=()):
     """Bind a read-only HTTP server that checks rights on every release request."""
     fit = FitService(fit_engine) if fit_engine is not None else None
     planned = ProfileRelease()
@@ -38,6 +46,9 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     archived = [ProfileRelease(store, release_ids) for release_ids in profile_archives]
     profile_versions = {profile.id: profile for profile in (planned, profiles, *archived)}
     profile_indexes = {profile.base + "/index.html": profile for profile in profile_versions.values()}
+    default_goals = GoalService()
+    goals = goals or default_goals
+    goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
@@ -49,7 +60,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            policy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"
+            policy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
             self.send_header("Content-Security-Policy", policy + ("; script-src 'self'" if profile_script else ""))
             if location is not None:
                 self.send_header("Location", location)
@@ -73,6 +84,14 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             profile_match = PROFILE_ROUTE.fullmatch(path)
             if profile_match is not None and profile_match[1] in profile_versions:
                 return self._profile(profile_versions[profile_match[1]], *profile_match.groups()[1:], query)
+            if path in {"/goals", "/goals/current"}:
+                return self._goals(goals, "", query, pin=True)
+            goal_match = GOALS_ROUTE.fullmatch(path)
+            if goal_match:
+                release, suffix = goal_match.groups()
+                if release not in goal_versions:
+                    return self._respond(404, "Goals release unavailable.\n")
+                return self._goals(goal_versions[release], suffix or "", query)
             if fit is not None and path in {"/fit", "/fit.json"}:
                 return self._fit(path, query)
             if path == "/":
@@ -84,8 +103,9 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(
                     200, '<!doctype html><html lang="en"><meta charset="utf-8">'
                     '<title>fastest.ai</title><h1>fastest.ai</h1>'
-                    '<p><a href="/costs">Compare text workload costs</a></p>'
-                    '<p><a href="/profiles">Machine and model comparisons</a></p>' + fit_link + benchmark,
+                    '<p><a href="/profiles">Machine and model comparisons</a></p>'
+                    '<p><a href="/goals">Compare setups by goal</a></p>'
+                    '<p><a href="/costs">Compare text workload costs</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
                 )
             match = RELEASE_ROUTE.fullmatch(path)
@@ -133,6 +153,27 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             selected = query.removeprefix("run=") if query.startswith("run=") else ""
             selected = selected if RUN_ID.fullmatch(selected) else None
             return self._respond(200, profiles.render(data, selected), CONTENT_TYPES["benchmark.html"], profile_script=True)
+
+        def _goals(self, service, suffix, query, *, pin=False):
+            if suffix.startswith("/"):
+                name = suffix[1:]
+                extension = name.rsplit(".", 1)[1]
+                content_type = {"html": CONTENT_TYPES["benchmark.html"], "md": CONTENT_TYPES["benchmark.md"],
+                                "json": "application/json"}[extension]
+                return self._respond(200, service.text_artifacts[name], content_type)
+            try:
+                params = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=len(GOAL_FIELDS))
+                if any(len(values) != 1 for values in params.values()):
+                    raise ValueError("Repeated goals parameter.")
+                selection = service.selection({key: values[0] for key, values in params.items()})
+            except ValueError as error:
+                return self._respond(400, f"{error}\n")
+            if pin:
+                return self._respond(307, location=service.url(selection))
+            result = service.evaluate(selection)
+            if suffix == ".json":
+                return self._respond(200, json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n", "application/json")
+            return self._respond(200, render_goals(service, result, fit is not None), CONTENT_TYPES["benchmark.html"])
 
         def _fit(self, path, query):
             try:
