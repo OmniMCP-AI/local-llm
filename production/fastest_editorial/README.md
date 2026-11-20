@@ -24,6 +24,8 @@ A `no_story` record includes a machine-readable `reason` of `no_current_release`
 
 The file path is `<output-dir>/<editorial-date>/<draft-revision>.json`. The revision is the SHA-256 of the JSON object without `draft_revision`, encoded as UTF-8 with sorted keys, unescaped Unicode, and no whitespace between elements or keys and values. Concurrent runs with the same inputs return the same file. An advance of the current release or a withdrawal can produce a new record. Retained drafts are audit artifacts. Read the pinned release again and verify the figures, rights, and exact payload before any later delivery.
 
+Use the [X editorial handoff](../fastest_delivery/README.md) to prepare a post with a chart, approve its destination and publishing window, and reconcile manual delivery.
+
 ## Test locally
 
 ```sh
