@@ -12,7 +12,10 @@ import { useLocale } from "./locale";
 
 const pageSize = 30;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
-const localHardwareRelease = __FASTEST_LOCAL_HARDWARE_RELEASE__;
+const localCatalogRelease = __FASTEST_LOCAL_CATALOG_RELEASE__;
+const localModelIds = new Set(__FASTEST_LOCAL_MODEL_IDS__);
+const manifestPath = (catalogRelease || localCatalogRelease) &&
+  `${catalogRelease ? "" : "local-catalog/"}catalog/${catalogRelease || localCatalogRelease}/manifest.json`;
 const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
 const machineKinds = ["Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
@@ -162,8 +165,12 @@ export function CatalogModelProfile({ id, go }) {
     <h1>{t("Model not found", "找不到模型")}</h1>
   </section>;
 
-  const card = modelCard({ ...row, identity: modelIdentities[row.id] }, localHardwareRelease, { local: true });
-  const markdown = renderCard(card, { release: localHardwareRelease, pathname: id + ".html", markdown: true, local: true });
+  const runtimeRoot = "local-catalog/catalog/" + localCatalogRelease;
+  const card = modelCard({ ...row, identity: modelIdentities[row.id] }, localCatalogRelease, { runtimeRoot });
+  const localProfile = localModelIds.has(id) && "local-catalog/" + catalogPath(localCatalogRelease, "models", id);
+  const markdown = localProfile ? null : renderCard(card, {
+    release: localCatalogRelease, pathname: id + ".html", markdown: true, local: true,
+  });
   const fields = rows => <dl className="profile-fields">{rows.map(([label, value, href]) => <div key={label}>
     <dt>{label}</dt><dd>{href ? <a href={href}>{value}</a> : value}</dd>
   </div>)}</dl>;
@@ -172,7 +179,10 @@ export function CatalogModelProfile({ id, go }) {
     <header className="profile-hero">
       <p className="profile-kicker">{t("Model repository", "模型仓库")}</p><h1><bdi>{id}</bdi></h1>
       <div className="profile-actions"><SourceLink href={row.source}>{t("Open source", "查看来源")}</SourceLink>
-        <a href={"data:text/markdown;charset=utf-8," + encodeURIComponent(markdown)} download={id.split("/")[1] + ".md"}>Markdown</a></div>
+        {localProfile ? <>
+          <a href={localProfile}>{t("Standalone profile", "独立资料页")}</a>
+          <a href={localProfile.replace(/\.html$/, ".md")}>Markdown</a>
+        </> : <a href={"data:text/markdown;charset=utf-8," + encodeURIComponent(markdown)} download={id.split("/")[1] + ".md"}>Markdown</a>}</div>
     </header>
     <section className="profile-section"><h2>{t("Repository details", "仓库详情")}</h2>{fields(card.fields)}</section>
     {card.sections.map(({ title, fields: rows }) => <section key={title} className="profile-section"><h2>{title}</h2>{fields(rows)}</section>)}
@@ -320,7 +330,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           specs: number.format(coverage.cardsWithVendorSpecs),
         })} ·{" "}</>}
         {t("No reviewed benchmark results", "暂无经过审核的基准测试结果")}
-        {(catalogRelease || localHardwareRelease) && <> · <a className="catalog-source-link" href={`${catalogRelease ? "" : "local-catalog/"}catalog/${catalogRelease || localHardwareRelease}/manifest.json`}>{t("Snapshot sources and counts", "快照来源与数量")}</a></>}
+        {manifestPath && <> · <a className="catalog-source-link" href={manifestPath}>{t("Snapshot sources and counts", "快照来源与数量")}</a></>}
       </p>}
       {active === "models" && <>
         <div className="catalog-nav" aria-label={t("Model collections", "模型分类")}>
@@ -386,7 +396,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
             const card = catalogRelease
               ? "/" + catalogPath(catalogRelease, active, row.id)
               : modelId ? "#catalog/models?" + modelQuery
-                : "local-catalog/" + catalogPath(localHardwareRelease, active, row.id);
+                : "local-catalog/" + catalogPath(localCatalogRelease, active, row.id);
             const sourceUrl = safeSource(row.vendorSpec?.source ?? row.source);
             const picked = picks.some(entry => entry.id === row.id);
             return <tr key={row.id}>
@@ -428,7 +438,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         <summary>{t("Source, coverage, and MIT notice", "来源、收录范围和 MIT 声明")}</summary>
         <p>{t(modelCatalog.note, "模型元数据来自固定版本的 llmfit 目录，每条记录链接至原始 Hugging Face 仓库。目录许可证不适用于模型权重。模型许可信息以原始仓库为准。")}</p>
         <p>{t("{count} upstream records at", "上游共 {count} 条记录，版本", { count: number.format(modelCatalog.sourceRows) })} <code>{modelCatalog.commit}</code></p>
-        {catalogRelease && <p><a className="catalog-source-link" href={`catalog/${catalogRelease}/manifest.json`}>{t("Release coverage and provenance", "发布版覆盖范围与来源")}</a></p>}
+        {manifestPath && <p><a className="catalog-source-link" href={manifestPath}>{t("Release coverage and provenance", "发布版覆盖范围与来源")}</a></p>}
         <SourceLink href={modelCatalog.catalogLicenseUrl}>{t("Upstream license", "上游许可证")}</SourceLink>
         <pre>{modelCatalog.licenseNotice}</pre>
         {onCopy && <button type="button" className="btn outline" onClick={() => onCopy(modelCatalog.licenseNotice, t("MIT notice copied", "已复制 MIT 声明"))}>{t("Copy MIT notice", "复制 MIT 声明")}</button>}
