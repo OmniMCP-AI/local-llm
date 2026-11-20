@@ -85,12 +85,63 @@ releases. Evidence and historical-offer queries then return 410 with no
 measurement or offer rows. Profile and goals pages reflect the resulting
 coverage or budget gaps.
 
-## Test the integrated production code
+## Connect an MCP client
 
-The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, and Pillow 10.1–12 for channel packaging. From `production/`, run this in a local environment with those tools. With uv, the command installs Pillow in an isolated environment.
+The local adapter uses MCP **2025-11-25** over **stdio**. The verified client
+is the official MCP Python SDK `ClientSession` from `mcp==1.30.0`, which is
+also the adapter's SDK pin. Responses retain the public API `1.0.0` payload,
+including revision IDs, citations, units, unknowns, exclusions and decimal
+strings. [MCP stdio specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) · [Python SDK release](https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0)
+
+From `production/`, start `python3 -m fastest_release serve` with the readers
+you want to expose. Install the adapter dependencies into the Python environment
+your client will launch using `python3 -m pip install -r fastest_mcp/requirements.txt`.
+Configure the client to launch `python3 -m fastest_mcp --port 8000` with
+`production/` as its working directory. Clients that take an executable and
+argument list can use the following command, substituting absolute paths.
+
+```json
+{
+  "command": "/path/to/python3",
+  "args": ["/path/to/local-llm/production/fastest_mcp", "--port", "8000"]
+}
+```
+
+| MCP operation | Released data |
+| --- | --- |
+| `v1_search` | Paginated machine and model catalog |
+| `v1_coverage` | Profile cohorts, evidence references and exclusions |
+| `v1_evidence` | One evidence ID or release UUID, when the evidence reader is configured |
+| `v1_comparison` | Goals comparison with its release ID and pinned page URL |
+| `v1_profile_comparison` | Reviewed measurements and exclusions from a pinned profile cohort |
+| `v1_historical_offers` | Authorized historical quotes, when the price reader is configured |
+| `v1_calculator` | Deterministic cost projection for the same accepted workload |
+| `fastest://v1/catalog` | First page of the public catalog with its resolved revision |
+| `fastest://v1/releases/{release_id}/evidence` | Evidence JSON by release UUID, when the evidence reader is configured |
+
+Tools publish their supported arguments through `tools/list`. Save the returned
+release or revision along with the selection to replay a comparison. For lists,
+reuse the revision and filters with the returned `next_offset`. Each read goes
+to the same public listener on `127.0.0.1`. Its pagination, rate limit and
+current rights checks apply to every tool and resource read, including pinned
+URIs. The adapter accepts only those public selectors and caps each upstream
+response at 2 MiB. All client calls use fixed GET paths with no client-supplied
+URL, query language, file path or mutation action.
+
+The wire tests start a disposable listener and exercise the official client.
+The tests compare the site's profile evidence IDs, exclusions and withdrawal
+behavior, and verify the calculator's exact decimal strings.
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 uv run --no-project --isolated --with 'Pillow>=10.1,<13' python -B -m unittest discover -c -s tests -v
+PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -s tests -k mcp -v
+```
+
+## Test the integrated production code
+
+The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, Pillow 10.1–12 for channel packaging, and the MCP SDK. From `production/`, run this in a local environment with those tools. uv installs the Python dependencies in an isolated environment.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with 'Pillow>=10.1,<13' --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -c -s tests -v
 ```
 
 The HTTP fit cases need a pinned native binary. Run the [fit verification command](#estimate-fit-for-a-selected-machine) to exercise them. The standalone benchmark-release tests need only Python and the PostgreSQL tools.
