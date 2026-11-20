@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 from urllib.parse import parse_qs
 
+from fastest_cost import PUBLIC_FIELDS as COST_FIELDS, calculate
+from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
 from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
 
@@ -60,6 +62,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
                 return self._respond(400, "Invalid Host header.\n")
             path, _, query = self.path.partition("?")
+            if path in COST_ROUTES:
+                return self._cost(path, query)
             if path == "/profiles/interaction.js":
                 return self._respond(200, profile_script, "text/javascript; charset=utf-8")
             if path in {"/profiles", "/profiles/current"}:
@@ -80,6 +84,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(
                     200, '<!doctype html><html lang="en"><meta charset="utf-8">'
                     '<title>fastest.ai</title><h1>fastest.ai</h1>'
+                    '<p><a href="/costs">Compare text workload costs</a></p>'
                     '<p><a href="/profiles">Machine and model comparisons</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
                 )
@@ -102,6 +107,16 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _cost(self, path, query):
+            try:
+                params = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=len(COST_FIELDS))
+                if params.keys() - COST_FIELDS or any(len(values) != 1 for values in params.values()):
+                    raise ValueError("Unknown or repeated cost parameter.")
+                result = calculate({key: values[0] for key, values in params.items()})
+            except ValueError as error:
+                return self._respond(400, f"{error}\n")
+            return self._respond(200, render_cost(result, path), COST_ROUTES[path])
 
         def _profile(self, profiles, kind, identity, extension, query):
             try:
