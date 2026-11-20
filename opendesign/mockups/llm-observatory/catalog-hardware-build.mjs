@@ -43,6 +43,19 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const { asOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
   const vendor = JSON.parse(specBytes);
   const additions = JSON.parse(additionsBytes);
+  const vendorSpec = (id) => {
+    const source = [additions.specs[id], vendor.cards[id]].find(spec => spec && !isWithdrawn(spec.source));
+    if (!source) return null;
+    const { gallery, ...spec } = source;
+    const scope = spec.scope ?? (/\/|\bor\b/.test(spec.facts["Memory configuration"] ?? "")
+      ? "Multiple manufacturer configurations" : "Manufacturer product reference");
+    return {
+      capturedAt: source === additions.specs[id] ? additions.capturedAt : vendor.capturedAt,
+      locator: `Manufacturer comparison table · ${spec.designation}`,
+      ...spec, scope,
+      ...(gallery && !isWithdrawn(gallery.source) ? { gallery } : {}),
+    };
+  };
   if (sha256(profileBytes) !== research.profilesSha256 || sha256(nativeBytes) !== research.nativeProfilesSha256) {
     throw new Error("Review the changed hardware research snapshot before publishing");
   }
@@ -99,7 +112,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       lookupSource: matcher?.source ?? null,
       variant: metadata.variant ?? "Exact board revision unavailable",
       memory: metadata.memory ?? null,
-      vendorSpec: [additions.specs[record.id], vendor.cards[record.id]].find(item => item && !isWithdrawn(item.source)) ?? null,
+      vendorSpec: vendorSpec(record.id),
       parent: metadata.parent ?? null,
       relatedProfiles: associatedProfiles,
       // Only explicit source/variant links can narrow a family reference to a specific board.
@@ -108,19 +121,21 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     }];
   }));
   if ([...matchers.keys()].some((id) => !cards.has(id))) throw new Error("Missing eligible llmfit card matcher");
-  for (const { id, name, manufacturer, variant, source, facts } of additions.cards) {
+  for (const { id, name, manufacturer, variant, source, parent = null } of additions.cards) {
     if (isWithdrawn(source) || isWithdrawn(id)) continue;
     if (cards.has(id)) throw new Error(`Already cataloged GPU: ${id}`);
+    const spec = vendorSpec(id);
+    if (!spec || spec.source !== source) throw new Error(`Missing manufacturer specification for GPU: ${id}`);
     cards.set(id, {
       id, name, manufacturer, variant, source, detail: variant, kind: "Component reference",
-      aliases: [], lookupSource: null, memory: null, parent: null,
+      aliases: [], lookupSource: null, memory: null, parent,
       relatedProfiles: [], explicitProfiles: [],
-      vendorSpec: { source, designation: name, facts },
+      vendorSpec: spec,
     });
   }
   for (const card of cards.values()) {
     if (card.parent && !cards.has(card.parent)) {
-      if (!withdrawnProfiles.size) throw new Error(`Unknown card family: ${card.parent}`);
+      if (!withdrawnProfiles.size && !isWithdrawn(card.parent)) throw new Error(`Unknown card family: ${card.parent}`);
       cards.delete(card.id);
     }
   }
@@ -182,18 +197,21 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const upstreamOnly = [...cards.values()].filter((card) => card.lookupSource && !card.relatedProfiles.length).length;
   const researchOnly = [...cards.values()].filter(row => !row.lookupSource && row.relatedProfiles.length).length;
   const manufacturerMachines = additions.machines.filter(row => !isWithdrawn(row.id) && !isWithdrawn(row.source));
+  const machineRows = [...machines, ...presets, ...manufacturerMachines];
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({
       ...card,
       variants: [...cards.values()].filter((entry) => entry.parent === card.id).map(({ id, name }) => ({ id, name })),
+      relatedMachines: machineRows.filter(machine => machine.kind !== "Component reference" && machine.cardIds.includes(card.id))
+        .map(({ id, name }) => ({ id, name })),
     })).sort((a, b) => a.id.localeCompare(b.id, "en")),
-    machines: [...machines, ...presets, ...manufacturerMachines],
+    machines: machineRows,
   };
   index(catalog.machines);
 
   const manifest = {
     asOf,
-    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, and the retained research hardware inventory. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
+    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, the retained research hardware inventory, and selected manufacturer and board-partner product records. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
     upstream: {
       commit: upstream.commit,
       commitDate: upstream.commitDate,
@@ -208,10 +226,17 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       nativeProfiles: `${researchBase}/llmfit/research/hardware.json`,
       nativeProfilesSha256: research.nativeProfilesSha256,
     },
-    vendorSpecs: { capturedAt: vendor.capturedAt, sha256: sha256(specBytes), additionsSha256: sha256(additionsBytes) },
+    vendorSpecs: {
+      capturedAt: vendor.capturedAt, sha256: sha256(specBytes),
+      additionsCapturedAt: additions.capturedAt, additionsSha256: sha256(additionsBytes),
+    },
     coverage: {
       cards: catalog.cards.length,
       cardsWithVendorSpecs: catalog.cards.filter(card => card.vendorSpec).length,
+      cardsWithSpecificVendorSpecs: catalog.cards.filter(card => card.vendorSpec &&
+        card.vendorSpec.scope !== "Multiple manufacturer configurations").length,
+      cardsWithProductImageLinks: catalog.cards.filter(card => card.vendorSpec?.gallery).length,
+      boardPartnerCards: catalog.cards.filter(card => card.vendorSpec?.scope === "Board-partner SKU").length,
       llmfitDiscreteMatchers: matchers.size,
       upstreamOnlyCards: upstreamOnly,
       researchOnlyCards: researchOnly,

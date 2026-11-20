@@ -70,7 +70,7 @@
       "id": "apple-m4",
       "name": "Apple M4",
       "backend": "Metal",
-      "blocker": "The Local environment check found an Apple M4 with 24 GiB of unified memory. The checked executable paths and model caches did not contain the pinned runner and exact GGUF shards."
+      "blocker": "The pinned model and runtime ran on a 24 GiB Apple M4 under ambient desktop GPU load. A quiet-host run and public release approval are pending."
     },
     {
       "id": "rtx-4090",

@@ -5,7 +5,233 @@
       "name": "AMD Radeon PRO W7800",
       "manufacturer": "AMD",
       "variant": "Manufacturer reference",
+      "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/w7800.html"
+    },
+    {
+      "id": "amd-radeon-pro-w7900",
+      "name": "AMD Radeon PRO W7900",
+      "manufacturer": "AMD",
+      "variant": "Manufacturer reference",
+      "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/w7900.html"
+    },
+    {
+      "id": "asus-dual-rx9060xt-16g",
+      "name": "ASUS Dual Radeon RX 9060 XT 16 GB",
+      "manufacturer": "ASUS",
+      "variant": "DUAL-RX9060XT-16G",
+      "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rx9060xt-16g/techspec/",
+      "parent": "amd-radeon-rx-9060-xt-16gb"
+    },
+    {
+      "id": "asus-dual-rtx5060ti-16g",
+      "name": "ASUS Dual GeForce RTX 5060 Ti 16 GB",
+      "manufacturer": "ASUS",
+      "variant": "DUAL-RTX5060TI-16G",
+      "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx5060ti-16g/techspec/",
+      "parent": "nvidia-geforce-rtx-5060-ti-16gb"
+    },
+    {
+      "id": "asrock-a770-pg-16go",
+      "name": "ASRock Intel Arc A770 Phantom Gaming 16 GB OC",
+      "manufacturer": "ASRock",
+      "variant": "A770 PG 16GO",
+      "source": "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20A770%20Phantom%20Gaming%2016GB%20OC/",
+      "parent": "intel-arc-a770-16gb"
+    },
+    {
+      "id": "nvidia-rtx-pro-5000-48gb",
+      "name": "NVIDIA RTX PRO 5000 Blackwell 48 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "Blackwell workstation 48 GB reference",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+      "parent": "nvidia-rtx-pro-5000"
+    },
+    {
+      "id": "nvidia-rtx-pro-5000-72gb",
+      "name": "NVIDIA RTX PRO 5000 Blackwell 72 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "Blackwell workstation 72 GB reference",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+      "parent": "nvidia-rtx-pro-5000"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5090-d-32gb",
+      "name": "NVIDIA GeForce RTX 5090 D 32 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "Original China-market D release",
+      "source": "https://www.nvidia.cn/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/",
+      "parent": "nvidia-geforce-rtx-5090-d"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5090-d-v2",
+      "name": "NVIDIA GeForce RTX 5090 D v2",
+      "manufacturer": "NVIDIA",
+      "variant": "China-market D v2",
+      "source": "https://www.nvidia.cn/geforce/graphics-cards/50-series/rtx-5090-d-v2/",
+      "parent": "nvidia-geforce-rtx-5090-d"
+    }
+  ],
+  "specs": {
+    "amd-instinct-mi100": {
+      "designation": "AMD Instinct MI100",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI100 row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "CDNA",
+        "Compute units": "120",
+        "Boost clock": "1502 MHz",
+        "Memory configuration": "32 GB HBM2",
+        "Memory bus": "4096-bit",
+        "Memory bandwidth": "1.2 TB/s",
+        "Host interface": "PCIe 4.0 x16 or PCIe 3.0 x16",
+        "Form factor and cooling": "Passive PCIe add-in card",
+        "Board power (rated)": "300 W peak"
+      }
+    },
+    "amd-instinct-mi210": {
+      "designation": "AMD Instinct MI210",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI210 row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "CDNA 2",
+        "Compute units": "104",
+        "Boost clock": "1700 MHz",
+        "Memory configuration": "64 GB HBM2e",
+        "Memory bus": "4096-bit",
+        "Memory bandwidth": "1.6 TB/s",
+        "Host interface": "PCIe 4.0 x16",
+        "Form factor and cooling": "Passive PCIe add-in card",
+        "Board power (rated)": "300 W peak"
+      }
+    },
+    "amd-instinct-mi250": {
+      "designation": "AMD Instinct MI250",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI250 row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "CDNA 2",
+        "Compute units": "208",
+        "Boost clock": "1700 MHz",
+        "Module memory (aggregate)": "128 GB HBM2e",
+        "Memory bus": "8192-bit (aggregate)",
+        "Module bandwidth (aggregate)": "3.2 TB/s",
+        "Host interface": "PCIe 4.0 x16",
+        "Form factor and cooling": "Passive OAM module",
+        "Board power (rated)": "500 W typical / 560 W peak"
+      }
+    },
+    "amd-instinct-mi250x": {
+      "designation": "AMD Instinct MI250X",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI250X row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "CDNA 2",
+        "Compute units": "220",
+        "Boost clock": "1700 MHz",
+        "Module memory (aggregate)": "128 GB HBM2e",
+        "Memory bus": "8192-bit (aggregate)",
+        "Module bandwidth (aggregate)": "3.2 TB/s",
+        "Host interface": "PCIe 4.0 x16",
+        "Form factor and cooling": "Passive OAM module",
+        "Board power (rated)": "500 W typical / 560 W peak"
+      }
+    },
+    "amd-instinct-mi300x": {
+      "designation": "AMD Instinct MI300X",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI300X row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "CDNA 3",
+        "Compute units": "304",
+        "Boost clock": "2100 MHz",
+        "Module memory (aggregate)": "192 GB HBM3",
+        "Memory bus": "8192-bit (aggregate)",
+        "Module bandwidth (aggregate)": "5.3 TB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Form factor and cooling": "Passive OAM module",
+        "Board power (rated)": "750 W peak"
+      }
+    },
+    "amd-radeon-ai-pro-r9700": {
+      "designation": "AMD Radeon AI PRO R9700",
+      "source": "https://www.amd.com/en/products/graphics/workstations/radeon-ai-pro/ai-9000-series/amd-radeon-ai-pro-r9700.html",
+      "locator": "GPU Specifications, Requirements and GPU Memory",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "64",
+        "Boost clock": "Up to 2920 MHz",
+        "Game clock": "2350 MHz",
+        "Rated graphics power (W)": "300",
+        "Recommended system power (W)": "750",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "640 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Memory configuration": "32 GB GDDR6",
+        "Architecture": "RDNA 4"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/workstations/radeon-ai-pro/ai-9000-series/amd-radeon-ai-pro-r9700.html",
+        "label": "Product images on AMD",
+        "scope": "Illustration of AMD Radeon AI PRO R9700 · manufacturer artist render"
+      }
+    },
+    "amd-radeon-instinct-mi50": {
+      "designation": "AMD Instinct MI50",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI50 (16GB) and MI50 (32GB) rows",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Vega20",
+        "Memory configuration": "16 GB or 32 GB HBM2",
+        "Memory bus": "4096-bit",
+        "Memory bandwidth": "1 TB/s",
+        "Host interface": "PCIe 4.0 x16 or PCIe 3.0 x16"
+      }
+    },
+    "amd-radeon-instinct-mi50-16gb": {
+      "designation": "AMD Instinct MI50 (16GB)",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI50 (16GB) row",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Vega20",
+        "Compute units": "60",
+        "Boost clock": "1725 MHz",
+        "Memory configuration": "16 GB HBM2",
+        "Memory bus": "4096-bit",
+        "Memory bandwidth": "1 TB/s",
+        "Host interface": "PCIe 4.0 x16 or PCIe 3.0 x16",
+        "Form factor and cooling": "Passive PCIe add-in card",
+        "Board power (rated)": "300 W peak"
+      }
+    },
+    "amd-radeon-instinct-mi50-32gb": {
+      "designation": "AMD Instinct MI50 (32GB)",
+      "source": "https://www.amd.com/en/products/specifications/accelerators.html",
+      "locator": "Accelerator Specifications table · MI50 (32GB) row",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Vega20",
+        "Compute units": "60",
+        "Boost clock": "1725 MHz",
+        "Memory configuration": "32 GB HBM2",
+        "Memory bus": "4096-bit",
+        "Memory bandwidth": "1 TB/s",
+        "Host interface": "PCIe 4.0 x16 or PCIe 3.0 x16",
+        "Form factor and cooling": "Passive PCIe add-in card",
+        "Board power (rated)": "300 W peak"
+      }
+    },
+    "amd-radeon-pro-w7800": {
+      "designation": "AMD Radeon PRO W7800",
       "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/w7800.html",
+      "locator": "GPU Specifications, Requirements and GPU Memory",
+      "scope": "Manufacturer product reference",
       "facts": {
         "Architecture": "RDNA 3",
         "Memory configuration": "32 GB GDDR6",
@@ -16,12 +242,11 @@
         "Recommended system power (W)": "700"
       }
     },
-    {
-      "id": "amd-radeon-pro-w7900",
-      "name": "AMD Radeon PRO W7900",
-      "manufacturer": "AMD",
-      "variant": "Manufacturer reference",
+    "amd-radeon-pro-w7900": {
+      "designation": "AMD Radeon PRO W7900",
       "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/w7900.html",
+      "locator": "GPU Specifications, Requirements and GPU Memory",
+      "scope": "Manufacturer product reference",
       "facts": {
         "Architecture": "RDNA 3",
         "Memory configuration": "48 GB GDDR6",
@@ -31,9 +256,521 @@
         "Rated graphics power (W)": "295",
         "Recommended system power (W)": "750"
       }
-    }
-  ],
-  "specs": {
+    },
+    "amd-radeon-rx-6600": {
+      "designation": "AMD Radeon RX 6600",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6600.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "28",
+        "Boost clock": "Up to 2491 MHz",
+        "Game clock": "2044 MHz",
+        "Power connectors": "1x8-Pin",
+        "Rated graphics power (W)": "132",
+        "Recommended system power (W)": "450",
+        "Memory speed": "Up to 14 Gbps",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "Up to 224 GB/s",
+        "Memory configuration": "8 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6600.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6600 manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6600-xt": {
+      "designation": "AMD Radeon RX 6600 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6600-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "32",
+        "Boost clock": "Up to 2589 MHz",
+        "Game clock": "2359 MHz",
+        "Power connectors": "1x8-Pin",
+        "Rated graphics power (W)": "160",
+        "Recommended system power (W)": "500",
+        "Memory speed": "Up to 16 Gbps",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "Up to 256 GB/s",
+        "Memory configuration": "8 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6600-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6600 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6700-xt": {
+      "designation": "AMD Radeon RX 6700 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6700-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "40",
+        "Boost clock": "Up to 2581 MHz",
+        "Game clock": "2424 MHz",
+        "Power connectors": "1x8-Pin + 1x6-Pin",
+        "Rated graphics power (W)": "230",
+        "Recommended system power (W)": "650",
+        "Memory speed": "Up to 16 Gbps",
+        "Memory bus": "192-bit",
+        "Memory bandwidth": "Up to 384 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2",
+        "Memory configuration": "12 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6700-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6700 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6800": {
+      "designation": "AMD Radeon RX 6800",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6800.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "60",
+        "Boost clock": "Up to 2105 MHz",
+        "Game clock": "1815 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "250",
+        "Recommended system power (W)": "650",
+        "Memory speed": "Up to 16 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 512 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6800.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6800 manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6800-xt": {
+      "designation": "AMD Radeon RX 6800 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6800-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "72",
+        "Boost clock": "Up to 2250 MHz",
+        "Game clock": "2015 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "300",
+        "Recommended system power (W)": "750",
+        "Memory speed": "Up to 16 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 512 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6800-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6800 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6900-xt": {
+      "designation": "AMD Radeon RX 6900 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6900-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "80",
+        "Boost clock": "Up to 2250 MHz",
+        "Game clock": "2015 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "300",
+        "Recommended system power (W)": "850",
+        "Memory speed": "Up to 16 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 512 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6900-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6900 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-6950-xt": {
+      "designation": "AMD Radeon RX 6950 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6950-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "80",
+        "Boost clock": "Up to 2310 MHz",
+        "Game clock": "2100 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "335",
+        "Recommended system power (W)": "850",
+        "Memory speed": "Up to 18 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 576 GB/s",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 2"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6950-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 6950 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7600": {
+      "designation": "AMD Radeon RX 7600",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7600.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "32",
+        "Boost clock": "Up to 2655 MHz",
+        "Game clock": "2250 MHz",
+        "Power connectors": "1x8-Pin",
+        "Rated graphics power (W)": "165",
+        "Recommended system power (W)": "550",
+        "Memory speed": "Up to 18 Gbps",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "Up to 288 GB/s",
+        "Board length": "204 mm",
+        "Slot width": "2",
+        "Memory configuration": "8 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7600.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7600 manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7700-xt": {
+      "designation": "AMD Radeon RX 7700 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7700-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "54",
+        "Boost clock": "Up to 2544 MHz",
+        "Game clock": "2171 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "245",
+        "Recommended system power (W)": "700",
+        "Memory speed": "Up to 18 Gbps",
+        "Memory bus": "192-bit",
+        "Memory bandwidth": "Up to 432 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "12 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7700-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7700 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7800-xt": {
+      "designation": "AMD Radeon RX 7800 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7800-xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "60",
+        "Boost clock": "Up to 2430 MHz",
+        "Game clock": "2124 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "263",
+        "Recommended system power (W)": "700",
+        "Memory speed": "Up to 19.5 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 624 GB/s",
+        "Board length": "267 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7800-xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7800 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7900-gre": {
+      "designation": "AMD Radeon RX 7900 GRE",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900-gre.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "80",
+        "Boost clock": "Up to 2245 MHz",
+        "Game clock": "1880 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "260",
+        "Memory speed": "Up to 18 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 576 GB/s",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900-gre.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7900 GRE manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7900-xt": {
+      "designation": "AMD Radeon RX 7900 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "84",
+        "Boost clock": "Up to 2400 MHz",
+        "Game clock": "2000 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "315",
+        "Recommended system power (W)": "750",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bandwidth": "Up to 800 GB/s",
+        "Board length": "276 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "20 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900xt.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7900 XT manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-7900-xtx": {
+      "designation": "AMD Radeon RX 7900 XTX",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900xtx.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "96",
+        "Boost clock": "Up to 2500 MHz",
+        "Game clock": "2300 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "355",
+        "Recommended system power (W)": "800",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bandwidth": "Up to 960 GB/s",
+        "Board length": "287 mm",
+        "Slot width": "2.5",
+        "Memory configuration": "24 GB GDDR6",
+        "Architecture": "RDNA 3"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900xtx.html",
+        "label": "Product images on AMD",
+        "scope": "AMD Radeon RX 7900 XTX manufacturer product image · board-partner designs vary"
+      }
+    },
+    "amd-radeon-rx-9060-xt": {
+      "designation": "AMD Radeon RX 9060 XT",
+      "source": "https://www.amd.com/en/products/specifications/graphics.html",
+      "locator": "Graphics Specifications table · RX 9060 XT (16 GB and 8 GB) rows",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Memory configuration": "8 GB or 16 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "Up to 320 GB/s",
+        "Rated graphics power (W)": "150 (8 GB) / 160 (16 GB)",
+        "Compute units": "32",
+        "Boost clock": "Up to 3130 MHz"
+      }
+    },
+    "amd-radeon-rx-9060-xt-16gb": {
+      "designation": "AMD Radeon RX 9060 XT (16 GB)",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Compute units": "32",
+        "Boost clock": "Up to 3130 MHz",
+        "Game clock": "2530 MHz",
+        "Power connectors": "1x8-Pin",
+        "Rated graphics power (W)": "160",
+        "Recommended system power (W)": "450",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "Up to 320 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 4"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt.html",
+        "label": "Product images on AMD",
+        "scope": "Illustration of AMD Radeon RX 9060 XT (16 GB product page) · manufacturer artist render"
+      }
+    },
+    "amd-radeon-rx-9070": {
+      "designation": "AMD Radeon RX 9070",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "56",
+        "Boost clock": "Up to 2520 MHz",
+        "Game clock": "2070 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "220",
+        "Recommended system power (W)": "650",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 640 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 4"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070.html",
+        "label": "Product images on AMD",
+        "scope": "Illustration of AMD Radeon RX 9070 · manufacturer artist render"
+      }
+    },
+    "amd-radeon-rx-9070-xt": {
+      "designation": "AMD Radeon RX 9070 XT",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070XT.html",
+      "locator": "GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Compute units": "64",
+        "Boost clock": "Up to 2970 MHz",
+        "Game clock": "2400 MHz",
+        "Power connectors": "2x8-Pin",
+        "Rated graphics power (W)": "304",
+        "Recommended system power (W)": "750",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "Up to 640 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Memory configuration": "16 GB GDDR6",
+        "Architecture": "RDNA 4"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070XT.html",
+        "label": "Product images on AMD",
+        "scope": "Illustration of AMD Radeon RX 9070 XT · manufacturer artist render"
+      }
+    },
+    "asrock-a770-pg-16go": {
+      "designation": "A770 PG 16GO",
+      "source": "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20A770%20Phantom%20Gaming%2016GB%20OC/",
+      "locator": "Technical specifications for the stated model",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "16 GB GDDR6",
+        "Memory bus": "256-bit",
+        "Memory speed": "17.5 Gbps",
+        "Host interface": "PCI Express 4.0 x16",
+        "Graphics clock": "2200 MHz",
+        "Dimensions": "305 × 131 × 56 mm",
+        "Slot width": "2.8",
+        "Recommended system power (W)": "700",
+        "Power connectors": "2 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://pg.asrock.com/Graphics-Card/Intel/Intel%20Arc%20A770%20Phantom%20Gaming%2016GB%20OC/#Gallery",
+        "label": "Product images on ASRock",
+        "scope": "ASRock Intel Arc A770 Phantom Gaming 16 GB OC (A770 PG 16GO)"
+      }
+    },
+    "asus-dual-rtx5060ti-16g": {
+      "designation": "DUAL-RTX5060TI-16G",
+      "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx5060ti-16g/techspec/",
+      "locator": "Technical specifications for the stated model",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "16 GB GDDR7",
+        "Memory bus": "128-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCI Express 5.0",
+        "CUDA cores": "4608",
+        "Default boost clock": "2572 MHz",
+        "OC mode clock": "2602 MHz",
+        "Dimensions": "229 × 120 × 50 mm",
+        "Slot width": "2.5",
+        "Recommended system power (W)": "550",
+        "Power connectors": "1 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx5060ti-16g/techspec/",
+        "label": "Product images on ASUS",
+        "scope": "ASUS Dual GeForce RTX 5060 Ti 16 GB (DUAL-RTX5060TI-16G)"
+      }
+    },
+    "asus-dual-rx9060xt-16g": {
+      "designation": "DUAL-RX9060XT-16G",
+      "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rx9060xt-16g/techspec/",
+      "locator": "Technical specifications for the stated model",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "16 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Memory speed": "20 Gbps",
+        "Host interface": "PCI Express 5.0",
+        "Stream processors": "2048",
+        "Default boost / game clock": "Up to 3230 MHz / up to 2620 MHz",
+        "OC mode boost / game clock": "Up to 3250 MHz / up to 2640 MHz",
+        "Display outputs": "1 × HDMI 2.1b, 2 × DisplayPort 2.1a",
+        "Dimensions": "202 × 120 × 49 mm",
+        "Slot width": "2.5",
+        "Recommended system power (W)": "550",
+        "Power connectors": "1 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rx9060xt-16g/techspec/",
+        "label": "Product images on ASUS",
+        "scope": "ASUS Dual Radeon RX 9060 XT 16 GB (DUAL-RX9060XT-16G)"
+      }
+    },
+    "intel-arc-a770": {
+      "designation": "Intel Arc A770",
+      "source": "https://www.intel.com/content/www/us/en/products/details/discrete-gpus/arc/desktop/a-series.html",
+      "locator": "Intel Arc Graphics Product Specifications · A770 (16GB) and A770 (8GB) rows",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Memory configuration": "8 GB or 16 GB GDDR6",
+        "Memory bandwidth": "512 GB/s (8 GB) / 560 GB/s (16 GB)",
+        "Xe cores": "32"
+      }
+    },
+    "intel-arc-a770-16gb": {
+      "designation": "Intel Arc A770 Graphics (16 GB)",
+      "source": "https://www.intel.com/content/www/us/en/products/sku/229151/intel-arc-a770-graphics-16gb/specifications.html",
+      "locator": "Essentials, GPU Specifications and Memory Specifications",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Xe HPG",
+        "Memory configuration": "16 GB GDDR6",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "560 GB/s",
+        "Graphics clock": "2100 MHz",
+        "Xe cores": "32",
+        "Rated graphics power (W)": "225",
+        "Host interface": "Up to PCI Express 4.0 x16"
+      }
+    },
     "intel-arc-b580": {
       "source": "https://www.intel.com/content/www/us/en/products/sku/241598/intel-arc-b580-graphics/specifications.html",
       "designation": "Intel Arc B580 Graphics",
@@ -44,6 +781,534 @@
         "Rated graphics power (W)": "190",
         "Graphics clock": "2670 MHz",
         "Recommended system power (W)": "600"
+      },
+      "locator": "GPU Specifications and Memory Specifications",
+      "scope": "Manufacturer product reference",
+      "gallery": {
+        "source": "https://download.intel.com/newsroom/2024/client-computing/Intel-Arc-B580-B570-Media-Deck.pdf",
+        "label": "Product images in Intel’s media deck",
+        "scope": "Intel Arc B580 Limited Edition · exploded-view illustration"
+      }
+    },
+    "nvidia-a10": {
+      "designation": "NVIDIA A10",
+      "source": "https://www.nvidia.com/en-us/data-center/products/a10-gpu/",
+      "locator": "A10 Technical Specifications and Features",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "24 GB GDDR6",
+        "Memory bandwidth": "600 GB/s",
+        "Host interface": "PCIe Gen4",
+        "Maximum TDP (W)": "150",
+        "Form factor": "Full-height, full-length, single-slot"
+      }
+    },
+    "nvidia-a100": {
+      "designation": "NVIDIA A100 PCIe (40 GB)",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "locator": "Page 1 · A100 40GB PCIe column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Memory configuration": "40 GB HBM2",
+        "Memory bandwidth": "1555 GB/s",
+        "Maximum TDP (W)": "250",
+        "Host interface": "PCIe Gen4",
+        "Interconnect": "NVLink bridge for up to two GPUs (600 GB/s)"
+      }
+    },
+    "nvidia-a100-sxm": {
+      "designation": "NVIDIA A100 SXM4",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "locator": "Page 1 · A100 40GB SXM and A100 80GB SXM columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Memory configuration": "40 GB HBM2 or 80 GB HBM2e",
+        "Memory bandwidth": "1555 GB/s (40 GB) / 2039 GB/s (80 GB)",
+        "Maximum TDP (W)": "400",
+        "Interconnect": "NVLink 600 GB/s via HGX A100"
+      }
+    },
+    "nvidia-a10g": {
+      "designation": "NVIDIA A10G in Amazon EC2 G5",
+      "source": "https://docs.nvidia.com/datascience/deployment/26.10/cloud/aws/index.html",
+      "locator": "NVIDIA CUDA-X Deployment · Tested Instances · AWS G5 rows",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Memory configuration": "24 GB"
+      }
+    },
+    "nvidia-geforce-gtx-1650": {
+      "designation": "GeForce GTX 1650",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 16 Series Specs · GTX 1650 (G6 and G5) columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Turing",
+        "Memory configuration": "4 GB GDDR6 or 4 GB GDDR5",
+        "Memory bus": "128-bit",
+        "CUDA cores": "896"
+      }
+    },
+    "nvidia-geforce-rtx-2080-ti-original-11gb": {
+      "designation": "GeForce RTX 2080 Ti (11 GB stock specification)",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 20 Series Specs · RTX 2080 Ti column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Memory configuration": "11 GB GDDR6",
+        "Memory bus": "352-bit",
+        "CUDA cores": "4352"
+      }
+    },
+    "nvidia-geforce-rtx-3050": {
+      "designation": "GeForce RTX 3050",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+      "locator": "Specifications · RTX 3050 (8 GB and 6 GB) columns, including OEM footnote",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "8 GB GDDR6 or 6 GB GDDR6",
+        "Memory bus": "128-bit (8 GB) / 96-bit (6 GB)",
+        "CUDA cores": "2560 (8 GB) / 2304 (6 GB and 8 GB OEM)"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+        "label": "Product images on NVIDIA",
+        "scope": "NVIDIA family illustration · individual board designs vary"
+      }
+    },
+    "nvidia-geforce-rtx-3060-12gb": {
+      "designation": "GeForce RTX 3060 (12 GB)",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+      "locator": "Specs · RTX 3060 column · selector and memory values for 12 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "12 GB GDDR6",
+        "Memory bus": "192-bit",
+        "CUDA cores": "3584",
+        "Boost clock (GHz)": "1.78"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+        "label": "Product images on NVIDIA",
+        "scope": "GeForce RTX 3060 family illustration · exact 12 GB board unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-5060-ti-16gb": {
+      "designation": "GeForce RTX 5060 Ti (16 GB)",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "locator": "Specs · RTX 5060 Ti column, 16 GB GDDR7 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "16 GB GDDR7",
+        "Memory bus": "128-bit",
+        "CUDA cores": "4608",
+        "Rated graphics power (W)": "180"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+        "label": "Product images on NVIDIA",
+        "scope": "GeForce RTX 5060 family illustration · exact 16 GB board unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-5090-d-32gb": {
+      "designation": "NVIDIA GeForce RTX 5090 D 32 GB",
+      "source": "https://www.nvidia.cn/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/",
+      "locator": "GeForce RTX 5090 D launch specifications",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bandwidth": "1792 GB/s",
+        "CUDA cores": "21760"
+      }
+    },
+    "nvidia-geforce-rtx-5090-d-v2": {
+      "designation": "NVIDIA GeForce RTX 5090 D v2",
+      "source": "https://www.nvidia.cn/geforce/graphics-cards/50-series/rtx-5090-d-v2/",
+      "locator": "规格 (Specifications) · RTX 5090 D v2",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "24 GB GDDR7",
+        "Memory bandwidth": "1344 GB/s",
+        "CUDA cores": "21760"
+      }
+    },
+    "nvidia-h100": {
+      "designation": "NVIDIA H100 PCIe (80 GB)",
+      "source": "https://resources.nvidia.com/en-us-hopper-architecture",
+      "locator": "NVIDIA H100 GPU Whitepaper · H100 PCIe GPU board form-factor and HBM2e memory specification",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Hopper",
+        "Memory configuration": "80 GB HBM2e",
+        "Host interface": "PCIe Gen5",
+        "Maximum TDP (W)": "350"
+      }
+    },
+    "nvidia-h100-sxm": {
+      "designation": "NVIDIA H100 SXM",
+      "source": "https://www.nvidia.com/en-us/data-center/h100/",
+      "locator": "Product Specifications · H100 SXM column",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Hopper",
+        "Memory configuration": "80 GB",
+        "Memory bandwidth": "3.35 TB/s",
+        "Maximum TDP (W)": "Up to 700 W (configurable)",
+        "Host interface": "PCIe Gen5",
+        "Interconnect": "NVLink 900 GB/s",
+        "Form factor": "SXM"
+      }
+    },
+    "nvidia-h200": {
+      "designation": "NVIDIA H200",
+      "source": "https://www.nvidia.com/en-us/data-center/h200/",
+      "locator": "NVIDIA H200 GPU · H200 SXM and H200 NVL columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Hopper",
+        "Memory configuration": "141 GB HBM3e",
+        "Memory bandwidth": "4.8 TB/s",
+        "Maximum TDP (W)": "Up to 700 W (SXM) / up to 600 W (NVL), configurable",
+        "Form factor": "SXM or dual-slot PCIe"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/data-center/h200/",
+        "label": "Product images on NVIDIA",
+        "scope": "H200 NVL product imagery · family includes a separate SXM module"
+      }
+    },
+    "nvidia-l4": {
+      "designation": "NVIDIA L4",
+      "source": "https://www.nvidia.com/en-us/data-center/l4/",
+      "locator": "Product Specifications · L4",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Memory configuration": "24 GB",
+        "Memory bandwidth": "300 GB/s",
+        "Host interface": "PCIe Gen4 x16",
+        "Maximum TDP (W)": "72",
+        "Form factor": "Low-profile, single-slot"
+      }
+    },
+    "nvidia-l40": {
+      "designation": "NVIDIA L40",
+      "source": "https://www.nvidia.com/en-gb/data-center/l40/",
+      "locator": "GPU specifications · L40",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Memory configuration": "48 GB GDDR6 with ECC",
+        "Memory bandwidth": "864 GB/s",
+        "Rated graphics power (W)": "300",
+        "Cooling": "Passive",
+        "Form factor": "4.4 in × 10.5 in, dual-slot",
+        "Power connectors": "1 × PCIe CEM5 16-pin"
+      }
+    },
+    "nvidia-l40s": {
+      "designation": "NVIDIA L40S",
+      "source": "https://www.nvidia.com/en-gb/data-center/l40s/",
+      "locator": "NVIDIA L40S GPU Specifications",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Memory configuration": "48 GB GDDR6 with ECC",
+        "Memory bandwidth": "864 GB/s",
+        "Host interface": "PCIe Gen4 x16",
+        "Rated graphics power (W)": "350",
+        "CUDA cores": "18,176",
+        "Cooling": "Passive",
+        "Form factor": "4.4 in × 10.5 in, dual-slot"
+      }
+    },
+    "nvidia-rtx-a4000": {
+      "designation": "NVIDIA RTX A4000",
+      "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a4000/",
+      "locator": "Specifications · RTX A4000",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "16 GB GDDR6 with ECC",
+        "Rated graphics power (W)": "140",
+        "Host interface": "PCI Express Gen4 x16",
+        "Form factor": "4.4 in × 9.5 in, single-slot",
+        "Cooling": "Active"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a4000/",
+        "label": "Product images on NVIDIA",
+        "scope": "NVIDIA RTX A4000 manufacturer card"
+      }
+    },
+    "nvidia-rtx-a5000": {
+      "designation": "NVIDIA RTX A5000",
+      "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a5000/",
+      "locator": "Specifications · RTX A5000",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "24 GB GDDR6 with ECC",
+        "Rated graphics power (W)": "230",
+        "Host interface": "PCI Express Gen4 x16",
+        "Form factor": "4.4 in × 10.5 in, dual-slot",
+        "Cooling": "Active"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a5000/",
+        "label": "Product images on NVIDIA",
+        "scope": "NVIDIA RTX A5000 manufacturer card"
+      }
+    },
+    "nvidia-rtx-a6000": {
+      "designation": "NVIDIA RTX A6000",
+      "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a6000/",
+      "locator": "Specifications · RTX A6000",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "48 GB GDDR6 with ECC",
+        "Rated graphics power (W)": "300",
+        "Host interface": "PCI Express Gen4 x16",
+        "Form factor": "4.4 in × 10.5 in, dual-slot",
+        "Cooling": "Active"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/rtx-a6000/",
+        "label": "Product images on NVIDIA",
+        "scope": "NVIDIA RTX A6000 manufacturer card"
+      }
+    },
+    "nvidia-rtx-pro-1000-blackwell-laptop-gpu": {
+      "designation": "NVIDIA RTX PRO 1000 Blackwell Generation Laptop GPU",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-laptops/compare/",
+      "locator": "NVIDIA RTX PRO Laptop GPUs · RTX PRO 1000 Blackwell Generation row",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "8 GB GDDR7",
+        "Memory bus": "128-bit",
+        "Memory bandwidth": "384 GB/s",
+        "Rated graphics power (W)": "35–115",
+        "Host interface": "PCIe Gen5",
+        "CUDA cores": "2560",
+        "Form factor": "Laptop GPU"
+      }
+    },
+    "nvidia-rtx-pro-5000": {
+      "designation": "NVIDIA RTX PRO 5000 Blackwell",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+      "locator": "Specifications · 48 GB and 72 GB Blackwell columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "48 GB or 72 GB GDDR7 with ECC",
+        "Memory bandwidth": "1344 GB/s",
+        "Rated graphics power (W)": "300",
+        "Form factor": "4.4 in × 10.5 in, dual-slot"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+        "label": "Product images on NVIDIA",
+        "scope": "NVIDIA RTX PRO 5000 Blackwell product imagery · memory capacity is not visible"
+      }
+    },
+    "nvidia-rtx-pro-5000-48gb": {
+      "designation": "NVIDIA RTX PRO 5000 Blackwell 48 GB",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+      "locator": "Specifications · 48 GB Blackwell column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "48 GB GDDR7 with ECC",
+        "Memory bandwidth": "1344 GB/s",
+        "Rated graphics power (W)": "300",
+        "Form factor": "4.4 in × 10.5 in, dual-slot"
+      }
+    },
+    "nvidia-rtx-pro-5000-72gb": {
+      "designation": "NVIDIA RTX PRO 5000 Blackwell 72 GB",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/",
+      "locator": "Specifications · 72 GB Blackwell column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "72 GB GDDR7 with ECC",
+        "Memory bandwidth": "1344 GB/s",
+        "Rated graphics power (W)": "300",
+        "Form factor": "4.4 in × 10.5 in, dual-slot"
+      }
+    },
+    "nvidia-rtx-pro-6000": {
+      "designation": "NVIDIA RTX PRO 6000 Blackwell Series",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+      "locator": "NVIDIA RTX PRO 6000 Blackwell Series · Specifications",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "96 GB GDDR7 with ECC",
+        "Workstation Edition rated graphics power (W)": "600",
+        "Workstation Edition memory bandwidth": "1792 GB/s"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+        "label": "Product images on NVIDIA",
+        "scope": "RTX PRO 6000 Blackwell Workstation Edition · other editions have different form factors"
+      }
+    },
+    "nvidia-tesla-p100": {
+      "designation": "NVIDIA Tesla P100",
+      "source": "https://www.nvidia.com/en-au/data-center/tesla-p100/",
+      "locator": "Performance Specification table · PCIe-Based Servers and NVLink-Optimized Servers columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Pascal",
+        "Memory configuration": "12 GB or 16 GB HBM2",
+        "Form factor": "PCIe add-in card or SXM2 module",
+        "Memory bandwidth": "549 GB/s (PCIe 12 GB), 732 GB/s (PCIe 16 GB), 732 GB/s (SXM2 16 GB)"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla P100 PCIe front and side views · separate SXM2 module differs"
+      }
+    },
+    "nvidia-tesla-p40": {
+      "designation": "NVIDIA Tesla P40",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-product-literature/184427-Tesla-P40-Datasheet-NV-Final-Letter-Web.pdf#page=1",
+      "locator": "Page 1 · Specifications",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Pascal",
+        "Memory configuration": "24 GB",
+        "Memory bandwidth": "346 GB/s",
+        "Host interface": "PCI Express 3.0 x16",
+        "Rated graphics power (W)": "250",
+        "Form factor": "4.4 in × 10.5 in, full-height, dual-slot"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-product-literature/184427-Tesla-P40-Datasheet-NV-Final-Letter-Web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla P40 front and side views"
+      }
+    },
+    "nvidia-tesla-t4": {
+      "designation": "NVIDIA T4",
+      "source": "https://www.nvidia.com/en-us/data-center/tesla-t4/",
+      "locator": "NVIDIA T4 Specifications · Performance, Interconnect, Memory and Power",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Turing",
+        "Memory configuration": "16 GB GDDR6",
+        "Memory bandwidth": "320+ GB/s",
+        "Host interface": "PCIe Gen3 x16",
+        "Rated graphics power (W)": "70",
+        "CUDA cores": "2560"
+      }
+    },
+    "nvidia-tesla-v100": {
+      "designation": "NVIDIA Tesla V100",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · Tesla V100 PCIe and SXM2 columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Memory bandwidth": "900 GB/s",
+        "Cooling": "Passive",
+        "Memory configuration": "16 GB or 32 GB HBM2",
+        "Form factor": "PCIe or SXM2"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla V100 PCIe and SXM2 · memory capacity is not visible"
+      }
+    },
+    "nvidia-tesla-v100-16gb": {
+      "designation": "NVIDIA Tesla V100",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · Tesla V100 PCIe and SXM2 columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Memory bandwidth": "900 GB/s",
+        "Cooling": "Passive",
+        "Memory configuration": "16 GB HBM2",
+        "Form factor": "PCIe or SXM2"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla V100 PCIe and SXM2 · form factor unresolved in the research record"
+      }
+    },
+    "nvidia-tesla-v100-32gb": {
+      "designation": "NVIDIA Tesla V100",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · Tesla V100 PCIe and SXM2 columns",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Memory bandwidth": "900 GB/s",
+        "Cooling": "Passive",
+        "Memory configuration": "32 GB HBM2",
+        "Form factor": "PCIe or SXM2"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla V100 PCIe and SXM2 · form factor unresolved in the research record"
+      }
+    },
+    "nvidia-tesla-v100-sxm": {
+      "designation": "NVIDIA Tesla V100 SXM2",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · Tesla V100 SXM2 column",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Memory bandwidth": "900 GB/s",
+        "Cooling": "Passive",
+        "Memory configuration": "16 GB or 32 GB HBM2",
+        "Form factor": "SXM2",
+        "Rated graphics power (W)": "300",
+        "Interconnect": "NVLink 300 GB/s"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla V100 SXM2 · memory capacity is not visible"
+      }
+    },
+    "nvidia-tesla-v100-sxm2": {
+      "designation": "NVIDIA Tesla V100 SXM2",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · Tesla V100 SXM2 column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Memory bandwidth": "900 GB/s",
+        "Cooling": "Passive",
+        "Memory configuration": "16 GB HBM2",
+        "Form factor": "SXM2",
+        "Rated graphics power (W)": "300",
+        "Interconnect": "NVLink 300 GB/s"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla V100 SXM2 · memory capacity is not visible"
       }
     }
   },
@@ -63,5 +1328,6 @@
       },
       "gpu": "NVIDIA GB10 integrated GPU"
     }
-  ]
+  ],
+  "capturedAt": "2026-11-21"
 }
