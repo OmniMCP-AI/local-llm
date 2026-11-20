@@ -10,6 +10,8 @@ import re
 
 from fastest_text.__main__ import PLAN_PATH
 
+from .reviewed import CostInputError, read_reviewed
+
 METHOD = "same-text-workload-cost-v1"
 OPTION_LABELS = {"keep": "Keep machine", "upgrade": "Upgrade", "rental": "Rent GPU", "api": "Use API"}
 PUBLIC_FIELDS = frozenset(("scenario", "monthly_accepted", "months"))
@@ -121,8 +123,14 @@ def _service(inputs, workload, accepted, paid_idle_hours):
     seconds = Decimal(inputs["seconds_per_attempt"])
     available = Decimal(inputs["available_hours"])
     active_budget = min(available * Decimal(inputs["utilization"]), available - paid_idle_hours)
-    capacity = floor(floor(max(active_budget, Decimal(0)) * 3600 / seconds) * rate)
-    attempts = ceil(Decimal(accepted) / rate)
+    available_attempts = floor(max(active_budget, Decimal(0)) * 3600 / seconds)
+    if "sample_count" in inputs:
+        sample, successful = inputs["sample_count"], inputs["accepted_count"]
+        capacity = available_attempts * successful // sample
+        attempts = (accepted * sample + successful - 1) // successful
+    else:
+        capacity = floor(available_attempts * rate)
+        attempts = ceil(Decimal(accepted) / rate)
     active_hours = Decimal(attempts) * seconds / 3600
     reasons = []
     if inputs["quality"] != "pass" or rate < Decimal(workload["minimum_acceptance_rate"]):
@@ -140,7 +148,7 @@ def _service(inputs, workload, accepted, paid_idle_hours):
 
 
 def _monthly(option, inputs, service, available_hours, price, workload):
-    if inputs is None or service["status"] != "feasible":
+    if inputs is None or service["status"] != "feasible" or (option in {"keep", "upgrade"} and price is None):
         return dict.fromkeys((*MONTHLY_FIELDS[option], "recurring_cost"))
     active = service["active_hours"]
     if option in {"keep", "upgrade"}:
@@ -265,10 +273,11 @@ def _curve(options, months):
 
 
 def _sensitivity(scenario, workload, accepted, months):
+    currency = scenario["price_basis"]["currency"]
     paths = (
-        ("electricity", ("price_basis", "electricity", "per_kwh"), "USD/kWh"),
-        ("rental_hourly_rate", ("options", "rental", "operation", "hourly_rate"), "USD/hour"),
-        ("api_output_rate", ("options", "api", "operation", "output_per_million"), "USD/M output tokens"),
+        ("electricity", ("price_basis", "electricity", "per_kwh"), f"{currency}/kWh"),
+        ("rental_hourly_rate", ("options", "rental", "operation", "hourly_rate"), f"{currency}/hour"),
+        ("api_output_rate", ("options", "api", "operation", "output_per_million"), f"{currency}/M output tokens"),
     )
     cases = [{
         "driver": "monthly_accepted", "unit": "accepted tasks/month",
@@ -306,7 +315,7 @@ def _sensitivity(scenario, workload, accepted, months):
     return rows
 
 
-def calculate(selection=None):
+def calculate(selection=None, *, reviewed_path=None, price_reader=None):
     """Return the versioned JSON-compatible comparison for public query selectors."""
     selection = {} if selection is None else selection
     if selection.keys() - PUBLIC_FIELDS:
@@ -318,9 +327,18 @@ def calculate(selection=None):
     months = _bound(selection, "months", DEFAULT_MONTHS, MAX_MONTHS)
     scenario = _scenario(name)
     workload = _workload()
+    reviewed = read_reviewed(reviewed_path, workload, scenario, price_reader) if name == "evidence" and reviewed_path else None
+    if reviewed is not None:
+        scenario = reviewed
+    citations = [{"locator": workload["source_path"], "revision": workload["pilot_revision"]}]
+    citations.extend(scenario.get("citations", [
+        {"locator": scenario["price_basis"]["source_path"], "revision": scenario["revision"]},
+    ]))
     identity = {
         "result_type": "text-workload-cost-comparison", "schema_version": 1, "method": METHOD,
-        "scenario": name, "estimate_kind": "illustrative" if name == "illustrative" else "unavailable",
+        "scenario": name, "estimate_kind": "reviewed" if reviewed is not None else (
+            "illustrative" if name == "illustrative" else "unavailable"
+        ),
         "inputs": scenario, "workload": workload,
         "assumptions": {"monthly_accepted": accepted, "months": months,
                         "monthly_discount_rate": str(MONTHLY_DISCOUNT_RATE), "hours_per_month": 730},
@@ -334,7 +352,7 @@ def calculate(selection=None):
     with localcontext(ACCOUNTING):
         options = _options(scenario, workload, accepted, months)
         return {
-            **identity, "revision": "v1-" + sha256(identity_bytes).hexdigest(),
+            **identity, "revision": "v1-" + sha256(identity_bytes).hexdigest(), "citations": citations,
             **_decimal_strings({
                 "options": options, "payback": _payback(options, months),
                 "cumulative_cost": _curve(options, months),

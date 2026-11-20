@@ -60,13 +60,18 @@ def _show(item):
 
 def _query(result):
     assumptions = result["assumptions"]
-    return urlencode({"scenario": result["scenario"], "monthly_accepted": assumptions["monthly_accepted"],
-                      "months": assumptions["months"]})
+    selection = {"scenario": result["scenario"], "monthly_accepted": assumptions["monthly_accepted"],
+                 "months": assumptions["months"]}
+    if result["estimate_kind"] == "reviewed":
+        selection["revision"] = result["revision"]
+    return urlencode(selection)
 
 
 def _intro(result):
     if result["estimate_kind"] == "illustrative":
         return "Illustrative estimates. The prices, service outcomes and power inputs are fictional examples."
+    if result["estimate_kind"] == "reviewed":
+        return "Reviewed, dated cost inputs for the pinned workload. Options with incomplete evidence have unavailable totals."
     return "No approved comparable prices or same-task measurements are available for these options."
 
 
@@ -101,6 +106,11 @@ def _tables(result):
         (f"Electricity price ({currency}/kWh)", basis["electricity"]["per_kwh"]),
         ("Scenario revision", result["inputs"]["revision"]),
     ])
+
+    if result["estimate_kind"] == "reviewed":
+        yield ("Reviewed sources", ("Input", "Source", "Revision"), [
+            (item.get("scope", "workload"), item["locator"], item["revision"]) for item in result["citations"]
+        ])
 
     yield (f"Cost at selected volume ({currency})", ("Metric", *OPTION_LABELS.values()), [
         ("Service", *(_label(item["service"]["status"]) for item in options.values())),
@@ -137,15 +147,16 @@ def _tables(result):
         for row in result["sensitivity"]
     ])
 
+    input_label = "Illustrative estimate" if result["estimate_kind"] == "illustrative" else "Reviewed input"
     for option, item in options.items():
         inputs = result["inputs"]["options"][option]
         service, tariff, parts = inputs["service"], inputs["operation"], item["purchase"]["parts"]
         yield (f'{item["label"]} · assumptions and monthly breakdown',
                ("Input or charge", f"Value (money in {currency})"), [
             ("Configuration", inputs["configuration"]),
-            ("Service inputs", "Illustrative estimate" if service else "No applicable measured service released"),
+            ("Service inputs", input_label if service else "No applicable measured service released"),
             *((_label(key), value) for key, value in (service or {}).items()),
-            ("Operating inputs or tariff", "Illustrative estimate" if tariff else "No applicable input or tariff released"),
+            ("Operating inputs or tariff", input_label if tariff else "No applicable input or tariff released"),
             *((_label(key), value) for key, value in (tariff or {}).items()),
             *((_label(key), value) for key, value in item["monthly"].items()),
         ])

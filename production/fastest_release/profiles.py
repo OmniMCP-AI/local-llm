@@ -185,7 +185,7 @@ class ProfileRelease:
     def index(self):
         profiles = self.catalog()
         groups = "".join(
-            f"<section><h2>{kind.title()}</h2><ul>"
+            f'<section id="{kind}"><h2>{kind.title()}</h2><ul>'
             + "".join(f'<li><a href="{self.url(kind, entry["id"])}">{escape(entry["name"])}</a></li>'
                       for entry in profiles if entry["kind"] == kind)
             + "</ul></section>"

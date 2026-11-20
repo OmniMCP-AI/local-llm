@@ -11,8 +11,11 @@ from time import monotonic
 from typing import Callable
 from urllib.parse import parse_qsl, urlencode
 
-from fastest_cost import DEFAULT_ACCEPTED, DEFAULT_MONTHS, MAX_ACCEPTED, MAX_MONTHS, calculate
-from fastest_goals import ENTRIES, METRICS, NUMBER, PRIVACY_LABELS, SERVING_ENTRY, SERVING_METRICS
+from fastest_cost import CostInputError, DEFAULT_ACCEPTED, DEFAULT_MONTHS, MAX_ACCEPTED, MAX_MONTHS, calculate
+from fastest_goals import (
+    ENTRIES, METRICS, NUMBER, PRIVACY_LABELS, SERVING_ENTRY, SERVING_METRICS, GoalEvidenceWithdrawn,
+    GoalRightsUnavailable,
+)
 from fastest_prices import PriceError, PriceReleaseNotFound
 from fastest_prices.result import eligible_offer
 
@@ -176,8 +179,9 @@ def _rights(document):
 
 
 class PublicApi:
-    def __init__(self, store, profiles, profile_versions, goals, goal_versions, price_reader):
+    def __init__(self, store, profiles, profile_versions, goals, goal_versions, price_reader, *, cost_reader=calculate):
         self.price_reader = price_reader
+        self.cost_reader = cost_reader
         self.store = store
         self.profiles = profiles
         self.profile_versions = profile_versions
@@ -306,7 +310,9 @@ class PublicApi:
             result = operation.read(_params(query, operation))
         except (ReleaseNotFound, PriceReleaseNotFound):
             return 404, {"api_version": VERSION, "error": ERRORS[404]}, JSON
-        except (ReleaseError, PriceError, OSError, TimeoutExpired, JSONDecodeError):
+        except GoalEvidenceWithdrawn:
+            return 410, {"api_version": VERSION, "error": ERRORS[410], "status": "withdrawn"}, JSON
+        except (CostInputError, GoalRightsUnavailable, ReleaseError, PriceError, OSError, TimeoutExpired, JSONDecodeError):
             logging.exception("Canonical public reader failed for %s", path)
             return 503, {"api_version": VERSION, "error": ERRORS[503]}, JSON
         except ValueError as error:
@@ -400,19 +406,19 @@ class PublicApi:
 
     def _calculator(self, parameters):
         revision = parameters.pop("revision", None)
-        result = calculate(parameters)
+        result = self.cost_reader(parameters)
         if revision is not None and revision != result["revision"]:
             raise ReleaseNotFound(revision)
         selection = {"scenario": result["scenario"],
                      **_pick(result["assumptions"], "months", "monthly_accepted")}
-        citations = [
-            {"locator": result["workload"]["source_path"], "revision": result["workload"]["pilot_revision"]},
-            {"locator": result["inputs"]["price_basis"]["source_path"], "revision": result["inputs"]["revision"]},
-        ]
+        if result["estimate_kind"] == "reviewed":
+            selection["revision"] = result["revision"]
         exclusions = {key: option["service"]["reasons"] for key, option in result["options"].items()
                       if option["service"]["reasons"]}
-        return {**result, "url": "/costs?" + urlencode(selection), "citations": citations,
-                "rights": {"export_scope": "public-release"}, "exclusions": exclusions}
+        return {**result, "url": "/costs?" + urlencode(selection),
+                "rights": {"export_scope": "public-release", **_pick(result["inputs"].get("authorization", {}),
+                                                                       "decision_id", "expires_at")},
+                "exclusions": exclusions}
 
 
     def _evidence(self, selection):

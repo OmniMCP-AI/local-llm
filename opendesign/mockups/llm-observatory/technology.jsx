@@ -127,7 +127,7 @@ function DraftFit({ request }) {
     output = <>{level} · {mode} · {required.toFixed(2)} GiB required / {available.toFixed(2)} GiB available. <a href={`/fit.json?${query}`}>Estimate and sources</a></>;
   }
   if (result.state === "unavailable") output = "Unknown · pinned fit service unavailable on this deployment.";
-  if (result.state === "ineligible") output = <>Unknown · no eligible estimate for these inputs. <a href={`/fit?${query}`}>See fit details</a>.</>;
+  if (result.state === "ineligible") output = <>Unknown · no eligible estimate for these inputs. <a href={`${__FASTEST_RELEASE_ORIGIN__ ?? ""}/fit?${query}`}>See fit details</a>.</>;
   return <><span role="status">{output}</span><small>{fitArtifactLabel()}. This estimate uses the llmfit example host assumptions.</small></>;
 }
 
@@ -205,7 +205,9 @@ function TopologySession({ report, images }) {
     {view.draft && <section className="tech-draft" aria-label="Draft fit and price">
       <h3>Draft fit and price</h3>
       <dl>
-        <div><dt>Model fit</dt><dd>{request ? <DraftFit key={JSON.stringify(request)} request={request} /> : "Unknown · this draft configuration has no matching native fit profile."}</dd></div>
+        <div><dt>Model fit</dt><dd>{request && (!__FASTEST_PAGES__ || __FASTEST_RELEASE_ORIGIN__) ? <DraftFit key={JSON.stringify(request)} request={request} />
+          : request ? "Unknown · pinned fit service unavailable on this deployment."
+            : "Unknown · this draft configuration has no matching native fit profile."}</dd></div>
         <div><dt>Whole-build price</dt><dd>Unknown · the draft lacks a complete parts list and a matching reviewed regional quote.</dd></div>
         <div><dt>Benchmark runs</dt><dd><a href={report.source}>{report.scope === "example" ? "Original scenario assumptions" : "Original profile and runs for reference"}</a>. The draft requires a new run.</dd></div>
       </dl>

@@ -41,6 +41,25 @@ def verify_story(store, draft):
     return data["scale"]["maximum"]
 
 
+def story_lineage(store, release_id):
+    """Report whether this exact evidence has been withdrawn or replaced."""
+    pinned = store.read(release_id)
+    if pinned["status"] == "withdrawn":
+        return "withdrawn_release", None
+    current = store.read_evidence(pinned["row"]["evidence_id"])
+    if current["status"] == "withdrawn":
+        return "withdrawn_release", None
+    if current["release_id"] != release_id:
+        return "superseded_release", current["release_id"]
+    return None, None
+
+
+def require_current_story(store, draft):
+    reason, _ = story_lineage(store, draft["release"]["release_id"])
+    if reason:
+        raise ValueError(f"evidence is ineligible: {reason}")
+
+
 def retain_package(output_dir, payload_sha256, files):
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / payload_sha256

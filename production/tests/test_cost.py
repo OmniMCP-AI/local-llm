@@ -1,5 +1,8 @@
 from contextlib import contextmanager
+from datetime import datetime, timezone
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from threading import Thread
 import unittest
 from urllib.error import HTTPError
@@ -83,10 +86,10 @@ class CostComparisonTests(unittest.TestCase):
 
 
 @contextmanager
-def cost_server():
+def cost_server(**options):
     from fastest_release.http import make_server
 
-    with make_server(None) as server:
+    with make_server(None, port=0, **options) as server:
         thread = Thread(target=server.serve_forever)
         thread.start()
         try:
@@ -96,6 +99,37 @@ def cost_server():
             thread.join(timeout=5)
             if thread.is_alive():
                 raise RuntimeError("Cost test did not stop its HTTP listener")
+
+
+def reviewed_scenario():
+    return {
+        "schema_version": 1,
+        "revision": "fixture-reviewed-cost-v1",
+        "authorization": {"status": "approved", "decision_id": "88392cd1-c0d7-45bc-9140-bdd4c01b6d4a",
+                          "expires_at": "2099-11-30T00:00:00Z"},
+        "workload": {key: calculate()["workload"][key] for key in (
+            "id", "revision", "quality_rubric", "concurrency", "latency_boundary",
+            "input_tokens_per_attempt", "output_tokens_per_attempt",
+        )},
+        "price_basis": {"market": "US", "destination": "US-CA, ZIP 95814", "currency": "USD",
+                        "as_of": datetime.now(timezone.utc).date().isoformat(), "method": "Fictional operator test evidence.",
+                        "electricity": None},
+        "options": {"api": {
+            "configuration": "Fixture endpoint", "configuration_revision": "fixture-endpoint@1",
+            "service": {"revision": "fixture-same-task@1", "quality": "pass", "privacy": "pass",
+                        "p95_latency_ms": 8000, "seconds_per_attempt": "6", "sample_count": 100,
+                        "accepted_count": 100, "available_hours": "100", "utilization": "0.8"},
+            "operation": {"revision": "fixture-api-tariff@1", "eligibility": "Standard fixture account",
+                          "billing": "Per million tokens",
+                          "input_per_million": "2", "cached_input_per_million": "1", "output_per_million": "8",
+                          "cached_input_ratio": "0", "monthly_fee": "0"},
+        }},
+        "citations": {
+            "scenario": {"locator": "https://example.test/scenarios/cost", "revision": "fixture-reviewed-cost-v1"},
+            "api.service": {"locator": "https://example.test/runs/fixture", "revision": "fixture-same-task@1"},
+            "api.operation": {"locator": "https://example.test/tariffs/fixture", "revision": "fixture-api-tariff@1"},
+        },
+    }
 
 
 class CostHttpTests(unittest.TestCase):
@@ -120,6 +154,96 @@ class CostHttpTests(unittest.TestCase):
                 content = response.read().decode()
                 self.assertIn("No approved comparable", content)
                 self.assertNotIn("Example GPU B", content)
+
+    def test_operator_reviewed_scenario_reaches_html_api_and_advisor_with_same_evidence(self):
+        with TemporaryDirectory(prefix="fastest-cost-test-") as root:
+            path = Path(root) / "scenario.json"
+            scenario = reviewed_scenario()
+            path.write_text(json.dumps(scenario))
+            with cost_server(cost_scenario=path) as base:
+                def read(route):
+                    with urlopen(base + route, timeout=5) as response:
+                        return response.read().decode()
+                query = "scenario=evidence&monthly_accepted=1800&months=24"
+                result = json.loads(read("/costs.json?" + query))
+                self.assertEqual(result["estimate_kind"], "reviewed")
+                self.assertEqual(result["options"]["api"]["totals"]["nominal_cost"], "132.7104")
+                self.assertIsNone(result["options"]["keep"]["totals"]["nominal_cost"])
+                self.assertIn("https://example.test/tariffs/fixture", read("/costs?" + query))
+                self.assertIn(result["revision"], read("/costs.md?" + query))
+                calculator = json.loads(read("/api/v1/calculator?" + query))
+                advisor = json.loads(read("/api/v1/advisor?decision=cost&privacy=allow-external&" + query))
+                self.assertEqual(calculator["revision"], result["revision"])
+                self.assertEqual(advisor["costs"]["options"]["api"]["nominal_cost"], "132.7104")
+                self.assertEqual(advisor["citations"], result["citations"])
+
+                scenario["authorization"]["status"] = "withdrawn"
+                path.write_text(json.dumps(scenario))
+                retired = json.loads(read("/costs.json?" + query))
+                self.assertEqual(retired["estimate_kind"], "unavailable")
+                self.assertIsNone(retired["options"]["api"]["totals"]["nominal_cost"])
+                self.assertNotIn("example.test", json.dumps(retired))
+
+    def test_reviewed_bom_uses_the_exact_live_whole_build_price_rights(self):
+        scenario = reviewed_scenario()
+        release = "ee436650-1a1d-45e4-995d-c3be9b443f0d"
+        scenario["price_basis"]["electricity"] = {"revision": "power@1", "per_kwh": "0.2"}
+        scenario["options"]["keep"] = {
+            "configuration": "Fixture build", "configuration_revision": "build@1",
+            "purchase": {"revision": "bom@1", "price_release": release, "scope_id": "fixture-build",
+                         "condition": "used", "parts": [
+                {"sku": "Fixture whole-build part", "kind": "gpu", "condition": "used", "quantity": 1,
+                 "unit_price": "250", "reused": True},
+            ]},
+            "service": {**scenario["options"]["api"]["service"], "revision": "local-service@1"},
+            "operation": {"revision": "meter@1", "load_watts": "200", "idle_watts": "50",
+                          "external_cooling_ratio": "0", "monthly_maintenance": "0", "terminal_residual": "0"},
+        }
+        scenario["citations"].update({
+            "electricity": {"locator": "https://example.test/power", "revision": "power@1"},
+            "keep.purchase": {"locator": "https://example.test/bom", "revision": "bom@1"},
+            "keep.service": {"locator": "https://example.test/local-run", "revision": "local-service@1"},
+            "keep.operation": {"locator": "https://example.test/meter", "revision": "meter@1"},
+        })
+        quote = {
+            "status": "published", "release_id": release, "data_class": "authorized_observations",
+            "adapter_status": "fresh", "market": "US", "destination": "US-CA, ZIP 95814", "currency": "USD",
+            "as_of": scenario["price_basis"]["as_of"], "condition": "used",
+            "scope": {"kind": "whole_build", "id": "fixture-build", "revision_id": "build@1"},
+            "offers": [{"latest_for_listing": True, "freshness": "fresh", "kind": "asking",
+                        "stock": "in_stock", "confirmation": "seller_confirmed", "discount": "unconditional",
+                        "landed_price": "250", "source_locator": "https://example.test/quote", "listing_id": "1"}],
+        }
+        with TemporaryDirectory(prefix="fastest-cost-test-") as root:
+            path = Path(root) / "scenario.json"
+            path.write_text(json.dumps(scenario))
+            def read_price(identifier):
+                self.assertEqual(identifier, release)
+                return quote
+            eligible = calculate(reviewed_path=path, price_reader=read_price)
+            self.assertEqual(eligible["options"]["keep"]["purchase"]["whole_build"], "250")
+            self.assertEqual(eligible["options"]["keep"]["totals"]["nominal_cost"], "26.16")
+            self.assertIn({"scope": "keep.price_release", "locator": "https://example.test/quote", "revision": release},
+                          eligible["citations"])
+            for patch in ({"status": "withdrawn"}, {"scope": {**quote["scope"], "revision_id": "other"}},
+                          {"adapter_status": "stale"}):
+                ineligible = calculate(reviewed_path=path, price_reader=lambda identifier: {**quote, **patch})
+                self.assertIsNone(ineligible["options"]["keep"]["totals"]["nominal_cost"])
+                self.assertNotIn("example.test/bom", json.dumps(ineligible))
+
+    def test_operator_input_rejects_a_different_workload_and_unbound_citation(self):
+        with TemporaryDirectory(prefix="fastest-cost-test-") as root:
+            path = Path(root) / "scenario.json"
+            for mutate in (
+                lambda scenario: scenario["workload"].update(concurrency=4),
+                lambda scenario: scenario["citations"]["api.service"].update(revision="wrong"),
+                lambda scenario: scenario["options"]["api"]["service"].update(accepted_count=101),
+            ):
+                scenario = reviewed_scenario()
+                mutate(scenario)
+                path.write_text(json.dumps(scenario))
+                with self.assertRaisesRegex(ValueError, "workload|citation|counts"):
+                    calculate(reviewed_path=path)
 
     def test_http_rejects_invalid_and_repeated_parameters(self):
         with cost_server() as base:

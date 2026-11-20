@@ -37,6 +37,10 @@ BEGIN
     SELECT * INTO STRICT filing FROM fastest_contributor.submission
     WHERE submission_id = identifier FOR UPDATE;
 
+    IF filing.contributor_id IS NOT NULL AND filing.contributor_id IS DISTINCT FROM owner_id THEN
+        RAISE EXCEPTION 'Amendments require the original contributor ID';
+    END IF;
+
     SELECT document INTO prior FROM fastest_contributor.entry
     WHERE submission_id = identifier AND version = submitted_version;
     IF FOUND THEN
@@ -46,12 +50,8 @@ BEGIN
         RETURN filing.receipt;
     END IF;
 
-    IF owner_id IS NOT NULL THEN
-        IF filing.contributor_id IS NULL THEN
-            UPDATE fastest_contributor.submission SET contributor_id = owner_id WHERE submission_id = identifier;
-        ELSIF filing.contributor_id <> owner_id THEN
-            RAISE EXCEPTION 'Amendments require the original contributor ID';
-        END IF;
+    IF owner_id IS NOT NULL AND filing.contributor_id IS NULL THEN
+        UPDATE fastest_contributor.submission SET contributor_id = owner_id WHERE submission_id = identifier;
     END IF;
 
     INSERT INTO fastest_contributor.entry (submission_id, version, document, issues)

@@ -386,7 +386,7 @@ preference and chart axes independently. Share the pinned URL to preserve the
 selection. Each chart marker links to its exact table row. The built-in cohort
 lists the two planned cells and their access blockers.
 
-To serve reviewed records, pass `--goal-cohort PATH` with a trusted operator
+To serve reviewed records, pass `--goal-cohort PATH` and `--goal-rights RIGHTS.json`. Use a trusted operator
 manifest using this shape. The identifiers in this example illustrate the
 format.
 
@@ -438,5 +438,17 @@ read. Fit links open the separate fit estimator when configured.
 
 Repeat `--goal-cohort` to retain earlier reviewed manifests and their pinned
 URLs. The last manifest becomes current. Keep each retained manifest with its
-exact reviewed records. Remove affected manifests from the serving config and
-restart the service if a text or privacy permission is withdrawn.
+exact reviewed records. For each reviewed cohort, inspect the digests from
+`GoalService(Path("cohort.json")).observation_digests` in an operator Python
+session under `production/`. Supply `price_reader=PriceStore(database_url).read`
+when the cohort has a price pin. After rights review, create a trusted file
+with `schema_version` set to 1 and an `observations` object that maps each
+approved digest to `"allow"`. Keep entries for any retained releases that are
+still authorized.
+
+Replace that file atomically to set a withdrawn observation's digest to
+`"withdrawn"` or remove its entry. The next read of an affected text or
+serving lane returns 410 across the site, API, and MCP, including pinned
+text companions. Missing or malformed configured policy files make measured
+goal reads unavailable. The built-in plan and unmeasured serving cohort
+remain available.

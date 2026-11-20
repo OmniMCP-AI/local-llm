@@ -8,7 +8,9 @@ import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
-import { emptyEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
+import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
+import { allowedResearchPin, deniedResearchPin, readResearchPin, researchReleaseId, writeResearchPin } from "./research-released-snapshot.mjs";
+import { releaseOrigin } from "./release-origin.mjs";
 import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
 
@@ -60,7 +62,7 @@ if (pages) {
   const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
   approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
   const stateFile = process.env.FASTEST_EVIDENCE_STATE;
-  if (stateFile) evidenceState = JSON.parse(await readFile(stateFile, "utf8"));
+  if (stateFile) evidenceState = validateEvidenceState(JSON.parse(await readFile(stateFile, "utf8")));
   const blocked = new Set(Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn")
     .map((id) => createHash("sha256").update(id).digest("hex")));
   if (evidenceState.withdrawnSources?.some((hash) => !blocked.has(hash))) {
@@ -92,17 +94,8 @@ const hardwareDirectory = {
 };
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
 const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
-let scalingUrl = null;
-if (process.env.FASTEST_RELEASE_ORIGIN) {
-  try {
-    const releaseUrl = new URL(process.env.FASTEST_RELEASE_ORIGIN);
-    if (releaseUrl.protocol === "https:" && releaseUrl.href === releaseUrl.origin + "/") {
-      scalingUrl = releaseUrl.origin + "/topology/scaling";
-    }
-  } catch {
-    // A missing or invalid release origin leaves the topology coverage unavailable.
-  }
-}
+const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
+const scalingUrl = origin && origin + "/topology/scaling";
 const wikiRelease = pages ? await writeWikiRelease({
   output,
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
@@ -133,6 +126,7 @@ const result = await build({
   define: {
     "process.env.NODE_ENV": '"production"',
     __FASTEST_PAGES__: String(pages),
+    __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex ?? null),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
@@ -176,7 +170,18 @@ ${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open t
 if (pages) {
   await mkdir(output, { recursive: true });
   await writeFile(join(output, "index.html"), html);
-  await writeEvidenceState(output, evidenceState);
+  const archive = process.env.FASTEST_RESEARCH_ARCHIVE;
+  const retained = {};
+  for (const [release, expected] of Object.entries(evidenceState.researchPins)) {
+    if (release === researchIndex.release || deniedResearchPin(release, evidenceState.paths)) continue;
+    if (!archive) throw new Error("FASTEST_RESEARCH_ARCHIVE is required for retained research pins");
+    const pin = await readResearchPin(archive, release, expected);
+    if (!allowedResearchPin(pin, approvals, evidenceState.paths) ||
+      [...pin.files.values()].some((content) => isWithdrawn(content.toString("utf8")))) continue;
+    await writeResearchPin(output, pin);
+    retained[release] = expected;
+  }
+  await writeEvidenceState(output, { ...evidenceState, researchPins: retained }, isWithdrawn);
   const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
   await writeFile(join(output, "prices.html"), `<!doctype html>
 <html lang="en">
@@ -195,7 +200,7 @@ if (pages) {
 </html>
 `);
   for (const name of await readdir(join(output, "research"))) {
-    if (name !== researchIndex.release && /^v1-[a-f0-9]{16}$/.test(name)) {
+    if (name !== researchIndex.release && !Object.hasOwn(retained, name) && researchReleaseId.test(name)) {
       await rm(join(output, "research", name), { recursive: true, force: true });
     }
   }

@@ -2,9 +2,52 @@
 
 From `production/`, run `python3 -B -m fastest_release serve` and open [Compare text workload costs](http://127.0.0.1:8000/costs). Choose the illustrative example to see fully populated calculations. Change accepted tasks per month and the horizon to update the comparison, cumulative curve, sensitivity and payback in one request. The HTTP response links to the same result in Markdown and JSON. The comparison needs no database to run.
 
-The public evidence scenario reports missing prerequisites. The [text pilot](../fastest_text/README.md) describes the task and review rubric. Its isolated prefill and decode phases have a different latency boundary from completed requests. The cost gate requires same-task capacity, review outcomes and p95 completion latency for each option. [Regional price releases](../fastest_prices/README.md) identify exact markets, quote scope and conditions. The comparison requires comparable, permitted landed prices for the complete configurations, as well as approved local electricity and endpoint tariffs when applicable. The checked-in examples are fictional. An illustrative result carries no market or measurement claim.
+The public evidence scenario reports missing prerequisites until the operator supplies approved inputs. The [text pilot](../fastest_text/README.md) describes the task and review rubric. Its isolated prefill and decode phases have a different latency boundary from completed requests. The cost gate requires same-task capacity, review outcomes and p95 completion latency for each option. [Regional price releases](../fastest_prices/README.md) identify exact markets, quote scope and conditions. The comparison requires comparable, permitted landed prices for the complete configurations, as well as approved local electricity and endpoint tariffs when applicable. The checked-in examples are fictional. An illustrative result carries no market or measurement claim.
 
 The same read-only `fastest_cost.calculate(selection)` function supplies every format. It accepts a mapping of `scenario` (`evidence` or `illustrative`), `monthly_accepted` (1–100,000,000) and `months` (1–120). Selectors are optional. The default demand is 1,800 accepted tasks per month over 24 months. Results carry a schema version, method, input revisions and a digest of the assumptions. Money and derived decimal quantities are strings with up to six decimal places. Counts are integers. Unknown or inapplicable values are null, with service and payback outcomes explaining why a comparison is withheld.
+
+## Configure reviewed evidence
+
+Start the release server with `--cost-scenario /path/to/reviewed-cost.json` to
+load one operator-reviewed scenario into the **Public evidence** view. The
+calculator, HTML and Markdown, JSON API, and advisor use the same inputs.
+The public selectors control task volume, time horizon and view. The
+configured file governs which evidence can be used.
+
+Use a JSON object with these fields.
+
+| Field | Required contents |
+| --- | --- |
+| `schema_version`, `revision` | Integer 1 and an immutable input revision. Change the revision when the reviewed inputs change. |
+| `authorization` | `status` set to `approved`, a publication review `decision_id` as a canonical UUID, and `expires_at` in UTC `YYYY-MM-DDTHH:MM:SSZ` format. |
+| `workload` | Copy `id`, `revision`, `quality_rubric`, `concurrency`, `latency_boundary`, `input_tokens_per_attempt` and `output_tokens_per_attempt` from `calculate()["workload"]` in the same checkout. |
+| `price_basis` | Two-letter `market`, explicit delivery `destination`, three-letter `currency`, UTC `as_of` date, review `method`, and `electricity` as null or an object with `revision` and `per_kwh`. |
+| `options` | Any subset of `keep`, `upgrade`, `rental` and `api` with reviewed inputs. Each includes a `configuration` name, exact `configuration_revision`, and `service` and `operation` records or nulls. Each local option also includes `purchase` or null. |
+| `citations` | A map with `scenario`, plus one key per supplied input such as `electricity`, `keep.purchase`, `keep.service` or `api.operation`. Each contains an approved public HTTPS `locator` and the corresponding input `revision`. |
+
+A service record includes `revision`, `quality` and `privacy` reviews
+(`pass` or `miss`), same-task `sample_count`, `accepted_count`, and
+`p95_latency_ms`, `seconds_per_attempt`, `available_hours` and
+`utilization`. Acceptance probability uses the exact sample counts. The
+service needs reviewed completed requests for the pinned task and latency
+boundary. Use the applicable `operation` field names from
+[the accounting example](illustrative.json). Rates and decimal quantities
+use decimal strings. Rental and API inputs include the applicable billing
+and eligibility terms.
+
+A reviewed local `purchase` includes the itemized `parts` and `revision`,
+plus a regional `price_release` UUID, `scope_id`, and `condition`. Configure
+`FASTEST_DATABASE_URL` to read these quotes. An eligible landed whole-build
+offer must match the setup revision, market, date, destination, currency and
+condition. The reviewed part values must add to that quote. Partial inputs
+can appear with unavailable totals. A revoked quote no longer supplies the
+purchase values or their citations.
+
+The server reads the file on each evidence calculation. Replace it atomically
+after review. Set the authorization status to `withdrawn` to remove the
+scenario from public calculations. Expired authorization also removes it.
+Links to the reviewed output pin the result revision for the chosen demand
+and horizon. A changed or retired revision returns 404 on replay.
 
 ## Accounting assumptions
 

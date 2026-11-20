@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process";
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { emptyEvidenceState, isPublicIssue, writeEvidenceState } from "./evidence-state.mjs";
+import { emptyEvidenceState, isPublicIssue, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { feedbackId } from "./feedback-policy.mjs";
-import { digest, readJson, readResearchSnapshot as snapshot } from "./research-released-snapshot.mjs";
+import { allowedResearchPin, digest, readJson, readResearchPin, readResearchSnapshot as snapshot, writeResearchPin } from "./research-released-snapshot.mjs";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const run = promisify(execFile);
@@ -89,7 +89,7 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
   const target = evidenceId === sourceId ? source : source?.records.find(({ id }) => id === evidenceId);
   if (!target || target.url !== sourceLocator) throw new Error("Evidence ID and locator do not identify a published source or record");
   const intake = intakeRecord(request.intake, evidenceId, old.release);
-  const priorState = await optionalState(previous);
+  const priorState = validateEvidenceState(await optionalState(previous));
   const approvals = approvalPath ? await readJson(approvalPath) : {};
   if (action === "withdraw") approvals[sourceId] = { status: "withdrawn" };
   const withdrawnSources = Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn").map(digest);
@@ -122,45 +122,63 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
     const stagedHashes = await hashes(candidate);
     const paths = new Set(priorState.paths);
     const history = [];
-    const protectedPaths = [];
-    if (action === "withdraw") {
-      const withdrawn = withdrawnReference(old, approvals);
-      for (const path of stagedHashes.keys()) {
-        if (withdrawn(await readFile(join(candidate, path.slice(1)), "utf8"))) {
-          throw new Error("Withdrawn source still referenced by " + path);
-        }
-      }
+    const researchPins = {};
+    const archives = await Promise.all([...new Set([previous, ...archiveRoots])].map(async (root) => ({
+      root, ...await snapshot(root),
+    })));
+    const capturedPins = new Set(archives.map(({ index }) => index.release));
+    for (const { index, manifestSha256 } of archives) {
+      const expected = priorState.researchPins[index.release];
+      if (expected && manifestSha256 !== expected) throw new Error("Archive manifest differs from retained pin " + index.release);
     }
-    for (const root of new Set([previous, ...archiveRoots])) {
-      const { wiki: capturedWiki, index } = await snapshot(root);
-      if (!containsSource(index, source)) continue;
-      const earlier = await hashes(root);
+    for (const [release, expected] of Object.entries(priorState.researchPins)) {
+      if (!capturedPins.has(release)) archives.push({ wiki: oldWiki, ...await readResearchPin(previous, release, expected) });
+    }
+    for (const { root, wiki: capturedWiki, ...pin } of archives) {
+      const { index, files, manifestSha256 } = pin;
       const prefix = `/research/${index.release}`;
-      const items = [...earlier].filter(([path, hash]) => stagedHashes.get(path) !== hash);
-      history.push({ researchRelease: index.release, artifacts: items.map(([path, before]) => ({ path, before })) });
-      if (action === "withdraw") {
-        paths.add(prefix + "/*");
-        if (capturedWiki.catalogRelease && capturedWiki.catalogRelease !== wiki.catalogRelease) {
-          paths.add(`/catalog/${capturedWiki.catalogRelease}/*`);
-          paths.add(`/catalog-data/${capturedWiki.catalogRelease}/*`);
+      if (containsSource(index, source)) {
+        const earlier = root ? await hashes(root) : new Map([...files].map(([name, bytes]) => [
+          prefix + "/" + name, digest(bytes),
+        ]));
+        const items = [...earlier].filter(([path, hash]) => stagedHashes.get(path) !== hash);
+        history.push({ researchRelease: index.release, artifacts: items.map(([path, before]) => ({ path, before })) });
+        if (action === "withdraw") {
+          paths.add(prefix + "/*");
+          if (capturedWiki.catalogRelease && capturedWiki.catalogRelease !== wiki.catalogRelease) {
+            paths.add(`/catalog/${capturedWiki.catalogRelease}/*`);
+            paths.add(`/catalog-data/${capturedWiki.catalogRelease}/*`);
+          }
+          for (const path of earlier.keys()) {
+            if (!stagedHashes.has(path)) for (const route of deniedRoutes(path)) paths.add(route);
+          }
         }
-        for (const path of earlier.keys()) {
-          if (!stagedHashes.has(path)) for (const route of deniedRoutes(path)) paths.add(route);
-        }
-      } else if (!paths.has(prefix + "/*") && index.release !== current.release &&
-          !index.sources.some(({ id }) => approvals[id]?.status === "withdrawn") &&
-          !index.methods.some(({ url }) => approvals["youtube/" + new URL(url).searchParams.get("v")]?.status === "withdrawn")) {
-        const folder = join("research", index.release);
-        await cp(join(root, folder), join(candidate, folder), { recursive: true, errorOnExist: false, force: false });
-        protectedPaths.push(prefix + "/*");
+      } else if (!Object.hasOwn(priorState.researchPins, index.release)) {
+        continue;
+      }
+      if (index.release !== current.release && !Object.hasOwn(researchPins, index.release)
+          && allowedResearchPin(pin, approvals, [...paths])) {
+        await writeResearchPin(candidate, pin);
+        researchPins[index.release] = manifestSha256;
       }
     }
 
     const id = digest(json([action, evidenceId, old.release, current.release]));
     const resolutionPath = "/wiki/evidence-updates#" + id;
     const update = { id, action, research: `/research/${current.release}/library`,
-      ...(action === "correct" && { source: updatedTarget.url }), ...(intake.issue && { issue: intake.issue }) };
-    await writeEvidenceState(candidate, { paths: [...paths], withdrawnSources, updates: [...priorState.updates, update] });
+      ...(action === "correct" && { source: updatedTarget.url, sourceDigest: digest(sourceId) }), ...(intake.issue && { issue: intake.issue }) };
+    const sourceIndex = await readJson(join(directory, "wiki", "research-index.json"));
+    const checks = [sourceIndex, ...archives.map(({ index }) => index)]
+      .map((index) => withdrawnReference(index, approvals));
+    const isWithdrawn = (value) => checks.some((check) => check(value));
+    await writeEvidenceState(candidate, {
+      paths: [...paths], withdrawnSources, researchPins, updates: [...priorState.updates, update],
+    }, isWithdrawn);
+    for (const path of await publicFiles(candidate)) {
+      if (isWithdrawn(await readFile(join(candidate, path), "utf8"))) {
+        throw new Error("Withdrawn source still referenced by " + path);
+      }
+    }
     const oldHashes = await hashes(previous);
     const newHashes = await hashes(candidate);
     const pagesChanges = [...new Set([...oldHashes.keys(), ...newHashes.keys()])].sort().flatMap((path) => {
@@ -193,7 +211,7 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
     await writeFile(join(output, "review.json"), json({
       action, evidenceId, sourceId, sourceLocator, previous: { wiki: oldWiki.release, research: old.release },
       candidate: { wiki: wiki.release, research: current.release }, resolutionPath, changes, diffSha256: digest(json(changes)),
-      history, historicalResearch: [...new Set(protectedPaths)].sort(),
+      history, historicalResearch: Object.keys(researchPins).sort().map((release) => `/research/${release}/*`),
       cachePurgePaths: [...cachePurgePaths].sort(),
       ...(benchmark && { benchmarkRelease: benchmark.release }),
       notificationDraft, receiptUpdate: receiptUpdate(intake, resolutionPath),

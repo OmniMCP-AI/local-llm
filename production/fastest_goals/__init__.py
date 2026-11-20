@@ -2,6 +2,7 @@
 
 from decimal import Decimal, localcontext
 import json
+from json import JSONDecodeError
 import re
 from urllib.parse import urlencode
 from uuid import UUID
@@ -43,8 +44,16 @@ def _item(status, reason, *, value=None, **evidence):
     return {"status": status, "reason": reason, "value": value, **evidence}
 
 
+class GoalEvidenceWithdrawn(LookupError):
+    """A measured goal observation lacks current public authorization."""
+
+
+class GoalRightsUnavailable(RuntimeError):
+    """The configured rights file could not be read or validated."""
+
+
 class GoalService:
-    def __init__(self, manifest=None, *, price_reader=None):
+    def __init__(self, manifest=None, *, price_reader=None, rights_path=None):
         policy = json.loads(manifest.read_text(encoding="utf-8")) if manifest else {
             "schema_version": 1, "records": [], "market": DEFAULT_MARKET, "candidates": {},
         }
@@ -95,8 +104,39 @@ class GoalService:
         if "serving_records" in policy:
             release["serving"] = {"protocol": SERVING_PROTOCOL, "setups": self.serving}
         self.release_id = digest(json_text(release))
-        self.text_artifacts = text_artifacts(self.text)
-        self.text_artifacts["manifest.json"] = bundle_manifest(self.text["id"], self.text_artifacts)
+        self.rights_path = rights_path
+        context = [self.text[key] for key in ("artifact", "runtime")]
+        self.observation_digests = {
+            "text": {cell["id"]: digest(json_text(["text", self.text["protocol"], self.text["rubric"], context, cell]))
+                     for cell in self.text["cells"] if "rights" in cell},
+            "serving": {cell: digest(json_text(["serving", SERVING_PROTOCOL, context, cell, record]))
+                        for cell, record in self.serving.items() if "rights" in record},
+        }
+        self._text_artifacts = text_artifacts(self.text)
+        self._text_artifacts["manifest.json"] = bundle_manifest(self.text["id"], self._text_artifacts)
+
+    def _require_current_rights(self, lane):
+        required = self.observation_digests[lane].values()
+        if not required:
+            return
+        if self.rights_path is None:
+            raise GoalEvidenceWithdrawn(self.release_id)
+        try:
+            policy = json.loads(self.rights_path.read_text(encoding="utf-8"))
+        except (OSError, JSONDecodeError, UnicodeError) as error:
+            raise GoalRightsUnavailable("Goal rights could not be read.") from error
+        if (not isinstance(policy, dict) or set(policy) != {"schema_version", "observations"}
+                or type(policy["schema_version"]) is not int or policy["schema_version"] != 1
+                or not isinstance(policy["observations"], dict)
+                or any(not re.fullmatch(r"[a-f0-9]{64}", key) or decision not in ("allow", "withdrawn")
+                       for key, decision in policy["observations"].items())):
+            raise GoalRightsUnavailable("Invalid goal rights policy.")
+        if any(policy["observations"].get(observation) != "allow" for observation in required):
+            raise GoalEvidenceWithdrawn(self.release_id)
+
+    def text_artifact(self, name):
+        self._require_current_rights("text")
+        return self._text_artifacts[name]
 
     def selection(self, values):
         _require(values.keys() <= PUBLIC_FIELDS, "Unknown goals parameter.")
@@ -250,6 +290,7 @@ class GoalService:
 
     def evaluate(self, selection):
         serving = selection["entry"] == SERVING_ENTRY
+        self._require_current_rights("serving" if serving else "text")
         definitions = SERVING_METRICS if serving else self.metrics
         row_for = self._serving_row if serving else self._row
         rows = [row_for(cell, selection) for cell in self.text["cells"]]

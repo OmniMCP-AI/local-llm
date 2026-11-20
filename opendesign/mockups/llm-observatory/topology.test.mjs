@@ -91,3 +91,42 @@ test("static topology surfaces link to a configured scaling reader and report mi
   assert.ok(renderTopologyReference("md", topologyPresets, href).includes(href));
   assert.match(renderTopologyReference("html"), /No reviewed 1→N GPU pair is available here/);
 });
+
+test("the Pages fit route forwards only the bounded estimator query to the configured origin", async (t) => {
+  const { onRequestGet } = await import("./functions/fit.json.js");
+  const origin = "https://release.fastest.example";
+  const estimate = { kind: "fit_estimate", status: "estimated" };
+  const observed = [];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    observed.push(url.href);
+    assert.equal(options.redirect, "error");
+    assert.equal(options.cache, "no-store");
+    assert.equal(options.headers?.Authorization, undefined);
+    return Response.json(estimate);
+  });
+  const fit = (suffix, env = { FASTEST_RELEASE_ORIGIN: origin }) => onRequestGet({
+    request: new Request("https://fastest.example/fit.json" + suffix, { headers: { Authorization: "private" } }), env,
+  });
+  const query = "?machine=llmfit-nvidia-rtx-4090&context=4096";
+  const response = await fit(query);
+  assert.deepEqual(await response.json(), estimate);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual(observed, [origin + "/fit.json" + query]);
+  assert.equal((await fit("?machine=one&machine=two")).status, 400);
+  assert.equal((await fit("?url=https://example.net")).status, 400);
+  assert.equal((await fit(query, {})).status, 404);
+  assert.equal(observed.length, 1);
+});
+
+test("the Pages navigation keeps standalone hash links and resolves hosted evidence destinations", async () => {
+  const { navigationHref } = await import("./release-origin.mjs");
+  const origin = "https://release.fastest.example";
+  assert.equal(navigationHref("goals", false, origin), "#goals");
+  assert.equal(navigationHref("goals", true, null), "#goals");
+  for (const [route, expected] of [["explorer", "/profiles"], ["goals", "/goals"], ["costs", "/costs"],
+    ["machines", "/profiles#machines"], ["models", "/profiles#models"]]) {
+    assert.equal(navigationHref(route, true, origin), origin + expected);
+  }
+  assert.equal(navigationHref("prices", true, origin), "/prices");
+  assert.equal(navigationHref("methods", true, origin), "/wiki/comparison-methods/");
+});

@@ -147,5 +147,35 @@ test("a reviewed correction preserves its prior pin and links the revised source
   assert.match(await readFile(join(output, "pages/wiki/evidence-updates.md"), "utf8"), /\[Reviewed source\]\(https:\/\/www\.youtube\.com\/watch\?v=09GB4LtXUok\)/);
   const pinned = join(output, "pages/research", earlier.release, "library.md");
   assert.match(await readFile(pinned, "utf8"), /Earlier wording in the reviewed source/);
-  assert.ok(report.notificationDraft.includes(digest(await readFile(pinned))));
+  const pinnedBytes = await readFile(pinned);
+  assert.ok(report.notificationDraft.includes(digest(pinnedBytes)));
+
+  const corrected = join(output, "pages");
+  const correctedState = join(corrected, "evidence-quarantine.json");
+  const rebuilt = join(root, "fresh-build");
+  await run(process.execPath, ["build.mjs", "--pages", "--output", rebuilt], { env: {
+    ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: approvals, FASTEST_EVIDENCE_STATE: correctedState,
+    FASTEST_RESEARCH_ARCHIVE: corrected,
+  } });
+  assert.deepEqual(await readFile(join(rebuilt, "research", earlier.release, "library.md")), pinnedBytes);
+
+  await writeFile(pinned, "tampered archive");
+  await assert.rejects(run(process.execPath, ["build.mjs", "--pages", "--output", join(root, "tampered-build")], {
+    env: { ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: approvals, FASTEST_EVIDENCE_STATE: correctedState,
+      FASTEST_RESEARCH_ARCHIVE: corrected },
+  }), /release manifest disagree/);
+
+  await writeFile(request, JSON.stringify({
+    action: "withdraw", evidenceId, sourceId: evidenceId, sourceLocator: source.url,
+    intake: { issue: "https://github.com/OmniMCP-AI/local-llm/issues/25" },
+  }));
+  const withdrawn = join(root, "withdrawn");
+  await run(process.execPath, ["resolve-evidence.mjs", request, rebuilt, withdrawn, approvals]);
+  const retired = join(withdrawn, "pages");
+  for (const path of ["wiki/evidence-updates.html", "wiki/evidence-updates.md", "evidence-quarantine.json"]) {
+    assert.doesNotMatch(await readFile(join(retired, path), "utf8"), /09GB4LtXUok|Reviewed source/);
+  }
+  const state = JSON.parse(await readFile(join(retired, "evidence-quarantine.json")));
+  assert.ok(state.paths.includes("/research/" + earlier.release + "/*"));
+  await assert.rejects(readFile(join(retired, "research", earlier.release, "library.md")), { code: "ENOENT" });
 });
