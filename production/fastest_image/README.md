@@ -1,6 +1,6 @@
 # Two-machine image pilot
 
-The [planned comparison](plan.json) covers one Apple M4 using Metal and one GeForce RTX 4090 using CUDA. The checked M4 host has 24 GiB of unified memory and lacked a ready pinned ComfyUI installation and exact checkpoint. No authorized RTX 4090 host or operator-run evidence was available. Both cells carry access blockers with zero measured repeats.
+The [planned comparison](plan.json) covers one Apple M4 using Metal and one GeForce RTX 4090 using CUDA. On November 21, 2026, the pinned workflow produced a warmup PNG and all five repeat PNGs in a private exploratory run on the 24 GiB M4. The host had background CPU and GPU activity and reached critical memory pressure during the run. A quiet-host capture and rights-cleared public evidence are pending. The private PNGs and blind review packet are ready for review. No authorized RTX 4090 host or operator-run evidence was available.
 
 From `production`, build the planned public report into a new directory.
 
@@ -28,7 +28,7 @@ Place the official `sd_xl_turbo_1.0_fp16.safetensors` file in the checkout’s `
 
 ## Capture one run on each available machine
 
-Start a fresh, dedicated local ComfyUI process from the pinned checkout in a foreground terminal. Retain stdout and stderr privately. Check the startup and run records for the actual backend, active GPU and effective placement. On the CUDA host, select the RTX 4090 with `CUDA_VISIBLE_DEVICES` before startup and keep other requests off the server.
+Start a fresh, dedicated local ComfyUI process from the pinned checkout in a foreground terminal. Retain stdout and stderr privately. Verify that the process owns the loopback listener, that the queue is empty and that the pinned checkpoint is available. Check the startup and run records for the actual backend, active GPU and effective placement. Record baseline CPU and GPU activity and memory pressure to establish whether the host was quiet. On the CUDA host, select the RTX 4090 with `CUDA_VISIBLE_DEVICES` before startup.
 
 ```sh
 /path/to/image-pilot-venv/bin/python main.py --listen 127.0.0.1 --port 8188 \
@@ -45,9 +45,9 @@ Capture queues the fixed warmup seed 731000 and then the five repeats 731001–7
 
 ## Review and publish
 
-Use [the synthetic ledger](../fixtures/synthetic-image-pilot.json) as a field guide. Copy the capture’s attempt list to `attempts`, including failed requests and their observed phase endpoints. Set `kind` to `measured` for an actual verified run. Supply the exact runtime, workflow, checkpoint and lock digests, runtime flags and hardware details. Link to a versioned, rights-cleared public evidence record and retain the underlying run separately. Record a public-release allow decision covering the published fields. Use reviewer pseudonyms and rights-cleared notes.
+Use [the synthetic ledger](../fixtures/synthetic-image-pilot.json) as a field guide. Copy the capture’s attempt list to `attempts`, including failed requests and their observed phase endpoints. Set `kind` to `measured` for a verified run that follows the pinned protocol. Supply the exact runtime, workflow, checkpoint and lock digests, runtime flags and hardware details. Link to a versioned public evidence record over HTTPS and retain the underlying run privately. Record a public-release allow decision covering the published fields. Use reviewer pseudonyms and rights-cleared notes.
 
-Give the reviewer each retrieved repeat PNG under an opaque ID along with the exact prompt. Hide machine and timing details. Enter the four boolean scores and a note under the attempt’s `review`, or leave it `null` while pending. A repeat is accepted when all four criteria pass. Completion time is the median of successful repeats. Seconds per accepted image divides the sum of all five repeat times, including failed and rejected attempts, by the accepted count. The rate requires all five attempts, completed reviews of the retrieved images and at least one acceptance. The report retains missing metrics and partial results.
+Give the reviewer each retrieved repeat PNG under an opaque ID along with the exact prompt. Hide machine and timing details. If ComfyUI embeds workflow or seed metadata, use a review copy with that metadata removed and the decoded pixels unchanged. Retain the original capture and the ID mapping privately. Enter the four boolean scores and a note under the attempt’s `review`, or leave it `null` while pending. A repeat is accepted when all four criteria pass. Completion time is the median of successful repeats. Seconds per accepted image divides the sum of all five repeat times, including failed and rejected attempts, by the accepted count. The rate requires all five attempts, completed reviews of the retrieved images and at least one acceptance. The report retains missing metrics and partial results.
 
 ```sh
 python3 -B -m fastest_image build /path/to/image-pilot-v2 \
