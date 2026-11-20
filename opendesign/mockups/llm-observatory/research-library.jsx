@@ -3,11 +3,14 @@ import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { useLocale } from "./locale";
 import { filterResearch, readResearchFilters, researchReleaseUrl } from "./research-filter.mjs";
 import vocabulary from "./wiki/context-vocabulary.json";
-import previewIndex from "./wiki/research-index.json";
 
-const index = __FASTEST_PAGES__ ? __FASTEST_RESEARCH_INDEX__ : previewIndex;
+const index = __FASTEST_RESEARCH_INDEX__;
 
 const languages = ["en", "zh-Hans", "es", "ja", "ko", "de", "hi", "fr", "ar"];
+const previewLabels = {
+  "reported-result": ["Reported result", "来源报告值", "Resultado reportado", "報告値", "보고된 결과", "Gemeldetes Ergebnis", "रिपोर्ट किया गया परिणाम", "Résultat rapporté", "النتيجة المبلّغ عنها"],
+  baseline: ["Comparison baseline", "比较基准", "Referencia de comparación", "比較基準", "비교 기준", "Vergleichsbasis", "तुलना का आधार", "Base de comparaison", "خط أساس المقارنة"],
+};
 const taskIds = new Set(index.sources.flatMap(source => source.records.flatMap(record => record.topics)));
 const allTopics = Object.keys(vocabulary.topics);
 const options = {
@@ -22,7 +25,7 @@ const groups = { format: "formats", topic: "topics", task: "topics", dimension: 
 export function useResearchLabels() {
   const { language, t } = useLocale();
   return (group, key) => {
-    const labels = vocabulary[group][key];
+    const labels = group === "preview" ? previewLabels[key] : vocabulary[group][key];
     if (language === "zh-Hant") return t(labels[0], labels[1]);
     return labels[languages.indexOf(language)] ?? labels[0];
   };
@@ -36,10 +39,19 @@ function RecordList({ records, label, locale }) {
       <small dir="ltr"><a href={record.seriesUrl} target="_blank" rel="noreferrer">{record.series}</a> / {record.id}</small>
       <dl>
         <dt>{label("ui", "dimension")}</dt><dd>{label("dimensions", record.dimension)} · {record.metric}</dd>
+        {record.reportedResult && <>
+          <dt>{label("preview", "reported-result")}</dt>
+          <dd><strong><bdi>{record.reportedResult.value} {record.reportedResult.unit}</bdi></strong></dd>
+          {record.reportedResult.baseline && record.reportedResult.baseline !== "not stated" && <>
+            <dt>{label("preview", "baseline")}</dt><dd><bdi>{record.reportedResult.baseline}</bdi></dd>
+          </>}
+        </>}
         <dt>{label("ui", "task")}</dt><dd>{record.topics.map(id => label("topics", id)).join(" · ") || label("ui", "unspecified")}</dd>
         <dt>{label("ui", "setup")}</dt><dd>{[record.hardware, record.model, record.runtime, record.quant].join(" / ")}</dd>
         <dt>{label("ui", "conditions")}</dt><dd>{record.conditions}</dd>
-        <dt>{label("ui", "evidence")}</dt><dd>{record.evidence}</dd>
+        <dt>{label("ui", "evidence")}</dt><dd>{record.evidence}
+          {record.reportedResult?.uncertainty && <p>{record.reportedResult.uncertainty}</p>}
+        </dd>
       </dl>
     </div>)}
     {limit < records.length && <button className="btn outline" onClick={() => setLimit(limit+10)}>{label("ui", "more")} ({(records.length-limit).toLocaleString(locale)})</button>}
@@ -67,7 +79,9 @@ function SourceCard({ source, records, label, locale, filters, onFilter }) {
 function Results({ matches, label, locale, filters, onFilter }) {
   const [limit, setLimit] = useState(10);
   return <>
-    <div aria-live="polite" className="research-count">{label("ui","sources")} <b>{matches.length.toLocaleString(locale)}</b></div>
+    <div aria-live="polite" className="research-count">{label("ui","sources")} <b>{matches.length.toLocaleString(locale)}</b>
+      {" · "}{label("ui","records")} <b>{matches.reduce((count, source) => count + source.records.length, 0).toLocaleString(locale)}</b>
+    </div>
     {!matches.length && <p>{label("ui","none")}</p>}
     <div className="research-list">{matches.slice(0,limit).map(({ source, records }) => <SourceCard key={source.id}
       source={source} records={records} label={label} locale={locale} filters={filters} onFilter={onFilter}/>)}</div>

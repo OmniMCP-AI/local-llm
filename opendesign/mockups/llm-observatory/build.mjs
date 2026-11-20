@@ -11,6 +11,7 @@ import { withdrawnReference } from "./evidence-provenance.mjs";
 import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import { allowedResearchPin, deniedResearchPin, readResearchPin, researchReleaseId, writeResearchPin } from "./research-released-snapshot.mjs";
 import { releaseOrigin } from "./release-origin.mjs";
+import { withPreviewResults } from "./research-preview.mjs";
 import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
 
@@ -69,6 +70,8 @@ if (pages) {
     throw new Error("Build approvals would restore a withdrawn research source");
   }
   researchIndex = await writeResearchRelease(fileURLToPath(here(".")), output, approvals);
+} else {
+  researchIndex = await withPreviewResults(JSON.parse(researchPayload));
 }
 const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
   if (!/^[a-z0-9-]+\.jpg$/.test(asset.file)) throw new Error("Invalid hardware photo filename: " + asset.file);
@@ -127,7 +130,7 @@ const result = await build({
     "process.env.NODE_ENV": '"production"',
     __FASTEST_PAGES__: String(pages),
     __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
-    __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex ?? null),
+    __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
