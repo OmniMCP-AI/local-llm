@@ -42,6 +42,7 @@
 .catalog-tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   min-height: 54px;
   padding: 6px 9px;
@@ -113,7 +114,6 @@
 @media (max-width: 790px) {
   .catalog-prototype-links { align-items: start; }
   .catalog-section-line { align-items: start; flex-wrap: wrap; }
-  .catalog-tools { flex-wrap: wrap; }
   .catalog-tools .deep-search { flex: 1 0 210px; }
 }
 @media (max-width: 530px) {
