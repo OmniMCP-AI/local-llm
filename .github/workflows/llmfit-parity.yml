@@ -1,0 +1,66 @@
+name: llmfit worker parity
+
+on:
+  pull_request:
+    paths: &fit_paths
+      - ".github/workflows/llmfit-parity.yml"
+      - "production/fastest_fit/**"
+      - "production/fastest_release/**"
+      - "production/tests/test_fit.py"
+      - "production/tests/capture_fit_parity.py"
+      - "opendesign/mockups/llm-observatory/catalog-*.json"
+  push:
+    branches: [main]
+    paths: *fit_paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fit:
+    name: Fit fixtures (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Identify the worker and install Rust
+        run: |
+          uname -sm
+          rustup toolchain install 1.98.0 --profile minimal
+          rustup run 1.98.0 rustc --version --verbose
+      - name: Run the public fit fixtures
+        working-directory: production
+        env:
+          PYTHONDONTWRITEBYTECODE: 1
+        run: python3 -m fastest_fit --toolchain 1.98.0 verify --report "$RUNNER_TEMP/fit-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fit-${{ matrix.runner }}
+          path: ${{ runner.temp }}/fit-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+  compare:
+    name: Compare public fit responses
+    needs: fit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: fit-*
+          path: reports
+      - name: Require byte-identical responses
+        run: |
+          diff -u reports/fit-ubuntu-24.04/fit-report.json reports/fit-macos-15/fit-report.json
+          sha256sum reports/fit-ubuntu-24.04/fit-report.json reports/fit-macos-15/fit-report.json
