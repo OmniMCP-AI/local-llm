@@ -25,10 +25,12 @@ const states = {
   untested: "Untested", cloud: "Cloud baseline",
 };
 const routes = {
-  Explorer: "explorer", Compare: "goals", Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
+  Explorer: "explorer", Compare: "goals",
+  ...(__FASTEST_RELEASE_ORIGIN__ ? { "Guided advisor": "advisor" } : {}),
+  Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
 };
 const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__);
-const chineseRoutes = { Explorer: "探索", Compare: "目标对比", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
+const chineseRoutes = { Explorer: "探索", Compare: "目标对比", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
 const chineseWorkload = { text: "文本生成", image: "图像生成", agent: "智能体任务" };
 const defaults = {
   work: "text", context: "short", region: "us", budget: 2800, condition: "new",

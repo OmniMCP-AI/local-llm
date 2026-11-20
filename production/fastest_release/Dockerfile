@@ -10,7 +10,8 @@ ENV PORT=8000 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /opt/fastest/production
 
 COPY production/fastest_release/__init__.py production/fastest_release/__main__.py \
-     production/fastest_release/advisor.py production/fastest_release/api.py production/fastest_release/artifacts.py \
+     production/fastest_release/advisor.py production/fastest_release/advisor_page.py \
+     production/fastest_release/api.py production/fastest_release/artifacts.py \
      production/fastest_release/healthcheck.py production/fastest_release/http.py \
      production/fastest_release/profiles.py production/fastest_release/research.py production/fastest_release/scaling.py \
      production/fastest_release/validation.py production/fastest_release/profile-interaction.js ./fastest_release/

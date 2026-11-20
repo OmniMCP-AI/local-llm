@@ -1,5 +1,5 @@
 const productionRoutes = {
-  explorer: "/profiles", goals: "/goals", costs: "/costs",
+  explorer: "/profiles", goals: "/goals", advisor: "/advisor", costs: "/costs",
   machines: "/profiles#machines", models: "/profiles#models",
 };
 const pagesRoutes = {

@@ -131,7 +131,7 @@ test("the Pages navigation keeps standalone hash links and resolves hosted evide
   const origin = "https://release.fastest.example";
   assert.equal(navigationHref("goals", false, origin), "#goals");
   assert.equal(navigationHref("goals", true, null), "#goals");
-  for (const [route, expected] of [["explorer", "/profiles"], ["goals", "/goals"], ["costs", "/costs"],
+  for (const [route, expected] of [["explorer", "/profiles"], ["goals", "/goals"], ["advisor", "/advisor"], ["costs", "/costs"],
     ["machines", "/profiles#machines"], ["models", "/profiles#models"]]) {
     assert.equal(navigationHref(route, true, origin), origin + expected);
   }

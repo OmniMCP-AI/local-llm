@@ -2,6 +2,7 @@
 !production/fastest_release/__init__.py
 !production/fastest_release/__main__.py
 !production/fastest_release/advisor.py
+!production/fastest_release/advisor_page.py
 !production/fastest_release/api.py
 !production/fastest_release/artifacts.py
 !production/fastest_release/healthcheck.py

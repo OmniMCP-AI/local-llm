@@ -14,6 +14,7 @@ from urllib.request import urlopen
 from uuid import uuid4
 
 from fastest_prices import PriceError, PriceStore
+from test_goals import fixture_service
 from test_public_api import api_client
 
 
@@ -414,6 +415,41 @@ class PriceTest(unittest.TestCase):
             self.assertNotIn("offers", after)
             self.assertEqual(request(f"/price-releases/{saved}/prices.json")[0], 410)
             self.assertNotIn("240.00", self.store.artifact(saved, "prices.html"))
+
+    def test_advisor_and_wizard_share_landed_postgres_quote_and_withdrawal(self):
+        self.cohort.update(data_class="authorized_observations",
+                           scope={"kind": "whole_build", "id": "apple-m4", "revision_id": "fixture-m4-build-v1"})
+        capture = deepcopy(self.fixture["captures"][2])
+        capture["observations"][0]["scope"] = self.cohort["scope"]
+        self.store.approve(self.cohort)
+        self.store.capture(self.cohort["id"], capture)
+        release_id = self.store.publish(self.cohort["id"], "2026-11-01", "2026-11-04")
+        query = "entry=budget&budget=254&decode=40&prefill=500&privacy=local-only"
+
+        with fixture_service(price=self.store.read, price_release=release_id) as goals:
+            with api_client(goals=goals, price_reader=self.store.read) as request:
+                status, _, html = request("/advisor?" + query, decode=False)
+                self.assertEqual(status, 200)
+                self.assertIn("253.80 USD", html)
+                self.assertNotIn("illustrative-authorization-file", html)
+                status, _, advisor = request("/api/v1/advisor?" + query)
+                self.assertEqual(status, 200)
+                self.assertEqual(advisor["recommendation"], "apple-m4")
+                citation = next(item for item in advisor["citations"] if item["kind"] == "landed-quote")
+                self.assertEqual((citation["release_id"], citation["locator"]),
+                                 (release_id, "example-feed/2026-11-03/offer-a"))
+                status, _, wizard = request(advisor["comparison"]["replay_url"])
+                self.assertEqual(status, 200)
+                row = next(item for item in wizard["rows"] if item["id"] == "apple-m4")
+                self.assertEqual(row["goals"]["budget"]["value"], "253.80")
+
+                self.store.withdraw(self.cohort["id"], "private operator-only authorization update")
+                status, _, html = request("/advisor?" + query, decode=False)
+                self.assertEqual(status, 200)
+                self.assertIn("Insufficient evidence", html)
+                self.assertIn("The pinned price release was withdrawn.", html)
+                self.assertNotIn("253.80 USD", html)
+                self.assertNotIn("operator-only", html)
 
     def test_public_reader_cannot_read_private_inputs_or_write(self):
         self.store.approve(self.cohort)

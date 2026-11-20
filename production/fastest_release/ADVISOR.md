@@ -1,8 +1,10 @@
 # Guided configuration advisor
 
-The read-only advisor evaluates one structured decision in the release service. It replies with an `answer`, a `clarify` response listing the missing selectors, or an `abstain` response with the available checks. It is available in [the public API description](../README.md#query-the-public-release-api).
+Open **Guided advisor** from the release service home page. The form checks a named machine, a budget or a set of text performance goals. **Compare costs** accepts the monthly workload and planning horizon. The page shows which requirements are missing, which checks support a result, or where the evidence falls short. Links beside the values open the corresponding pinned wizard data and a JSON replay.
 
-Run `python3 -B -m fastest_release serve` from `production/` and try these requests.
+The same read-only decision is available in [the public API description](../README.md#query-the-public-release-api). It returns an `answer`, a `clarify` response listing the missing selectors, or an `abstain` response with the available checks.
+
+Run `python3 -B -m fastest_release serve` from `production/`, open [the advisor](http://127.0.0.1:8000/advisor), or try these requests.
 
 ```sh
 curl 'http://127.0.0.1:8000/api/v1/advisor?entry=expert&decode=40&prefill=500&privacy=local-only'
