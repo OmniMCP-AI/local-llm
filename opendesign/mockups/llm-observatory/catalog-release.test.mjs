@@ -72,7 +72,7 @@ test("reviewed repository and conversion artifacts retain their own revisions an
   const { read, request } = await buildFixture(t);
   const { coverage } = JSON.parse(await read("manifest.json"));
   assert.equal(coverage.withExactArtifacts, 1);
-  assert.equal(coverage.exactArtifacts, 2);
+  assert.equal(coverage.exactArtifacts, 3);
 
   for (const extension of ["html", "md"]) {
     const response = await request("models/Qwen/Qwen2.5-0.5B-Instruct." + extension);
@@ -85,6 +85,8 @@ test("reviewed repository and conversion artifacts retain their own revisions an
     assert.match(text, /9217f5db79a29953eb74d5343926648285ec7e67\/qwen2\.5-0\.5b-instruct-q4/);
     assert.match(text, /74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db/);
     assert.ok(text.replaceAll("\\", "").includes("Q4_K_M"));
+    assert.match(text, /9217f5db79a29953eb74d5343926648285ec7e67\/qwen2\.5-0\.5b-instruct-q8_0\.gguf/);
+    assert.match(text, /ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e/);
     assert.match(text, /runtimes\/llama\.cpp\.html/);
     assert.match(text, /Tested compatibility.*unavailable/i);
   }
