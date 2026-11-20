@@ -179,6 +179,9 @@ a specific exclusion for a mismatched, failed or unavailable pair. Only a synthe
 test fixture is included for this protocol. A public measurement needs a reviewed
 pair from an authorized GPU host.
 
+[Scaling evidence review](fastest_release/SCALING-EVIDENCE.md) records two
+source-reported candidates and the gaps that keep them out of this report.
+
 ## Test the integrated production code
 
 The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmpeg/ffprobe, Pillow 10.1–12 for channel packaging, and the MCP SDK. From `production/`, run this in a local environment with those tools. uv installs the Python dependencies in an isolated environment.
