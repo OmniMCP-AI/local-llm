@@ -5,6 +5,8 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
+import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
+import { writeLocalHardwareProfiles } from "./catalog-local-build.mjs";
 import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -98,6 +100,8 @@ test("runtime cards cite pinned releases and keep documented support apart from 
     ["llama.cpp", "v1.0.0", "ggml-org/llama.cpp", "GGUF"],
     ["sglang", "v0.5.23", "sgl-project/sglang", "Safetensors"],
     ["vllm", "v0.34.0", "vllm-project/vllm", "Safetensors"],
+    ["ollama", "v0.40.16", "ollama/ollama", "GGUF"],
+    ["mlx-lm", "v0.32.2", "ml-explore/mlx-lm", "MLX"],
   ]) {
     for (const extension of ["html", "md"]) {
       const response = await request(`runtimes/${runtime}.${extension}`);
@@ -115,7 +119,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 102);
+  assert.equal(hardware.coverage.cards, 104);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -143,7 +147,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
 
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 102], ["machines", 119]]) {
+  for (const [kind, count] of [["cards", 104], ["machines", 120]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -154,5 +158,20 @@ test("every released hardware row resolves in both formats", async (t) => {
         assert.ok((await response.text()).includes(source), id + " must retain its original source");
       }
     }
+  }
+});
+
+test("the offline catalog generates linked HTML and Markdown for every GPU", async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-local-catalog-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  const hardware = await readHardwareCatalog(here);
+  const release = await writeLocalHardwareProfiles(output, hardware, "Test license");
+  for (const { id, source } of hardware.catalog.cards) {
+    const root = join(output, "catalog", release, "cards", id);
+    const [html, markdown] = await Promise.all(["html", "md"].map(ext => readFile(root + "." + ext, "utf8")));
+    assert.ok(html.includes(source) && markdown.includes(source), id);
+    assert.ok(html.includes(`href="${id}.md"`), id);
+    assert.ok(html.includes("../../../../fastest-ai.html#catalog/cards"), id);
+    assert.ok(html.includes("On-board memory") && markdown.includes("On-board memory"), id);
   }
 });

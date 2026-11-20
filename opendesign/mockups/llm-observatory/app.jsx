@@ -11,7 +11,7 @@ import { ScatterPlot, PricePlot, RankingPlot } from "./plots";
 import { ExploreLenses, KnowledgePage, WikiDetails, wikiEntry } from "./knowledge";
 import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
-import { SourceCatalog } from "./catalog";
+import { CatalogTopics, SourceCatalog } from "./catalog";
 import { CostPage } from "./costs";
 import { navigationHref } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
@@ -521,6 +521,7 @@ function App() {
         : page === "Compare" ? <GoalPage state={state} set={set} go={go} onCopy={copy} />
         : page === "Methods" ? <MethodsPage go={go} />
         : page === "Costs" ? <CostPage key={slug || "costs"} initialMethod={slug} go={go} />
+        : page === "Catalog" && slug === "topics" ? <CatalogTopics go={go} />
         : page === "Catalog" || (page === "Models" && !slug) ? <>
           <SourceCatalog key={page + "/" + (slug || "")} initialKind={page === "Models" ? "models" : slug || "cards"} go={go} onCopy={copy} />
           <WikiDetails slug={slug === "runtimes" ? "runtimes" : page === "Models" ? "models" : "catalog"} go={go} onCopy={copy} />

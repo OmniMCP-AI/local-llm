@@ -13,7 +13,7 @@ function byRepository(left, right) {
   return left.id < right.id ? -1 : 1;
 }
 
-export function queryModelCatalog(rows, identities, { query = "", tag = "", license = "", page = 1, pageSize = 30 } = {}) {
+export function queryModelCatalog(rows, identities, { query = "", tag = "", license = "", page = 1, pageSize = 30, ranked = false } = {}) {
   const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const matched = rows.filter((row) => {
     if (license === "__missing" && row.license) return false;
@@ -23,7 +23,8 @@ export function queryModelCatalog(rows, identities, { query = "", tag = "", lice
     if (tag && !tags.includes(tag)) return false;
     const text = [row.id, row.name, row.license, ...tags].join(" ").toLowerCase();
     return terms.every((term) => text.includes(term));
-  }).sort(byRepository);
+  });
+  if (!ranked) matched.sort(byRepository);
   const pages = Math.max(1, Math.ceil(matched.length / pageSize));
   const current = Math.max(1, Math.min(page, pages));
   const start = (current - 1) * pageSize;

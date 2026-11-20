@@ -1,4 +1,5 @@
 /dist/
 /node_modules/
 /fastest-ai.html
+/local-catalog/
 __pycache__/

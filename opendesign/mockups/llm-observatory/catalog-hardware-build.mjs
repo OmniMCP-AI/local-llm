@@ -31,14 +31,18 @@ function researchMemory(profile, native, exceptions) {
 }
 
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
-  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes] = await Promise.all([
+  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
     readFile(join(directory, "../../..", seedPath, "hardware-profiles.json")),
     readFile(join(directory, "../../..", seedPath, "llmfit/research/hardware.json")),
+    readFile(join(directory, "gpu-vendor-specs.json")),
+    readFile(join(directory, "catalog-source-additions.json")),
   ]);
   const inventory = JSON.parse(inventoryBytes);
   const { asOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
+  const vendor = JSON.parse(specBytes);
+  const additions = JSON.parse(additionsBytes);
   if (sha256(profileBytes) !== research.profilesSha256 || sha256(nativeBytes) !== research.nativeProfilesSha256) {
     throw new Error("Review the changed hardware research snapshot before publishing");
   }
@@ -95,6 +99,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       lookupSource: matcher?.source ?? null,
       variant: metadata.variant ?? "Exact board revision unavailable",
       memory: metadata.memory ?? null,
+      vendorSpec: [additions.specs[record.id], vendor.cards[record.id]].find(item => item && !isWithdrawn(item.source)) ?? null,
       parent: metadata.parent ?? null,
       relatedProfiles: associatedProfiles,
       // Only explicit source/variant links can narrow a family reference to a specific board.
@@ -103,6 +108,16 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     }];
   }));
   if ([...matchers.keys()].some((id) => !cards.has(id))) throw new Error("Missing eligible llmfit card matcher");
+  for (const { id, name, manufacturer, variant, source, facts } of additions.cards) {
+    if (isWithdrawn(source) || isWithdrawn(id)) continue;
+    if (cards.has(id)) throw new Error(`Already cataloged GPU: ${id}`);
+    cards.set(id, {
+      id, name, manufacturer, variant, source, detail: variant, kind: "Component reference",
+      aliases: [], lookupSource: null, memory: null, parent: null,
+      relatedProfiles: [], explicitProfiles: [],
+      vendorSpec: { source, designation: name, facts },
+    });
+  }
   for (const card of cards.values()) {
     if (card.parent && !cards.has(card.parent)) {
       if (!withdrawnProfiles.size) throw new Error(`Unknown card family: ${card.parent}`);
@@ -165,13 +180,14 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const associations = machines.reduce((count, row) => count + row.associations, 0);
   const componentReferences = machines.filter((row) => row.kind === "Component reference").length;
   const upstreamOnly = [...cards.values()].filter((card) => card.lookupSource && !card.relatedProfiles.length).length;
-  const researchOnly = cards.size - matchers.size;
+  const researchOnly = [...cards.values()].filter(row => !row.lookupSource && row.relatedProfiles.length).length;
+  const manufacturerMachines = additions.machines.filter(row => !isWithdrawn(row.id) && !isWithdrawn(row.source));
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({
       ...card,
       variants: [...cards.values()].filter((entry) => entry.parent === card.id).map(({ id, name }) => ({ id, name })),
     })).sort((a, b) => a.id.localeCompare(b.id, "en")),
-    machines: [...machines, ...presets],
+    machines: [...machines, ...presets, ...manufacturerMachines],
   };
   index(catalog.machines);
 
@@ -192,17 +208,21 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       nativeProfiles: `${researchBase}/llmfit/research/hardware.json`,
       nativeProfilesSha256: research.nativeProfilesSha256,
     },
+    vendorSpecs: { capturedAt: vendor.capturedAt, sha256: sha256(specBytes), additionsSha256: sha256(additionsBytes) },
     coverage: {
       cards: catalog.cards.length,
+      cardsWithVendorSpecs: catalog.cards.filter(card => card.vendorSpec).length,
       llmfitDiscreteMatchers: matchers.size,
       upstreamOnlyCards: upstreamOnly,
       researchOnlyCards: researchOnly,
-      cardsWithBothSources: cards.size - upstreamOnly - researchOnly,
+      cardsWithBothSources: [...cards.values()].filter(row => row.lookupSource && row.relatedProfiles.length).length,
+      manufacturerOnlyCards: [...cards.values()].filter(row => !row.lookupSource && !row.relatedProfiles.length).length,
       unresolvedCardReferences: catalog.cards.filter(({ kind }) => kind === "Unresolved family reference").length,
       researchProfiles: machines.length,
       researchComponentReferences: componentReferences,
       partialMachines: machines.length - componentReferences,
       upstreamPresets: presets.length,
+      manufacturerMachines: manufacturerMachines.length,
       completeBuilds: 0,
       profilesWithCreatorReports: machines.filter((row) => row.associations > 0).length,
       profilesWithoutCreatorReports: machines.filter((row) => row.associations === 0).length,

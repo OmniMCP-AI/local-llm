@@ -112,6 +112,8 @@ The site uses **fastest.ai** as its working name and **localdecode.com** as an a
 
 ## Implementation Decisions
 
+The [local data and catalog expansion](catalog-expansion-spec.md) adds a reproducible local ER import, a profile for every GPU identity, and curated popular and small-model discovery. The existing M1 tickets cover import and catalog delivery, with recurring retail collection in M3.
+
 ### Start with the hardware and model catalog
 
 - The first release must give people a searchable, paginated list of **graphics cards, machine profiles, and models**. Define the covered source list and snapshot date upfront. Reconcile every eligible entry from the pinned llmfit hardware/model inputs and approved vendor or research sources, and show source coverage, import counts, and unsupported or missing records. Source-complete means all eligible records in the named snapshots. It does not mean every machine someone could assemble.

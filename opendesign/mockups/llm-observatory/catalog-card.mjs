@@ -69,15 +69,26 @@ export function runtimeCard(row) {
   };
 }
 
-export function hardwareCard(row, release, kind) {
-  const path = (type, id) => "/" + catalogPath(release, type, id);
+export function hardwareCard(row, release, kind, { local = false } = {}) {
+  const path = (type, id) => local ? `../${type}/${id}.html` : "/" + catalogPath(release, type, id);
   const common = [["Catalog ID", row.id], ["Pinned source", "Open source record", row.source]];
   const untested = "Untested in this release. No reviewed measurement is published for this identity.";
 
   if (kind === "cards") {
+    const vendor = row.vendorSpec;
+    const vendorFields = Object.entries(vendor?.facts ?? {}).map(([label, value]) => [label, value, vendor.source]);
+    const memory = vendor?.facts["Memory configuration"] ?? vendor?.facts["Dedicated memory (GB)"] ?? row.memory ?? "Unknown";
+    const bus = vendor?.facts["Memory bus"] ?? vendor?.facts["Memory bus (bits)"] ?? "Unknown";
+    const bandwidth = vendor?.facts["Memory bandwidth"] ?? vendor?.facts["Memory bandwidth (GB/s)"] ?? "Unknown";
+    const power = vendor?.facts["Rated graphics power (W)"] ?? "Unknown";
     return {
       title: row.name,
       kind: row.kind,
+      visuals: [
+        { title: "On-board memory", fields: [["Capacity / configuration", memory], ["Bus", bus], ["Bandwidth", bandwidth]] },
+        { title: "Host and power", fields: [["Host interface", vendor?.facts["Host interface"] ?? "Unknown"], ["Rated graphics power (W)", power]] },
+      ],
+      photos: row.photos ?? [],
       fields: [
         ...common,
         ["Manufacturer", row.manufacturer],
@@ -88,6 +99,12 @@ export function hardwareCard(row, release, kind) {
         ...(row.parent ? [["Related product family or calibration", row.parent, path("cards", row.parent)]] : []),
       ],
       sections: [
+        {
+          title: "Manufacturer specifications",
+          fields: vendor
+            ? [["Published product designation", vendor.designation, vendor.source], ...vendorFields]
+            : [["Source coverage", "No manufacturer specification has been matched to this identity."]],
+        },
         ...(row.variants.length ? [{
           title: "Distinct related variants",
           fields: row.variants.map(({ id, name }) => ["Variant", name, path("cards", id)]),
@@ -152,26 +169,32 @@ function markdownFields(fields) {
     `- **${name}** — ${href ? `[${escapeMarkdown(value)}](<${href}>)` : escapeMarkdown(value)}`);
 }
 
-export function renderCard(card, { release, pathname, markdown }) {
-  const root = `/catalog/${release}`;
-  const htmlLink = pathname.replace(/\.(md|html)$/, ".html");
-  const mdLink = pathname.replace(/\.(md|html)$/, ".md");
+export function renderCard(card, { release, pathname, markdown, local = false }) {
+  const root = local ? ".." : `/catalog/${release}`;
+  const linksFrom = local ? pathname.split("/").at(-1) : pathname;
+  const htmlLink = linksFrom.replace(/\.(md|html)$/, ".html");
+  const mdLink = linksFrom.replace(/\.(md|html)$/, ".md");
   const licenseLink = root + "/LICENSE.txt";
   const manifestLink = root + "/manifest.json";
+  const home = local ? "../../../../fastest-ai.html" : "/";
   const sections = card.sections ?? [];
+  const visuals = card.visuals ?? [];
+  const photos = card.photos ?? [];
 
   if (markdown) {
     return [
       "---",
       `title: ${JSON.stringify(card.title)}`,
       `kind: ${JSON.stringify(card.kind)}`,
-      `route: ${JSON.stringify(htmlLink)}`,
+      `route: ${JSON.stringify(pathname.replace(/\.(md|html)$/, ".html"))}`,
       `release: ${release}`,
       "locale: en",
       "---",
       "",
       `# ${escapeMarkdown(card.title)}`,
       "",
+      ...visuals.flatMap(({ title, fields }) => [`## ${escapeMarkdown(title)}`, "", ...markdownFields(fields), ""]),
+      ...photos.map(({ alt, source, credit }) => `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}`),
       ...markdownFields(card.fields),
       ...sections.flatMap(({ title, fields }) => ["", `## ${escapeMarkdown(title)}`, "", ...markdownFields(fields)]),
       "",
@@ -195,12 +218,20 @@ body{font:1rem/1.6 system-ui,sans-serif;max-width:50rem;margin:2rem auto;padding
 h1{font-size:clamp(1.5rem,5vw,2.5rem);overflow-wrap:anywhere;line-height:1.2}
 a{color:#12655a} dt{font-weight:600} dd{margin:0 0 .75rem;overflow-wrap:anywhere}
 nav{display:flex;gap:1rem;flex-wrap:wrap} footer{margin-top:2rem;border-top:1px solid #b8c6c2;padding-top:1rem}
+.spec-visuals{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:.8rem;margin-block:1.5rem}
+.spec-visuals section{padding:1rem;border:1px solid #b8c6c2;border-radius:.7rem;background:#edf5f3}
+.spec-visuals h2{font-size:1.05rem;margin:0;color:#12655a}
+.spec-visuals dl{margin-bottom:0}.spec-visuals dd:last-child{margin-bottom:0}
+.product-gallery{display:flex;flex-wrap:wrap;gap:1rem}.product-gallery figure{margin:0;max-width:24rem}
+.product-gallery img{display:block;width:100%;height:auto;border-radius:.5rem}.product-gallery figcaption{font-size:.85rem}
 </style>
 </head>
 <body>
-<header><nav aria-label="Catalog"><a href="/#catalog/cards">Cards</a><a href="/#catalog/machines">Machines</a><a href="/#catalog/models">Models</a><a href="/#catalog/runtimes">Runtimes</a><a href="${mdLink}">Markdown</a></nav></header>
+<header><nav aria-label="Catalog"><a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a><a href="${mdLink}">Markdown</a></nav></header>
 <main>
 <p>${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
+${visuals.length ? `<div class="spec-visuals">${visuals.map(({title,fields}) => `<section><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("")}</div>` : ""}
+${photos.length ? `<div class="product-gallery">${photos.map(({ data, alt, source, credit }) => `<figure><img src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption><a href="${escapeHtml(source)}">${escapeHtml(credit)}</a></figcaption></figure>`).join("")}</div>` : ""}
 ${htmlFields(card.fields)}
 ${sections.map(({ title, fields }) => `<section><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("\n")}
 <h2>Evidence</h2><p>${escapeHtml(card.evidence)}</p>

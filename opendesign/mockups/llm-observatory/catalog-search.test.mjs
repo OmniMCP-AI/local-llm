@@ -19,3 +19,17 @@ test("search and source tags apply before stable model pagination", () => {
   assert.equal(queryModelCatalog(rows, identities, { ...filters, tag: "Text to speech" }).total, 0);
   assert.equal(queryModelCatalog(rows, identities, { ...filters, license: "__missing" }).total, 0);
 });
+
+test("small and popular shelves preserve dated Hub ranks and resolvable repository IDs", async () => {
+  const snapshot = JSON.parse(await readFile(new URL("model-discovery.json", import.meta.url)));
+  const byId = new Map(rows.map(row => [row.id, row]));
+  assert.equal(snapshot.popular.length, 300);
+  assert.equal(snapshot.small.length, 75);
+  assert.ok(snapshot.small.every(row => row.parameters <= snapshot.smallLimit));
+  for (const shelf of [snapshot.popular, snapshot.small]) {
+    assert.ok(shelf.every(row => byId.has(row.id)));
+    assert.equal(new Set(shelf.map(row => row.family)).size, shelf.length);
+    const page = queryModelCatalog(shelf.map(row => byId.get(row.id)), identities, { ranked: true, pageSize: 3 });
+    assert.deepEqual(page.rows.map(row => row.id), shelf.slice(0, 3).map(row => row.id));
+  }
+});

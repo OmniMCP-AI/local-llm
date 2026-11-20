@@ -1,0 +1,535 @@
+{
+  "capturedAt": "2026-11-20T21:33:59+00:00",
+  "cards": {
+    "intel-arc-pro-b50": {
+      "designation": "B50",
+      "facts": {
+        "Dedicated memory (GB)": "16",
+        "Host interface": "Gen 5 x8",
+        "Memory bandwidth (GB/s)": "224",
+        "Memory bus (bits)": "128",
+        "Memory type": "GDDR6",
+        "Rated graphics power (W)": "70",
+        "Xe cores": "16"
+      },
+      "source": "https://dgpu-docs.intel.com/overview/architecture/gpu-architecture.html"
+    },
+    "intel-arc-pro-b60": {
+      "designation": "B60",
+      "facts": {
+        "Dedicated memory (GB)": "24",
+        "Host interface": "Gen 5 x8",
+        "Memory bandwidth (GB/s)": "456",
+        "Memory bus (bits)": "192",
+        "Memory type": "GDDR6",
+        "Rated graphics power (W)": "120–200",
+        "Xe cores": "20"
+      },
+      "source": "https://dgpu-docs.intel.com/overview/architecture/gpu-architecture.html"
+    },
+    "intel-arc-pro-b65": {
+      "designation": "B65",
+      "facts": {
+        "Dedicated memory (GB)": "32",
+        "Host interface": "Gen 5.0 x16",
+        "Memory bandwidth (GB/s)": "608",
+        "Memory bus (bits)": "256",
+        "Memory type": "GDDR6",
+        "Rated graphics power (W)": "200",
+        "Xe cores": "20"
+      },
+      "source": "https://dgpu-docs.intel.com/overview/architecture/gpu-architecture.html"
+    },
+    "intel-arc-pro-b70": {
+      "designation": "B70",
+      "facts": {
+        "Dedicated memory (GB)": "32",
+        "Host interface": "Gen 5 x16",
+        "Memory bandwidth (GB/s)": "608",
+        "Memory bus (bits)": "256",
+        "Memory type": "GDDR6",
+        "Rated graphics power (W)": "150–300",
+        "Xe cores": "32"
+      },
+      "source": "https://dgpu-docs.intel.com/overview/architecture/gpu-architecture.html"
+    },
+    "nvidia-geforce-gtx-1630": {
+      "designation": "GeForce GTX 1630",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "512",
+        "Memory bus": "64-bit",
+        "Memory configuration": "4GB GDDR6",
+        "Power connectors": "6-pin",
+        "Rated graphics power (W)": "75"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-gtx-1650-super": {
+      "designation": "GeForce GTX 1650 Super",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "1280",
+        "Memory bus": "128-bit",
+        "Memory configuration": "4GB GDDR6",
+        "Power connectors": "6-pin",
+        "Rated graphics power (W)": "100"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-gtx-1660": {
+      "designation": "GeForce GTX 1660",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "1408",
+        "Memory bus": "192-bit",
+        "Memory configuration": "6GB GDDR5",
+        "Power connectors": "8-pin",
+        "Rated graphics power (W)": "120"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-gtx-1660-super": {
+      "designation": "GeForce GTX 1660 Super",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "1408",
+        "Memory bus": "192-bit",
+        "Memory configuration": "6GB GDDR6",
+        "Power connectors": "8-pin",
+        "Rated graphics power (W)": "125"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-gtx-1660-ti": {
+      "designation": "GeForce GTX 1660 Ti",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "1536",
+        "Memory bus": "192-bit",
+        "Memory configuration": "6GB GDDR6",
+        "Power connectors": "8-pin",
+        "Rated graphics power (W)": "120"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2060": {
+      "designation": "GeForce RTX 2060",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.47 / 1.37",
+        "Boost clock (GHz)": "1.65 / 1.68",
+        "CUDA cores": "2176 / 1920",
+        "Memory bus": "192-bit",
+        "Memory configuration": "12 GB GDDR6 / / 6 GB GDDR6",
+        "Power connectors": "1x PCIe 8-pin",
+        "Rated graphics power (W)": "185 / 160"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2060-super": {
+      "designation": "GeForce RTX 2060 Super",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.47",
+        "Boost clock (GHz)": "1.65",
+        "CUDA cores": "2176",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 8-pin",
+        "Rated graphics power (W)": "175"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2070": {
+      "designation": "GeForce RTX 2070",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.41",
+        "Boost clock (GHz)": "1.71",
+        "CUDA cores": "2304",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 8-pin",
+        "Rated graphics power (W)": "185"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2070-super": {
+      "designation": "GeForce RTX 2070 Super",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.61",
+        "Boost clock (GHz)": "1.77",
+        "CUDA cores": "2560",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 6-pin / + 1x PCIe 8-pin",
+        "Rated graphics power (W)": "215"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2080": {
+      "designation": "GeForce RTX 2080",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.52",
+        "Boost clock (GHz)": "1.8",
+        "CUDA cores": "2944",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 6-pin / + 1x PCIe 8-pin",
+        "Rated graphics power (W)": "225"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2080-super": {
+      "designation": "GeForce RTX 2080 Super",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.65",
+        "Boost clock (GHz)": "1.82",
+        "CUDA cores": "3072",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 6-pin / + 1x PCIe 8-pin",
+        "Rated graphics power (W)": "250"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-2080-ti": {
+      "designation": "GeForce RTX 2080 Ti",
+      "facts": {
+        "Architecture": "Turing",
+        "Base clock (GHz)": "1.35",
+        "Boost clock (GHz)": "1.64",
+        "CUDA cores": "4352",
+        "Memory bus": "352-bit",
+        "Memory configuration": "11 GB GDDR6",
+        "Power connectors": "2x PCIe 8-pin",
+        "Rated graphics power (W)": "260"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3060": {
+      "designation": "GeForce RTX 3060",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.32",
+        "Boost clock (GHz)": "1.78",
+        "CUDA cores": "3584",
+        "Memory bus": "192-bit / 128-bit",
+        "Memory configuration": "12 GB GDDR6 / 8 GB GDDR6",
+        "Power connectors": "1x PCIe 8-pin",
+        "Rated graphics power (W)": "170"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3060-ti": {
+      "designation": "GeForce RTX 3060 Ti",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.41",
+        "Boost clock (GHz)": "1.67",
+        "CUDA cores": "4864",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6 / 8 GB GDDR6X",
+        "Power connectors": "1x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "200"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3070": {
+      "designation": "GeForce RTX 3070",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.50",
+        "Boost clock (GHz)": "1.73",
+        "CUDA cores": "5888",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Power connectors": "1x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "220"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3070-ti": {
+      "designation": "GeForce RTX 3070 Ti",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.58",
+        "Boost clock (GHz)": "1.77",
+        "CUDA cores": "6144",
+        "Memory bus": "256-bit",
+        "Memory configuration": "8 GB GDDR6X",
+        "Power connectors": "2x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "290"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3080": {
+      "designation": "GeForce RTX 3080",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.26 / 1.44",
+        "Boost clock (GHz)": "1.71",
+        "CUDA cores": "8960 / 8704",
+        "Memory bus": "384-bit / 320-bit",
+        "Memory configuration": "12 GB GDDR6X / 10 GB GDDR6X",
+        "Power connectors": "2x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "350 / 320"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3080-ti": {
+      "designation": "GeForce RTX 3080 Ti",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.37",
+        "Boost clock (GHz)": "1.67",
+        "CUDA cores": "10240",
+        "Memory bus": "384-bit",
+        "Memory configuration": "12 GB GDDR6X",
+        "Power connectors": "2x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "350"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3090": {
+      "designation": "GeForce RTX 3090",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.40",
+        "Boost clock (GHz)": "1.70",
+        "CUDA cores": "10496",
+        "Memory bus": "384-bit",
+        "Memory configuration": "24 GB GDDR6X",
+        "Power connectors": "2x PCIe 8-pin / (adapter to 1x 12-pin included)",
+        "Rated graphics power (W)": "350"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-3090-ti": {
+      "designation": "GeForce RTX 3090 Ti",
+      "facts": {
+        "Architecture": "Ampere",
+        "Base clock (GHz)": "1.56",
+        "Boost clock (GHz)": "1.86",
+        "CUDA cores": "10752",
+        "Memory bus": "384-bit",
+        "Memory configuration": "24 GB GDDR6X",
+        "Power connectors": "3x PCIe 8-pin cables (adapter in box) OR / 450W or greater PCIe Gen 5 cable",
+        "Rated graphics power (W)": "450"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4060": {
+      "designation": "GeForce RTX 4060",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "1.83",
+        "Boost clock (GHz)": "2.46",
+        "CUDA cores": "3072",
+        "Memory bus": "128-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Rated graphics power (W)": "115"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4060-ti": {
+      "designation": "GeForce RTX 4060 Ti",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.31",
+        "Boost clock (GHz)": "2.54",
+        "CUDA cores": "4352",
+        "Memory bus": "128-bit",
+        "Memory configuration": "16 GB GDDR6 or 8 GB GDDR6",
+        "Rated graphics power (W)": "165 or 160"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4070": {
+      "designation": "GeForce RTX 4070",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "1.92",
+        "Boost clock (GHz)": "2.48",
+        "CUDA cores": "5888",
+        "Memory bus": "192-bit",
+        "Memory configuration": "12 GB GDDR6 / 12 GB GDDR6X",
+        "Rated graphics power (W)": "200"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4070-super": {
+      "designation": "GeForce RTX 4070 SUPER",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "1.98",
+        "Boost clock (GHz)": "2.48",
+        "CUDA cores": "7168",
+        "Memory bus": "192-bit",
+        "Memory configuration": "12 GB GDDR6X",
+        "Rated graphics power (W)": "220"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4070-ti": {
+      "designation": "GeForce RTX 4070 Ti",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.31",
+        "Boost clock (GHz)": "2.61",
+        "CUDA cores": "7680",
+        "Memory bus": "192-bit",
+        "Memory configuration": "12 GB GDDR6X",
+        "Rated graphics power (W)": "285"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4070-ti-super": {
+      "designation": "GeForce RTX 4070 Ti SUPER",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.34",
+        "Boost clock (GHz)": "2.61",
+        "CUDA cores": "8448",
+        "Memory bus": "256-bit",
+        "Memory configuration": "16 GB GDDR6X",
+        "Rated graphics power (W)": "285"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4080": {
+      "designation": "GeForce RTX 4080",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.21",
+        "Boost clock (GHz)": "2.51",
+        "CUDA cores": "9728",
+        "Memory bus": "256-bit",
+        "Memory configuration": "16 GB GDDR6X",
+        "Rated graphics power (W)": "320"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4080-super": {
+      "designation": "GeForce RTX 4080 SUPER",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.29",
+        "Boost clock (GHz)": "2.55",
+        "CUDA cores": "10240",
+        "Memory bus": "256-bit",
+        "Memory configuration": "16 GB GDDR6X",
+        "Rated graphics power (W)": "320"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-4090": {
+      "designation": "GeForce RTX 4090",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "Base clock (GHz)": "2.23",
+        "Boost clock (GHz)": "2.52",
+        "CUDA cores": "16384",
+        "Memory bus": "384-bit",
+        "Memory configuration": "24 GB GDDR6X",
+        "Rated graphics power (W)": "450"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5050": {
+      "designation": "GeForce RTX 5050",
+      "facts": {
+        "Base clock (GHz)": "2.31",
+        "Boost clock (GHz)": "2.57",
+        "CUDA cores": "2560",
+        "Memory bandwidth": "320 GB/sec",
+        "Memory bus": "128-bit",
+        "Memory configuration": "8 GB GDDR6",
+        "Rated graphics power (W)": "130"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5060": {
+      "designation": "GeForce RTX 5060",
+      "facts": {
+        "Base clock (GHz)": "2.28",
+        "Boost clock (GHz)": "2.50",
+        "CUDA cores": "3840",
+        "Memory bandwidth": "448 GB/sec",
+        "Memory bus": "128-bit",
+        "Memory configuration": "8 GB GDDR7",
+        "Rated graphics power (W)": "145"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5060-ti": {
+      "designation": "GeForce RTX 5060 Ti",
+      "facts": {
+        "Base clock (GHz)": "2.41",
+        "Boost clock (GHz)": "2.57",
+        "CUDA cores": "4608",
+        "Memory bandwidth": "448 GB/sec",
+        "Memory bus": "128-bit",
+        "Memory configuration": "16 GB / 8 GB GDDR7",
+        "Rated graphics power (W)": "180"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5070": {
+      "designation": "GeForce RTX 5070",
+      "facts": {
+        "Base clock (GHz)": "2.33",
+        "Boost clock (GHz)": "2.51",
+        "CUDA cores": "6144",
+        "Memory bandwidth": "672 GB/sec",
+        "Memory bus": "192-bit",
+        "Memory configuration": "12 GB GDDR7",
+        "Rated graphics power (W)": "250"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5070-ti": {
+      "designation": "GeForce RTX 5070 Ti",
+      "facts": {
+        "Base clock (GHz)": "2.30",
+        "Boost clock (GHz)": "2.45",
+        "CUDA cores": "8960",
+        "Memory bandwidth": "896 GB/sec",
+        "Memory bus": "256-bit",
+        "Memory configuration": "16 GB GDDR7",
+        "Rated graphics power (W)": "300"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5080": {
+      "designation": "GeForce RTX 5080",
+      "facts": {
+        "Base clock (GHz)": "2.30",
+        "Boost clock (GHz)": "2.62",
+        "CUDA cores": "10752",
+        "Memory bandwidth": "960 GB/sec",
+        "Memory bus": "256-bit",
+        "Memory configuration": "16 GB GDDR7",
+        "Rated graphics power (W)": "360"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    },
+    "nvidia-geforce-rtx-5090": {
+      "designation": "GeForce RTX 5090",
+      "facts": {
+        "Base clock (GHz)": "2.01",
+        "Boost clock (GHz)": "2.41",
+        "CUDA cores": "21760",
+        "Memory bandwidth": "1792 GB/sec",
+        "Memory bus": "512-bit",
+        "Memory configuration": "32 GB GDDR7",
+        "Rated graphics power (W)": "575"
+      },
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/"
+    }
+  }
+}

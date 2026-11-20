@@ -17,7 +17,10 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.completeBuilds, 0);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 119);
+  assert.equal(catalog.machines.length, 120);
+  assert.equal(manifest.coverage.manufacturerMachines, 1);
+  assert.equal(manifest.coverage.cards, 104);
+  assert.ok(manifest.coverage.cardsWithVendorSpecs >= 39);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");

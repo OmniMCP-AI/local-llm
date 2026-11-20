@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
+import { writeLocalHardwareProfiles } from "./catalog-local-build.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
@@ -89,6 +90,17 @@ const publicDocuments = Object.fromEntries(Object.entries(documents)
     return [id, { ...doc, body: clean(doc.body), raw: clean(doc.raw) }];
   }));
 const hardware = await readHardwareCatalog(catalogDirectory, isWithdrawn);
+const gpuPhotos = {
+  "nvidia-geforce-rtx-4090": "rtx-4090",
+  "nvidia-geforce-rtx-3090": "rtx-3090",
+  "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
+  "intel-arc-b580": "arc-b580",
+};
+for (const card of hardware.catalog.cards) {
+  const photo = media[gpuPhotos[card.id]];
+  if (photo && !isWithdrawn(photo.source)) card.photos = [photo];
+}
+hardware.digest = createHash("sha256").update(JSON.stringify({ catalog: hardware.catalog, manifest: hardware.manifest })).digest("hex");
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
@@ -96,6 +108,15 @@ const hardwareDirectory = {
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware) : "";
+let localHardwareRelease = "";
+if (!pages) {
+  const localOutput = fileURLToPath(here("local-catalog/"));
+  const { importLocalCatalog } = await import("./catalog-pg.mjs");
+  const imported = await importLocalCatalog(hardware);
+  console.log(`Imported local PostgreSQL catalog snapshot ${imported.snapshotId}`);
+  const license = JSON.parse(await readFile(here("catalog-models.json"), "utf8")).licenseNotice;
+  localHardwareRelease = await writeLocalHardwareProfiles(localOutput, imported, license);
+}
 const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
 const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
@@ -132,6 +153,7 @@ const result = await build({
     __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
+    __FASTEST_LOCAL_HARDWARE_RELEASE__: JSON.stringify(localHardwareRelease),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
     __FASTEST_WIKI_PUBLIC_ROUTES__: JSON.stringify(Object.fromEntries(Object.keys(wikiRelease?.publicPages ?? {})
