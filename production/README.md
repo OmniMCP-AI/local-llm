@@ -4,6 +4,8 @@ PostgreSQL stores reviewed observation revisions and the current release pointer
 
 The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream releases and authored card applicability. It links matched retests to approved benchmark releases.
 
+[Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
+
 [Regional price cohorts](fastest_prices/README.md) publish dated reviewed offers and a historical range when the sample qualifies.
 
 [Text workload costs](fastest_cost/README.md) compare keeping a machine, upgrading, hourly rental, and a token-metered API at the same service targets.
