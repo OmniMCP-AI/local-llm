@@ -10,6 +10,7 @@ from fastest_pilot_bundle import bundle_manifest, digest, json_text
 from fastest_prices import PriceError
 from fastest_prices.result import eligible_offer
 from fastest_release.validation import plain_text
+from fastest_serving import METRICS as SERVING_METRICS, PROTOCOL as SERVING_PROTOCOL, load_records
 from fastest_text.__main__ import load_dataset, text_artifacts
 
 
@@ -19,7 +20,8 @@ METRICS = {
     "budget": {"label": "Landed whole-build price", "direction": "lower", "default": "1500"},
 }
 ENTRIES = {"machine": "Use my machine", "budget": "Shop by budget", "expert": "Expert compare"}
-PUBLIC_FIELDS = {"entry", "machine", "decode", "prefill", "budget", "priority", "privacy", "x", "y"}
+SERVING_ENTRY = "serving"
+PUBLIC_FIELDS = {"entry", "machine", "decode", "prefill", "budget", "priority", "privacy", "x", "y", *SERVING_METRICS}
 DEFAULT_MARKET = {"market": "US", "destination": None, "currency": "USD", "condition": "new"}
 PRIVACY_LABELS = {"local-only": "Require local-only execution", "allow-external": "Allow external services"}
 PRIVACY_RECORDS = {"local-only": "Local-only execution", "external": "External service use"}
@@ -32,8 +34,8 @@ def _require(condition, message):
         raise ValueError(message)
 
 
-def _number(text, metric):
-    _require(NUMBER.fullmatch(text), f"Invalid {METRICS[metric]['label'].lower()} goal.")
+def _number(text, definition):
+    _require(NUMBER.fullmatch(text), f"Invalid {definition['label'].lower()} goal.")
     return format(Decimal(text), "f").rstrip("0").rstrip(".") if "." in text else text
 
 
@@ -46,8 +48,9 @@ class GoalService:
         policy = json.loads(manifest.read_text(encoding="utf-8")) if manifest else {
             "schema_version": 1, "records": [], "market": DEFAULT_MARKET, "candidates": {},
         }
-        _require(isinstance(policy, dict) and set(policy) == {"schema_version", "records", "market", "candidates"}
-                 and type(policy["schema_version"]) is int and policy["schema_version"] == 1, "Invalid goals cohort manifest.")
+        _require(isinstance(policy, dict) and policy.keys() - {"serving_records"} == {
+            "schema_version", "records", "market", "candidates",
+        } and type(policy["schema_version"]) is int and policy["schema_version"] == 1, "Invalid goals cohort manifest.")
         records = policy["records"]
         _require(isinstance(records, list) and all(plain_text(path) for path in records), "Invalid goals text records.")
         self.text = load_dataset([manifest.parent / path for path in records])
@@ -84,32 +87,41 @@ class GoalService:
         self.price_reader = price_reader
         self.metrics = {metric: {**definition, **({"unit": self.market["currency"]} if metric == "budget" else {})}
                         for metric, definition in METRICS.items()}
-        self.release_id = digest(json_text({
-            "version": 1, "text": self.text, "market": self.market, "candidates": self.candidates,
-        }))
+        serving_records = policy.get("serving_records", [])
+        _require(isinstance(serving_records, list) and all(plain_text(path) for path in serving_records),
+                 "Invalid goals serving records.")
+        self.serving = load_records([manifest.parent / path for path in serving_records], self.text)
+        release = {"version": 1, "text": self.text, "market": self.market, "candidates": self.candidates}
+        if "serving_records" in policy:
+            release["serving"] = {"protocol": SERVING_PROTOCOL, "setups": self.serving}
+        self.release_id = digest(json_text(release))
         self.text_artifacts = text_artifacts(self.text)
         self.text_artifacts["manifest.json"] = bundle_manifest(self.text["id"], self.text_artifacts)
 
     def selection(self, values):
         _require(values.keys() <= PUBLIC_FIELDS, "Unknown goals parameter.")
         entry = values.get("entry", "machine")
-        _require(entry in ENTRIES, "Unknown starting point.")
+        _require(entry in ENTRIES or entry == SERVING_ENTRY, "Unknown starting point.")
+        serving = entry == SERVING_ENTRY
+        metrics = SERVING_METRICS if serving else self.metrics
+        inactive = METRICS if serving else SERVING_METRICS
+        _require(not inactive.keys() & values.keys(), "A threshold does not apply to this workload.")
         machine = values.get("machine", next(iter(self.machines)) if entry == "machine" else "")
         _require(machine == "" or machine in self.machines, "Unknown setup.")
-        priority = values.get("priority", "budget" if entry == "budget" else "decode")
+        x_default = "capacity" if serving else "budget" if entry == "budget" else "prefill"
+        y_default = "user_p95" if serving else "decode"
+        priority = values.get("priority", "budget" if entry == "budget" else y_default)
         privacy = values.get("privacy", "local-only")
-        x = values.get("x", "budget" if entry == "budget" else "prefill")
-        y = values.get("y", "decode")
-        _require(priority in METRICS and privacy in PRIVACY_LABELS, "Unknown priority or privacy requirement.")
-        _require(x in METRICS and y in METRICS and x != y, "Choose two distinct chart axes.")
-        budget = values.get("budget", METRICS["budget"]["default"] if entry == "budget" else "")
-        return {
-            "entry": entry, "machine": machine,
-            "decode": _number(values.get("decode", METRICS["decode"]["default"]), "decode"),
-            "prefill": _number(values.get("prefill", METRICS["prefill"]["default"]), "prefill"),
-            "budget": _number(budget, "budget") if budget else "",
-            "priority": priority, "privacy": privacy, "x": x, "y": y,
-        }
+        x, y = values.get("x", x_default), values.get("y", y_default)
+        _require(priority in metrics and privacy in PRIVACY_LABELS, "Unknown priority or privacy requirement.")
+        _require(x in metrics and y in metrics and x != y, "Choose two distinct chart axes.")
+        targets = {}
+        for metric, definition in metrics.items():
+            optional = metric in {"budget", "wall_energy"}
+            default = "" if metric == "budget" and entry != "budget" else definition["default"]
+            value = values.get(metric, default)
+            targets[metric] = "" if optional and not value else _number(value, definition)
+        return {"entry": entry, "machine": machine, **targets, "priority": priority, "privacy": privacy, "x": x, "y": y}
 
     def url(self, selection, suffix=""):
         return f"/goals/{self.release_id}{suffix}?{urlencode(selection)}"
@@ -181,27 +193,52 @@ class GoalService:
         else:
             admission = _item("pass", f"Reviewed measurements on the pinned protocol ({cell['status']} run).")
         gates = {"admission": admission, "quality": quality_gate, "privacy": privacy_gate}
-        goals = {metric: self._check(metric, metrics[metric], selection[metric], admission)
-                 for metric in METRICS if selection[metric]}
+        return self._decision_row(cell, selection, self.metrics, metrics, gates,
+                                  run_source=cell.get("source"), build_revision=candidate.get("build_revision"))
+
+    def _serving_row(self, cell, selection):
+        evidence = self.serving[cell["id"]]
+        if evidence["status"] == "measured":
+            admission = _item("pass", "Reviewed measurements cover the full serving protocol.")
+        elif evidence["status"] == "failed":
+            admission = _item("ineligible", "The full serving run produced zero accepted responses.")
+        else:
+            admission = _item("unknown", evidence["reason"])
+        privacy = evidence.get("privacy")
+        required = selection["privacy"] == "local-only"
+        if privacy is None:
+            privacy_gate = _item("unknown" if required else "pass", "Serving execution privacy is unverified.")
+        else:
+            status = "ineligible" if required and privacy != "local-only" else "pass"
+            privacy_gate = _item(status, PRIVACY_RECORDS[privacy] + ".", source=evidence["source"]["locator"])
+        return self._decision_row(
+            cell, selection, SERVING_METRICS, evidence["metrics"], {"admission": admission, "privacy": privacy_gate},
+            run_source=evidence.get("source"), serving={key: value for key, value in evidence.items() if key != "metrics"},
+        )
+
+    def _decision_row(self, cell, selection, definitions, metrics, gates, **metadata):
+        goals = {metric: self._check(definition, metrics[metric], selection[metric], gates["admission"],
+                                     gate_missing=metric != "budget")
+                 for metric, definition in definitions.items() if selection[metric]}
         gate_states = {gate["status"] for gate in gates.values()}
         goal_states = {goal["status"] for goal in goals.values()}
         status = next((state for state in ("ineligible", "miss", "unknown")
                        if state in goal_states | gate_states), "pass")
         return {
-            "id": machine, "name": cell["name"], "backend": cell["backend"], "status": status,
-            "selected_machine": machine == selection["machine"],
+            "id": cell["id"], "name": cell["name"], "backend": cell["backend"], "status": status,
+            "selected_machine": cell["id"] == selection["machine"],
             "gates": gates, "goals": goals, "metrics": metrics, "chart_eligible": gate_states == {"pass"},
-            "run_source": cell.get("source"), "build_revision": candidate.get("build_revision"),
+            **metadata,
         }
 
-    def _check(self, metric, observation, target, admission):
-        unit = self.metrics[metric]["unit"]
+    def _check(self, definition, observation, target, admission, *, gate_missing):
+        unit = definition["unit"]
         value = observation["value"]
         if value is None:
-            status = "ineligible" if metric != "budget" and admission["status"] == "ineligible" else "unknown"
+            status = "ineligible" if gate_missing and admission["status"] == "ineligible" else "unknown"
             reason = admission["reason"] if status == "ineligible" else observation["reason"]
             return _item(status, reason, value=None, target=target, unit=unit, gap=None)
-        low = METRICS[metric]["direction"] == "lower"
+        low = definition["direction"] == "lower"
         with localcontext() as context:
             context.prec = 80
             gap = Decimal(value) - Decimal(target) if low else Decimal(target) - Decimal(value)
@@ -212,12 +249,15 @@ class GoalService:
         return _item("pass", "At or within the required limit.", value=value, target=target, unit=unit, gap="0")
 
     def evaluate(self, selection):
-        rows = [self._row(cell, selection) for cell in self.text["cells"]]
+        serving = selection["entry"] == SERVING_ENTRY
+        definitions = SERVING_METRICS if serving else self.metrics
+        row_for = self._serving_row if serving else self._row
+        rows = [row_for(cell, selection) for cell in self.text["cells"]]
 
         def rank(row):
             metric = selection["priority"]
             value = row["metrics"][metric]["value"]
-            return STATUSES.index(row["status"]), value is None, _axis(metric, value) if value else 0, row["id"]
+            return STATUSES.index(row["status"]), value is None, _axis(definitions[metric], value) if value is not None else 0, row["id"]
 
         rows.sort(key=rank)
         supported = [row["id"] for row in rows if row["status"] == "pass"]
@@ -225,26 +265,29 @@ class GoalService:
                         and (not supported or row["id"] != supported[0])]
         return {
             "release_id": self.release_id, "text_release": self.text["id"], "selection": selection,
-            "market": self.market, "metrics": self.metrics, "rows": rows,
-            "protocol": self.text["protocol"]["id"], "quality_rubric": self.text["rubric"]["id"],
+            "market": self.market, "metrics": definitions, "rows": rows,
+            "protocol": SERVING_PROTOCOL["id"] if serving else self.text["protocol"]["id"],
+            "quality_rubric": "fixed-token-response@1" if serving else self.text["rubric"]["id"],
+            **({"serving_protocol": {**SERVING_PROTOCOL, "artifact": self.text["artifact"],
+                                     "runtime_revision": self.text["runtime"]["revision"]}} if serving else {}),
             "recommendation": supported[0] if supported else None, "alternatives": alternatives,
-            "chart": _chart(rows, selection["x"], selection["y"]),
+            "chart": _chart(rows, selection["x"], selection["y"], definitions),
         }
 
 
-def _axis(metric, value):
+def _axis(definition, value):
     decimal = Decimal(value)
-    return decimal if METRICS[metric]["direction"] == "lower" else decimal.copy_negate()
+    return decimal if definition["direction"] == "lower" else decimal.copy_negate()
 
 
-def _chart(rows, x, y):
+def _chart(rows, x, y, definitions):
     points = []
     for row in rows:
         x_value, y_value = (row["metrics"][metric]["value"] for metric in (x, y))
         if row["chart_eligible"] and x_value is not None and y_value is not None:
             points.append({"id": row["id"], "x": x_value, "y": y_value})
 
-    axes = [(_axis(x, point["x"]), _axis(y, point["y"])) for point in points]
+    axes = [(_axis(definitions[x], point["x"]), _axis(definitions[y], point["y"])) for point in points]
     for point, (first, second) in zip(points, axes):
         point["pareto"] = not any(a <= first and b <= second and (a < first or b < second) for a, b in axes)
     return {"x": x, "y": y, "points": points}
