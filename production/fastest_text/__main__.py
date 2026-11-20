@@ -57,7 +57,7 @@ def render(dataset, data_hash):
     protocol = dataset["protocol"]
     rubric = dataset["rubric"]
     label = {
-        "planned": "Planned comparison. Both machines are listed with access blockers.",
+        "planned": "Planned comparison. The table gives the current blocker for each machine.",
         "synthetic": "Synthetic demonstration. Values and reviewer records illustrate the intake.",
         "measured": "Reviewed run records. Each row applies to the stated machine and phase.",
     }[dataset["evidence_kind"]]
@@ -120,7 +120,7 @@ def render(dataset, data_hash):
     paragraph("TTFT measures " + LATENCY_METRICS["ttft"][1].lower())
     paragraph("First visible answer measures " + LATENCY_METRICS["first_visible_answer"][1].lower())
     table(
-        ("Machine", "Backend", "Cell status", "Recorded attempts", "Failures", "Access blocker"),
+        ("Machine", "Backend", "Cell status", "Recorded attempts", "Failures", "Blocker"),
         [
             (
                 cell["name"], cell["backend"], cell["status"], len(cell["attempts"]),
