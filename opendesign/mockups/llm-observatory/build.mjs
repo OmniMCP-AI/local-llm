@@ -12,7 +12,7 @@ import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-releas
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import { allowedResearchPin, deniedResearchPin, readResearchPin, researchReleaseId, writeResearchPin } from "./research-released-snapshot.mjs";
-import { releaseOrigin } from "./release-origin.mjs";
+import { navigationHref, releaseOrigin } from "./release-origin.mjs";
 import { withPreviewResults } from "./research-preview.mjs";
 import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
@@ -138,6 +138,7 @@ const wikiRelease = pages ? await writeWikiRelease({
   documents: publicDocuments,
   topologies: publicTopologies,
   scalingUrl,
+  advisorUrl: origin && navigationHref("advisor", pages, origin),
   edges: graph.edges,
   highlights: highlights.filter(({ source }) => !isWithdrawn(source)),
   releaseDate,

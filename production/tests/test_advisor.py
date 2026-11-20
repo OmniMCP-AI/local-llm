@@ -1,9 +1,12 @@
 """Scripted acceptance cases for the advisor and the wizard's canonical readers."""
 
-from contextlib import nullcontext
+from contextlib import nullcontext, redirect_stderr
 from dataclasses import dataclass, field
 from decimal import Decimal
 import json
+from html import unescape
+from io import StringIO
+import re
 from statistics import median
 import sys
 from time import perf_counter_ns
@@ -286,6 +289,90 @@ class GuidedAdvisorTests(unittest.TestCase):
             self.assertEqual((status, data["status"], price_reads), (200, "clarify", []))
             status, data, _ = read(api, "/api/v1/advisor", goal(entry="budget", budget="1200"))
             self.assertEqual((status, data["status"], price_reads), (200, "answer", [PRICE_ID]))
+
+    def test_browser_navigation_clarification_and_pinned_evidence(self):
+        hostile = HOSTILE_LOCATOR + ' <img src=x onerror="alert(1)">'
+        with fixture_service(modify_record=lambda record: record["source"].update(locator=hostile)) as service:
+            with api_client(goals=service) as request:
+                self.assertIn('href="/advisor"', request("/", decode=False)[2])
+                status, headers, html = request("/advisor", decode=False)
+                self.assertEqual(status, 200)
+                self.assertEqual(headers.get_content_type(), "text/html")
+                self.assertEqual(headers["Referrer-Policy"], "no-referrer")
+                self.assertIn('<form action="/advisor" method="get"', html)
+                self.assertIn("External inference services", html)
+                self.assertIn("release server", html)
+                self.assertNotIn("<textarea", html)
+
+                status, _, html = request("/advisor?entry=budget&decode=40&prefill=&privacy=&budget=", decode=False)
+                self.assertEqual(status, 200)
+                self.assertIn("More information needed", html)
+                self.assertIn("the minimum prefill throughput", html)
+                self.assertIn('name="decode" type="number" value="40"', html)
+                self.assertNotIn("Replay exact comparison", html)
+
+                query = urlencode(goal(entry="budget", budget="1199.95"))
+                status, _, html = request("/advisor?" + query, decode=False)
+                self.assertEqual(status, 200)
+                self.assertIn("Supported configuration", html)
+                self.assertIn("Apple M4", html)
+                self.assertIn("1199.95 USD", html)
+                self.assertNotIn(hostile, html)
+                self.assertNotIn("onerror=", html)
+                exact = unescape(re.search(r'href="([^"]+#goal-apple-m4)"', html)[1])
+                status, _, evidence = request(exact.split("#")[0], decode=False)
+                self.assertEqual(status, 200)
+                self.assertIn('id="goal-apple-m4"', evidence)
+                self.assertIn("&lt;img", evidence)
+                _, _, api = request("/api/v1/advisor?" + query)
+                self.assertEqual(api["recommendation"], "apple-m4")
+                self.assertIn(hostile, [source.get("locator") for source in api["citations"]])
+                replay = unescape(re.search(r'href="([^"]+)">Replay exact comparison', html)[1])
+                status, _, comparison = request(replay)
+                self.assertEqual(status, 200)
+                self.assertEqual(comparison["release_id"], service.release_id)
+                self.assertEqual(comparison["recommendation"], api["recommendation"])
+
+                log = StringIO()
+                with redirect_stderr(log):
+                    for path in ("/advisor", "/api/v1/advisor"):
+                        status, _, body = request(path + "?prompt=private-task-token", decode=False)
+                        self.assertEqual(status, 400)
+                        self.assertNotIn("private-task-token", body)
+                self.assertNotIn("private-task-token", log.getvalue())
+
+                service.rights_path.write_text('{"schema_version": 1, "observations": {}}')
+                status, _, html = request("/advisor?" + query, decode=False)
+                self.assertEqual(status, 410)
+                self.assertIn("Public rights have ended", html)
+                self.assertNotIn("1199.95 USD", html)
+
+    def test_browser_cost_uses_calculator_and_applies_workload_privacy(self):
+        with api_client() as request:
+            status, _, html = request("/advisor?decision=cost", decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("More information needed", html)
+            self.assertIn('name="monthly_accepted"', html)
+            self.assertNotIn('name="decode"', html)
+
+            public_query = urlencode(cost(scenario="evidence"))
+            status, _, html = request("/advisor?" + public_query, decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("Insufficient evidence", html)
+            self.assertNotIn("589.472", html)
+
+            query = urlencode(cost(privacy="local-only"))
+            status, _, html = request("/advisor?" + query, decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("Illustrative cost estimates", html)
+            self.assertIn("589.472 USD", html)
+            self.assertIn("External processing disallowed", html)
+            self.assertNotIn("100.7616", html)
+            replay = unescape(re.search(r'href="([^"]+)">Replay exact calculator', html)[1])
+            status, _, calculator = request(replay)
+            self.assertEqual(status, 200)
+            self.assertEqual(calculator["options"]["upgrade"]["totals"]["nominal_cost"], "589.472")
+            self.assertIn(calculator["revision"], replay)
 
 
 if __name__ == "__main__":
