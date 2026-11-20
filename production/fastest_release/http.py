@@ -1,6 +1,7 @@
 import json
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 import re
 from urllib.parse import parse_qs
 
@@ -9,6 +10,7 @@ from fastest_fit.page import render_fit
 
 from . import ReleaseError, ReleaseNotFound
 from .artifacts import build_artifacts
+from .profiles import ProfileRelease, RUN_ID
 
 
 CONTENT_TYPES = {
@@ -23,12 +25,21 @@ RELEASE_ROUTE = re.compile(
 )
 
 
-def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None):
+PROFILE_ROUTE = re.compile(r"/profiles/(v1-[a-f0-9]{16})/(machines|models)/([a-z0-9.-]+)\.(html|json|md)")
+
+
+def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None, profile_releases=(), profile_archives=()):
     """Bind a read-only HTTP server that checks rights on every release request."""
     fit = FitService(fit_engine) if fit_engine is not None else None
+    planned = ProfileRelease()
+    profiles = ProfileRelease(store, profile_releases) if profile_releases else planned
+    archived = [ProfileRelease(store, release_ids) for release_ids in profile_archives]
+    profile_versions = {profile.id: profile for profile in (planned, profiles, *archived)}
+    profile_indexes = {profile.base + "/index.html": profile for profile in profile_versions.values()}
+    profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
-        def _respond(self, status, body="", content_type="text/plain; charset=utf-8", location=None):
+        def _respond(self, status, body="", content_type="text/plain; charset=utf-8", location=None, *, profile_script=False):
             encoded = body.encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", content_type)
@@ -36,7 +47,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'")
+            policy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"
+            self.send_header("Content-Security-Policy", policy + ("; script-src 'self'" if profile_script else ""))
             if location is not None:
                 self.send_header("Location", location)
             self.end_headers()
@@ -48,20 +60,29 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
                 return self._respond(400, "Invalid Host header.\n")
             path, _, query = self.path.partition("?")
-            if fit is not None:
-                if path in {"/fit", "/fit.json"}:
-                    return self._fit(path, query)
-                if path == "/":
-                    benchmark = (
-                        '<p><a href="/releases/current/benchmark.html">Current benchmark</a></p>'
-                        if store is not None else ""
-                    )
-                    return self._respond(
-                        200, '<!doctype html><html lang="en"><meta charset="utf-8">'
-                        '<title>fastest.ai</title><h1>fastest.ai</h1>'
-                        '<p><a href="/fit">Estimate model fit</a></p>' + benchmark,
-                        CONTENT_TYPES["benchmark.html"],
-                    )
+            if path == "/profiles/interaction.js":
+                return self._respond(200, profile_script, "text/javascript; charset=utf-8")
+            if path in {"/profiles", "/profiles/current"}:
+                return self._respond(307, location=profiles.base + "/index.html")
+            if path in profile_indexes:
+                return self._respond(200, profile_indexes[path].index(), CONTENT_TYPES["benchmark.html"])
+            profile_match = PROFILE_ROUTE.fullmatch(path)
+            if profile_match is not None and profile_match[1] in profile_versions:
+                return self._profile(profile_versions[profile_match[1]], *profile_match.groups()[1:], query)
+            if fit is not None and path in {"/fit", "/fit.json"}:
+                return self._fit(path, query)
+            if path == "/":
+                fit_link = '<p><a href="/fit">Estimate model fit</a></p>' if fit is not None else ""
+                benchmark = (
+                    '<p><a href="/releases/current/benchmark.html">Current benchmark</a></p>'
+                    if store is not None else ""
+                )
+                return self._respond(
+                    200, '<!doctype html><html lang="en"><meta charset="utf-8">'
+                    '<title>fastest.ai</title><h1>fastest.ai</h1>'
+                    '<p><a href="/profiles">Machine and model comparisons</a></p>' + fit_link + benchmark,
+                    CONTENT_TYPES["benchmark.html"],
+                )
             match = RELEASE_ROUTE.fullmatch(path)
             if store is None or match is None or match[2] not in CONTENT_TYPES:
                 return self._respond(404, "Release artifact unavailable.\n")
@@ -81,6 +102,22 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _profile(self, profiles, kind, identity, extension, query):
+            try:
+                data = profiles.data(kind, identity)
+            except LookupError:
+                return self._respond(404, "Profile unavailable.\n")
+            except ReleaseError:
+                logging.exception("Cannot read a profile benchmark release")
+                return self._respond(503, "Release service unavailable.\n")
+            if extension == "json":
+                return self._respond(200, json.dumps(data, ensure_ascii=False, allow_nan=False) + "\n", "application/json")
+            if extension == "md":
+                return self._respond(200, profiles.markdown(data), CONTENT_TYPES["benchmark.md"])
+            selected = query.removeprefix("run=") if query.startswith("run=") else ""
+            selected = selected if RUN_ID.fullmatch(selected) else None
+            return self._respond(200, profiles.render(data, selected), CONTENT_TYPES["benchmark.html"], profile_script=True)
 
         def _fit(self, path, query):
             try:

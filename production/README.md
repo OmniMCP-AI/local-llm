@@ -176,6 +176,51 @@ GeForce RTX 4090 cells for one pinned ComfyUI workflow. It reports completion
 time, accepted images and access blockers from the same ledger in Markdown,
 HTML and typed JSON.
 
+## Browse reciprocal machine and model profiles
+
+From `production`, run `python3 -B -m fastest_release serve` and open
+[Machine and model comparisons](http://127.0.0.1:8000/profiles). The directory
+and each HTML, Markdown and JSON profile URL pin the same profile release.
+The two machine pages cover Apple M4 and GeForce RTX 4090. The two model pages
+cover the exact Qwen2.5 7B Instruct GGUF and SDXL Turbo checkpoints from the
+pilot plans. The current pilot records have access blockers, with no eligible
+measured rows. Each profile lists the pinned protocol, runtime, artifact files,
+ranking rules and cohort exclusions.
+
+When reviewed runs are available, use the typed pilot report and its original
+review evidence to prepare approved observation documents for the
+[benchmark release service](#publish-correct-and-withdraw). Run `migrate` to
+install the profile metric definitions before publishing. Use these pins in
+the documents:
+
+| Cohort | Workload ID and version | Primary metric | Map companion |
+| --- | --- | --- | --- |
+| Text | `llama-bench-solo-empty-kv@1` | `llama-bench-decode` v1, median tok/s, 20 successful samples | `llama-bench-prefill` v1, median tok/s, 20 successful samples |
+| Image | `comfyui-sdxl-turbo-solo@1` | `comfyui-seconds-per-accepted-image` v1, ratio s/image, five measured repeats | `comfyui-median-completion` v1, median s, five successful repeats |
+
+Use the measurement boundaries from the plans and the release metric
+registry. Publish the first text shard as `artifact.path` and `artifact.sha256`,
+with `format: GGUF` and `quantization: Q4_K_M`. Put the second digest in the
+public, known `artifact_companion_sha256` field. For image, use the pinned
+checkpoint, `format: Safetensors`, `quantization: FP16`, and public, known
+`workflow_sha256`. Include the public, known fields `profile_cell`
+(`apple-m4` or `rtx-4090`), `backend` (`Metal` or `CUDA`), `runtime_revision`
+and `run_id` (a stable UUID per execution). Use identical hardware and artifact
+identity in all observations from that run. Keep the original and reviewed
+setup, denominators and evidence in the study record. A primary observation
+qualifies for ranking on its own, while a map point requires both metrics
+from the same run. The machine and backend change together in these cohorts.
+
+Pass one `--profile-release RELEASE_UUID` flag per approved observation release
+when starting the server with `FASTEST_DATABASE_URL`. The profile release ID
+derives from those exact UUIDs and the pinned cohort definitions. To retain a
+prior measured set on the same server with the same plans, pass
+`--profile-archive UUID,UUID,...` with its prior observation UUIDs. Keep the
+prior deployment for archives that use different plans. Reads check current
+rights together on every request. Withdrawals remove affected values from both
+profiles and their views, including held profile releases. Prototype and
+synthetic observations are ineligible.
+
 ## Controlled agent-task comparison
 
 The [inventory agent task](fastest_agent_task/README.md) compares time and success

@@ -31,6 +31,9 @@ def main(argv=None):
     serve.add_argument("--port", default=8000, type=int)
     serve.add_argument("--trusted-host", action="append", default=[], help="Allowed HTTP Host header, including its port if present.")
     serve.add_argument("--fit-engine", type=Path, help="Path to the pinned fit executable built by fastest_fit.")
+    serve.add_argument("--profile-release", action="append", default=[], help="Include a reviewed observation release UUID in the profile comparison.")
+    serve.add_argument("--profile-archive", action="append", default=[], metavar="UUID,UUID,...",
+                       help="Keep a prior profile release available from its comma-separated observation release UUIDs.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -40,7 +43,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     fit_engine = args.fit_engine if args.command == "serve" else None
-    if not args.database_url and fit_engine is None:
+    if not args.database_url and args.command != "serve":
         parser.error("set FASTEST_DATABASE_URL or pass --database-url")
     store = ReleaseStore(args.database_url) if args.database_url else None
     try:
@@ -59,7 +62,9 @@ def main(argv=None):
         elif args.command == "research-read":
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
-            with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine) as server:
+            with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
+                             profile_releases=args.profile_release,
+                             profile_archives=[archive.split(",") for archive in args.profile_archive]) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()
