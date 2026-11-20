@@ -1,0 +1,28 @@
+[
+  {
+    "id": 90000001,
+    "url": "https://api.github.com/repos/ggml-org/llama.cpp/releases/90000001",
+    "tag_name": "fixture-b1",
+    "name": "Synthetic release fixture-b1",
+    "draft": false,
+    "prerelease": false,
+    "immutable": false,
+    "published_at": "2026-11-18T01:00:00Z",
+    "target_commitish": "1111111111111111111111111111111111111111",
+    "body": "Synthetic release watch fixture.",
+    "assets": []
+  },
+  {
+    "id": 90000002,
+    "url": "https://api.github.com/repos/ggml-org/llama.cpp/releases/90000002",
+    "tag_name": "fixture-b2",
+    "name": "Synthetic release fixture-b2",
+    "draft": false,
+    "prerelease": false,
+    "immutable": false,
+    "published_at": "2026-11-19T01:00:00Z",
+    "target_commitish": "1111111111111111111111111111111111111111",
+    "body": "Synthetic release watch fixture.",
+    "assets": []
+  }
+]
