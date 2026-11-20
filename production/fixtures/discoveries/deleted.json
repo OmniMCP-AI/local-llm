@@ -1,0 +1,11 @@
+{
+  "source_url": "https://forum.example/topics/local-models/24",
+  "original_url": "https://forum.example/topics/local-models/24",
+  "source_format": "forum",
+  "published_at": "2026-11-18T10:00:00Z",
+  "consent": {
+    "authority": "rights_holder",
+    "reference": "fixture-deleted-grant",
+    "scope": "public_source_link"
+  }
+}
