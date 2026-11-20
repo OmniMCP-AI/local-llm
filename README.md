@@ -11,9 +11,7 @@ Compare an existing local AI machine, a hardware upgrade and a cloud service for
 
 ## fastest.ai prototype
 
-Browse the [research library](opendesign/mockups/llm-observatory/fastest-ai.html#wiki/research) to filter articles, posts, guides and video notes by use case and inspect the matching test conditions.
-
-Open the [standalone preview](opendesign/mockups/llm-observatory/fastest-ai.html). To rebuild, run `npm ci` and `npm run build` in `opendesign/mockups/llm-observatory`. The preview uses browser preferences on a first visit. Both 简体中文 (CNY) and 繁體中文 (TWD) are available, and the display currency can be selected independently.
+In `opendesign/mockups/llm-observatory`, run `npm ci` and `npm run build`, then open the generated `fastest-ai.html` preview. From **Wiki → Research library**, filter articles, posts, guides and video notes by use case and inspect the matching test conditions. The standalone preview uses browser preferences on a first visit. Both 简体中文 (CNY) and 繁體中文 (TWD) are available, and the display currency can be selected independently.
 
 For Cloudflare Pages, set the project root to the prototype directory, the build command to `npm ci && npm run build:pages`, and the output directory to `dist`. The root `functions` directory provides the first-visit language hint from Cloudflare's IP country. A saved language or display currency takes priority over the corresponding automatic default. [Cloudflare Pages middleware](https://developers.cloudflare.com/pages/functions/middleware/)
 
