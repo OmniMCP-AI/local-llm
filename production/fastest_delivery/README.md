@@ -4,7 +4,7 @@ Use the [seven-day distribution pilot guide](PILOT.md) to collect and audit the 
 
 ## X pilot
 
-Run from `production/` with Python 3.11 or later. The preparation step also requires Pillow (`python3 -m pip install 'Pillow>=10.1,<13'`). Preparation and export use the same read-only PostgreSQL login and `FASTEST_EDITORIAL_DATABASE_URL` as the [editorial draft generator](../fastest_editorial/README.md).
+Run from `production/` with Python 3.11 or later. The preparation step also requires Pillow (`python3 -m pip install 'Pillow>=10.1,<13'`). Give the review operator a read-only PostgreSQL login with the permissions described in the [editorial draft guide](../fastest_editorial/README.md). Also grant it permission to execute `fastest_release.read_evidence(uuid)` so export can check for superseded or withdrawn evidence. Set the operator's `FASTEST_EDITORIAL_DATABASE_URL` to this login before preparing or exporting packages.
 
 ## Prepare and approve
 
