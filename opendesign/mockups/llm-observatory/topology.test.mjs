@@ -4,7 +4,7 @@ import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { fileURLToPath } from "node:url";
 import reports from "./catalog-topology.json" with { type: "json" };
 import hardware from "./catalog-hardware-sources.json" with { type: "json" };
-import { draftFitEstimate, draftFitRequest, fitScenario, topologyPresets, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitScenario, topologyPresets, topologyView } from "./topology.mjs";
 import { renderTopologyReference } from "./wiki-release.mjs";
 
 const { catalog } = await readHardwareCatalog(fileURLToPath(new URL(".", import.meta.url)));
@@ -17,6 +17,13 @@ test("released presets switch slots and preserve per-device memory provenance", 
   assert.equal(layouts[3].mixed, true);
   assert.deepEqual(layouts[3].parts.map(({ memory }) => memory), [null, null]);
   assert.ok(layouts.every(({ links }) => links.length === 0));
+});
+
+test("an existing hardware photo link can open its own labeled component example", () => {
+  const example = cardPhotoExample("arc-b580", catalog.cards);
+  assert.equal(example.scope, "example");
+  assert.equal(topologyView(example).parts[0].photo, "arc-b580");
+  assert.equal(topologyView(example).activeCount, null);
 });
 
 test("a replacement invalidates affected links and does not inherit original conclusions", () => {

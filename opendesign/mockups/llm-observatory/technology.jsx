@@ -2,7 +2,7 @@ import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, CircuitBoard, Cpu, Monitor, Pause, Play, StepForward, Terminal } from "lucide-react";
 import reports from "./catalog-topology.json";
 import { catalogPath } from "./catalog-paths.mjs";
-import { draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, topologyPresets, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, topologyPresets, topologyView } from "./topology.mjs";
 
 const hardware = __FASTEST_HARDWARE_DIRECTORY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
@@ -140,6 +140,7 @@ function TopologySession({ report, images }) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const view = topologyView(report, replacements);
   const request = draftFitRequest(view);
+  const inventoryScope = view.draft ? "planned" : report.scope === "example" ? "modeled" : "installed";
   const reference = catalogLink("machines", hardware.machines.find(({ id }) => id === report.id)) ?? report.source;
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -176,8 +177,8 @@ function TopologySession({ report, images }) {
 
   return <>
     <div className="tech-meta">
-      <div><strong>{view.draft ? "Draft build" : report === fitScenario ? "Example scenario" : "Source-reported setup"}</strong> · <a href={reference}>{report.id}</a></div>
-      <div>{view.isHost ? `${view.parts.length} hosts · accelerator counts unknown` : <>{view.installedCount} {view.draft ? "planned" : "installed"} {view.installedCount === 1 ? "card" : "cards"} · Active cards {view.activeCount ?? "unknown"}</>}{view.mixed && " · Mixed devices · separate VRAM per card"}</div>
+      <div><strong>{view.draft ? "Draft build" : report.scope === "example" ? "Example scenario" : "Source-reported setup"}</strong> · <a href={reference}>{report.id}</a></div>
+      <div>{view.isHost ? `${view.parts.length} hosts · accelerator counts unknown` : <>{view.installedCount} {inventoryScope} {view.installedCount === 1 ? "card" : "cards"} · Active cards {view.activeCount ?? "unknown"}</>}{view.mixed && " · Mixed devices · separate VRAM per card"}</div>
     </div>
     <div className="tech-grid">
       <div className="tech-flow">
@@ -207,7 +208,7 @@ function TopologySession({ report, images }) {
       <dl>
         <div><dt>Model fit</dt><dd>{request ? <DraftFit key={JSON.stringify(request)} request={request} /> : "Unknown · this draft configuration has no matching native fit profile."}</dd></div>
         <div><dt>Whole-build price</dt><dd>Unknown · the draft lacks a complete parts list and a matching reviewed regional quote.</dd></div>
-        <div><dt>Benchmark runs</dt><dd><a href={report.source}>{report === fitScenario ? "Original scenario assumptions" : "Original profile and runs for reference"}</a>. The draft requires a new run.</dd></div>
+        <div><dt>Benchmark runs</dt><dd><a href={report.source}>{report.scope === "example" ? "Original scenario assumptions" : "Original profile and runs for reference"}</a>. The draft requires a new run.</dd></div>
       </dl>
       <button type="button" className="btn outline" onClick={() => { setReplacements({}); goTo(0); }}>Reset draft</button>
     </section>}
@@ -217,11 +218,14 @@ function TopologySession({ report, images }) {
 
 export function TechnologyDiagram({ images = {}, focus, options }) {
   const id = useId();
-  const choices = options ?? [...reports, fitScenario];
-  const initial = choices.find((row) => row.id.toLowerCase() === focus?.toLowerCase())
-    ?? choices.find(({ count, devices }) => count === 1 && devices.some(({ photo }) => photo && photo === focus))
-    ?? choices.find(({ devices }) => devices.some(({ photo }) => photo && photo === focus))
-    ?? (options ? choices[0] : topologyPresets[0].report);
+  const sourceChoices = options ?? [...reports, fitScenario];
+  const matchesPhoto = ({ devices }) => devices.some(({ photo }) => photo && photo === focus);
+  const source = sourceChoices.find(({ id }) => id.toLowerCase() === focus?.toLowerCase())
+    ?? sourceChoices.find((row) => row.count === 1 && matchesPhoto(row))
+    ?? sourceChoices.find(matchesPhoto);
+  const example = !options && !source && cardPhotoExample(focus, hardware.cards);
+  const choices = example ? [...sourceChoices, example] : sourceChoices;
+  const initial = source || example || (options ? choices[0] : topologyPresets[0].report);
   const [profile, setProfile] = useState(initial.id);
   const report = choices.find((row) => row.id === profile) ?? initial;
   return <section className="tech-lab" aria-labelledby={id + "-title"}>

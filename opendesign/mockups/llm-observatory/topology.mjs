@@ -28,6 +28,7 @@ const fitInputs = Object.freeze({
 });
 export const fitScenario = {
   id: "fit-example",
+  scope: "example",
   name: "llmfit test host with an alternate GPU",
   group: "single",
   count: 1,
@@ -43,6 +44,20 @@ const photosByCard = {
   "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
   "intel-arc-b580": "arc-b580",
 };
+
+export function cardPhotoExample(photo, cards) {
+  if (!photo) return undefined;
+  const card = cards.find(({ id }) => photosByCard[id] === photo);
+  return card && {
+    id: photo,
+    scope: "example",
+    name: `${card.name} component example`,
+    group: "single",
+    count: 1,
+    source: card.source,
+    devices: [{ label: card.name, card: card.id, memory: card.memory, photo }],
+  };
+}
 
 export function topologyView(report, replacements = {}) {
   const isHost = report.group === "hosts";
