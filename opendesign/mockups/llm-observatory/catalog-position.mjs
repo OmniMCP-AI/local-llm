@@ -5,15 +5,17 @@ function positiveFact(value, pattern) {
 }
 
 export function cardRatings({ vendorSpec }) {
-  const facts = vendorSpec?.facts ?? {};
+  const facts = vendorSpec?.scope === "Multiple manufacturer configurations" ? {} : vendorSpec?.facts ?? {};
   const capacity = positiveFact(
     facts["Memory configuration"] ?? facts["Dedicated memory (GB)"],
-    /^(\d+(?:\.\d+)?)\s*(?:GB\s*(?:GDDR\dX?|HBM\dE?)?)?$/i,
+    /^(\d+(?:\.\d+)?)\s*(?:GB\s*(?:GDDR\dX?|HBM\dE?)?)?(?: with ECC)?$/i,
   );
+  const rawBandwidth = facts["Memory bandwidth"] ?? facts["Memory bandwidth (GB/s)"];
+  const bandwidth = positiveFact(rawBandwidth, /^(?:up to )?([\d,]+(?:\.\d+)?)\s*(?:GB\s*\/\s*(?:s|sec))?$/i);
+  const terabytes = positiveFact(rawBandwidth, /^(?:up to )?([\d,]+(?:\.\d+)?)\s*TB\s*\/\s*(?:s|sec)$/i);
   return {
     capacity,
-    bandwidth: positiveFact(facts["Memory bandwidth"] ?? facts["Memory bandwidth (GB/s)"],
-      /^([\d,]+(?:\.\d+)?)\s*(?:GB\s*\/\s*(?:s|sec))?$/i),
+    bandwidth: bandwidth ?? (terabytes && terabytes * 1000),
     power: positiveFact(facts["Rated graphics power (W)"], /^([\d,]+(?:\.\d+)?)\s*W?$/i),
   };
 }

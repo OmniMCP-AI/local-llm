@@ -27,8 +27,8 @@ const tabs = [
   {
     key: "cards", title: "Cards", icon: Cpu, rows: hardwareCatalog.cards, scope: "Graphics card references",
     titleZh: "显卡", scopeZh: "显卡资料",
-    description: "Card identities and variants from the research inventory and pinned llmfit lookup.",
-    descriptionZh: "显卡型号与版本来自研究资料和固定版本的 llmfit 硬件表。",
+    description: "Card identities and variants from the research inventory, pinned llmfit lookup, and manufacturer and board-partner records.",
+    descriptionZh: "显卡型号与版本来自研究资料、固定版本的 llmfit 硬件表，以及芯片厂商与板卡合作伙伴。",
   },
   {
     key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Machine and component records",
@@ -315,7 +315,11 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         }) : t("{complete} complete builds, {partial} partial configurations, {components} component references, {presets} example presets", "完整配置 {complete} 条、部分配置 {partial} 条、部件资料 {components} 条、示例配置 {presets} 条", {
           complete: number.format(coverage.completeBuilds), partial: number.format(coverage.partialMachines),
           components: number.format(coverage.researchComponentReferences), presets: number.format(coverage.upstreamPresets),
-        })} ·{" "}{t("No reviewed benchmark results", "暂无经过审核的基准测试结果")}
+        })} ·{" "}
+        {active === "cards" && <>{t("{specs} with manufacturer or board-partner specs", "{specs} 条附有厂商或板卡合作伙伴规格", {
+          specs: number.format(coverage.cardsWithVendorSpecs),
+        })} ·{" "}</>}
+        {t("No reviewed benchmark results", "暂无经过审核的基准测试结果")}
         {(catalogRelease || localHardwareRelease) && <> · <a className="catalog-source-link" href={`${catalogRelease ? "" : "local-catalog/"}catalog/${catalogRelease || localHardwareRelease}/manifest.json`}>{t("Snapshot sources and counts", "快照来源与数量")}</a></>}
       </p>}
       {active === "models" && <>

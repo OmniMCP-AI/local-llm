@@ -1,5 +1,5 @@
 import { catalogPath } from "./catalog-paths.mjs";
-import { cardPosition } from "./catalog-position.mjs";
+import { cardPosition, cardRatings } from "./catalog-position.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -87,18 +87,42 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
   if (kind === "cards") {
     const vendor = row.vendorSpec;
     const vendorFields = Object.entries(vendor?.facts ?? {}).map(([label, value]) => [label, value, vendor.source]);
-    const memory = vendor?.facts["Memory configuration"] ?? vendor?.facts["Dedicated memory (GB)"] ?? row.memory ?? "Unknown";
-    const bus = vendor?.facts["Memory bus"] ?? vendor?.facts["Memory bus (bits)"] ?? "Unknown";
-    const bandwidth = vendor?.facts["Memory bandwidth"] ?? vendor?.facts["Memory bandwidth (GB/s)"] ?? "Unknown";
-    const power = vendor?.facts["Rated graphics power (W)"] ?? "Unknown";
+    const memory = vendor?.facts["Memory configuration"] ?? vendor?.facts["Dedicated memory (GB)"];
+    const bus = vendor?.facts["Memory bus"] ?? vendor?.facts["Memory bus (bits)"];
+    const bandwidth = vendor?.facts["Memory bandwidth"] ?? vendor?.facts["Memory bandwidth (GB/s)"];
+    const power = vendor?.facts["Rated graphics power (W)"];
+    const maximumTdp = vendor?.facts["Maximum TDP (W)"];
+    const boardPower = vendor?.facts["Board power (rated)"];
+    const moduleMemory = vendor?.facts["Module memory (aggregate)"];
+    const moduleBandwidth = vendor?.facts["Module bandwidth (aggregate)"];
+    const withSource = (label, value) => [label, value ?? "Unknown", value && vendor?.source];
+    const memoryField = moduleMemory ? withSource("Aggregate module capacity", moduleMemory)
+      : memory ? withSource("Capacity / configuration", memory)
+      : ["Capacity / configuration", row.memory ?? "Unknown", row.memory && row.source];
+    const gallery = vendor?.gallery;
+    const ratings = cardRatings(row);
+    const peerRatings = peers.map(cardRatings);
+    const graphic = (label, metric, unit) => ratings[metric] && {
+      label, value: ratings[metric], unit,
+      max: Math.max(ratings[metric], ...peerRatings.map(peer => peer[metric] ?? 0)),
+    };
     return {
       title: row.name,
       kind: row.kind,
       source: vendor?.source ?? row.source,
       position: cardPosition(row, peers, id => path("cards", id)),
       visuals: [
-        { title: "On-board memory", fields: [["Capacity / configuration", memory], ["Bus", bus], ["Bandwidth", bandwidth]] },
-        { title: "Host and power", fields: [["Host interface", vendor?.facts["Host interface"] ?? "Unknown"], ["Rated graphics power (W)", power]] },
+        { title: "On-board memory", graphic: graphic("Nominal capacity", "capacity", "GB"), fields: [
+          memoryField,
+          withSource("Memory bus", bus),
+          withSource(moduleBandwidth ? "Aggregate module bandwidth" : "Memory bandwidth", moduleBandwidth ?? bandwidth),
+        ] },
+        { title: "Host and power", graphic: graphic("Rated graphics power", "power", "W"), fields: [
+          withSource("Host interface", vendor?.facts["Host interface"]),
+          withSource(boardPower ? "Board power (rated)" : maximumTdp ? "Maximum TDP (W)" : "Rated graphics power (W)",
+            boardPower ?? maximumTdp ?? power),
+          withSource("Interconnect", vendor?.facts["Interconnect"]),
+        ] },
       ],
       photos: row.photos ?? [],
       fields: [
@@ -114,17 +138,34 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
         {
           title: "Manufacturer specifications",
           fields: vendor
-            ? [["Published product designation", vendor.designation, vendor.source], ...vendorFields]
+            ? [
+              ["Published product designation", vendor.designation, vendor.source],
+              ["Specification applies to", vendor.scope ?? "Manufacturer product reference"],
+              ...(vendor.locator ? [["Source locator", vendor.locator, vendor.source]] : []),
+              ...(vendor.capturedAt ? [["Captured", vendor.capturedAt]] : []),
+              ...vendorFields,
+            ]
             : [["Source coverage", "No manufacturer specification has been matched to this identity."]],
         },
+        ...(gallery ? [{
+          title: "Product image source",
+          fields: [["Source images", gallery.label, gallery.source], ["Depicted hardware", gallery.scope]],
+        }] : []),
         ...(row.variants.length ? [{
           title: "Distinct related variants",
           fields: row.variants.map(({ id, name }) => ["Variant", name, path("cards", id)]),
+        }] : []),
+        ...(row.relatedMachines?.length ? [{
+          title: "Linked machines and configurations",
+          fields: row.relatedMachines.map(({ id, name }) => ["Machine or configuration", name, path("machines", id)]),
         }] : []),
         ...(row.relatedProfiles.length ? [{
           title: "Research source records",
           fields: row.relatedProfiles.map(({ id }) => ["Hardware reference", id, path("machines", id)]),
         }] : []),
+        { title: "Retail availability", fields: [
+          ["Variant-matched retail observations", "No approved observation is available in this catalog snapshot."],
+        ] },
       ],
       evidence: untested,
     };
@@ -175,6 +216,15 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
 function htmlFields(fields) {
   return `<dl class="profile-fields">${fields.map(([name, value, href]) =>
     `<div><dt>${escapeHtml(name)}</dt><dd>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(value)}</a>` : escapeHtml(value)}</dd></div>`).join("")}</dl>`;
+}
+
+function ratingScale({ label, value, max, unit }) {
+  return `${label} · ${value} ${unit} on the catalog scale of 0–${max} ${unit}`;
+}
+
+function htmlSpecGraphic(graphic) {
+  const text = escapeHtml(ratingScale(graphic));
+  return `<figure class="profile-spec-graphic"><meter min="0" max="${graphic.max}" value="${graphic.value}" aria-label="${text}"></meter><figcaption>${text}</figcaption></figure>`;
 }
 
 function markdownFields(fields) {
@@ -235,8 +285,11 @@ export function renderCard(card, { release, pathname, markdown, local = false })
       "",
       `# ${escapeMarkdown(card.title)}`,
       "",
-      ...visuals.flatMap(({ title, fields }) => [`## ${escapeMarkdown(title)}`, "", ...markdownFields(fields), ""]),
-      ...photos.map(({ alt, source, credit }) => `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}`),
+      ...visuals.flatMap(({ title, fields, graphic }) => [
+        `## ${escapeMarkdown(title)}`, "", ...(graphic ? [ratingScale(graphic), ""] : []), ...markdownFields(fields), "",
+      ]),
+      ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
+        `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
       ...(position ? [
         `## ${positionTitle}`, "", positionBasis, "",
         position.selected ? `Selected GPU: ${position.selected.capacity} GB · ${position.label}: ${position.selected.value}` : noPosition,
@@ -270,9 +323,13 @@ export function renderCard(card, { release, pathname, markdown, local = false })
 <div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
 <p class="profile-evidence">${escapeHtml(card.evidence)}</p>
 <div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}<a href="${mdLink}">Markdown</a></div></div>
-${visuals.length ? `<div class="profile-specs">${visuals.map(({title,fields}) => `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("")}</div>` : ""}
+${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
+  `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? positionHtml(position) : ""}
-${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit }) => `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption><a href="${escapeHtml(source)}">${escapeHtml(credit)}</a></figcaption></figure>`).join("")}</div>` : ""}
+${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
+  `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
+  ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}
+  </figcaption></figure>`).join("")}</div>` : ""}
 <section class="profile-section"><h2>Catalog details</h2>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("\n")}
 </main>
