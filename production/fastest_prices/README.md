@@ -48,3 +48,34 @@ GRANT EXECUTE ON FUNCTION fastest_prices.read_release(uuid) TO fastest_price_rea
 Run `python3 -m fastest_prices withdraw COHORT_ID "editorial reason"` as the publisher to withdraw approval. Subsequent reads of affected release IDs emit a withdrawal notice. A static host must replace or remove existing exports and invalidate cached copies.
 
 From `production/`, run `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_prices.py'` for the PostgreSQL, CLI, and rendering checks. The tests use an isolated database over a temporary local socket.
+
+## Hosted comparison
+
+The Pages build serves the localized comparison at `/prices`. Set
+`FASTEST_RELEASE_ORIGIN` in Pages to the HTTPS origin of
+`python3 -m fastest_release serve`. The origin reads each pinned UUID at
+`/price-releases/UUID/prices.json` using the schema-restricted database reader.
+Keep the database connection details at the origin. Set `FASTEST_PRICE_RELEASE`
+to the reviewed UUID to make it available at the unpinned entry point. A shared
+`/prices?release=UUID` link retains its release. With no configured release,
+the entry point shows the missing state.
+
+Add `goal` and `cost` URL parameters for optional decision and economics
+context. Use the exact same-origin paths from the release service, including
+the decision selection and cost scenario parameters. URL-encode each path
+as the value of the enclosing parameter.
+
+- `goal=/goals/DECISION_SHA256.json?entry=budget` shows the existing result
+  order only for an exact market, currency, destination and condition match
+  and when the decision used this whole-build price release for that revision.
+- `cost=/costs.json?scenario=evidence&revision=v1-SCENARIO_SHA256` shows the
+  pinned scenario's break-even values. The values use that scenario's own
+  inputs and units. The evidence scenario reports unavailable when inputs
+  are missing.
+
+An illustrative cohort can be pinned explicitly against a test origin. The
+comparison labels the fictional seller and quotes. Each original amount
+keeps its decimal string and source currency. The selected display currency
+uses the dated reference rates listed beside the table, or shows the original
+currency when no dated rate covers the currency pair. A withdrawn price
+release returns a notice in place of the offers on each subsequent read.

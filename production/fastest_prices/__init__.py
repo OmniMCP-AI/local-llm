@@ -12,6 +12,10 @@ from .result import METHOD, build_result
 from .validation import PriceError
 
 
+class PriceReleaseNotFound(PriceError):
+    """The requested price release does not exist."""
+
+
 def _document(value):
     return f"{_sql_text(json.dumps(value, ensure_ascii=False))}::jsonb"
 
@@ -65,7 +69,7 @@ class PriceStore:
             raise PriceError("release ID must be a UUID") from error
         payload = self._query(f"SELECT fastest_prices.read_release('{release_key}'::uuid);")
         if not payload:
-            raise PriceError("Price release does not exist")
+            raise PriceReleaseNotFound("Price release does not exist")
         return build_result(json.loads(payload))
 
     def artifact(self, release_id, name):

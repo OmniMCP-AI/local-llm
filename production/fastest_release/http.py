@@ -2,6 +2,7 @@ import json
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from subprocess import TimeoutExpired
 import re
 from urllib.parse import parse_qs
 
@@ -11,8 +12,10 @@ from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
 from fastest_goals import GoalService, PUBLIC_FIELDS as GOAL_FIELDS
 from fastest_goals.page import render_goals
+from fastest_prices import PriceError, PriceReleaseNotFound
 
 from . import ReleaseError, ReleaseNotFound
+from .api import PublicApi
 from .artifacts import build_artifacts
 from .profiles import ProfileRelease, RUN_ID
 
@@ -29,6 +32,9 @@ RELEASE_ROUTE = re.compile(
 )
 
 
+PRICE_ROUTE = re.compile(r"/price-releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/prices\.json")
+
+
 PROFILE_ROUTE = re.compile(r"/profiles/(v1-[a-f0-9]{16})/(machines|models)/([a-z0-9.-]+)\.(html|json|md)")
 
 
@@ -38,7 +44,7 @@ GOALS_ROUTE = re.compile(
 
 
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
-                profile_releases=(), profile_archives=(), goals=None, goal_history=()):
+                profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
     fit = FitService(fit_engine) if fit_engine is not None else None
     planned = ProfileRelease()
@@ -49,6 +55,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     default_goals = GoalService()
     goals = goals or default_goals
     goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
+    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
@@ -73,8 +80,15 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
                 return self._respond(400, "Invalid Host header.\n")
             path, _, query = self.path.partition("?")
+            price_match = PRICE_ROUTE.fullmatch(path)
+            if price_match and price_reader is not None:
+                return self._price(price_match[1])
             if path in COST_ROUTES:
                 return self._cost(path, query)
+            if api.handles(path):
+                status, result, content_type = api.get(path, query)
+                body = json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n"
+                return self._respond(status, body, content_type)
             if path == "/profiles/interaction.js":
                 return self._respond(200, profile_script, "text/javascript; charset=utf-8")
             if path in {"/profiles", "/profiles/current"}:
@@ -127,6 +141,18 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _price(self, release_id):
+            try:
+                result = price_reader(release_id)
+            except PriceReleaseNotFound:
+                return self._respond(404, "Price release unavailable.\n")
+            except (OSError, TimeoutExpired, PriceError):
+                logging.exception("Cannot read a price release")
+                return self._respond(503, "Price release service unavailable.\n")
+            status = 410 if result["status"] == "withdrawn" else 200
+            return self._respond(status, json.dumps(result, ensure_ascii=False, allow_nan=False) + "\n",
+                                 CONTENT_TYPES["table.json"])
 
         def _cost(self, path, query):
             try:

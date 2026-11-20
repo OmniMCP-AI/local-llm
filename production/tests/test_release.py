@@ -17,6 +17,7 @@ from uuid import uuid4
 
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
 from fastest_release.research import SEED_ROOT
+from test_public_api import api_client
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -394,6 +395,13 @@ class ReleaseTest(unittest.TestCase):
             _, markdown = get(model + ".md")
             self.assertIn("42.000", markdown)
             self.assertIn(row["machine_url"], markdown)
+            api_query = ("/api/v1/comparison/profile?kind=models&id=qwen2.5-7b-instruct"
+                         f"&revision={base.split('/')[2]}&limit=1")
+            _, raw = get(api_query)
+            api_run = json.loads(raw)["results"][0]
+            self.assertEqual(api_run["run_id"], selected)
+            self.assertEqual(api_run["metrics"]["llama-bench-decode"]["value"], "42.000")
+            self.assertEqual(api_run["metrics"]["llama-bench-decode"]["unit"], "tok/s")
 
             self.store.withdraw(withdrawn_evidence, "Fixture withdrawal")
             _, raw = get(model + ".json")
@@ -402,11 +410,55 @@ class ReleaseTest(unittest.TestCase):
             self.assertEqual(after["map"], after["ranking"])
             self.assertNotIn("42.000", raw)
             self.assertIn("withdrawn", {entry["status"] for entry in after["exclusions"]})
+            _, updated = get(api_query)
+            self.assertNotIn("42.000", updated)
         finally:
             server.shutdown()
             worker.join(5)
             server.server_close()
             self.assertFalse(worker.is_alive())
+
+    def test_api_evidence_projects_only_released_fields_and_honors_expiring_rights(self):
+        synthetic = self.store.publish(self.observation)
+        self.observation["evidence_id"] = str(uuid4())
+        self.observation["kind"] = "measured"
+        self.observation["metric"]["value"] = "53.500"
+        self.observation["rights"]["expires_at"] = "2099-01-01T00:00:00Z"
+        self.observation["fields"]["internal_notes"] = {"status": "known", "value": "outside API fields", "rights": "allow"}
+        release = self.store.publish(self.observation)
+        self.observation["evidence_id"] = str(uuid4())
+        self.observation["rights"]["expires_at"] = "2000-01-01T00:00:00Z"
+        expired = self.store.publish(self.observation)
+        self.observation["rights"]["expires_at"] = "9999-02-31T00:00:00Z"
+        with self.assertRaises(InvalidObservation):
+            self.store.publish(self.observation)
+
+        self.store._query("""
+            CREATE ROLE api_evidence_reader NOLOGIN;
+            GRANT USAGE ON SCHEMA fastest_release TO api_evidence_reader;
+            GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid), fastest_release.read_evidence(uuid)
+                TO api_evidence_reader;
+        """)
+        reader = ReleaseStore(self.database_url + " options='-c role=api_evidence_reader'")
+        with api_client(reader) as request:
+            status, _, data = request(f"/api/v1/evidence?release={release}")
+            self.assertEqual(status, 200)
+            self.assertEqual(data["release_id"], release)
+            self.assertEqual(data["metric"]["value"], "53.500")
+            self.assertEqual(data["conditions"]["driver_version"]["status"], "missing")
+            self.assertEqual(data["rights"]["expires_at"], "2099-01-01T00:00:00Z")
+            self.assertNotIn("outside API fields", json.dumps(data))
+            self.assertNotIn("private calibration note", json.dumps(data))
+            self.assertEqual(request(f"/api/v1/evidence?evidence_id={data['evidence_id']}")[2], data)
+            status, _, html = request(data["url"], decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("53.500", html)
+            self.assertIn(release, html)
+            self.assertEqual(request(f"/api/v1/evidence?release={synthetic}")[0], 404)
+            for path in (f"/api/v1/evidence?release={expired}", f"/releases/{expired}/benchmark.html"):
+                status, _, body = request(path, decode=False)
+                self.assertEqual(status, 410)
+                self.assertNotIn("53.500", body)
 
     def test_public_routes_pin_current_and_quarantine_withdrawn_evidence(self):
         from fastest_release.http import make_server

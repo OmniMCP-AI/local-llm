@@ -1,14 +1,20 @@
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import signal
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import time
 import unittest
+from urllib.error import HTTPError
+from urllib.request import urlopen
+from uuid import uuid4
 
 from fastest_prices import PriceError, PriceStore
+from test_public_api import api_client
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-price-cohort.json"
@@ -180,6 +186,96 @@ class PriceTest(unittest.TestCase):
             self.assertNotIn("private withdrawal", artifact)
         with self.assertRaisesRegex(PriceError, "withdrawn"):
             self.store.capture(self.cohort["id"], self.fixture["captures"][0])
+
+    def test_release_origin_serves_exact_quotes_and_immediate_withdrawal(self):
+        from fastest_release.http import make_server
+
+        self.store.ingest(self.fixture)
+        release_id = self.store.publish(self.cohort["id"], "2026-11-01", "2026-11-04")
+        with make_server(None, port=0, price_reader=self.store.read) as server:
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            base = f"http://127.0.0.1:{server.server_port}/price-releases/"
+            try:
+                with urlopen(f"{base}{release_id}/prices.json") as response:
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                    result = json.load(response)
+                    self.assertEqual(result, self.store.read(release_id))
+                    self.assertEqual(result["market"], "US")
+                    self.assertEqual(result["offers"][0]["price"], "240.00")
+                with self.assertRaises(HTTPError) as missing:
+                    urlopen(f"{base}{uuid4()}/prices.json")
+                self.assertEqual(missing.exception.code, 404)
+                missing.exception.close()
+
+                self.store.withdraw(self.cohort["id"], "private authorization update")
+                with self.assertRaises(HTTPError) as withdrawn:
+                    urlopen(f"{base}{release_id}/prices.json")
+                self.assertEqual(withdrawn.exception.code, 410)
+                with withdrawn.exception as response:
+                    self.assertNotIn("offers", json.load(response))
+            finally:
+                server.shutdown()
+                worker.join(timeout=5)
+
+    def test_api_prices_paginate_authorized_quotes_with_current_rights(self):
+        illustrative = deepcopy(self.cohort)
+        illustrative["id"] += "-illustrative"
+        self.store.approve(illustrative)
+        self.store.capture(illustrative["id"], self.fixture["captures"][0])
+        demo = self.store.publish(illustrative["id"], "2026-11-01", "2026-11-04")
+        self.cohort["data_class"] = "authorized_observations"
+        authorization = self.cohort["authorization"]
+        authorization["aggregate"] = "deny"
+        authorization["expires_at"] = "2099-01-01T00:00:00Z"
+        self.store.approve(self.cohort)
+        for capture in self.fixture["captures"]:
+            self.store.capture(self.cohort["id"], capture)
+        release = self.store.publish(self.cohort["id"], "2026-11-01", "2026-11-04")
+
+        with api_client(price_reader=self.store.read) as request:
+            status, _, specification = request("/api/v1/openapi.json")
+            self.assertEqual(status, 200)
+            self.assertIn("/api/v1/historical-offers", specification["paths"])
+            path = f"/api/v1/historical-offers?release={release}&limit=1"
+            status, _, page = request(path)
+            self.assertEqual(status, 200)
+            self.assertEqual(page["release_id"], release)
+            self.assertEqual(page["unit"], "USD")
+            self.assertEqual(page["rights"]["expires_at"], "2099-01-01T00:00:00Z")
+            self.assertEqual(page["sampling"]["range_status"], "rights_restricted")
+            self.assertIsNone(page["sampling"]["sample_count"])
+            self.assertEqual(page["offers"][0]["price"], "240.00")
+            self.assertIsNone(page["offers"][0]["landed_price"])
+            self.assertEqual(page["pagination"]["next_offset"], 1)
+            status, _, second = request(path + "&offset=1")
+            self.assertEqual(status, 200)
+            self.assertEqual(second["offers"][0]["landed_price"], "253.80")
+            self.assertIsNone(second["pagination"]["next_offset"])
+            site_status, _, site = request(second["url"])
+            self.assertEqual(site_status, 200)
+            self.assertEqual(site["release_id"], second["release_id"])
+            self.assertEqual(site["offers"][1]["landed_price"], second["offers"][0]["landed_price"])
+            self.assertIn("253.80", self.store.artifact(release, "prices.html"))
+            self.assertNotIn("authorization-file", json.dumps(second))
+            self.assertEqual(request(f"/api/v1/historical-offers?release={demo}")[0], 404)
+
+            now = datetime.now(timezone.utc)
+            deadline = (now + timedelta(seconds=5)).replace(microsecond=0)
+            expiring = deepcopy(self.cohort)
+            expiring["id"] += "-expiring"
+            expiring["authorization"]["expires_at"] = deadline.strftime("%Y-%m-%dT%H:%M:%SZ")
+            self.store.approve(expiring)
+            self.store.capture(expiring["id"], self.fixture["captures"][0])
+            saved = self.store.publish(expiring["id"], "2026-11-01", "2026-11-04")
+            saved_path = f"/api/v1/historical-offers?release={saved}"
+            self.assertEqual(request(saved_path)[0], 200)
+            time.sleep(max(0, (deadline - datetime.now(timezone.utc)).total_seconds()) + 0.02)
+            status, _, after = request(saved_path)
+            self.assertEqual(status, 410)
+            self.assertNotIn("offers", after)
+            self.assertEqual(request(f"/price-releases/{saved}/prices.json")[0], 410)
+            self.assertNotIn("240.00", self.store.artifact(saved, "prices.html"))
 
     def test_public_reader_cannot_read_private_inputs_or_write(self):
         self.store.approve(self.cohort)

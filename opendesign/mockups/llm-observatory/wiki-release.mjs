@@ -218,7 +218,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);
 
-  const canonicalRoutes = ["/", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
+  const canonicalRoutes = ["/", "/prices", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
   const citationUrls = [
     `- [Evidence updates](${origin}/wiki/evidence-updates.md)`,
     `- [Current wiki release](${origin}/wiki/manifest.json)`,
@@ -239,6 +239,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
   }, null, 2) + "\n";
   files["/_routes.json"] = JSON.stringify({
     version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
+      "/prices", "/prices/", "/prices.html", "/api/price-comparison",
       "/research/*", "/wiki/*", "/catalog/*", "/catalog-data/*", "/downloads/*",
       "/robots.txt", "/sitemap.xml", "/llms.txt", "/evidence-quarantine.json"], exclude: [],
   }, null, 2) + "\n";
