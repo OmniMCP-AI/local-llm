@@ -17,6 +17,7 @@ from fastest_prices import PriceError, PriceReleaseNotFound
 from fastest_prices.result import eligible_offer
 
 from . import ReleaseError, ReleaseNotFound
+from .advisor import advise
 
 
 BASE = "/api/v1"
@@ -94,6 +95,14 @@ COST_PARAMS = {
     "scenario": {"type": "string", "enum": ["evidence", "illustrative"], "default": "evidence"},
     "monthly_accepted": {"type": "integer", "minimum": 1, "maximum": MAX_ACCEPTED, "default": DEFAULT_ACCEPTED},
     "months": {"type": "integer", "minimum": 1, "maximum": MAX_MONTHS, "default": DEFAULT_MONTHS},
+}
+ADVISOR_PARAMS = {
+    **GOAL_PARAMS, **COST_PARAMS,
+    "decision": {"type": "string", "enum": ["configuration", "cost"], "default": "configuration"},
+    "entry": {**GOAL_PARAMS["entry"], "default": "expert"},
+    "monthly_accepted": {"type": "integer", "minimum": 1, "maximum": MAX_ACCEPTED},
+    "months": {"type": "integer", "minimum": 1, "maximum": MAX_MONTHS},
+    "revision": {"type": "string", "pattern": r"^(?:current|(?:v1-)?[a-f0-9]{64})$"},
 }
 REQUESTS_PER_MINUTE = 120
 ERRORS = {
@@ -188,6 +197,14 @@ class PublicApi:
                     "market": "object", "metrics": "object", "protocol": "string", "quality_rubric": "string",
                     "rows": "array", "recommendation": ["string", "null"], "alternatives": "array", "chart": "object",
                     "url": "string", "citations": "array", "rights": "object",
+                },
+            ),
+            BASE + "/advisor": Operation(
+                self._advisor, "Guide one released configuration or cost decision",
+                ADVISOR_PARAMS, {
+                    "decision": "string", "status": "string", "message": "string", "missing": _array({"type": "string"}),
+                    "recommendation": ["string", "null"], "comparison": ["object", "null"], "costs": ["object", "null"],
+                    "citations": "array", "wizard": ["string", "null"], "execution": "object",
                 },
             ),
             BASE + "/calculator": Operation(
@@ -366,6 +383,9 @@ class PublicApi:
                 "rights": {"export_scope": "public-release", "measurements": rights},
                 "citations": [{"url": f"/goals/{service.release_id}/text-pilot.html", "release_id": result["text_release"]}],
                 "url": service.url(selection)}
+
+    def _advisor(self, parameters):
+        return advise(parameters, self._goal_comparison, self._calculator)
 
     def _calculator(self, parameters):
         revision = parameters.pop("revision", None)
