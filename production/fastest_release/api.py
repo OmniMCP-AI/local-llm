@@ -34,7 +34,7 @@ EVIDENCE_FIELDS = ("profile_cell", "backend", "runtime_revision", "run_id", "art
                    "workflow_sha256", "driver_version")
 OFFER_FIELDS = ("listing_id", "seller", "kind", "confirmation", "stock", "discount", "observed_at",
                 "captured_at", "price", "currency", "tax", "shipping", "landed_price", "age_days",
-                "freshness", "latest_for_listing", "sample_selected")
+                "freshness", "latest_for_listing", "sample_selected", "availability", "expires_at")
 
 
 def _object(fields):
@@ -60,6 +60,10 @@ PRICE_OFFER = _object({
     "landed_price": ["string", "null"], "age_days": "integer", "freshness": "string",
     "latest_for_listing": "boolean", "sample_selected": ["boolean", "null"],
     "comparable_asking_quote": "boolean", "citation": "object",
+})
+PRICE_OFFER["properties"].update({
+    "availability": {"type": "string", "description": "Availability at the pinned release date."},
+    "expires_at": {"type": ["string", "null"], "format": "date-time"},
 })
 
 PAGE = {

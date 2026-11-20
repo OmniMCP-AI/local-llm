@@ -134,7 +134,10 @@ class GoalTests(unittest.TestCase):
         def change_price(**changes):
             return lambda release_id: {**read_price(release_id), **changes}
 
+        expired = {**read_price(PRICE_ID)["offers"][0], "availability": "expired"}
         for price, reason in (
+            (change_price(offers=[expired]), "unavailable"),
+            (change_price(adapter_status="incomplete"), "incomplete"),
             (lambda release_id: {"release_id": release_id, "status": "withdrawn"}, "withdrawn"),
             (change_price(adapter_status="stale"), "stale"),
             (change_price(data_class="illustrative"), "illustrative"),

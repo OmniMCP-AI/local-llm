@@ -129,12 +129,17 @@ class GoalService:
         expected_scope = {"kind": "whole_build", "id": machine, "revision_id": candidate["build_revision"]}
         if price["scope"] != expected_scope or any(price[field] != value for field, value in self.market.items()):
             return _item("unknown", "The pinned price does not cover this exact whole-build revision and market terms.")
+        if price["adapter_status"] in {"incomplete", "failed"}:
+            return _item("unknown", "The latest refresh for the pinned price was incomplete or failed.")
         if price["adapter_status"] != "fresh":
             return _item("unknown", "The pinned price source is stale or has no successful check.")
         offers = [offer for offer in price["offers"] if offer["latest_for_listing"] and eligible_offer(offer)]
-        current = [offer for offer in offers if offer["freshness"] == "fresh"]
+        current = [
+            offer for offer in offers
+            if offer["freshness"] == "fresh" and offer.get("availability", "available") == "available"
+        ]
         if not current:
-            reason = "Every eligible whole-build quote is stale." if offers else (
+            reason = "Eligible whole-build quotes are unavailable at the pinned date." if offers else (
                 "No fresh, unconditional, confirmed, in-stock asking quote has known tax and shipping."
             )
             return _item("unknown", reason)
