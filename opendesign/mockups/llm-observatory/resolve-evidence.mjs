@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 import { emptyEvidenceState, isPublicIssue, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { feedbackId } from "./feedback-policy.mjs";
+import { readResearchApprovals } from "./research-release-build.mjs";
 import { allowedResearchPin, digest, readJson, readResearchPin, readResearchSnapshot as snapshot, writeResearchPin } from "./research-released-snapshot.mjs";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
@@ -90,7 +91,7 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
   if (!target || target.url !== sourceLocator) throw new Error("Evidence ID and locator do not identify a published source or record");
   const intake = intakeRecord(request.intake, evidenceId, old.release);
   const priorState = validateEvidenceState(await optionalState(previous));
-  const approvals = approvalPath ? await readJson(approvalPath) : {};
+  const approvals = await readResearchApprovals(approvalPath);
   if (action === "withdraw") approvals[sourceId] = { status: "withdrawn" };
   const withdrawnSources = Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn").map(digest);
   if (priorState.withdrawnSources?.some((hash) => !withdrawnSources.includes(hash))) {

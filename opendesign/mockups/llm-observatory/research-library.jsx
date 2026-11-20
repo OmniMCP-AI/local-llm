@@ -67,6 +67,7 @@ function SourceCard({ source, records, label, locale, filters, onFilter }) {
     <div className="research-byline"><b>{label("formats",source.format)}</b><span>{source.publisher}</span>{source.language && <span>{source.language}</span>}<span>{date || label("ui","undated")}</span></div>
     <h2><a href={url} target={local ? undefined : "_blank"} rel={local ? undefined : "noreferrer"}>{source.title} <ArrowUpRight size={15}/></a></h2>
     <p>{source.context}</p>
+    {source.license && <p><a href={source.license.url} target="_blank" rel="noreferrer">{source.license.spdx}</a> · {source.license.attribution}</p>}
     <div className="research-topics" aria-label={label("ui","topic")}>{Object.keys(source.topics).map(topic =>
       <button key={topic} type="button" aria-pressed={filters.topic===topic} onClick={() => onFilter("topic",filters.topic===topic ? "" : topic)}>{label("topics",topic)}</button>
     )}</div>

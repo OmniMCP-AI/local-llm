@@ -3,14 +3,14 @@
   "multigraph": false,
   "graph": {
     "source_sha256": "5895f5799cce1a3f9f5c63f8ef3b5ebdf5f6ef9d8fd6fd6804718eb34829ab2f",
-    "research_index_sha256": "850dfa012c814c73cbe79e0ea64e39657360a8eb6d57770566c0ef148ee9b9e4",
+    "research_index_sha256": "323e3e34d1a5d522a66477ea14ba49e622eead0f079067edc273ff06186365f3",
     "taxonomy_version": 1,
     "research_inputs": {
       "video-topics.json": "280800b53a8c79d6418435f6d48071869ba8ca348d983a737c9ebf854f998abd",
       "case-tasks.json": "ed950ea4c2badbab8d2cfb7c2894bb5a93f2f2e6c37a2146fc903717d3ee4d5d",
-      "editorial-sources.json": "968db0e8b30aa5f759c6d4e9d638b00f4b52a5ca741ae27b54e70d74219c2e3c",
+      "editorial-sources.json": "90f29d3275e91d070d1ee12cc40e53cceb2a033b7d0bfeb63bd5c4d870eb696c",
       "context-vocabulary.json": "301c6042b984868a0f534814ad0f24501b69df8dcf2215cf34fd980a328ac89b",
-      "research_graph.py": "02b42bef5165c5f2ee0157050ec0480818c21dd9e7d4fcdb369ae5338ede6e7a"
+      "research_graph.py": "72ddc08b6c2b6c9eb359bf9c8b1c5b38e51386e09ef50b955bb4510beb26f7cb"
     }
   },
   "nodes": [
@@ -617,6 +617,67 @@
       "id": "lcz-strata-quantization",
       "community": null,
       "norm_label": "comparing quantized model configurations in strata"
+    },
+    {
+      "file_type": "document",
+      "label": "llama-bench prompt processing and generation example",
+      "source_file": "editorial-sources.json",
+      "publisher": "llama.cpp project",
+      "date": "2025-04-28",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L60-L70",
+      "context": "The project documentation shows separate prompt processing and generation runs in its JSONL output example. The rows give average throughput and variation for each phase. Application task, quality, and artifact digest are unspecified.",
+      "language": "en",
+      "license": {
+        "spdx": "MIT",
+        "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/LICENSE",
+        "attribution": "Copyright (c) 2023-2024 The ggml authors"
+      },
+      "id": "llama-bench-jsonl-example",
+      "community": null,
+      "norm_label": "llama-bench prompt processing and generation example"
+    },
+    {
+      "file_type": "concept",
+      "label": "llama-bench-jsonl-series",
+      "source_file": "editorial-sources.json",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L280-L288",
+      "id": "llama-bench-jsonl-series",
+      "community": null,
+      "norm_label": "llama-bench-jsonl-series"
+    },
+    {
+      "file_type": "concept",
+      "label": "Prompt processing throughput (tokens/s)",
+      "source_file": "editorial-sources.json",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L287",
+      "timestamp": "2025-04-24T11:59:33Z",
+      "task": null,
+      "hardware": "NVIDIA GeForce RTX 4080 and AMD Ryzen 7 7800X3D",
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf (reported filename)",
+      "runtime": "llama-bench build 5163 (8cf427ff), CUDA",
+      "quant": "Q4_K_M",
+      "conditions": "512 prompt tokens and 0 generated tokens. 0 preloaded KV tokens. Batch 2048, microbatch 512, 8 CPU threads, f16 keys and values, Flash Attention disabled, 99 GPU layers requested. Five repetitions.",
+      "evidence": "Project-reported documentation example",
+      "id": "llama-bench-jsonl-prefill",
+      "community": null,
+      "norm_label": "prompt processing throughput (tokens/s)"
+    },
+    {
+      "file_type": "concept",
+      "label": "Text generation throughput (tokens/s)",
+      "source_file": "editorial-sources.json",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L288",
+      "timestamp": "2025-04-24T11:59:33Z",
+      "task": null,
+      "hardware": "NVIDIA GeForce RTX 4080 and AMD Ryzen 7 7800X3D",
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf (reported filename)",
+      "runtime": "llama-bench build 5163 (8cf427ff), CUDA",
+      "quant": "Q4_K_M",
+      "conditions": "0 prompt tokens and 128 generated tokens. 0 preloaded KV tokens. Batch 2048, microbatch 512, 8 CPU threads, f16 keys and values, Flash Attention disabled, 99 GPU layers requested. Five repetitions.",
+      "evidence": "Project-reported documentation example",
+      "id": "llama-bench-jsonl-generation",
+      "community": null,
+      "norm_label": "text generation throughput (tokens/s)"
     },
     {
       "file_type": "document",
@@ -12799,6 +12860,94 @@
       "annotation_file": "editorial-sources.json",
       "source": "lcz-strata-quantization",
       "target": "topics/runtime-tuning"
+    },
+    {
+      "relation": "has_format",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L60-L70",
+      "source": "llama-bench-jsonl-example",
+      "target": "formats/article"
+    },
+    {
+      "relation": "discusses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L60-L70",
+      "taxonomy_version": 1,
+      "annotation_file": "editorial-sources.json",
+      "source": "llama-bench-jsonl-example",
+      "target": "topics/evidence-research"
+    },
+    {
+      "relation": "discusses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L60-L70",
+      "taxonomy_version": 1,
+      "annotation_file": "editorial-sources.json",
+      "source": "llama-bench-jsonl-example",
+      "target": "topics/runtime-tuning"
+    },
+    {
+      "relation": "reports_series",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L280-L288",
+      "source": "llama-bench-jsonl-example",
+      "target": "llama-bench-jsonl-series"
+    },
+    {
+      "relation": "contains_observation",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L287",
+      "source": "llama-bench-jsonl-series",
+      "target": "llama-bench-jsonl-prefill"
+    },
+    {
+      "relation": "contains_observation",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L288",
+      "source": "llama-bench-jsonl-series",
+      "target": "llama-bench-jsonl-generation"
+    },
+    {
+      "relation": "has_dimension",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L287",
+      "taxonomy_version": 1,
+      "annotation_file": "editorial-sources.json",
+      "source": "llama-bench-jsonl-prefill",
+      "target": "dimensions/prefill"
+    },
+    {
+      "relation": "has_dimension",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0,
+      "source_file": "editorial-sources.json",
+      "source_location": "https://github.com/ggml-org/llama.cpp/blob/1831f538f720d1d99fba146f24f0a8e970838cc4/examples/llama-bench/README.md#L288",
+      "taxonomy_version": 1,
+      "annotation_file": "editorial-sources.json",
+      "source": "llama-bench-jsonl-generation",
+      "target": "dimensions/generation"
     },
     {
       "relation": "has_format",

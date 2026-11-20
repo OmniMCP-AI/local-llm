@@ -8,7 +8,7 @@ export async function withPreviewResults(index) {
     [row.observation_id, row]));
   if (byId.size !== envelopes.length) throw new Error("Duplicate observation in the research seed");
 
-  const sources = index.sources.map(source => ({
+  const sources = index.sources.map(source => source.format !== "video" ? source : ({
     ...source,
     records: source.records.map(record => {
       const row = byId.get(record.id);
