@@ -42,7 +42,7 @@ The full Python suite requires Python 3.11+, PostgreSQL command-line tools, FFmp
 PYTHONDONTWRITEBYTECODE=1 uv run --no-project --isolated --with 'Pillow>=10.1,<13' python -B -m unittest discover -c -s tests -v
 ```
 
-The HTTP fit cases need a pinned native binary. Use the fit verifier documented above to run them. The standalone benchmark-release tests need only Python and the PostgreSQL tools.
+The HTTP fit cases need a pinned native binary. Run the [fit verification command](#estimate-fit-for-a-selected-machine) to exercise them. The standalone benchmark-release tests need only Python and the PostgreSQL tools.
 
 ## Test locally
 
