@@ -140,24 +140,6 @@
 .photo-diagram-link:hover { outline: 1px solid var(--color-accent); outline-offset: -1px; }
 .lens-rail { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .topology-view .knowledge-select { max-width: 440px; margin: 0 0 10px; }
-.reported-topology { border: 1px solid var(--color-rule); background: var(--color-paper-2); margin-bottom: 11px; padding: 12px; }
-.reported-topology-head { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 7px; }
-.reported-topology-head span, .reported-topology-caption { color: var(--color-muted); font-size: 12px; }
-.reported-slots { display: grid; grid-template-columns: repeat(auto-fit,minmax(125px,1fr)); gap: 7px; margin: 10px 0 7px; }
-.reported-slots button { display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; padding: 7px; border: 1px solid var(--color-rule); background: var(--color-paper); }
-.reported-slots button:hover { border-color: var(--color-field-edge); }
-.reported-slots button[aria-pressed="true"] { border-color: var(--color-accent); }
-.reported-slots img, .reported-photo-placeholder { width: 100%; height: 93px; background: var(--color-paper-3); }
-.reported-slots img { object-fit: contain; }
-.reported-photo-placeholder { display: flex; justify-content: center; align-items: center; gap: 5px; flex-direction: column; color: var(--color-muted); font-size: 11px; }
-.reported-slots button > small { color: var(--color-muted); overflow-wrap: anywhere; }
-.reported-edge { position: relative; text-align: center; padding: 12px 0 0; }
-.reported-edge::before { content: ""; position: absolute; inset: 0 var(--edge-inset) auto; height: 8px; border: solid var(--color-accent); border-width: 0 1px 1px; pointer-events: none; }
-.reported-edge[data-state="optional"]::before { border-style: dashed; }
-.reported-edge a { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-height: 36px; padding: 2px 6px; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
-.reported-edge a span { color: var(--color-muted); }
-.reported-topology-caption p + p { margin-top: 4px; }
-.reported-topology-caption a { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 780px) { .lens-rail { grid-template-columns: repeat(2,minmax(0,1fr)); } .lens-rail a:nth-child(n+3) { border-top: 1px solid var(--color-rule); } .lens-rail a:nth-child(odd) { border-left: 0; } }
 @media (max-width: 470px) { .lens-rail { grid-template-columns: 1fr; } .lens-rail a + a { border-left: 0; border-top: 1px solid var(--color-rule); } }
 

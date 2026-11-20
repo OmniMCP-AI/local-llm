@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
+import { inferenceStages, topologyPresets, topologyView } from "./topology.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -49,6 +50,40 @@ function renderBody(body, resolveLink, format) {
     if (type === "heading") return format === "html" ? `<h2>${inline(text)}</h2>` : "## " + inline(text);
     return format === "html" ? `<p>${inline(text)}</p>` : inline(text);
   }).join("\n\n");
+}
+
+export function renderTopologyReference(format) {
+  const interactive = "/#wiki/technology";
+  const rows = topologyPresets.map(({ label, report }) => {
+    const view = topologyView(report);
+    return {
+      label, report,
+      summary: `${view.installedCount} ${view.installedCount === 1 ? "card" : "cards"}`,
+      active: view.activeCount ?? "Unknown",
+      inventory: view.parts.map(({ slot, label: name, memory }) => `${slot}. ${name} · ${memory ?? "VRAM unknown"}`).join(" / "),
+      links: view.links.map(({ label: name, slots }) => `${name} (${slots.join(" ↔ ")})`).join(" / ") ||
+        (view.installedCount === 1 ? "Single-card layout" : "Unknown"),
+    };
+  });
+  if (format === "md") return `## Topology reference
+
+[Open interactive topology](${interactive})
+
+${rows.map(({ label, report, summary, active, inventory, links }) =>
+  `- [${label} · ${report.id}](${report.source}) · ${summary} · Active cards ${active} · ${markdown(inventory)} · Inter-card link ${links}`).join("\n")}
+
+## Conceptual inference stages
+
+${inferenceStages.map(({ title, note }, index) => `${index + 1}. **${title}.** ${note}`).join("\n")}
+`;
+  return `<section><h2>Topology reference</h2>
+<p><a href="${interactive}">Open interactive topology</a></p>
+<div style="overflow-x:auto"><table><caption>Source-reported layouts</caption>
+<thead><tr><th scope="col">Layout</th><th scope="col">Installed</th><th scope="col">Active cards</th><th scope="col">Inventory by slot</th><th scope="col">Inter-card link</th></tr></thead>
+<tbody>${rows.map(({ label, report, summary, active, inventory, links }) =>
+  `<tr><th scope="row"><a href="${escape(report.source)}">${escape(label)} · ${escape(report.id)}</a></th><td>${summary}</td><td>${active}</td><td>${escape(inventory)}</td><td>${escape(links)}</td></tr>`).join("\n")}</tbody></table></div>
+<h2>Conceptual inference stages</h2><ol>${inferenceStages.map(({ title, note }) =>
+  `<li><strong>${escape(title)}.</strong> ${escape(note)}</li>`).join("")}</ol></section>`;
 }
 
 function frontmatter(fields) {
@@ -112,7 +147,8 @@ export async function writeWikiRelease({
     const neighbors = [...new Set(edges.flatMap(({ source, target }) =>
       source === id ? [target] : target === id ? [source] : []))]
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
-    const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format);
+    const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
+      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format) : "");
     const { title, kind, summary, entity, evidence, methods, media } = doc;
     return { id, source: "wiki/pages/" + id + ".md", title, kind, summary, entity, evidence, methods, media,
       aliases, neighbors, html: body("html"), md: body("md") };

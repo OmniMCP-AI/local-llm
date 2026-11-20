@@ -64,7 +64,7 @@ const hardware = await readHardwareCatalog(catalogDirectory);
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
-  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source }) => ({ id, name, detail, aliases, source })),
+  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory }) => ({ id, name, detail, aliases, source, memory })),
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, fileURLToPath(here("dist/")), hardware) : "";

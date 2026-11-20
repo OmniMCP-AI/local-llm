@@ -270,7 +270,7 @@ function WikiPage({ slug, focus, go, onCopy }) {
     </div>}
     {slug === "benchmark-method" && <ContextLens go={go} />}
     {slug === "gpu-topology" && <TopologyLens key={focus || "default"} initialProfile={focus} />}
-    {slug === "technology" && <TechnologyDiagram key={focus || "default"} images={pictures} cardIds={[focus || "rtx-4090", focus === "rtx-3090" ? "rtx-3060" : "rtx-3090"]} />}
+    {slug === "technology" && <TechnologyDiagram key={focus || "default"} images={pictures} focus={focus} />}
     <WikiDetails slug={slug} go={go} onCopy={onCopy} initiallyOpen />
   </div>;
 }
@@ -279,15 +279,12 @@ function TopologyLens({ initialProfile }) {
   const { t } = useLocale();
   const opening = topologyReports.find((row) => row.id.toLowerCase() === initialProfile);
   const [view,setView] = useState(opening?.group ?? "multi");
-  const [profile,setProfile] = useState(opening?.id ?? "V025-HP-E01");
   const options = [["single",t("One card", "单卡")],["multi",t("Multiple cards", "多卡")],["hosts",t("Multi-host", "多主机")]];
   const rows = topologyReports.filter((row) => row.group === view);
-  const selected = rows.find((row) => row.id === profile) ?? rows[0];
   return <section className="detail-section topology-view" aria-labelledby="topology-profile-title">
     <div className="detail-heading"><div><h2 id="topology-profile-title">{t("Reported configurations", "已报道的配置")}</h2><p>{t("The diagram shows documented hardware. Bandwidth and scaling need separate measurements.", "图中显示有来源的硬件信息。带宽及扩展性能需要单独测量。")}</p></div></div>
     <div className="detail-controls" aria-label="Topology classes">{options.map(([id,label]) => <button type="button" key={id} aria-pressed={view === id} className={"btn outline " + (view === id ? "picked" : "")} onClick={() => setView(id)}>{label}</button>)}</div>
-    {selected && <><Setting label={t("Show setup layout", "查看配置布局")} value={selected.id} onChange={setProfile} items={rows.map((row) => [row.id,row.name])} />
-      <ReportedTopology key={selected.id} report={selected} /></>}
+    <TechnologyDiagram key={view} images={pictures} focus={opening?.id ?? "V025-HP-E01"} options={rows} />
     <div className="table-wrap"><table>
       <thead><tr><th scope="col">Profile</th><th scope="col">Reported cards</th><th scope="col">Memory per GPU</th><th scope="col">Reported interconnect</th><th scope="col">Measured link bandwidth</th></tr></thead>
       <tbody>{rows.map((row) => <tr key={row.id}>
@@ -298,44 +295,6 @@ function TopologyLens({ initialProfile }) {
     </table></div>
     <p>{rows.length} source profiles in this group. Multi-host transport is shown separately from GPU-to-GPU links inside one machine.</p>
   </section>;
-}
-
-function ReportedTopology({ report }) {
-  const { t } = useLocale();
-  const [index,setIndex] = useState(0);
-  const isHost = report.group === "hosts";
-  const partName = isHost ? "Host" : "Card";
-  const parts = isHost ? Array.from({length:report.hostCount}, () => ({ label:report.hostModel || "Host system", photo:null })) : report.devices;
-  const links = report.links ?? [];
-  const component = parts[index];
-  const photo = pictures[component?.photo];
-  return <div className="reported-topology">
-    <div className="reported-topology-head"><strong>{report.name}</strong><span>{parts.length} reported {isHost ? (parts.length === 1 ? "host" : "hosts") : (parts.length === 1 ? "card" : "cards")}</span></div>
-    <div className="reported-slots" aria-label="Reported hardware components" style={links.length ? {gridTemplateColumns:"repeat(" + parts.length + ", minmax(0,1fr))"} : undefined}>
-      {parts.map((part,n) => {
-        const image = pictures[part.photo];
-        return <button key={n} type="button" aria-pressed={index === n} onClick={() => setIndex(n)}>
-          {image ? <img src={image.data} alt={image.alt} loading="lazy" /> : <div className="reported-photo-placeholder">{isHost ? <Monitor size={26} aria-hidden="true" /> : <CircuitBoard size={26} aria-hidden="true" />}<span>{t("Photo unavailable", "暂无照片")}</span></div>}
-          <strong>{partName} {n + 1}</strong><small>{part.label}</small>
-        </button>;
-      })}
-      {links.map((link) => {
-        const [first,last] = [...link.slots].sort((a,b) => a - b);
-        return <div key={link.label + first + last} className="reported-edge" data-state={link.state}
-          style={{gridColumn:(first + " / " + (last + 1)), "--edge-inset":(50 / (last - first + 1)) + "%"}}>
-          <a href={link.source} target="_blank" rel="noreferrer">
-            {link.label} <span>· {partName} {first} ↔ {partName} {last}</span>
-            <ArrowUpRight size={12} aria-hidden="true" />
-          </a>
-        </div>;
-      })}
-    </div>
-    <div className="reported-topology-caption" aria-live="polite">
-      <p>{isHost ? "Individual accelerator counts per host are not established here." : "Reported memory per GPU: " + (report.memory ?? "not reported") + "."}</p>
-      <p>Link or transport: {report.connection ?? "not reported"}. Exact endpoints and active paths are shown only when documented.</p>
-      {photo && <p>Representative card photo, resized. <a href={photo.source} target="_blank" rel="noreferrer">{photo.author}</a> / <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a>. <a href={"#wiki/technology/" + component.photo}>See this card in the technology illustration</a>.</p>}
-    </div>
-  </div>;
 }
 
 function UnknownPage({ name, to, go }) {

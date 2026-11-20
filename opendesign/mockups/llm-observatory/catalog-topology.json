@@ -11,9 +11,13 @@
     "devices": [
       {
         "label": "RTX4090",
-        "photo": "rtx-4090"
+        "photo": "rtx-4090",
+        "card": "nvidia-geforce-rtx-4090",
+        "placement": "Active in the reported comparison"
       }
-    ]
+    ],
+    "activeCount": 1,
+    "hostModel": "Intel Core i7-13700K · 64 GB system RAM"
   },
   {
     "id": "V026-HP-TEST",
@@ -192,11 +196,13 @@
     "devices": [
       {
         "label": "RTX3060",
-        "photo": "rtx-3060"
+        "photo": "rtx-3060",
+        "card": "nvidia-geforce-rtx-3060-12gb"
       },
       {
         "label": "RTX3060",
-        "photo": "rtx-3060"
+        "photo": "rtx-3060",
+        "card": "nvidia-geforce-rtx-3060-12gb"
       }
     ]
   },
@@ -371,12 +377,15 @@
     "count": 2,
     "group": "multi",
     "connection": "NVLink optional and explicitly compared with no bridge;bridge nearly400",
-    "note": null,
+    "note": "The source describes bridge and no-bridge runs and gives conflicting per-card capacities.",
     "memory": "22GBintro;11GB/24GBotherclausescontradict",
     "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V029-HP-C001.md",
     "links": [
       {
-        "slots": [1, 2],
+        "slots": [
+          1,
+          2
+        ],
         "label": "Optional NVLink bridge",
         "state": "optional",
         "source": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=57s"
@@ -385,11 +394,13 @@
     "devices": [
       {
         "label": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
-        "photo": null
+        "photo": null,
+        "card": "nvidia-geforce-rtx-2080-ti-colorful-modified"
       },
       {
         "label": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
-        "photo": null
+        "photo": null,
+        "card": "nvidia-geforce-rtx-2080-ti-colorful-modified"
       }
     ]
   },
@@ -438,19 +449,23 @@
     "devices": [
       {
         "label": "AMDMI50",
-        "photo": null
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
       },
       {
         "label": "AMDMI50",
-        "photo": null
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
       },
       {
         "label": "AMDMI50",
-        "photo": null
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
       },
       {
         "label": "AMDMI50",
-        "photo": null
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
       }
     ]
   },
@@ -473,17 +488,19 @@
     "count": 2,
     "group": "multi",
     "connection": null,
-    "note": null,
+    "note": "The source mentions a four-lane chipset slot and a separate tensor-split configuration. Endpoints, negotiated width and per-card capacity are unconfirmed.",
     "memory": null,
     "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-E01.md",
     "devices": [
       {
         "label": "RTX4070Super",
-        "photo": null
+        "photo": null,
+        "card": "nvidia-geforce-rtx-4070-super"
       },
       {
         "label": "RTX5060Ti",
-        "photo": null
+        "photo": null,
+        "card": "nvidia-geforce-rtx-5060-ti"
       }
     ]
   },
