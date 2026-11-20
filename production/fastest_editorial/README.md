@@ -12,6 +12,8 @@ python3 -m fastest_editorial \
 
 Set `--public-origin` to the HTTPS origin serving your public benchmark releases. The command prints the absolute path of one review record. GrokBot can invoke the command and read that JSON file. The process reads public evidence, writes a local draft, and has no channel-account configuration.
 
+Use the [pilot scheduler entry point](../fastest_delivery/PILOT.md#run-a-scheduled-editorial-slot) for a scheduled pilot run. It retains the exact review revision and the observed attempt history for the pilot audit.
+
 The default date is today's date in Asia/Shanghai. The default release is the current release at the start of the run. Pass `--date YYYY-MM-DD` and `--release RELEASE_UUID` to reproduce a specific run. Use `--locale en`, `zh-CN`, or `zh-TW` for English, Simplified Chinese, or Traditional Chinese.
 
 ## Review record

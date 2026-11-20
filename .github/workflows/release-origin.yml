@@ -1,0 +1,38 @@
+name: Release origin
+
+on:
+  pull_request:
+    paths: &origin_paths
+      - ".github/workflows/release-origin.yml"
+      - "production/**"
+      - "opendesign/mockups/llm-observatory/catalog-*.json"
+  push:
+    branches: [main]
+    paths: *origin_paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Enable the runner's PostgreSQL tools
+        run: echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+      - name: Build and smoke-test the release image
+        env:
+          FASTEST_ORIGIN_TEST_IMAGE: fastest-origin-smoke
+          PYTHONDONTWRITEBYTECODE: 1
+        run: |
+          trap 'docker image rm "$FASTEST_ORIGIN_TEST_IMAGE" >/dev/null 2>&1 || true' EXIT
+          docker build -f production/fastest_release/Dockerfile -t "$FASTEST_ORIGIN_TEST_IMAGE" .
+          cd production
+          python -B -m unittest discover -s tests -p test_release.py -k deployed_origin -v

@@ -13,6 +13,7 @@ from fastest_release.validation import plain_text
 
 from . import shorts, x_post
 from .approval import decode_sealed, instant, json_bytes, read_sealed, require_window
+from .run_slot import scheduled_runs
 
 
 TIMEZONE = ZoneInfo(EDITORIAL_TIMEZONE)
@@ -250,13 +251,16 @@ def load_operator_log(path, start):
     return record
 
 
-def audit(start, draft_dir, directories, operator_log=None):
+def audit(start, draft_dir, directories, operator_log=None, run_dir=None):
+    runs, mode = scheduled_runs(run_dir, ((start + timedelta(days=offset)).isoformat() for offset in range(7)))
+    operator = load_operator_log(operator_log, start)
+    if mode and operator_log is not None and mode != operator["mode"]:
+        raise ValueError("pilot operator log and scheduler records use different modes")
     days = load_days(start, draft_dir)
     drafts = {draft["draft_revision"]: {key: value for key, value in draft.items() if key != "record"}
               for day in days.values() for draft in day["drafts"]}
     deliveries = _load_deliveries(days, drafts, directories)
-    operator = load_operator_log(operator_log, start)
-    _record_runs(operator.get("runs", []), days, drafts)
+    _record_runs([*runs, *operator.get("runs", [])], days, drafts)
     exercises = operator.get("exercises", [])
     _record_exercises(exercises, deliveries, drafts, days)
     channels = {}
@@ -275,12 +279,13 @@ def audit(start, draft_dir, directories, operator_log=None):
     effort = _review_effort(operator.get("reviews", []), deliveries, drafts)
     metrics = _metrics(operator.get("metrics", {}))
     readiness = _readiness(operator.get("readiness", {}))
-    gaps = _gaps(operator["mode"], days, channels, exercises, effort, metrics, readiness)
+    mode = mode or operator["mode"]
+    gaps = _gaps(mode, days, channels, exercises, effort, metrics, readiness)
     return {
         "schema_version": 1,
         "status": "incomplete" if gaps else "complete",
         "gaps": gaps,
-        "mode": operator["mode"],
+        "mode": mode,
         "timezone": EDITORIAL_TIMEZONE,
         "start_date": start.isoformat(),
         "end_date": (start + timedelta(days=6)).isoformat(),
@@ -298,15 +303,16 @@ def audit(start, draft_dir, directories, operator_log=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", required=True, type=date.fromisoformat, help="First pilot date (YYYY-MM-DD).")
-    for key in ("draft-dir", "x-approvals", "x-deliveries", "shorts-approvals", "shorts-deliveries", "operator-log"):
-        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None}
+    for key in ("draft-dir", "x-approvals", "x-deliveries", "shorts-approvals", "shorts-deliveries", "operator-log",
+                "run-dir"):
+        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None, "run-dir": None}
         parser.add_argument(f"--{key}", type=Path, default=defaults.get(key, Path(key)))
     args = parser.parse_args(argv)
     try:
         result = audit(args.start, args.draft_dir, {
             "x": (args.x_approvals, args.x_deliveries),
             "youtube-shorts": (args.shorts_approvals, args.shorts_deliveries),
-        }, args.operator_log)
+        }, args.operator_log, args.run_dir)
     except (AttributeError, BadZipFile, OSError, KeyError, TypeError, ValueError, OverflowError) as error:
         parser.exit(1, f"invalid pilot evidence: {error}\n")
     print(json_bytes(result).decode(), end="")

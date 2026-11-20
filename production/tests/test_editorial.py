@@ -104,6 +104,167 @@ class EditorialTest(unittest.TestCase):
         record = Path(result.stdout.strip())
         return record, json.loads(record.read_bytes())
 
+    def run_slot(self, *options, entrypoint=("-m", "fastest_delivery.run_slot")):
+        return subprocess.run(
+            [
+                sys.executable, "-B", *entrypoint,
+                "--database-url", f"{self.database_url} user=editorial_reader",
+                "--public-origin", "https://benchmark.example",
+                "--scheduled-at", "2026-11-20T16:30:00Z",
+                "--mode", "rehearsal",
+                "--draft-dir", str(self.output),
+                "--run-dir", str(self.output.parent / "scheduler"),
+                *options,
+            ],
+            cwd=PRODUCTION, capture_output=True, text=True, timeout=10,
+        )
+
+    def slot_audit(self, *options):
+        result = subprocess.run(
+            [
+                sys.executable, "-B", "-m", "fastest_delivery.pilot",
+                "--start", "2026-11-21", "--draft-dir", str(self.output),
+                "--run-dir", str(self.output.parent / "scheduler"),
+                *options,
+            ],
+            cwd=PRODUCTION, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_scheduled_no_story_is_replayed_from_the_original_slot(self):
+        result = self.run_slot()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (draft,) = (self.output / "2026-11-21").glob("*.json")
+        original = json.loads(draft.read_bytes())
+        self.assertEqual(original["reason"], "no_current_release")
+
+        self.store.publish(self.observation)
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            results = list(workers.map(
+                lambda _: self.run_slot("--scheduled-at", "2026-11-21T00:30:00+08:00"), range(2),
+            ))
+        for replay in results:
+            self.assertEqual(replay.returncode, 0, replay.stderr)
+            self.assertEqual(replay.stdout, result.stdout)
+        self.assertEqual(list(draft.parent.iterdir()), [draft])
+
+        operator_log = self.output.parent / "operator-log.json"
+        operator_log.write_text(json.dumps({
+            "schema_version": 1,
+            "start_date": "2026-11-21",
+            "mode": "rehearsal",
+            "reviews": [{
+                "draft_revision": original["draft_revision"], "minutes": 2, "reference": "Fixture review log",
+            }],
+        }))
+        audit = self.slot_audit("--operator-log", str(operator_log))
+        self.assertEqual(audit["mode"], "rehearsal")
+        self.assertEqual(audit["review_effort"]["recorded_minutes"], 2)
+        day = audit["days"][0]
+        self.assertEqual(day["status"], "no_story")
+        (slot,) = day["scheduled_runs"]
+        self.assertEqual(slot["scheduled_at"], "2026-11-21T00:30:00+08:00")
+        self.assertEqual(slot["draft_revision"], original["draft_revision"])
+        self.assertEqual(len(slot["attempts"]), 1)
+        self.assertTrue(Path(slot["reference"]).is_file())
+        self.assertIn("scheduled_run_unreported:2026-11-22", audit["gaps"])
+
+    def test_scheduled_database_failure_is_reported_and_can_retry_once(self):
+        invalid_connection = (
+            "--database-url", f"{self.database_url} user=missing_runner password=slot-secret",
+        )
+        failed = self.run_slot(*invalid_connection)
+        self.assertEqual(failed.returncode, 1, failed.stderr)
+        self.assertNotIn("slot-secret", failed.stderr)
+        day = self.slot_audit()["days"][0]
+        self.assertEqual(day["status"], "failed")
+        (slot,) = day["scheduled_runs"]
+        self.assertEqual(slot["error"], "release database read failed")
+        self.assertEqual(len(slot["attempts"]), 1)
+        self.assertNotIn("slot-secret", Path(slot["reference"]).read_text())
+
+        recovered = self.run_slot()
+        self.assertEqual(recovered.returncode, 0, recovered.stderr)
+        day = self.slot_audit()["days"][0]
+        self.assertEqual(day["status"], "no_story")
+        (slot,) = day["scheduled_runs"]
+        self.assertNotIn("error", slot)
+        self.assertEqual(slot["attempts"][0]["error"], "release database read failed")
+        self.assertEqual(slot["draft_revision"], day["drafts"][0]["draft_revision"])
+        self.assertEqual(len(slot["attempts"]), 2)
+
+        another_slot = ("--scheduled-at", "2026-11-22T00:30:00+08:00")
+        for _ in range(2):
+            self.assertEqual(self.run_slot(*another_slot, *invalid_connection).returncode, 1)
+        self.assertEqual(self.run_slot(*another_slot).returncode, 1)
+        (exhausted,) = self.slot_audit()["days"][1]["scheduled_runs"]
+        self.assertEqual(exhausted["error"], "release database read failed")
+        self.assertEqual(len(exhausted["attempts"]), 2)
+
+    def test_scheduled_retry_recovers_the_selected_draft_after_storage_failure(self):
+        release_id = self.store.publish(self.observation)
+        blocked = self.output / "2026-11-21"
+        self.output.mkdir()
+        blocked.touch()
+
+        failed = self.run_slot()
+        self.assertEqual(failed.returncode, 1, failed.stderr)
+        (slot,) = self.slot_audit()["days"][0]["scheduled_runs"]
+        self.assertEqual(slot["error"], "editorial draft could not be retained")
+
+        self.store.withdraw(self.observation["evidence_id"], "fixture withdrawal")
+        blocked.unlink()
+        recovered = self.run_slot()
+        self.assertEqual(recovered.returncode, 0, recovered.stderr)
+        day = self.slot_audit()["days"][0]
+        self.assertEqual(day["status"], "story")
+        (slot,) = day["scheduled_runs"]
+        (draft,) = day["drafts"]
+        self.assertEqual(slot["attempts"][0]["error"], "editorial draft could not be retained")
+        self.assertEqual(slot["draft_revision"], draft["draft_revision"])
+        self.assertEqual(draft["release"]["release_id"], release_id)
+        self.assertEqual(draft["story"]["claims"][0]["value"], "37.625000000001")
+
+    def test_interrupted_outcome_write_reconciles_the_retained_draft(self):
+        crash_before_commit = """
+import json
+import os
+from pathlib import Path
+import sys
+
+from fastest_delivery.run_slot import main
+
+
+def stop_before_outcome(event, args):
+    if event == "os.rename":
+        source, destination, *_ = args
+        if Path(destination).suffix == ".json" and "draft_revision" in json.loads(Path(source).read_bytes()):
+            os._exit(99)
+
+
+sys.addaudithook(stop_before_outcome)
+main(sys.argv[1:])
+"""
+        interrupted = self.run_slot(entrypoint=("-c", crash_before_commit))
+        self.assertEqual(interrupted.returncode, 99, interrupted.stderr)
+        (draft,) = (self.output / "2026-11-21").glob("*.json")
+        self.assertIn("scheduled_run_unreported:2026-11-21", self.slot_audit()["gaps"])
+
+        self.store.publish(self.observation)
+        recovered = self.run_slot()
+        self.assertEqual(recovered.returncode, 0, recovered.stderr)
+        (slot,) = self.slot_audit()["days"][0]["scheduled_runs"]
+        self.assertEqual(slot["draft_revision"], draft.stem)
+        self.assertEqual(len(slot["attempts"]), 1)
+        self.assertTrue(slot["attempts"][0]["reconciled_at"])
+
+    def test_new_live_slot_cannot_be_backdated(self):
+        result = self.run_slot("--mode", "live", "--scheduled-at", "2020-01-01T00:30:00+08:00")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("today's Asia/Shanghai editorial date", result.stderr)
+        self.assertFalse(list((self.output.parent / "scheduler").rglob("*.json")))
+
     def test_draft_pins_verified_numeric_claim_and_attribution(self):
         release_id = self.store.publish(self.observation)
         path, package = self.draft("--locale", "zh-CN")
