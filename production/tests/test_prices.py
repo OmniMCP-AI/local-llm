@@ -134,6 +134,137 @@ class PriceTest(unittest.TestCase):
                     self.assertIn(value, artifact)
                 self.assertNotIn("illustrative-authorization-file", artifact)
 
+    def test_recurring_feed_replays_and_recovers_without_filling_history_gaps(self):
+        from fastest_prices.refresh import register, refresh
+
+        def offer(event_id, version, observed_at, amount, expires_at):
+            quote = deepcopy(self.fixture["captures"][2]["observations"][0])
+            quote.update(price=amount, observed_at=observed_at, expires_at=expires_at)
+            return {"id": event_id, "version": version, "offer": quote}
+
+        original = offer("nov-01", 2, "2026-11-01T12:00:00Z", "240.00", "2026-11-02T00:00:00Z")
+        correction = offer("nov-01", 3, "2026-11-01T12:00:00Z", "241.00", "2026-11-02T00:00:00Z")
+        renewed = offer("nov-04", 1, "2026-11-04T12:00:00Z", "225.00", "2026-11-06T00:00:00Z")
+        self.store.approve(self.cohort)
+        key = self.cohort["id"]
+        register(self.store, key, {
+            "url": "https://seller.example.test/reviewed-prices",
+            "minimum_interval_seconds": 300,
+            "max_pages": 3,
+        })
+
+        def deliver(day, steps):
+            expected = iter(steps)
+
+            def fetch_page(cursor):
+                expected_cursor, outcome = next(expected)
+                self.assertEqual(cursor, expected_cursor)
+                if isinstance(outcome, Exception):
+                    raise outcome
+                return outcome
+
+            result = refresh(self.store, key, fetch_page, checked_at=f"2026-11-{day:02}T13:00:00Z")
+            self.assertEqual(list(expected), [])
+            return result
+
+        def page(cursor, complete, *rows):
+            return {"cursor": cursor, "complete": complete, "observations": list(rows)}
+
+        def release(day):
+            release_id = self.store.publish(key, "2026-11-01", f"2026-11-{day:02}")
+            result = json.loads(self.store.artifact(release_id, "prices.json"))
+            return result, self.store.artifact(release_id, "prices.html")
+
+        first = deliver(1, [(None, page("one", True, original, original))])
+        self.assertEqual(first["status"], "success")
+        self.assertEqual(first["observations_recorded"], 1)
+        before, _ = release(1)
+        self.assertEqual(before["offers"][0]["availability"], "available")
+
+        interrupted = deliver(2, [
+            ("one", page("partial", False, correction)),
+            ("partial", OSError("fixture connection interrupted")),
+        ])
+        self.assertEqual(interrupted["status"], "incomplete")
+        pending, html = release(2)
+        self.assertEqual(pending["adapter_status"], "incomplete")
+        self.assertEqual(pending["last_success_at"], "2026-11-01T13:00:00Z")
+        self.assertEqual(pending["offers"][0]["price"], "240.00")
+        self.assertEqual(pending["offers"][0]["availability"], "expired")
+        self.assertEqual(pending["days"][1]["status"], "capture_incomplete")
+        self.assertIn("Capture incomplete", html)
+        self.assertIn("Expired", html)
+
+        recovered = deliver(4, [
+            ("one", page("partial", False, correction)),
+            ("partial", page("four", True, original, renewed)),
+        ])
+        self.assertEqual(recovered["status"], "success")
+        self.assertEqual(recovered["observations_recorded"], 2)
+        current, html = release(4)
+        self.assertEqual(current["adapter_status"], "fresh")
+        self.assertEqual([row["status"] for row in current["days"]], [
+            "observed", "capture_incomplete", "not_checked", "observed",
+        ])
+        self.assertEqual([row["price"] for row in current["offers"]], ["241.00", "225.00"])
+        self.assertEqual([row["availability"] for row in current["offers"]], ["expired", "available"])
+        self.assertIn('<circle cx="30.00"', html)
+        self.assertIn('<circle cx="610.00"', html)
+        self.assertEqual(html.count("<circle "), 2)
+        self.assertEqual(self.store.read(before["release_id"]), before)
+        self.assertEqual(self.store.read(pending["release_id"]), pending)
+
+        repeated = deliver(5, [("four", page("five", True, original, correction, renewed))])
+        self.assertEqual(repeated["observations_recorded"], 0)
+        older = offer("nov-01", 1, "2026-11-01T12:00:00Z", "234.00", "2026-11-02T00:00:00Z")
+        self.assertEqual(deliver(6, [("five", page("six", True, older))])["observations_recorded"], 1)
+        caught_up, _ = release(6)
+        self.assertEqual([row["price"] for row in caught_up["offers"]], ["241.00", "225.00"])
+        stale, _ = release(9)
+        self.assertEqual(stale["adapter_status"], "stale")
+        self.assertEqual(stale["offers"][-1]["availability"], "expired")
+
+    def test_recurring_feed_checks_rights_and_persists_quota_and_retry_after(self):
+        from fastest_prices.refresh import RateLimited, register, refresh
+
+        key = self.cohort["id"]
+        config = {
+            "url": "https://seller.example.test/reviewed-prices",
+            "minimum_interval_seconds": 300,
+            "max_pages": 1,
+        }
+        with self.assertRaisesRegex(PriceError, "approval is missing"):
+            register(self.store, key, config)
+        self.store.approve(self.cohort)
+        register(self.store, key, config)
+        with self.assertRaisesRegex(PriceError, "authorized observations"):
+            refresh(self.store, key)
+
+        def partial(cursor):
+            self.assertIsNone(cursor)
+            return {"cursor": "page-two", "complete": False, "observations": []}
+
+        def limited(cursor):
+            self.assertIsNone(cursor)
+            raise RateLimited("3600")
+
+        def unexpected(cursor):
+            self.fail("A deferred or denied refresh contacted the feed")
+
+        quota = refresh(self.store, key, partial, checked_at="2026-11-01T13:00:00Z")
+        self.assertEqual((quota["status"], quota["reason"]), ("incomplete", "request_quota"))
+        self.assertEqual(
+            refresh(self.store, key, unexpected, checked_at="2026-11-01T13:01:00Z")["status"], "deferred",
+        )
+        backoff = refresh(self.store, key, limited, checked_at="2026-11-01T13:05:00Z")
+        self.assertEqual((backoff["status"], backoff["reason"]), ("failed", "rate_limited"))
+        self.assertEqual(
+            refresh(self.store, key, unexpected, checked_at="2026-11-01T14:04:00Z")["status"], "deferred",
+        )
+        self.store.withdraw(key, "fixture withdrawal")
+        with self.assertRaisesRegex(PriceError, "withdrawn"):
+            refresh(self.store, key, unexpected, checked_at="2026-11-01T14:05:00Z")
+
     def test_seller_day_dedup_and_threshold_use_comparable_confirmed_offers(self):
         self.cohort["source_type"] = "feed"
         self.cohort["seller_aliases"]["Example B"] = "example-seller-b"

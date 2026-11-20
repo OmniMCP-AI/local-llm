@@ -8,11 +8,13 @@ from .validation import PriceError
 
 
 METHOD = "seller-day-landed-asking-v1"
+REFRESH_METHOD = "seller-day-landed-asking-v2"
 
 DAY_LABELS = {
     "observed": "Observed",
     "no_comparable_offer": "No comparable offer",
     "capture_failed": "Capture failed",
+    "capture_incomplete": "Capture incomplete",
     "not_checked": "Not checked",
 }
 
@@ -36,12 +38,31 @@ def _landed(offer):
     return total
 
 
-def eligible_offer(offer):
+def _comparable_offer(offer):
     return (
         offer["kind"] == "asking" and offer["stock"] == "in_stock"
         and offer["confirmation"] == "seller_confirmed" and offer["discount"] == "unconditional"
         and offer["landed_price"] is not None
     )
+
+
+def eligible_offer(offer):
+    return _comparable_offer(offer) and offer.get("availability", "available") == "available"
+
+
+def _availability(offer, as_of, feed_status):
+    expiry = offer.get("expires_at")
+    if expiry and date.fromisoformat(expiry[:10]) <= as_of:
+        return "expired"
+    if not offer["latest_for_listing"]:
+        return "historical"
+    if not expiry or not _comparable_offer(offer):
+        return "unavailable"
+    if feed_status == "stale" or offer["freshness"] == "stale":
+        return "stale"
+    if feed_status != "fresh":
+        return "incomplete"
+    return "available"
 
 
 def _quartile(values, index):
@@ -70,7 +91,8 @@ def _sampling(values, seller_count, minimums, allowed):
 
 
 def build_result(snapshot):
-    if snapshot["method"] != METHOD:
+    recurring = snapshot["method"] == REFRESH_METHOD
+    if snapshot["method"] not in (METHOD, REFRESH_METHOD):
         raise PriceError(f"Unsupported price cohort method: {snapshot['method']}")
     identity = {
         "result_type": "regional-price-cohort",
@@ -99,6 +121,10 @@ def build_result(snapshot):
     if last_success_age is not None:
         freshness = "stale" if last_success_age > stale_after else "fresh"
 
+    last_attempt = snapshot["captures"][-1]["status"] if captures else None
+    if recurring and freshness != "stale" and last_attempt in {"failed", "incomplete"}:
+        freshness = last_attempt
+
     offers_by_day = defaultdict(list)
     comparable_days = set()
     best_quotes = {}
@@ -117,7 +143,7 @@ def build_result(snapshot):
         offers_by_day[day].append(offer)
         # The database orders the deduplicated rows by observation day.
         latest[(offer["seller"], offer["listing_id"], offer["kind"])] = offer
-        if eligible_offer(offer):
+        if _comparable_offer(offer):
             comparable_days.add(day)
             if allowed:
                 key = (day, offer["seller"])
@@ -127,6 +153,11 @@ def build_result(snapshot):
 
     for offer in latest.values():
         offer["latest_for_listing"] = True
+
+    if recurring:
+        for offer in snapshot["offers"]:
+            offer.setdefault("expires_at", None)
+            offer["availability"] = _availability(offer, as_of, freshness)
 
     values_by_day = defaultdict(list)
     for (day, seller), (price, offer) in best_quotes.items():
@@ -141,7 +172,9 @@ def build_result(snapshot):
         elif day in successes or offers_by_day[day]:
             state = "no_comparable_offer"
         else:
-            state = "capture_failed" if captures.get(day) == "failed" else "not_checked"
+            state = {
+                "failed": "capture_failed", "incomplete": "capture_incomplete",
+            }.get(captures.get(day), "not_checked")
         days.append({
             "date": day,
             "status": state,
@@ -161,7 +194,7 @@ def build_result(snapshot):
         "as_of": snapshot["as_of"],
         "last_success_at": last_success,
         "last_success_age_days": last_success_age,
-        "last_attempt_status": snapshot["captures"][-1]["status"] if captures else None,
+        "last_attempt_status": last_attempt,
         "adapter_status": freshness,
         "sampling": _sampling(
             [price for price, _ in best_quotes.values()],

@@ -6,7 +6,7 @@ from hashlib import sha256
 from html import escape
 import json
 
-from .result import DAY_LABELS, RANGE_LABELS
+from .result import DAY_LABELS, RANGE_LABELS, REFRESH_METHOD
 
 
 ARTIFACT_NAMES = ("prices.md", "prices.html", "prices.json")
@@ -28,6 +28,7 @@ def _charge(charge):
 
 
 def _tables(result):
+    recurring = result["method"] == REFRESH_METHOD
     offers = [
         (
             offer["observed_at"], offer["captured_at"], offer["seller"], offer["listing_id"],
@@ -35,6 +36,7 @@ def _tables(result):
             f"{offer['price']} {offer['currency']}", _charge(offer["tax"]), _charge(offer["shipping"]),
             _value(offer["landed_price"]), f"{offer['age_days']} days ({offer['freshness']})",
             "Latest" if offer["latest_for_listing"] else "Earlier",
+            *((_value(offer.get("expires_at")), _section_value(offer["availability"])) if recurring else ()),
             offer["source_locator"], offer["review"]["decision_id"],
         )
         for offer in result["offers"]
@@ -49,8 +51,10 @@ def _tables(result):
     return (
         ("Dated quotes", (
             "Observed at (UTC)", "Captured at (UTC)", "Seller", "Listing", "Price kind",
-            "Confirmation", "Stock", "Discount eligibility", "Original quote", "Tax", "Shipping",
+            "Confirmation", "Observed stock" if recurring else "Stock",
+            "Discount eligibility", "Original quote", "Tax", "Shipping",
             f"Landed price ({result['currency']})", "Age at release", "Listing history",
+            *(("Offer expires (UTC)", "Availability at release") if recurring else ()),
             "Source locator", "Review decision",
         ), offers),
         ("Daily coverage", ("Date (UTC)", "Status", "Last check", "Quotes", "Samples"), coverage),
