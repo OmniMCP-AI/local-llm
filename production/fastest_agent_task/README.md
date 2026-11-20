@@ -18,13 +18,39 @@ The demo executes scripted turns against real fixture reads. Its timings are ill
 
 ## Run the controlled task on an owned host
 
+From `production`, use the included adapter with the pinned `llama-server` and
+the first GGUF shard. Keep the second shard beside the first. Choose a short,
+new destination under an operator-private parent to accommodate the Unix
+socket path limit. Use the hardware, OS build, backend and device from the host
+you are measuring. The values below illustrate the Apple M4 invocation.
+
+```sh
+python3 -B -m fastest_agent_task.measure /path/to/private/run \
+  /path/to/llama-server \
+  /path/to/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf \
+  --hardware "Apple M4, 24 GiB" --os "macOS 27.2.1 (26B131)" \
+  --backend Metal --device Metal
+```
+
+The adapter verifies both shard sizes and digests, checks the runtime revision,
+records the binary and adapter digests, and launches a single server on an
+owner-only Unix socket. It runs one warmup per context and follows the pinned trial order. It
+erases the server's KV slot before each attempt and closes the server when
+finished. It writes private draft records, actual server and host logs, raw
+model turns and the manifest digest in `review-pending.json`. Check the
+offload and KV resets in the server log. The plan requires an idle host. Use the
+ambient load snapshots to determine eligibility before approving measurements.
+
 1. Save the plan and use its exact llama.cpp source revision and both GGUF shards from the [text pilot](../fastest_text/README.md). Verify the byte lengths and digests. Use one owned host and keep the runtime binary and adapter unchanged throughout the comparison. Record the hardware configuration, OS build and driver details in the private execution packet.
 2. Use a local adapter to drive chat turns under the plan's settings. The opening user message is the pinned prompt, a newline, and `Allowed tool requests: ` followed by the context's compact JSON list. Send only this prompt and the permitted tool results to the model. Each reply must be a single JSON object with unique keys. For a tool request, pass the exact typed pair to `fastest_agent_task.harness.read_tool(context_id, tool, resource)`, and append the returned JSON as a user turn. The CLI `tool` command exposes the same fixture reads for inspection. If using it during a timed trial, use the same invocation method in both contexts and include its overhead.
 3. Stop on acceptance, a final candidate, a denied call, invalid JSON, runtime error, or the first reached budget. A tool request consumes a call from the attempt's budget, and generated tokens are counted cumulatively across model turns. The capped output has zero separate reasoning tokens. A denial terminates the attempt. Retain denied requests privately and summarize them with the `tool_denied` outcome. Only successful allowlisted reads enter the public ledger.
 4. Use the plan's warmup, attempt and trial order. Measure with a monotonic clock from submission of the initial task message until grading returns or the attempt aborts. Include runtime, tool and grading work. Exclude model startup, warmup, KV resets and waiting between attempts. Trial totals sum every recorded attempt, including failures and retries.
 5. Keep raw turns, clocks, token counts, successful reads, tool denials, fixture/model/build hashes, adapter source and effective settings in the privately retained packet. Give the reviewed ledger its SHA-256 and an opaque evidence UUID. An authorized reviewer checks the actual packet against the context fingerprint, confirms completeness or a partial prefix, and clears every submitted field. Publish only data you own and have approved for release. Enter hardware models, memory and OS build, keeping hostnames, serial numbers, usernames and paths in the private packet.
 
-Use the following record fields. Supply measured values throughout. The context SHA-256 comes from the matching measured `plan` context.
+To publish, the authorized reviewer takes the evidence ID and retained manifest
+digest from `review-pending.json`, verifies the matching packet, and adds the
+actual release decision to a copy of each draft. Use the following fields and
+supply measured values throughout. The context SHA-256 comes from the matching measured `plan` context.
 
 | Field | Required value |
 | --- | --- |

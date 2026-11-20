@@ -376,9 +376,10 @@ synthetic observations are ineligible.
 ## Controlled agent-task comparison
 
 The [inventory agent task](fastest_agent_task/README.md) compares time and success
-for one pinned task under two read-only tool policies. It builds a synthetic demo
-or a measured release from reviewed operator-owned records, with matching HTML,
-Markdown, JSON and a checksum manifest.
+for one pinned task under two read-only tool policies. Run the local inference
+adapter on an owned host to collect a private evidence packet. Build a synthetic
+demo or a measured release from reviewed operator-owned records, with matching
+HTML, Markdown, JSON and a checksum manifest.
 
 ## Compare setups against goals
 

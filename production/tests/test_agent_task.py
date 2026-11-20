@@ -133,3 +133,55 @@ class AgentTaskTest(unittest.TestCase):
                 result = self.cli("build", str(out), "--record", str(submitted))
                 self.assertEqual(result.returncode, 2, result.stderr)
                 self.assertFalse(out.exists())
+
+
+class AgentTaskMeasurementTest(unittest.TestCase):
+    def test_split_attempt_reads_two_pages_and_charges_all_turns(self):
+        from fastest_agent_task.harness import plan
+        from fastest_agent_task.measure import run_attempt
+
+        protocol = plan()
+        context = next(context for context in protocol["contexts"] if context["id"] == "split")
+        exchanges = [
+            ('{"tool":"read_page","resource":"a"}', 13),
+            ('{"tool":"read_page","resource":"b"}', 13),
+            ('{"open_units":17}', 7),
+        ]
+        requests = []
+
+        def completion(request, timeout):
+            requests.append(request)
+            content, count = exchanges.pop(0)
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"content": content}}],
+                "usage": {"completion_tokens": count},
+            }
+
+        measured = run_attempt(completion, context, 1, 1, protocol["settings"])
+        self.assertEqual(measured["outcome"], "accepted")
+        self.assertEqual(measured["attempt"]["generated_tokens"], 33)
+        self.assertEqual(measured["attempt"]["answer"], {"open_units": 17})
+        self.assertEqual([request["max_tokens"] for request in requests], [128, 115, 102])
+        self.assertTrue(all(not request["cache_prompt"] for request in requests))
+        self.assertEqual(json.loads(requests[-1]["messages"][2]["content"])["rows"][0]["units"], 8)
+        self.assertEqual(json.loads(requests[-1]["messages"][4]["content"])["rows"][0]["units"], 9)
+
+    def test_denied_request_ends_attempt_and_stays_out_of_public_ledger(self):
+        from fastest_agent_task.harness import plan
+        from fastest_agent_task.measure import run_attempt
+
+        protocol = plan()
+        context = next(context for context in protocol["contexts"] if context["id"] == "bundle")
+        denied = {"tool": "read_page", "resource": "a"}
+
+        def completion(request, timeout):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(denied)}}],
+                "usage": {"completion_tokens": 13},
+            }
+
+        measured = run_attempt(completion, context, 1, 1, protocol["settings"])
+        self.assertEqual(measured["outcome"], "tool_denied")
+        self.assertEqual(measured["attempt"]["tool_reads"], [])
+        self.assertIsNone(measured["attempt"]["answer"])
+        self.assertEqual([turn["denied_tool"] for turn in measured["turns"]], [denied])
