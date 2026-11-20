@@ -9,6 +9,12 @@ Compare an existing local AI machine, a hardware upgrade and a cloud service for
 - [Twenty comparison methods](docs/youtube-comparison-methods.md) connects purchase, inference, evaluation and ownership questions to timestamped research and the milestones that can support them.
 - [Platform research](docs/Local-AI-Comparison-Platform/Local-AI-Comparison-Platform.md), [video research inventory and seed data](docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/README.md), and [domain research](docs/AI-Hardware-Project-Domains/AI-Hardware-Project-Domains.md) are the source notes.
 
+## Local services and pilots
+
+- Publish and inspect a versioned PostgreSQL benchmark release. The quickstart includes a labeled synthetic observation. [Release service](production/README.md)
+- Prepare redacted case cards from consented interviews and hand them off to the buyer pilot. [Case intake](research-pilot/README.md)
+- Generate a dated editorial proposal from an approved release, then approve and export a channel-ready X package. [Editorial drafts](production/fastest_editorial/README.md) · [X delivery](production/fastest_delivery/README.md)
+
 ## fastest.ai prototype
 
 In `opendesign/mockups/llm-observatory`, run `npm ci` and `npm run build`, then open the generated `fastest-ai.html` preview. From **Wiki → Research library**, filter articles, posts, guides and video notes by use case and inspect the matching test conditions. The standalone preview uses browser preferences on a first visit. Both 简体中文 (CNY) and 繁體中文 (TWD) are available, and the display currency can be selected independently.
