@@ -1,0 +1,66 @@
+{
+  "repository": "AlexsJones/llmfit",
+  "default_branch": "main",
+  "head_commit": "26450cccaf3a3f14b1822875f2473847a744a718",
+  "verified_Asia_Shanghai": "2026-11-20T21:50:55.958610+08:00",
+  "read_method": "cursor-github get_repository/get_branch/get_git_tree/get_file_contents;no clone",
+  "sources": [
+    {
+      "purpose": "hardware-profileJSONschema",
+      "path": "llmfit-core/data/hardware/schema.json",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/hardware/schema.json"
+    },
+    {
+      "purpose": "hardwareprofiledocs",
+      "path": "llmfit-core/data/hardware/README.md",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/hardware/README.md"
+    },
+    {
+      "purpose": "hardwareprofileRusttypes",
+      "path": "llmfit-core/src/hwprofile.rs",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hwprofile.rs"
+    },
+    {
+      "purpose": "benchmarkandHardwareInfoRusttypes",
+      "path": "llmfit-core/src/benchmarks.rs",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/benchmarks.rs"
+    },
+    {
+      "purpose": "communityJSONschema",
+      "path": "llmfit-core/data/community/schema.json",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/community/schema.json"
+    },
+    {
+      "purpose": "communitydocs",
+      "path": "llmfit-core/data/community/README.md",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/community/README.md"
+    },
+    {
+      "purpose": "modelcatalogtypes/enums",
+      "path": "llmfit-core/src/models.rs",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/models.rs"
+    },
+    {
+      "purpose": "qualityrubricnotresulttable",
+      "path": "llmfit-core/data/benchmarks.yaml",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/benchmarks.yaml"
+    },
+    {
+      "purpose": "rolebaselinesnotperGPUruns",
+      "path": "llmfit-core/data/baselines.json",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/data/baselines.json"
+    },
+    {
+      "purpose": "MITlicense",
+      "path": "LICENSE",
+      "permalink": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/LICENSE"
+    }
+  ],
+  "catalog_metadata_only": {
+    "path": "llmfit-core/data/hf_models.json",
+    "git_blob_sha": "c91df9db4d2dddb08c8c432999c1da85947dc04a",
+    "bytes": 17293734,
+    "downloaded_or_imported": false
+  },
+  "cache_or_community_resultdata_imported": false
+}

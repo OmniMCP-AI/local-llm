@@ -1,0 +1,1087 @@
+[
+  {
+    "id": "V001-P001",
+    "tokSOut": 53.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "Arc A770"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=301s;see externalresearchrecord V001-P001"
+  },
+  {
+    "id": "V001-P002",
+    "tokSOut": 97.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RTX5060Ti"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=311s;see externalresearchrecord V001-P002"
+  },
+  {
+    "id": "V001-P003",
+    "tokSOut": 119.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RX9070"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=351s;see externalresearchrecord V001-P003"
+  },
+  {
+    "id": "V001-P004",
+    "tokSOut": 131.0,
+    "engineName": "llama.cpp community scoreboard",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=375s;see externalresearchrecord V001-P004"
+  },
+  {
+    "id": "V001-P005",
+    "tokSOut": 81.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RTX3060"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=399s;see externalresearchrecord V001-P005"
+  },
+  {
+    "id": "V001-P006",
+    "tokSOut": 72.0,
+    "engineName": "llama.cpp community scoreboard",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=404s;see externalresearchrecord V001-P006"
+  },
+  {
+    "id": "V001-P007",
+    "tokSOut": 191.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RX7900XTX"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=441s;see externalresearchrecord V001-P007"
+  },
+  {
+    "id": "V001-P008",
+    "tokSOut": 172.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=464s;see externalresearchrecord V001-P008"
+  },
+  {
+    "id": "V001-P009",
+    "tokSOut": 190.0,
+    "engineName": "llama.cpp community scoreboard",
+    "hardware": {
+      "gpuName": "RTX4090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=483s;see externalresearchrecord V001-P009"
+  },
+  {
+    "id": "V001-P010",
+    "tokSOut": 192.0,
+    "engineName": "llama.cpp community scoreboard",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=500s;see externalresearchrecord V001-P010"
+  },
+  {
+    "id": "V001-P021",
+    "ttftMs": 31000.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=708s;see externalresearchrecord V001-P021"
+  },
+  {
+    "id": "V001-P022",
+    "ttftMs": 13000.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX4090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=712s;see externalresearchrecord V001-P022"
+  },
+  {
+    "id": "V001-P023",
+    "ttftMs": 40000.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RX7900XTX"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=722s;see externalresearchrecord V001-P023"
+  },
+  {
+    "id": "V001-P024",
+    "tokSOut": 40.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=819s;see externalresearchrecord V001-P024"
+  },
+  {
+    "id": "V001-P025",
+    "tokSOut": 37.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=825s;see externalresearchrecord V001-P025"
+  },
+  {
+    "id": "V001-P026",
+    "tokSOut": 34.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=825s;see externalresearchrecord V001-P026"
+  },
+  {
+    "id": "V001-P027",
+    "tokSOut": 36.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RX7900XTX"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=835s;see externalresearchrecord V001-P027"
+  },
+  {
+    "id": "V001-P028",
+    "tokSOut": 46.0,
+    "quantization": "4bit in setup discussion",
+    "hardware": {
+      "gpuName": "RTX4090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=857s;see externalresearchrecord V001-P028"
+  },
+  {
+    "id": "V001-P029",
+    "tokSOut": 75.0,
+    "quantization": "4bit in setup discussion",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=870s;see externalresearchrecord V001-P029"
+  },
+  {
+    "id": "V001-P033",
+    "tokSOut": 25.0,
+    "quantization": "5bit",
+    "hardware": {
+      "gpuName": "R9700"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=915s;see externalresearchrecord V001-P033"
+  },
+  {
+    "id": "V001-P035",
+    "tokSOut": 22.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=2L_RB-XqisE&t=962s;see externalresearchrecord V001-P035"
+  },
+  {
+    "id": "V002-P001",
+    "tokSOut": 60.0,
+    "quantization": "AWQ INT4",
+    "engineName": "vLLM",
+    "hardware": {
+      "gpuName": "CMP170HX/GA100"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=J58FXpo3L4U&t=393s;see externalresearchrecord V002-P001"
+  },
+  {
+    "id": "V002-P002",
+    "tokSOut": 151.0,
+    "quantization": "AWQ INT4",
+    "engineName": "vLLM",
+    "hardware": {
+      "gpuName": "CMP170HX/GA100"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=J58FXpo3L4U&t=396s;see externalresearchrecord V002-P002"
+  },
+  {
+    "id": "V002-P004",
+    "tokSOut": 180.0,
+    "quantization": "AWQ INT4",
+    "engineName": "vLLM",
+    "hardware": {
+      "gpuName": "CMP170HX/GA100"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=J58FXpo3L4U&t=404s;see externalresearchrecord V002-P004"
+  },
+  {
+    "id": "V002-P011",
+    "tokSOut": 40.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=J58FXpo3L4U&t=486s;see externalresearchrecord V002-P011"
+  },
+  {
+    "id": "V003-P001",
+    "tokSOut": 31.0,
+    "engineName": "community llama.cpp fork",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=351s;see externalresearchrecord V003-P001"
+  },
+  {
+    "id": "V003-P002",
+    "tokSOut": 23.0,
+    "engineName": "community fork",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=383s;see externalresearchrecord V003-P002"
+  },
+  {
+    "id": "V003-P003",
+    "tokSOut": 17.5,
+    "engineName": "upstream llama.cpp",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=412s;see externalresearchrecord V003-P003"
+  },
+  {
+    "id": "V003-P004",
+    "tokSOut": 32.5,
+    "engineName": "patched llama.cpp",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=417s;see externalresearchrecord V003-P004"
+  },
+  {
+    "id": "V003-P009",
+    "tokSOut": 43.0,
+    "hardware": {
+      "gpuName": "AppleintegratedGPU;chip notretied here"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=700s;see externalresearchrecord V003-P009"
+  },
+  {
+    "id": "V003-P014",
+    "tokSOut": 87.0,
+    "engineName": "llama.cpp",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=968s;see externalresearchrecord V003-P014"
+  },
+  {
+    "id": "V003-P015",
+    "tokSOut": 194.0,
+    "hardware": {
+      "gpuName": "RTX5090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1068s;see externalresearchrecord V003-P015"
+  },
+  {
+    "id": "V003-P016",
+    "tokSOut": 56.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1174s;see externalresearchrecord V003-P016"
+  },
+  {
+    "id": "V003-P017",
+    "tokSOut": 5.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1221s;see externalresearchrecord V003-P017"
+  },
+  {
+    "id": "V005-P011",
+    "tokSOut": 18.0,
+    "engineName": "Adamant / Strata",
+    "hardware": {
+      "gpuName": "RTX4090",
+      "cpu": "Four-core Xeon;exact SKU not reported"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=GW56S3LVb2g&t=270s;see externalresearchrecord V005-P011"
+  },
+  {
+    "id": "V007-P001",
+    "tokSOut": 75.0,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "hardware": {
+      "gpuName": "RTX5090",
+      "gpuCount": 1,
+      "vramGb": 32.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=249s;see externalresearchrecord V007-P001"
+  },
+  {
+    "id": "V007-P002",
+    "tokSOut": 22.5,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "hardware": {
+      "gpuName": "RTX5060Ti",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=253s;see externalresearchrecord V007-P002"
+  },
+  {
+    "id": "V007-P019",
+    "tokSOut": 282.0,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "hardware": {
+      "gpuName": "RTX5090",
+      "gpuCount": 1,
+      "vramGb": 32.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=908s;see externalresearchrecord V007-P019"
+  },
+  {
+    "id": "V007-P020",
+    "tokSOut": 204.0,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=912s;see externalresearchrecord V007-P020"
+  },
+  {
+    "id": "V007-P021",
+    "tokSOut": 0.38,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=982s;see externalresearchrecord V007-P021"
+  },
+  {
+    "id": "V007-P022",
+    "tokSOut": 11.6,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "hardware": {
+      "gpuName": "RTX4070Super"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=1020s;see externalresearchrecord V007-P022"
+  },
+  {
+    "id": "V007-P023",
+    "tokSOut": 20.9,
+    "engineName": "llama.cpp/vLLM context;individual runtime not always isolated",
+    "hardware": {
+      "gpuName": "RTX4070Super +RTX5060Ti"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=1028s;see externalresearchrecord V007-P023"
+  },
+  {
+    "id": "V012-P009",
+    "tokSOut": 120.0,
+    "engineName": "Basalt/Strata",
+    "hardware": {
+      "ramGb": 128,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTX5080",
+      "cpu": "Ryzen9 5950X",
+      "os": "windows"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=wC6jsOU4jII&t=669s;see externalresearchrecord V012-P009"
+  },
+  {
+    "id": "V018-P006",
+    "tokSOut": 99.7,
+    "hardware": {
+      "gpuName": "RTX5090D as captioned",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1PJGtLpYGOY&t=298s;see externalresearchrecord V018-P006"
+  },
+  {
+    "id": "V018-P007",
+    "tokSOut": 121.2,
+    "hardware": {
+      "gpuName": "RTX5090D as captioned",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1PJGtLpYGOY&t=300s;see externalresearchrecord V018-P007"
+  },
+  {
+    "id": "V018-P008",
+    "tokSOut": 91.7,
+    "hardware": {
+      "gpuName": "RTX4090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1PJGtLpYGOY&t=306s;see externalresearchrecord V018-P008"
+  },
+  {
+    "id": "V026-P001",
+    "tokSOut": 11.1,
+    "engineName": "ProjectMaya",
+    "hardware": {
+      "ramGb": 256,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "3060s (as captioned)",
+      "cpu": "E5 2696 V4;22cores44threads as narrated",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=GLXGqbNBq9s&t=16s;see externalresearchrecord V026-P001"
+  },
+  {
+    "id": "V013-P002",
+    "tokSOut": 131.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=YcosZPh-kcI&t=345s;see externalresearchrecord V013-P002"
+  },
+  {
+    "id": "V013-P005",
+    "tokSOut": 32.0,
+    "hardware": {
+      "gpuName": "RTX5090",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=YcosZPh-kcI&t=475s;see externalresearchrecord V013-P005"
+  },
+  {
+    "id": "V013-P006",
+    "ttftMs": 37000.0,
+    "hardware": {
+      "gpuName": "RTX5090",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=YcosZPh-kcI&t=475s;see externalresearchrecord V013-P006"
+  },
+  {
+    "id": "V021-P002",
+    "tokSOut": 40.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=229s;see externalresearchrecord V021-P002"
+  },
+  {
+    "id": "V021-P010",
+    "ttftMs": 1800000.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=343s;see externalresearchrecord V021-P010"
+  },
+  {
+    "id": "V021-P013",
+    "tokSOut": 63.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=610s;see externalresearchrecord V021-P013"
+  },
+  {
+    "id": "V021-P018",
+    "tokSOut": 155.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=692s;see externalresearchrecord V021-P018"
+  },
+  {
+    "id": "V021-P019",
+    "ttftMs": 120.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=715s;see externalresearchrecord V021-P019"
+  },
+  {
+    "id": "V021-P021",
+    "tokSOut": 41.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "hardware": {
+      "gpuName": "RX7900XTX"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=746s;see externalresearchrecord V021-P021"
+  },
+  {
+    "id": "V021-P028",
+    "tokSOut": 20.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "hardware": {
+      "gpuName": "ArcProB70"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=854s;see externalresearchrecord V021-P028"
+  },
+  {
+    "id": "V021-P029",
+    "tokSOut": 23.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "hardware": {
+      "gpuName": "ArcProB70"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=857s;see externalresearchrecord V021-P029"
+  },
+  {
+    "id": "V021-P032",
+    "tokSOut": 38.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "hardware": {
+      "gpuName": "RTX5060Ti",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=954s;see externalresearchrecord V021-P032"
+  },
+  {
+    "id": "V021-P042",
+    "ttftMs": 690000.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=1113s;see externalresearchrecord V021-P042"
+  },
+  {
+    "id": "V021-P044",
+    "tokSOut": 12.0,
+    "engineName": "llama.cpp unless otherwise noted",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=1148s;see externalresearchrecord V021-P044"
+  },
+  {
+    "id": "V022-P003",
+    "tokSOut": 95.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=228s;see externalresearchrecord V022-P003"
+  },
+  {
+    "id": "V022-P007",
+    "tokSOut": 2.91,
+    "engineName": "Strata/derivatives unless indicated",
+    "hardware": {
+      "gpuName": "RTX2080"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=610s;see externalresearchrecord V022-P007"
+  },
+  {
+    "id": "V022-P012",
+    "tokSOut": 53.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1084s;see externalresearchrecord V022-P012"
+  },
+  {
+    "id": "V022-P019",
+    "tokSOut": 41.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "hardware": {
+      "ramGb": 192,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTX3090",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1214s;see externalresearchrecord V022-P019"
+  },
+  {
+    "id": "V022-P020",
+    "tokSOut": 33.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "hardware": {
+      "ramGb": 128,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTX3090",
+      "gpuCount": 1
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1231s;see externalresearchrecord V022-P020"
+  },
+  {
+    "id": "V022-P026",
+    "tokSOut": 40.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "hardware": {
+      "ramGb": 32,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTX4070Super",
+      "gpuCount": 1,
+      "vramGb": 12.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1781s;see externalresearchrecord V022-P026"
+  },
+  {
+    "id": "V022-P028",
+    "tokSOut": 80.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1813s;see externalresearchrecord V022-P028"
+  },
+  {
+    "id": "V022-P030",
+    "tokSOut": 26.0,
+    "engineName": "Strata/derivatives unless indicated",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=qW2E2ay47dw&t=1937s;see externalresearchrecord V022-P030"
+  },
+  {
+    "id": "V024-P006",
+    "tokSOut": 182.0,
+    "engineName": "Strata",
+    "hardware": {
+      "gpuName": "RTX5090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=09GB4LtXUok&t=203s;see externalresearchrecord V024-P006"
+  },
+  {
+    "id": "V025-P001",
+    "tokSOut": 16.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=557s;see externalresearchrecord V025-P001"
+  },
+  {
+    "id": "V025-P002",
+    "tokSOut": 57.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "RTX3060",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=599s;see externalresearchrecord V025-P002"
+  },
+  {
+    "id": "V025-P003",
+    "tokSOut": 43.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=607s;see externalresearchrecord V025-P003"
+  },
+  {
+    "id": "V025-P006",
+    "tokSOut": 76.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "RTX5060Ti",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=675s;see externalresearchrecord V025-P006"
+  },
+  {
+    "id": "V025-P007",
+    "tokSOut": 43.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=700s;see externalresearchrecord V025-P007"
+  },
+  {
+    "id": "V025-P008",
+    "tokSOut": 66.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=707s;see externalresearchrecord V025-P008"
+  },
+  {
+    "id": "V025-P009",
+    "tokSOut": 60.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "RTX2080Ti",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=750s;see externalresearchrecord V025-P009"
+  },
+  {
+    "id": "V025-P010",
+    "tokSOut": 30.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "RTX2080Ti modified",
+      "gpuCount": 1,
+      "vramGb": 22.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=789s;see externalresearchrecord V025-P010"
+  },
+  {
+    "id": "V025-P011",
+    "tokSOut": 63.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "RX7900XTX"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=820s;see externalresearchrecord V025-P011"
+  },
+  {
+    "id": "V025-P012",
+    "tokSOut": 42.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=854s;see externalresearchrecord V025-P012"
+  },
+  {
+    "id": "V025-P013",
+    "tokSOut": 53.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "ArcProB60"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=874s;see externalresearchrecord V025-P013"
+  },
+  {
+    "id": "V025-P014",
+    "tokSOut": 16.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "ArcProB60"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=877s;see externalresearchrecord V025-P014"
+  },
+  {
+    "id": "V025-P015",
+    "tokSOut": 12.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "TeslaP40"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=955s;see externalresearchrecord V025-P015"
+  },
+  {
+    "id": "V025-P016",
+    "tokSOut": 23.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "TeslaP40",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=962s;see externalresearchrecord V025-P016"
+  },
+  {
+    "id": "V025-P017",
+    "tokSOut": 35.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=992s;see externalresearchrecord V025-P017"
+  },
+  {
+    "id": "V025-P018",
+    "tokSOut": 49.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1003s;see externalresearchrecord V025-P018"
+  },
+  {
+    "id": "V025-P019",
+    "ttftMs": 690000.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1012s;see externalresearchrecord V025-P019"
+  },
+  {
+    "id": "V025-P020",
+    "tokSOut": 23.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "P100",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1023s;see externalresearchrecord V025-P020"
+  },
+  {
+    "id": "V025-P021",
+    "tokSOut": 48.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "TeslaV100"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1050s;see externalresearchrecord V025-P021"
+  },
+  {
+    "id": "V025-P022",
+    "tokSOut": 59.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "V100SXM2",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1092s;see externalresearchrecord V025-P022"
+  },
+  {
+    "id": "V025-P023",
+    "tokSOut": 48.0,
+    "engineName": "llama.cpp family unless patch specified",
+    "hardware": {
+      "gpuName": "AMDMI50",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1135s;see externalresearchrecord V025-P023"
+  },
+  {
+    "id": "V028-P007",
+    "ttftMs": 63000.0,
+    "engineName": "samecase",
+    "hardware": {
+      "gpuName": "DGXSpark;GPUcores notstated"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=574s;see externalresearchrecord V028-P007"
+  },
+  {
+    "id": "V028-P008",
+    "tokSOut": 31.0,
+    "hardware": {
+      "gpuName": "DGXSpark;GPUcores notstated"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=587s;see externalresearchrecord V028-P008"
+  },
+  {
+    "id": "V028-P009",
+    "tokSOut": 87.0,
+    "hardware": {
+      "gpuName": "DGXSpark;GPUcores notstated"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=592s;see externalresearchrecord V028-P009"
+  },
+  {
+    "id": "V028-P010",
+    "tokSOut": 131.0,
+    "hardware": {
+      "gpuName": "DGXSpark;GPUcores notstated"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=596s;see externalresearchrecord V028-P010"
+  },
+  {
+    "id": "V028-P011",
+    "tokSOut": 27.0,
+    "hardware": {
+      "gpuName": "StrixHalo"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=740s;see externalresearchrecord V028-P011"
+  },
+  {
+    "id": "V028-P016",
+    "tokSOut": 26.0,
+    "engineName": "0x0build as named",
+    "hardware": {
+      "ramGb": 256,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTX3090",
+      "gpuCount": 1,
+      "vramGb": 24.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=863s;see externalresearchrecord V028-P016"
+  },
+  {
+    "id": "V028-P020",
+    "tokSOut": 65.0,
+    "hardware": {
+      "ramGb": 512,
+      "hwClass": "DISCRETE_GPU",
+      "gpuName": "RTXPro6000",
+      "gpuCount": 1,
+      "vramGb": 96.0
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=968s;see externalresearchrecord V028-P020"
+  },
+  {
+    "id": "V028-P022",
+    "tokSOut": 236.0,
+    "hardware": {
+      "gpuCount": 4
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=1076s;see externalresearchrecord V028-P022"
+  },
+  {
+    "id": "V028-P023",
+    "tokSOut": 219.0,
+    "engineName": "communitysoftware",
+    "hardware": {
+      "gpuName": "V100",
+      "gpuCount": 4
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=1166s;see externalresearchrecord V028-P023"
+  },
+  {
+    "id": "V028-P024",
+    "tokSOut": 50.0,
+    "engineName": "communitypreviewROCm",
+    "hardware": {
+      "gpuName": "AMDMI50",
+      "gpuCount": 4
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=JPHT9AvoPSA&t=1203s;see externalresearchrecord V028-P024"
+  },
+  {
+    "id": "V029-P002",
+    "tokSOut": 28.0,
+    "engineName": "vLLMdiscussion;AutoRoundGPTQ",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=418s;see externalresearchrecord V029-P002"
+  },
+  {
+    "id": "V029-P006",
+    "tokSOut": 100.0,
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=472s;see externalresearchrecord V029-P006"
+  },
+  {
+    "id": "V029-P007",
+    "tokSOut": 45.0,
+    "engineName": "vLLMdiscussion",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=525s;see externalresearchrecord V029-P007"
+  },
+  {
+    "id": "V029-P021",
+    "tokSOut": 92.5,
+    "engineName": "same",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=802s;see externalresearchrecord V029-P021"
+  },
+  {
+    "id": "V029-P022",
+    "tokSOut": 114.0,
+    "engineName": "same",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=802s;see externalresearchrecord V029-P022"
+  },
+  {
+    "id": "V029-P025",
+    "tokSOut": 32.4,
+    "engineName": "same",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=853s;see externalresearchrecord V029-P025"
+  },
+  {
+    "id": "V029-P026",
+    "tokSOut": 74.0,
+    "engineName": "same",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=861s;see externalresearchrecord V029-P026"
+  },
+  {
+    "id": "V029-P028",
+    "tokSOut": 233.0,
+    "engineName": "Medusa2",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=902s;see externalresearchrecord V029-P028"
+  },
+  {
+    "id": "V029-P029",
+    "tokSOut": 128.0,
+    "engineName": "vLLM",
+    "hardware": {
+      "gpuName": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+      "gpuCount": 2
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=1xmOTSUpBL0&t=918s;see externalresearchrecord V029-P029"
+  },
+  {
+    "id": "V042-P001",
+    "tokSOut": 56.0,
+    "quantization": "1.58bit/ternary as discussed",
+    "engineName": "WebGPU",
+    "hardware": {
+      "gpuName": "RTX3090"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=DEPF8rAprS4&t=626s;see externalresearchrecord V042-P001"
+  },
+  {
+    "id": "V048-P001",
+    "ttftMs": 2900.0,
+    "engineName": "backend/settingsnotfullyspecified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=dnk_lPZ0Y-E&t=159s;see externalresearchrecord V048-P001"
+  },
+  {
+    "id": "V048-P002",
+    "ttftMs": 82000.0,
+    "engineName": "backend/settingsnotfullyspecified",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=dnk_lPZ0Y-E&t=163s;see externalresearchrecord V048-P002"
+  },
+  {
+    "id": "V059-P001",
+    "ttftMs": 2000.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra in cluster family;exactnode notidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=310s;see externalresearchrecord V059-P001"
+  },
+  {
+    "id": "V059-P002",
+    "tokSOut": 5.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra in cluster family;exactnode notidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=313s;see externalresearchrecord V059-P002"
+  },
+  {
+    "id": "V059-P003",
+    "ttftMs": 2000.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=394s;see externalresearchrecord V059-P003"
+  },
+  {
+    "id": "V059-P004",
+    "tokSOut": 5.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=396s;see externalresearchrecord V059-P004"
+  },
+  {
+    "id": "V059-P006",
+    "tokSOut": 5.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=411s;see externalresearchrecord V059-P006"
+  },
+  {
+    "id": "V059-P008",
+    "tokSOut": 9.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=612s;see externalresearchrecord V059-P008"
+  },
+  {
+    "id": "V059-P009",
+    "tokSOut": 22.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=671s;see externalresearchrecord V059-P009"
+  },
+  {
+    "id": "V059-P010",
+    "tokSOut": 15.5,
+    "engineName": "Exo/MLX;modeinconditions",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=796s;see externalresearchrecord V059-P010"
+  },
+  {
+    "id": "V059-P012",
+    "tokSOut": 25.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=823s;see externalresearchrecord V059-P012"
+  },
+  {
+    "id": "V059-P015",
+    "ttftMs": 3500.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=924s;see externalresearchrecord V059-P015"
+  },
+  {
+    "id": "V059-P016",
+    "tokSOut": 20.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "AppleM3Ultra cluster family;subsetnotidentified"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=926s;see externalresearchrecord V059-P016"
+  },
+  {
+    "id": "V059-P017",
+    "tokSOut": 24.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=938s;see externalresearchrecord V059-P017"
+  },
+  {
+    "id": "V059-P022",
+    "tokSOut": 50.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "hardware": {
+      "gpuName": "H200"
+    },
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1098s;see externalresearchrecord V059-P022"
+  },
+  {
+    "id": "V059-P023",
+    "tokSOut": 26.0,
+    "engineName": "Exo/MLX;modeinconditions",
+    "notes": "Video-caption reported claim,not independently verified. https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1112s;see externalresearchrecord V059-P023"
+  }
+]

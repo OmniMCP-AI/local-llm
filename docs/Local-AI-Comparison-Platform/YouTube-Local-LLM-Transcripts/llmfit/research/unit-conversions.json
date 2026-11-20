@@ -1,0 +1,128 @@
+[
+  {
+    "observation_id": "V001-P021",
+    "source_value": "31",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 31000.0,
+    "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=708s"
+  },
+  {
+    "observation_id": "V001-P022",
+    "source_value": "13",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 13000.0,
+    "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=712s"
+  },
+  {
+    "observation_id": "V001-P023",
+    "source_value": "40",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 40000.0,
+    "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=722s"
+  },
+  {
+    "observation_id": "V013-P006",
+    "source_value": "37",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 37000.0,
+    "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=475s"
+  },
+  {
+    "observation_id": "V021-P010",
+    "source_value": "30",
+    "source_unit": "minutes",
+    "field": "ttftMs",
+    "factor": 60000,
+    "value": 1800000.0,
+    "source_url": "https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=343s"
+  },
+  {
+    "observation_id": "V021-P019",
+    "source_value": "0.12",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 120.0,
+    "source_url": "https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=715s"
+  },
+  {
+    "observation_id": "V021-P042",
+    "source_value": "11.5",
+    "source_unit": "minutes",
+    "field": "ttftMs",
+    "factor": 60000,
+    "value": 690000.0,
+    "source_url": "https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=1113s"
+  },
+  {
+    "observation_id": "V025-P019",
+    "source_value": "11.5",
+    "source_unit": "minutes",
+    "field": "ttftMs",
+    "factor": 60000,
+    "value": 690000.0,
+    "source_url": "https://www.youtube.com/watch?v=kQKCp7PlVxY&t=1012s"
+  },
+  {
+    "observation_id": "V028-P007",
+    "source_value": "63",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 63000.0,
+    "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=574s"
+  },
+  {
+    "observation_id": "V048-P001",
+    "source_value": "2.9",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 2900.0,
+    "source_url": "https://www.youtube.com/watch?v=dnk_lPZ0Y-E&t=159s"
+  },
+  {
+    "observation_id": "V048-P002",
+    "source_value": "82",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 82000.0,
+    "source_url": "https://www.youtube.com/watch?v=dnk_lPZ0Y-E&t=163s"
+  },
+  {
+    "observation_id": "V059-P001",
+    "source_value": "2",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 2000.0,
+    "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=310s"
+  },
+  {
+    "observation_id": "V059-P003",
+    "source_value": "2",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 2000.0,
+    "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=394s"
+  },
+  {
+    "observation_id": "V059-P015",
+    "source_value": "3.5",
+    "source_unit": "seconds",
+    "field": "ttftMs",
+    "factor": 1000,
+    "value": 3500.0,
+    "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=924s"
+  }
+]

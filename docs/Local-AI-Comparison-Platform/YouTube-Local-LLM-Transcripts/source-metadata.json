@@ -32,5 +32,29 @@
     },
     "method": "Offline caption context review;LCZ references are schemaonly;originalfacts preserved",
     "saved_base_commit": "e558ee5921283da2dc7061bfbc144e364e94ac7f"
+  },
+  "llmfit_alignment": {
+    "upstream_commit": "26450cccaf3a3f14b1822875f2473847a744a718",
+    "updated_Asia_Shanghai": "2026-11-20T21:50:55.958610+08:00",
+    "counts": {
+      "research_hardware_records": 116,
+      "native_hardware_profile_schema_compatible": 16,
+      "research_partial_hardware_profiles": 100,
+      "meaningful_hardware_info_projections": 103,
+      "model_reference_records": 140,
+      "native_complete_LlmModel_records": 0,
+      "research_partial_model_references": 140,
+      "research_observation_records": 450,
+      "native_BenchmarkEntry_structural_projections": 127,
+      "research_only_observations": 323,
+      "native_community_submissions": 0,
+      "preserved_profiles": 116,
+      "preserved_profile_links": 293,
+      "preserved_test_series": 242,
+      "preserved_hardware_fact_rows": 99,
+      "unit_conversions_time_to_ms": 14
+    },
+    "primary_records": "llmfit/research/*.json",
+    "native_import_tested": false
   }
 }

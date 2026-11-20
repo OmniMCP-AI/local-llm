@@ -1,0 +1,3606 @@
+[
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "parameter_count": "7B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M01",
+      "video_position": 1,
+      "reported_label": "7B scoreboard model (~4GB);exact identity not stated",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=301s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8 27B",
+      "quantization": "4bit in setup discussion",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M02",
+      "video_position": 1,
+      "reported_label": "Qwen3.8 27B",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=702s",
+      "source_quantization_label": "4bit in setup discussion",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8 27B",
+      "quantization": "4bit",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M03",
+      "video_position": 1,
+      "reported_label": "Qwen3.8 27B",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=786s",
+      "source_quantization_label": "4bit",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.6 27B",
+      "quantization": "5bit",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M04",
+      "video_position": 1,
+      "reported_label": "Qwen3.6 27B",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=915s",
+      "source_quantization_label": "5bit",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.5 27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M05",
+      "video_position": 1,
+      "reported_label": "Qwen3.5 27B",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=946s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B comparison model",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M06",
+      "video_position": 1,
+      "reported_label": "27B comparison model",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=962s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "~4GB model"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V001-M07",
+      "video_position": 1,
+      "reported_label": "~4GB model",
+      "source_url": "https://www.youtube.com/watch?v=2L_RB-XqisE&t=249s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen27B",
+      "quantization": "AWQ INT4"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V002-M01",
+      "video_position": 2,
+      "reported_label": "Qwen27B",
+      "source_url": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=393s",
+      "source_quantization_label": "AWQ INT4",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen35B",
+      "quantization": "AWQ INT4"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V002-M02",
+      "video_position": 2,
+      "reported_label": "Qwen35B",
+      "source_url": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=396s",
+      "source_quantization_label": "AWQ INT4",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V002-M03",
+      "video_position": 2,
+      "reported_label": "same27B comparison",
+      "source_url": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=486s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V002-M04",
+      "video_position": 2,
+      "reported_label": "27B",
+      "source_url": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=494s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M01",
+      "video_position": 3,
+      "reported_label": "27B",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=351s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M02",
+      "video_position": 3,
+      "reported_label": "not stated",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=455s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "32B dense",
+      "parameter_count": "32B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M03",
+      "video_position": 3,
+      "reported_label": "32B dense",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=634s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "sparse3B-active model"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M04",
+      "video_position": 3,
+      "reported_label": "sparse3B-active model",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=700s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "30B/3B-active sparse",
+      "parameter_count": "30B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M05",
+      "video_position": 3,
+      "reported_label": "30B/3B-active sparse",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=968s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "35B sparse",
+      "parameter_count": "35B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M06",
+      "video_position": 3,
+      "reported_label": "35B sparse",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1068s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "GPT-OSS120B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M07",
+      "video_position": 3,
+      "reported_label": "GPT-OSS120B",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1174s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "70B dense",
+      "parameter_count": "70B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M08",
+      "video_position": 3,
+      "reported_label": "70B dense",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1221s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "model not established in reviewed clause"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M09",
+      "video_position": 3,
+      "reported_label": "model not established in reviewed clause",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1321s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "more compressed artifact"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M10",
+      "video_position": 3,
+      "reported_label": "more compressed artifact",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1326s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V003-M11",
+      "video_position": 3,
+      "reported_label": "same test not fully specified",
+      "source_url": "https://www.youtube.com/watch?v=FVDEiBqFLBU&t=1370s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8FlashNext family"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V005-M01",
+      "video_position": 5,
+      "reported_label": "Qwen3.8FlashNext family",
+      "source_url": "https://www.youtube.com/watch?v=GW56S3LVb2g&t=122s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V005-M02",
+      "video_position": 5,
+      "reported_label": "same family",
+      "source_url": "https://www.youtube.com/watch?v=GW56S3LVb2g&t=132s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "6bit oversized artifact"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V005-M03",
+      "video_position": 5,
+      "reported_label": "6bit oversized artifact",
+      "source_url": "https://www.youtube.com/watch?v=GW56S3LVb2g&t=267s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "model family not exact artifact"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V005-M04",
+      "video_position": 5,
+      "reported_label": "model family not exact artifact",
+      "source_url": "https://www.youtube.com/watch?v=GW56S3LVb2g&t=281s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V005-M05",
+      "video_position": 5,
+      "reported_label": "same comparison",
+      "source_url": "https://www.youtube.com/watch?v=GW56S3LVb2g&t=291s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "not specified"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V006-M01",
+      "video_position": 6,
+      "reported_label": "not specified",
+      "source_url": "https://www.youtube.com/watch?v=nRj0iRSBMwc&t=293s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B comparison",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M01",
+      "video_position": 7,
+      "reported_label": "27B comparison",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=249s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M02",
+      "video_position": 7,
+      "reported_label": "same27B",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=253s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "18GB artifact;9GB/card in formula"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M03",
+      "video_position": 7,
+      "reported_label": "18GB artifact;9GB/card in formula",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=344s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M04",
+      "video_position": 7,
+      "reported_label": "same model;identity not given here",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=429s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M05",
+      "video_position": 7,
+      "reported_label": "same comparison",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=436s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M06",
+      "video_position": 7,
+      "reported_label": "27B",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=499s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "70B dense",
+      "parameter_count": "70B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M07",
+      "video_position": 7,
+      "reported_label": "70B dense",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=509s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "MoE~3Bactive"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M08",
+      "video_position": 7,
+      "reported_label": "MoE~3Bactive",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=519s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "MoE"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M09",
+      "video_position": 7,
+      "reported_label": "MoE",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=526s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M10",
+      "video_position": 7,
+      "reported_label": "not stated",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=649s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "model fits eithercard;not identified"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M11",
+      "video_position": 7,
+      "reported_label": "model fits eithercard;not identified",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=908s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V007-M12",
+      "video_position": 7,
+      "reported_label": "same model",
+      "source_url": "https://www.youtube.com/watch?v=jEOIQ6Y7X6I&t=912s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "MoE/Layer as noted"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V008-M01",
+      "video_position": 8,
+      "reported_label": "MoE/Layer as noted",
+      "source_url": "https://www.youtube.com/watch?v=xYY7-0y_ryk&t=651s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.6 35BMoE"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M01",
+      "video_position": 9,
+      "reported_label": "Qwen3.6 35BMoE",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=32s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8 27Bdense"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M02",
+      "video_position": 9,
+      "reported_label": "Qwen3.8 27Bdense",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=42s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M03",
+      "video_position": 9,
+      "reported_label": "selectedMoE,exactartifactnotrestated",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=278s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M04",
+      "video_position": 9,
+      "reported_label": "sameMoE",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=287s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8 27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M05",
+      "video_position": 9,
+      "reported_label": "Qwen3.8 27B",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=515s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "dense27B selection"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V009-M06",
+      "video_position": 9,
+      "reported_label": "dense27B selection",
+      "source_url": "https://www.youtube.com/watch?v=8dhcnt-G19M&t=850s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8FlashNext125B family;artifact varies"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V012-M01",
+      "video_position": 12,
+      "reported_label": "Qwen3.8FlashNext125B family;artifact varies",
+      "source_url": "https://www.youtube.com/watch?v=wC6jsOU4jII&t=186s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "near-full27B versusBonsai compressed27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M01",
+      "video_position": 13,
+      "reported_label": "near-full27B versusBonsai compressed27B",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=43s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekMoE"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M01",
+      "video_position": 17,
+      "reported_label": "DeepSeekMoE",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=797s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek4.1Flash discussed"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M02",
+      "video_position": 17,
+      "reported_label": "DeepSeek4.1Flash discussed",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=1003s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek4.1Flash"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M03",
+      "video_position": 17,
+      "reported_label": "DeepSeek4.1Flash",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=1024s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M04",
+      "video_position": 17,
+      "reported_label": "same model",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=1033s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "large localmodel"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M05",
+      "video_position": 17,
+      "reported_label": "large localmodel",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=1294s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8FlashNext"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V018-M01",
+      "video_position": 18,
+      "reported_label": "Qwen3.8FlashNext",
+      "source_url": "https://www.youtube.com/watch?v=1PJGtLpYGOY&t=93s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekV4Flash"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V018-M02",
+      "video_position": 18,
+      "reported_label": "DeepSeekV4Flash",
+      "source_url": "https://www.youtube.com/watch?v=1PJGtLpYGOY&t=102s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Edge0 145B",
+      "parameter_count": "145B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V018-M03",
+      "video_position": 18,
+      "reported_label": "Edge0 145B",
+      "source_url": "https://www.youtube.com/watch?v=1PJGtLpYGOY&t=110s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Edge0 120B",
+      "parameter_count": "120B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V018-M04",
+      "video_position": 18,
+      "reported_label": "Edge0 120B",
+      "source_url": "https://www.youtube.com/watch?v=1PJGtLpYGOY&t=135s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen2.5-7B-Instruct as captioned",
+      "quantization": "Q3_K_S",
+      "parameter_count": "7B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V019-M01",
+      "video_position": 19,
+      "reported_label": "Qwen2.5-7B-Instruct as captioned",
+      "source_url": "https://www.youtube.com/watch?v=mjR-LJmHg_I&t=100s",
+      "source_quantization_label": "Q3_K_S",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V019-M02",
+      "video_position": 19,
+      "reported_label": "notrestated",
+      "source_url": "https://www.youtube.com/watch?v=mjR-LJmHg_I&t=323s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "KimiK2Thinking"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V023-M01",
+      "video_position": 23,
+      "reported_label": "KimiK2Thinking",
+      "source_url": "https://www.youtube.com/watch?v=Ni7ON0pZtso&t=331s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekV4.1Flash1017"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V026-M01",
+      "video_position": 26,
+      "reported_label": "DeepSeekV4.1Flash1017",
+      "source_url": "https://www.youtube.com/watch?v=GLXGqbNBq9s&t=16s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V026-M02",
+      "video_position": 26,
+      "reported_label": "modelnotunambiguouslyidentified",
+      "source_url": "https://www.youtube.com/watch?v=GLXGqbNBq9s&t=317s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekV4.1Flash"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V026-M03",
+      "video_position": 26,
+      "reported_label": "DeepSeekV4.1Flash",
+      "source_url": "https://www.youtube.com/watch?v=GLXGqbNBq9s&t=354s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "animated-catcodingmodel;identitynotisolated"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V026-M04",
+      "video_position": 26,
+      "reported_label": "animated-catcodingmodel;identitynotisolated",
+      "source_url": "https://www.youtube.com/watch?v=GLXGqbNBq9s&t=425s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "selectedQwen27B discussed"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V027-M01",
+      "video_position": 27,
+      "reported_label": "selectedQwen27B discussed",
+      "source_url": "https://www.youtube.com/watch?v=WOlXMUKJeuI&t=63s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V027-M02",
+      "video_position": 27,
+      "reported_label": "same context",
+      "source_url": "https://www.youtube.com/watch?v=WOlXMUKJeuI&t=68s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V027-M03",
+      "video_position": 27,
+      "reported_label": "same task",
+      "source_url": "https://www.youtube.com/watch?v=WOlXMUKJeuI&t=122s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "ordinary smaller Qwen rival"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M02",
+      "video_position": 13,
+      "reported_label": "ordinary smaller Qwen rival",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=345s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "FlashNext2bit discussed"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M03",
+      "video_position": 13,
+      "reported_label": "FlashNext2bit discussed",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=450s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M04",
+      "video_position": 13,
+      "reported_label": "sameFlashNext",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=461s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "modelvariant:ordinary4bitQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M05",
+      "video_position": 13,
+      "reported_label": "modelvariant:ordinary4bitQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=171s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "modelvariant:UnslothcompressedQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M06",
+      "video_position": 13,
+      "reported_label": "modelvariant:UnslothcompressedQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=177s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "modelvariant:smart-squeezeQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M07",
+      "video_position": 13,
+      "reported_label": "modelvariant:smart-squeezeQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=177s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "modelvariant:BonsaiQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M08",
+      "video_position": 13,
+      "reported_label": "modelvariant:BonsaiQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=177s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "modelvariant:tinyQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M09",
+      "video_position": 13,
+      "reported_label": "modelvariant:tinyQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=177s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "full-sizeQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M10",
+      "video_position": 13,
+      "reported_label": "full-sizeQwen",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=260s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Bonsai"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M11",
+      "video_position": 13,
+      "reported_label": "Bonsai",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=272s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Unsloth"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M12",
+      "video_position": 13,
+      "reported_label": "Unsloth",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=288s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "trimmed"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M13",
+      "video_position": 13,
+      "reported_label": "trimmed",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=319s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "tiny"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M14",
+      "video_position": 13,
+      "reported_label": "tiny",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=326s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "smallerQwenrival"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V013-M15",
+      "video_position": 13,
+      "reported_label": "smallerQwenrival",
+      "source_url": "https://www.youtube.com/watch?v=YcosZPh-kcI&t=336s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V014-M01",
+      "video_position": 14,
+      "reported_label": "exactartifactnotstated",
+      "source_url": "https://www.youtube.com/watch?v=ao6B7GR8tQY&t=33s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "currentQwen3.8 27B unless stated;futureclaims separately marked",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V021-M01",
+      "video_position": 21,
+      "reported_label": "currentQwen3.8 27B unless stated;futureclaims separately marked",
+      "source_url": "https://www.youtube.com/watch?v=6YMHMU_x4Rc&t=226s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "QwenFlashNext"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M01",
+      "video_position": 22,
+      "reported_label": "QwenFlashNext",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=197s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "smallestQwenvariant"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M02",
+      "video_position": 22,
+      "reported_label": "smallestQwenvariant",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=228s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek4.1Flash"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M03",
+      "video_position": 22,
+      "reported_label": "DeepSeek4.1Flash",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=576s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M04",
+      "video_position": 22,
+      "reported_label": "DeepSeek",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=599s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "trimmedcodeDeepSeek"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M05",
+      "video_position": 22,
+      "reported_label": "trimmedcodeDeepSeek",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=718s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "QwenFlashNextdefault"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M06",
+      "video_position": 22,
+      "reported_label": "QwenFlashNextdefault",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1084s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek versusQwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M07",
+      "video_position": 22,
+      "reported_label": "DeepSeek versusQwen",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1095s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M08",
+      "video_position": 22,
+      "reported_label": "Qwen",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1330s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek2.25bit"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M09",
+      "video_position": 22,
+      "reported_label": "DeepSeek2.25bit",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1457s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M10",
+      "video_position": 22,
+      "reported_label": "modelnotexplicitlyretied",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1859s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "trimmedDeepSeekcode191GBartifact"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M11",
+      "video_position": 22,
+      "reported_label": "trimmedDeepSeekcode191GBartifact",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1937s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V022-M12",
+      "video_position": 22,
+      "reported_label": "sametrimmedcodeartifact",
+      "source_url": "https://www.youtube.com/watch?v=qW2E2ay47dw&t=1943s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8FlashNext GSQR Coda as captioned"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V024-M01",
+      "video_position": 24,
+      "reported_label": "Qwen3.8FlashNext GSQR Coda as captioned",
+      "source_url": "https://www.youtube.com/watch?v=09GB4LtXUok&t=157s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8 27B comparison;some claims about futureQwen4 are not these tests",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V025-M01",
+      "video_position": 25,
+      "reported_label": "Qwen3.8 27B comparison;some claims about futureQwen4 are not these tests",
+      "source_url": "https://www.youtube.com/watch?v=kQKCp7PlVxY&t=557s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekV4.1Flash"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V028-M01",
+      "video_position": 28,
+      "reported_label": "DeepSeekV4.1Flash",
+      "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=466s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V028-M02",
+      "video_position": 28,
+      "reported_label": "sameDeepSeek",
+      "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=472s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeek"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V028-M03",
+      "video_position": 28,
+      "reported_label": "DeepSeek",
+      "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=557s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8FlashNext"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V028-M04",
+      "video_position": 28,
+      "reported_label": "Qwen3.8FlashNext",
+      "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=1076s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen3.8"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V028-M05",
+      "video_position": 28,
+      "reported_label": "Qwen3.8",
+      "source_url": "https://www.youtube.com/watch?v=JPHT9AvoPSA&t=1166s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27Bdense discussion"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M01",
+      "video_position": 29,
+      "reported_label": "27Bdense discussion",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=345s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27Bdense"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M02",
+      "video_position": 29,
+      "reported_label": "27Bdense",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=418s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M03",
+      "video_position": 29,
+      "reported_label": "same27B",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=420s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "35B-A3BMoE",
+      "parameter_count": "35B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M04",
+      "video_position": 29,
+      "reported_label": "35B-A3BMoE",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=472s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "transporttest"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M05",
+      "video_position": 29,
+      "reported_label": "transporttest",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=689s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "27B",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M06",
+      "video_position": 29,
+      "reported_label": "27B",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=720s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "lightermodel;captionF8unclear"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M07",
+      "video_position": 29,
+      "reported_label": "lightermodel;captionF8unclear",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=918s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V029-M08",
+      "video_position": 29,
+      "reported_label": "sameunresolvedmodel",
+      "source_url": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=922s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Bonsai2 27B",
+      "quantization": "1.58bit/ternary as discussed",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V042-M01",
+      "video_position": 42,
+      "reported_label": "Bonsai2 27B",
+      "source_url": "https://www.youtube.com/watch?v=DEPF8rAprS4&t=626s",
+      "source_quantization_label": "1.58bit/ternary as discussed",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Bonsai2 27B",
+      "quantization": "ternary as discussed",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V042-M02",
+      "video_position": 42,
+      "reported_label": "Bonsai2 27B",
+      "source_url": "https://www.youtube.com/watch?v=DEPF8rAprS4&t=648s",
+      "source_quantization_label": "ternary as discussed",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Bonsai2"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V042-M03",
+      "video_position": 42,
+      "reported_label": "Bonsai2",
+      "source_url": "https://www.youtube.com/watch?v=DEPF8rAprS4&t=82s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "千问3.8 27B unlesshistorical3.6noted",
+      "parameter_count": "27B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V045-M01",
+      "video_position": 45,
+      "reported_label": "千问3.8 27B unlesshistorical3.6noted",
+      "source_url": "https://www.youtube.com/watch?v=MhZABCEOUWY&t=30s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V048-M01",
+      "video_position": 48,
+      "reported_label": "modelnotidentified",
+      "source_url": "https://www.youtube.com/watch?v=dnk_lPZ0Y-E&t=159s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "embeddingpipeline,notLLMdecode"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V049-M01",
+      "video_position": 49,
+      "reported_label": "embeddingpipeline,notLLMdecode",
+      "source_url": "https://www.youtube.com/watch?v=VKEXWXMlVS0&t=197s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V049-M02",
+      "video_position": 49,
+      "reported_label": "sameembeddingpipeline",
+      "source_url": "https://www.youtube.com/watch?v=VKEXWXMlVS0&t=201s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Qwen7B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V049-M03",
+      "video_position": 49,
+      "reported_label": "Qwen7B",
+      "source_url": "https://www.youtube.com/watch?v=VKEXWXMlVS0&t=279s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V049-M04",
+      "video_position": 49,
+      "reported_label": "27Bunspecified",
+      "source_url": "https://www.youtube.com/watch?v=VKEXWXMlVS0&t=516s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "32Bmodel;artifactnotnamed"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V052-M01",
+      "video_position": 52,
+      "reported_label": "32Bmodel;artifactnotnamed",
+      "source_url": "https://www.youtube.com/watch?v=P-Fmo_CCIbY&t=515s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "multipleloadedmodels"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V052-M02",
+      "video_position": 52,
+      "reported_label": "multipleloadedmodels",
+      "source_url": "https://www.youtube.com/watch?v=P-Fmo_CCIbY&t=631s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V052-M03",
+      "video_position": 52,
+      "reported_label": "unspecified",
+      "source_url": "https://www.youtube.com/watch?v=P-Fmo_CCIbY&t=634s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "unnamed4Bmodel"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V053-M01",
+      "video_position": 53,
+      "reported_label": "unnamed4Bmodel",
+      "source_url": "https://www.youtube.com/watch?v=RkzCAaIV_cQ&t=90s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "GPT-OSS120B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V053-M02",
+      "video_position": 53,
+      "reported_label": "GPT-OSS120B",
+      "source_url": "https://www.youtube.com/watch?v=RkzCAaIV_cQ&t=224s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Llama3.3 70B FP16",
+      "parameter_count": "70B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M01",
+      "video_position": 59,
+      "reported_label": "Llama3.3 70B FP16",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=310s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M02",
+      "video_position": 59,
+      "reported_label": "sameLlama",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=313s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M03",
+      "video_position": 59,
+      "reported_label": "notmodel-specific",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=585s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M04",
+      "video_position": 59,
+      "reported_label": "Mistralcodingmodel notidentifiedinclause",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=671s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "KimiK2Instruct4bit"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M05",
+      "video_position": 59,
+      "reported_label": "KimiK2Instruct4bit",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=823s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M06",
+      "video_position": 59,
+      "reported_label": "sameKimi",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=827s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekV3.1 671B/37Bactive",
+      "parameter_count": "671B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M07",
+      "video_position": 59,
+      "reported_label": "DeepSeekV3.1 671B/37Bactive",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=924s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M08",
+      "video_position": 59,
+      "reported_label": "sameDeepSeek",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=926s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M09",
+      "video_position": 59,
+      "reported_label": "MoE atthispoint;exactmodelnotretied",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1049s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M10",
+      "video_position": 59,
+      "reported_label": "sameMoE",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1053s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Llama3.3 70B FP8",
+      "parameter_count": "70B"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M11",
+      "video_position": 59,
+      "reported_label": "Llama3.3 70B FP8",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1098s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {},
+    "x_local_ai_research": {
+      "model_reference_id": "V059-M12",
+      "video_position": 59,
+      "reported_label": "sameLlama FP8",
+      "source_url": "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=1112s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "name",
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "DeepSeekFlash expertstreaming"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V017-M06",
+      "video_position": 17,
+      "reported_label": "DeepSeekFlash expertstreaming",
+      "source_url": "https://www.youtube.com/watch?v=cFdoXn6yvE4&t=872s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Coda"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V024-M02",
+      "video_position": 24,
+      "reported_label": "Coda",
+      "source_url": "https://www.youtube.com/watch?v=09GB4LtXUok&t=1049s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  },
+  {
+    "upstream_type": "models::LlmModel",
+    "llmfit_llm_model": null,
+    "llmfit_llm_model_partial": {
+      "name": "Coda vs27Bdense"
+    },
+    "x_local_ai_research": {
+      "model_reference_id": "V024-M03",
+      "video_position": 24,
+      "reported_label": "Coda vs27Bdense",
+      "source_url": "https://www.youtube.com/watch?v=09GB4LtXUok&t=1076s",
+      "source_quantization_label": "not stated",
+      "missing_required_fields": [
+        "provider",
+        "parameter_count",
+        "min_ram_gb",
+        "recommended_ram_gb",
+        "quantization",
+        "context_length",
+        "use_case"
+      ],
+      "identity_status": "Unresolved video model/artifact label;not canonicalHFidentity;ASR may be wrong",
+      "weight_license": null,
+      "do_not_default": "No inventedformat=gguf,is_moe=false,minimumRAM,maximumcontext orprovider"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "name": "v005-hp-test",
+  "hardware": {
+    "total_ram_gb": 64,
+    "unified_memory": false
+  }
+}

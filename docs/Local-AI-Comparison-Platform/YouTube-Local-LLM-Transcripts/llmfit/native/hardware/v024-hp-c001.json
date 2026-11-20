@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "name": "v024-hp-c001",
+  "hardware": {
+    "total_ram_gb": 32,
+    "unified_memory": false
+  }
+}

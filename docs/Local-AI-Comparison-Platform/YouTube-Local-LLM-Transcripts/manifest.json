@@ -3,158 +3,158 @@
   "files": [
     {
       "path": "001-2L_RB-XqisE.md",
-      "bytes": 59402,
-      "sha256": "feb3823248bae0913a5d389e5eb9774c4a542e47fa58c0529acefefddaa99c19"
+      "bytes": 59982,
+      "sha256": "acb366d6ac863e47ab36ae012e8500abf6f209cdc1a8f509d71451d754c8dfae"
     },
     {
       "path": "002-J58FXpo3L4U.md",
-      "bytes": 21106,
-      "sha256": "c2579697214bb75d1af0f2b25d1bf0c876d049c708ec673543b3a2f1ac59b8dd"
+      "bytes": 21685,
+      "sha256": "992d0a9a1b065c254beccc40d6f06fc8c2d13474293f701e6c1dac529bd3e140"
     },
     {
       "path": "003-FVDEiBqFLBU.md",
-      "bytes": 50160,
-      "sha256": "bb7f7916ed2df925fbaefc36b2f0196f7e7c960dab9e6c236afc1d5405702b2c"
+      "bytes": 50739,
+      "sha256": "e71f4cd4fdf3f3e6ef5aad506f9899f99b291344f63cde1300f797ec0444724d"
     },
     {
       "path": "005-GW56S3LVb2g.md",
-      "bytes": 22756,
-      "sha256": "a30fd7c694dd68b522cc9df9f4de6464dfcbf0abe287896fd2d6706271e3d57b"
+      "bytes": 23335,
+      "sha256": "b9bce82bee27ce33d2f9d913ad09b53d98cbb7a92bff5610d07ed8bb8f121592"
     },
     {
       "path": "006-nRj0iRSBMwc.md",
-      "bytes": 12451,
-      "sha256": "52697f987c9e978b9d7445984a1506a4da7a344c3cd04b278b3daaf1ea12e058"
+      "bytes": 13030,
+      "sha256": "1a5149b613350c77cfc8490324fefd11c96e7ae26713d47253a377079934fa6f"
     },
     {
       "path": "007-jEOIQ6Y7X6I.md",
-      "bytes": 38791,
-      "sha256": "507b8e108d822d712f331022698fbd69cae8e6ffdabe2ef6d9c9da57d371fba9"
+      "bytes": 39370,
+      "sha256": "6a12f7390223197dd0c4e14d7560c0ff1e0f8cd20bb585a31a64ee370237164a"
     },
     {
       "path": "008-xYY7-0y_ryk.md",
-      "bytes": 12046,
-      "sha256": "2a6aa8b078f1079097d6efa1e7f7a827b79acb09de03eac3c965871b9d7da334"
+      "bytes": 12625,
+      "sha256": "fdadd597371fba66fb8af534f173da958dd5357dde0a435ea406c540de71b70f"
     },
     {
       "path": "009-8dhcnt-G19M.md",
-      "bytes": 17603,
-      "sha256": "e6630a644db3d38fa997ccd208759234e43a4681d02a54732ea39c15bd9ef707"
+      "bytes": 18182,
+      "sha256": "1f8ad5e042688f3f9af7fe85a73da6712eb3a882fc2bd51e02a99db905835394"
     },
     {
       "path": "012-wC6jsOU4jII.md",
-      "bytes": 28350,
-      "sha256": "29f70da92db9e8d325c8397d0035824c3ecaa1a4479e95ab8b8a617b1cb5ca47"
+      "bytes": 28929,
+      "sha256": "27b06b8fcbce323f6272c713976354c4597a471ab023bb1aa2cfa7c16af9fc4e"
     },
     {
       "path": "013-YcosZPh-kcI.md",
-      "bytes": 32137,
-      "sha256": "ef9af7062bd7d591dcbeb4eeb56ff9dbfbb970a20dad75c41a594c77e1c2c570"
+      "bytes": 32716,
+      "sha256": "2cd109328387d8bf15a245747632c3f2d8e5753e76376947a7547982fbd4859e"
     },
     {
       "path": "014-ao6B7GR8tQY.md",
-      "bytes": 12516,
-      "sha256": "9c6c0d1a3ae6dc3f978783e7cdd7476185210b872459492fa9d811588215d084"
+      "bytes": 13095,
+      "sha256": "98cd1e556a19e15fd89b67f63d65dcd8c60a981f386169b490f20f7efe7b7c8b"
     },
     {
       "path": "017-cFdoXn6yvE4.md",
-      "bytes": 14792,
-      "sha256": "7e0bb0fe15e956bba883ec75b22f9dca5427670c71b66e391fbfa3ed8d9a8a81"
+      "bytes": 15371,
+      "sha256": "eb8376876d0f527eecba3354bbcaab14c73684dc68ffac16893f48076ebd8b99"
     },
     {
       "path": "018-1PJGtLpYGOY.md",
-      "bytes": 23709,
-      "sha256": "38dcc09862b2cf1265a9ecb4892087439aeec80d007be97b5ce32ed96968ecbe"
+      "bytes": 24288,
+      "sha256": "277d87515deffb2fa9976ae28c2162fc020dfa89a0343b764ac6be5471ee39a6"
     },
     {
       "path": "019-mjR-LJmHg_I.md",
-      "bytes": 16419,
-      "sha256": "420473167f0cf58195f90b6533096d5e1e58576ad809de09a998a6e32ba1d1b6"
+      "bytes": 16998,
+      "sha256": "564da48e522c4a6a8bd8d357d3828b2fc90b3cb1a70cf6a5703c47059f9f1bb8"
     },
     {
       "path": "021-6YMHMU_x4Rc.md",
-      "bytes": 43751,
-      "sha256": "4ca2a4f51b3c2ecc924e811e9213c43a525b8ed293e78e157a44ec0323549af4"
+      "bytes": 44330,
+      "sha256": "46dca35f27a31c24aba3ea68c6fcf7d4419f30f63f25fb075772d9b03811ed71"
     },
     {
       "path": "022-qW2E2ay47dw.md",
-      "bytes": 49665,
-      "sha256": "cbb5d8e99f3a1fada7abbb54ed713e0dcd6a9aa1d0c3090c30e1af8e93323770"
+      "bytes": 50244,
+      "sha256": "f88f8be48ea0e32bc469ba0949f5a3db4bbe2c5d1a244361e1eeaabfa0e04cd4"
     },
     {
       "path": "023-Ni7ON0pZtso.md",
-      "bytes": 8254,
-      "sha256": "474420a530fc5ce704a9ccd978d2b052e886c0f5adf2755b9ff57de3eda47c83"
+      "bytes": 8833,
+      "sha256": "5e32b922d8daeb48ca7380407ab2473844ae5b6900efbd806b674a69e5a04401"
     },
     {
       "path": "024-09GB4LtXUok.md",
-      "bytes": 18338,
-      "sha256": "cd8dc6bcae24df34b4910d5a7be55d31b10e2ae1217814f3ddc19197f060dd38"
+      "bytes": 18917,
+      "sha256": "86fbbc530c5d01873b3acb0645091c4aae4bb5a373d9084504fda41435c51eac"
     },
     {
       "path": "025-kQKCp7PlVxY.md",
-      "bytes": 55942,
-      "sha256": "5a70c7070ef5a5e1bca606556790b0b578c9bae24aae6a9294b4e7390029cc88"
+      "bytes": 56522,
+      "sha256": "95666d4b1316b17e7d17e90c5a76ef44df40e35bcba7aee88b4f057087b8acc7"
     },
     {
       "path": "026-GLXGqbNBq9s.md",
-      "bytes": 12393,
-      "sha256": "8c73cede7cec9d8ba0b01d28791560868be02022ace35b90d66f2c2e9030ec57"
+      "bytes": 12972,
+      "sha256": "c54bfe66c47bc4c2f3482658687393a35e0ccf7185a4c64f6482226d87a1a99e"
     },
     {
       "path": "027-WOlXMUKJeuI.md",
-      "bytes": 12214,
-      "sha256": "c8193329c876804f479dfe087423991ea9da8e20444cd9c9f18fbb74fe32ae97"
+      "bytes": 12793,
+      "sha256": "dd3e0857dee545e36cbe38188fa9fc3df696a7088482ee0e00231752307519d0"
     },
     {
       "path": "028-JPHT9AvoPSA.md",
-      "bytes": 68099,
-      "sha256": "227b2ebfcdfd07b72e7e298e0c25f1e1021213a9f5c540bcfbfe197650eb8094"
+      "bytes": 68679,
+      "sha256": "d761bde6c48b47d5fcd2c37f9944c3a4fa45dc35066a614b46dad0d25ed8e3b2"
     },
     {
       "path": "029-1xmOTSUpBL0.md",
-      "bytes": 38715,
-      "sha256": "fb62303f12b842348d97f5d17985ede3e17b86b0fc9b0e57ebce8bfb29a7b45c"
+      "bytes": 39294,
+      "sha256": "ce9e7dac0badb961f11a725f46c2985f2b5e47a8a2fb1a121d5c8c0537e0af9e"
     },
     {
       "path": "042-DEPF8rAprS4.md",
-      "bytes": 9917,
-      "sha256": "e0ad3723f479e8c0a62a5ca6d597b5fdb903e7f7fef940025e73957215add5a1"
+      "bytes": 10496,
+      "sha256": "1ae9ee6a5a7a7c46724dbda6755a16e8d89807b984ca735064feb631ca861932"
     },
     {
       "path": "045-MhZABCEOUWY.md",
-      "bytes": 16067,
-      "sha256": "ee35ca880058a0efd944a0a1ca73b24adae5914c753d736ae986abcad1567b54"
+      "bytes": 16646,
+      "sha256": "164fca9a0b7b0c47911bc506809faaa5f199989789608201008be74341e353d7"
     },
     {
       "path": "048-dnk_lPZ0Y-E.md",
-      "bytes": 19329,
-      "sha256": "5a8a038410094fcc3b7cf2223b8ef0e253b70bbaa183e6d792d381e56d736eed"
+      "bytes": 19908,
+      "sha256": "61ae3b4cc057170f1fb8fec2792407c79e713e7f770fc93be044476669beb722"
     },
     {
       "path": "049-VKEXWXMlVS0.md",
-      "bytes": 15891,
-      "sha256": "0596f1be49a0ab8dbfb7fc2de781e1f6c2899731ce6a1a0196b0033c7c1430b9"
+      "bytes": 16470,
+      "sha256": "c7d2a9ecde9e89c6131bdbae146e2b55591bce556be3fe734fac8a029b84f5c7"
     },
     {
       "path": "052-P-Fmo_CCIbY.md",
-      "bytes": 15552,
-      "sha256": "9917890fecd052611717cfaea8d8b1fca65e6675cd663a1e7a5917359b4a43a4"
+      "bytes": 16131,
+      "sha256": "f130d14c6c33ba3bfd5ba8e041ac79864d0fb0b10fd754c13c5b550d6005fa7e"
     },
     {
       "path": "053-RkzCAaIV_cQ.md",
-      "bytes": 14076,
-      "sha256": "f9ced325a0a459c84b126874eae44422c259210029c9044b6e58838ec2f5c5a5"
+      "bytes": 14655,
+      "sha256": "cc7558f8a4c1e23e376bc2d236204a68981e51fa4668044d0c3c3e6649d85793"
     },
     {
       "path": "059-4l4UWZGxvoc.md",
-      "bytes": 41028,
-      "sha256": "419a86870753f6c553067f193d401c73b3d056beb201e4f40333ddf22c80acb5"
+      "bytes": 41607,
+      "sha256": "a4e872b2d58521f11fc58f63de5efbb2fb79309e92eab1868c018f95d7862e3e"
     },
     {
       "path": "README.md",
-      "bytes": 85072,
-      "sha256": "a8b02f58c88aefe9008f33a4a97f0c03b9f3755fe4b30f23e2c90de256203f42"
+      "bytes": 86502,
+      "sha256": "3da5f871e71d1f351ec8663a586d0bc58395ae4598b4ba0f712673d4d40dcb8d"
     },
     {
       "path": "hardware-configurations.csv",
@@ -168,583 +168,583 @@
     },
     {
       "path": "hardware-profiles/V001-HP-G001.md",
-      "bytes": 2451,
-      "sha256": "260e39448f27b9094e41d6c0ccde98281fcd31552aa67b08a6c7336118719bab"
+      "bytes": 2982,
+      "sha256": "5c34b1e9cbea9496505bc55b7aa181529984ef078a926cf8450df27e9d269b75"
     },
     {
       "path": "hardware-profiles/V001-HP-G002.md",
-      "bytes": 2730,
-      "sha256": "d04dc1e437e3339a202f080b7f74302f47ba4652c551339c1742f2c2b14c9b27"
+      "bytes": 3261,
+      "sha256": "cc3107fb0b26dd30f35cffd76360d249ca4896b763dca5b2cc0fe9dcc397cf9d"
     },
     {
       "path": "hardware-profiles/V001-HP-G003.md",
-      "bytes": 2725,
-      "sha256": "9af5db3b1cb67bcf2a0d545546ffc5d77c5741e8c7fd6899dfa6880bf245f646"
+      "bytes": 3256,
+      "sha256": "7dc51975ba07cff84f18443dc84f483630ecf2bd252e4c1a200128c1c4b48759"
     },
     {
       "path": "hardware-profiles/V001-HP-G004.md",
-      "bytes": 2436,
-      "sha256": "9e0ac84021f0a8a96da631d39b4a384d2d4e0532e7f13ce1e4e9afb7df0ea452"
+      "bytes": 2967,
+      "sha256": "044e74ad02e7e9ff7bd1aaf1a0a6adea23cceae5183aa6d42aadc4491785decf"
     },
     {
       "path": "hardware-profiles/V001-HP-G005.md",
-      "bytes": 2412,
-      "sha256": "21306ea8686f4283faa589daf8eb9595e5bcd73535bc9b55d9d3542be8fe5262"
+      "bytes": 2943,
+      "sha256": "99f8a03cd706dc7105e6f375912b6dd0528b7a711bf817475c80531f13eb420d"
     },
     {
       "path": "hardware-profiles/V001-HP-G006.md",
-      "bytes": 2441,
-      "sha256": "7b2aac037632acb70a46c70dc17b4c2750ff264e3cf927922df9abd07b67c13b"
+      "bytes": 2972,
+      "sha256": "eb4d60d5e0941cffa6c5ae936d98fa2db3a3ba406cf151227ccabd419903eab0"
     },
     {
       "path": "hardware-profiles/V001-HP-G007.md",
-      "bytes": 3511,
-      "sha256": "06f1f57aa45c2d50d0da031681b793e96b25d547591f4bcd7006c4a5b427d7c3"
+      "bytes": 4042,
+      "sha256": "87c4c69097b2c383e981e72e281d5b49c8c1004ce4fdb57b62ddeb78989ee85a"
     },
     {
       "path": "hardware-profiles/V001-HP-G008.md",
-      "bytes": 3961,
-      "sha256": "08d4694cdd5733e5eb1fc38b288eef78ce7d04bd8d6f80f370724990fcf5edf3"
+      "bytes": 4492,
+      "sha256": "6b8392e512569de9b71d49ca8d9b327a015ed2b9783b03fc81ec34e9a1ff6608"
     },
     {
       "path": "hardware-profiles/V001-HP-G009.md",
-      "bytes": 3257,
-      "sha256": "81a201052a9d258b9881d833c910f199971e8993a28601dc8b22828e1da9a169"
+      "bytes": 3788,
+      "sha256": "bd8ef5e719e763776820ab28013d0c7e1ec81a812c08fba9597fc376126e8bc3"
     },
     {
       "path": "hardware-profiles/V001-HP-G010.md",
-      "bytes": 2436,
-      "sha256": "82ff0f4b4b41e0b123d312aadd7fbf32039503c8c1029edff655b7ca11b05ff5"
+      "bytes": 2967,
+      "sha256": "4061675858e6205bdea5e6052ac873aea86c7b7bf6c3353dcaf5bef7f427379c"
     },
     {
       "path": "hardware-profiles/V001-HP-G011.md",
-      "bytes": 2674,
-      "sha256": "1df217b4054d3b44f59296dbb8d656dfd469df29b56ac5c15ca307fa3e25b613"
+      "bytes": 3205,
+      "sha256": "f84936c89d6cfd9e469b99cc1e71efd6b87037a6b326e73d8dfbb25cf5aad2a5"
     },
     {
       "path": "hardware-profiles/V001-HP-G012.md",
-      "bytes": 2364,
-      "sha256": "4a922cdc176ab72edd3e1fde2466676c4c9c6ac4de25457e22b45bdaf2157c5f"
+      "bytes": 2895,
+      "sha256": "437e0df853dbd082d10728fcba2584e87aa0ab3b7d3b28bc2b0eb454dadeb83c"
     },
     {
       "path": "hardware-profiles/V001-HP-G013.md",
-      "bytes": 2019,
-      "sha256": "3d772586b5dca3f6c4207e2d69570be9453cbfb675f3f60ac2b1d7519614666c"
+      "bytes": 2550,
+      "sha256": "2273331cabf1efecc8e9b00479b9b798a65585409c320e44984911951bca45e8"
     },
     {
       "path": "hardware-profiles/V002-HP-G001.md",
-      "bytes": 6176,
-      "sha256": "7507eca8daf21ab9c80b79912db1f0652c2ac2d1552114fe9361241978ac125b"
+      "bytes": 6707,
+      "sha256": "bdbb1084f8e860817c43ddde6909e566e40449f5280ba2977e6c2bda7f537005"
     },
     {
       "path": "hardware-profiles/V003-HP-E01.md",
-      "bytes": 3162,
-      "sha256": "ded19bf23e08cc3cc9b7623055b7cf92606375740b06f3733000d662dcae332c"
+      "bytes": 3692,
+      "sha256": "258739c12861f122cbc4078d876fd3182c45a80bc3a15c7ce1d0ea417d6a377e"
     },
     {
       "path": "hardware-profiles/V003-HP-E02.md",
-      "bytes": 3301,
-      "sha256": "958c683d666402cfb0a5689c274fcfcf1673e7c70ca3310ff3cd600391e011c3"
+      "bytes": 3831,
+      "sha256": "65eed38151dbaaba492806a0368e588b0667c9535bda48d6bb4defa8dad0d238"
     },
     {
       "path": "hardware-profiles/V003-HP-E03.md",
-      "bytes": 4844,
-      "sha256": "4fce9c982276d2c86ffab020b305cdfa907a7b2029e539963fb7f74cdab81dda"
+      "bytes": 5374,
+      "sha256": "0a8ac7906f5a55b46341ba3b243d4ee23f0c819b1f99cddb97fc3843d3722d20"
     },
     {
       "path": "hardware-profiles/V003-HP-G001.md",
-      "bytes": 2045,
-      "sha256": "7bfd61ede97a76c29a9534d1d61b138acf6034c806f6f577d8c7f36967a10022"
+      "bytes": 2576,
+      "sha256": "588e0bbef34c593ba8ef874ab7342dacb84786dbd297391db36d655641aa1618"
     },
     {
       "path": "hardware-profiles/V003-HP-G002.md",
-      "bytes": 2805,
-      "sha256": "5a4dfca9367566f9c19c93d1a72992a873060c1f598e5c35d281effb12e7bb53"
+      "bytes": 3336,
+      "sha256": "982eea0f6e56fe642a7a6a302af46092303c0b7ad51e1e5cf73f986eb3c7e8e0"
     },
     {
       "path": "hardware-profiles/V003-HP-G003.md",
-      "bytes": 2239,
-      "sha256": "284685c2ed72d38f61d18f63101104d56f29d08571ecd59d0efc76270f6af8e6"
+      "bytes": 2770,
+      "sha256": "6e0c63015c8bbff83763433db1abd598e3f3722660da747633253948be09eab6"
     },
     {
       "path": "hardware-profiles/V003-HP-G004.md",
-      "bytes": 2912,
-      "sha256": "8ce5d18cc287aa7aaf9572fd433121fef1825ccf0d1d594e9277460ee246f5fd"
+      "bytes": 3443,
+      "sha256": "b97fcfb41934ecdf568fa6dc8885f2c06da135970e7332fff65ae3be551de085"
     },
     {
       "path": "hardware-profiles/V005-HP-G002.md",
-      "bytes": 3925,
-      "sha256": "c5bf99ae95b72a9027a2bad679ae642f239c8655858d466d7e2ec149a16c062a"
+      "bytes": 4456,
+      "sha256": "4247324e8009e08c77695bcffe3182ec182d23e3de43ee7e6aa4fad71a06893f"
     },
     {
       "path": "hardware-profiles/V005-HP-TEST.md",
-      "bytes": 4814,
-      "sha256": "30586841ec38e0a40deae1e01f9d33d1dacbd978af9cbec98e073523c02c53a5"
+      "bytes": 5412,
+      "sha256": "bc4fccfaeceda4fd57b04bc028cb241570c7c0b5ded68fec38a60c48ab9a94f5"
     },
     {
       "path": "hardware-profiles/V006-HP-E01.md",
-      "bytes": 2949,
-      "sha256": "708cb135e48b681ee1510512f8a21df327d911d5f67e12261d46bff7b7c5c781"
+      "bytes": 3479,
+      "sha256": "0a845e27377499b672cf9ff9a9da4c54d1153a51fd55bfa2e51b89a6a38d46a2"
     },
     {
       "path": "hardware-profiles/V006-HP-G001.md",
-      "bytes": 2657,
-      "sha256": "be0009d7d7a601b05dfe4ace9970171ddc47d701ba7ae57798e128d0eace1ff5"
+      "bytes": 3188,
+      "sha256": "534306c540fe00e2bfd2fcca02d1cc49c9dcaf8139f7930233947c991d939bdb"
     },
     {
       "path": "hardware-profiles/V007-HP-C001.md",
-      "bytes": 3559,
-      "sha256": "50db87a2b5c8308e079814f38544266a29d4138e63fffb42b6cb155ea35f457d"
+      "bytes": 4090,
+      "sha256": "6fcd5a45cb011642a9ab0f0a9924e8e5645ef1c3dd89f3433c61fac015c94da5"
     },
     {
       "path": "hardware-profiles/V007-HP-C002.md",
-      "bytes": 3500,
-      "sha256": "83ee58765fa667e9ae02237cac52b178f6fa72964c6541792b24ceb9aa35c413"
+      "bytes": 4031,
+      "sha256": "cf33c979d218759e17ba64d14a3a96b5749f13ad65907e0b8ad3e69435414533"
     },
     {
       "path": "hardware-profiles/V007-HP-E01.md",
-      "bytes": 3217,
-      "sha256": "232e422caf3143da5697896d15d04f84fad0afb2de3d9136117546bd3ef34c83"
+      "bytes": 3747,
+      "sha256": "33bbe569938d37707f0e02770153fdf6b97cfc69fb1b1c00d6f51d01acddf293"
     },
     {
       "path": "hardware-profiles/V007-HP-G002.md",
-      "bytes": 2268,
-      "sha256": "3ff2760181435cf458a709f3f4e70704809b55e60743f8e9be8974480b61f8fb"
+      "bytes": 2799,
+      "sha256": "1e482e8237416fa87cc006ca71d63d1aef1f2dc76fc47b86c0ee272757b67d03"
     },
     {
       "path": "hardware-profiles/V008-HP-C001.md",
-      "bytes": 2529,
-      "sha256": "3ada1547a1e1ce041f29ec94289183af7a3ac989a502d9490356cdf72e948780"
+      "bytes": 3127,
+      "sha256": "25ad6a5227f1be063624f44bd51ffe2ae9e4bafdcfee0c9a8949c46d3f2b9fdf"
     },
     {
       "path": "hardware-profiles/V009-HP-TEST.md",
-      "bytes": 5679,
-      "sha256": "0a1cc52d17dcb748d4678b97c108b6a0f0d169c57cff0431149476bc6c05c6fe"
+      "bytes": 6210,
+      "sha256": "32444a39496f0c801cf6cb8053b7e2da3a41a56e136ac6c125bc309134e216c1"
     },
     {
       "path": "hardware-profiles/V012-HP-C001.md",
-      "bytes": 2624,
-      "sha256": "1cf9520bf34f62dffb2d6a05a4aca19089f24b69e4d73a0b2790592c1b675403"
+      "bytes": 3222,
+      "sha256": "217062f87931afcf5a08fad97a4db6d709c3c8a84336d085aea25725b01c744b"
     },
     {
       "path": "hardware-profiles/V012-HP-E01.md",
-      "bytes": 3784,
-      "sha256": "94de175273e3215bcef78553b051997846fcc1d818d0e09b5eaaab16f86ea40b"
+      "bytes": 4380,
+      "sha256": "4991bbad55198ea3fe56001976392778f0451c96dd5196bf291c26a396a35b50"
     },
     {
       "path": "hardware-profiles/V012-HP-G001.md",
-      "bytes": 2555,
-      "sha256": "d9bfba517b1dc12fa5884bfcd971dae51bc15475eeecfb5b638a1e8bfc9d11fd"
+      "bytes": 3086,
+      "sha256": "566b1217672960b13f4993a1df86bd4c4216898c70721ab7f50fc06ed834c66a"
     },
     {
       "path": "hardware-profiles/V012-HP-G002.md",
-      "bytes": 2286,
-      "sha256": "315230281ceab9fef2f42cb8ff1768f55eff77992e42b7dba47efe9b74ac46e7"
+      "bytes": 2817,
+      "sha256": "9a63628d7581ca1c3bb038bd6cb3f0eb300b48762b07528ce5e3183b2c961439"
     },
     {
       "path": "hardware-profiles/V012-HP-G003.md",
-      "bytes": 2460,
-      "sha256": "660423a785c28925e513b72b7146078defec4ebb4a6f9ac561eb9b9647d97eb3"
+      "bytes": 2991,
+      "sha256": "cb5ca3be1472e41ff33f72800b889c024fa3ec328742a0c9042e2f93a7a4816a"
     },
     {
       "path": "hardware-profiles/V013-HP-C001.md",
-      "bytes": 3714,
-      "sha256": "3cc7db85f207018289d2a78c36ab39ff2e33923ef92c014d7b17baaaab01c690"
+      "bytes": 4245,
+      "sha256": "7a29a32fff511f04f029c8e4f0c03efe5786f49328aab24885fa942358acbe7c"
     },
     {
       "path": "hardware-profiles/V013-HP-C002.md",
-      "bytes": 5904,
-      "sha256": "468845af8f1c1bdd7876589f7cbcc4bba917d89fcc0bf1563b6944f6cb56cbd4"
+      "bytes": 6435,
+      "sha256": "13638324e66f61c92c0f29ccc48960be8f63f219c4b553092be17ed8a54ff2d6"
     },
     {
       "path": "hardware-profiles/V014-HP-G002.md",
-      "bytes": 1928,
-      "sha256": "97c6d6a346a8922e06e6e9188ee62a3d0a68e46db85776d3ce3e1413ca10d7a1"
+      "bytes": 2459,
+      "sha256": "5da079bba77c5eae1aa6f6941ebef9fcf0db678ff943a493829143eb1a5b446a"
     },
     {
       "path": "hardware-profiles/V014-HP-TEST.md",
-      "bytes": 2474,
-      "sha256": "19e8cd9dbbe619d8cd518ca2481e859031904b3b45263c01dcbff08371aa6bb6"
+      "bytes": 3005,
+      "sha256": "a332e3e5ba5b9ad4e314864fb809178091b4939b1cfc22d65c6b1cd7cf19fa0d"
     },
     {
       "path": "hardware-profiles/V017-HP-C001.md",
-      "bytes": 3944,
-      "sha256": "b5051a4e6c9138e91e41aacbf6c06dbe1f3f5f65fad6af0d63bfd2deed7ec78c"
+      "bytes": 4475,
+      "sha256": "425f41c534398d139e2490a7b05d0d3333bd1d28018faa088e080410a37f5375"
     },
     {
       "path": "hardware-profiles/V018-HP-C001.md",
-      "bytes": 3595,
-      "sha256": "c0adbf42b6bb82771fabe04d09adb4fab337a03f646b5a76784a3fc5eb0dbd53"
+      "bytes": 4126,
+      "sha256": "0535c3842a4eec56b1cfeed9bbcf0d654cbc60019b19dd4174c0f28f9171a2cb"
     },
     {
       "path": "hardware-profiles/V018-HP-C002.md",
-      "bytes": 3012,
-      "sha256": "5adbcf3a80d205c0a432121c05da9cd4b2185bf239107958469902963a82b2bf"
+      "bytes": 3543,
+      "sha256": "c3ef0accc9f9b268281b5f97a656f4423e555e5ae2567c4c2d9f27db796b5467"
     },
     {
       "path": "hardware-profiles/V018-HP-E01.md",
-      "bytes": 2888,
-      "sha256": "79579d345036e6f7a10d6a9202540fb2e82e953fe7747e1789ff7cc7ff22d6da"
+      "bytes": 3418,
+      "sha256": "75fdde950a3f7ca8bcaf680e03e5b748ac86cfce63cdb91c8d62b7a27526f021"
     },
     {
       "path": "hardware-profiles/V018-HP-G002.md",
-      "bytes": 2296,
-      "sha256": "288f07f9291486ace9fb7000003a54e0ab9c6448c7c866bac19b892268d8937b"
+      "bytes": 2827,
+      "sha256": "b6c8f6c14e658a5a1a02ea88371cc9822378b8ea928ffdaab00b428fff425c62"
     },
     {
       "path": "hardware-profiles/V019-HP-E01.md",
-      "bytes": 2586,
-      "sha256": "7f0a273c70209ad8c6fc0313a20d12d5b55a1a225662089e61f9672f12c74da5"
+      "bytes": 3116,
+      "sha256": "04eae56dc1b15f3b3edeae9c82ddb457b36a0191462dbc7398b72aa737b469ad"
     },
     {
       "path": "hardware-profiles/V019-HP-E02.md",
-      "bytes": 2582,
-      "sha256": "d0e97f90c85eab530aa9d52a4fbadee8c94e55fc57ec3c29720970ad4bb7291e"
+      "bytes": 3112,
+      "sha256": "18e4f7f313698a3e8cc18cee05645e8bca31c9958e6f5591094d323110c01169"
     },
     {
       "path": "hardware-profiles/V019-HP-TEST.md",
-      "bytes": 4972,
-      "sha256": "deb851810fcfe0a97c4928fe0b3b1fc5aa3707fe80b48d4af1995f9cbffe5dfb"
+      "bytes": 5570,
+      "sha256": "7d798053a1b669ec997d3f60f559e0d87fdd36d386860328b96ea0172ab7e6d9"
     },
     {
       "path": "hardware-profiles/V021-HP-C001.md",
-      "bytes": 3056,
-      "sha256": "bb5401b7339e487f32fe8f895806452370b0e11f0e92177de55f113280b122ee"
+      "bytes": 3587,
+      "sha256": "a69c7a2775fea078644f2b8e4f0e981a33657673ff45838f881b72f8583ab14b"
     },
     {
       "path": "hardware-profiles/V021-HP-E01.md",
-      "bytes": 2935,
-      "sha256": "352ac070666e0945dfe52f3a8a3a20e2aa61ec901be76fda313db5173ec6da32"
+      "bytes": 3465,
+      "sha256": "b809249e6a114720fd6dbb0eaf93e98b4a552e6241aca6f1132064089a719dda"
     },
     {
       "path": "hardware-profiles/V021-HP-E02.md",
-      "bytes": 3497,
-      "sha256": "67eb5f179d5a06945823c17b7a9cb03205c293507f12e0b570185a05d181d877"
+      "bytes": 4027,
+      "sha256": "22c016e9b689b4088b71ed760b4672c47ceee8331b09afbbf9a60028f340264d"
     },
     {
       "path": "hardware-profiles/V021-HP-G001.md",
-      "bytes": 2784,
-      "sha256": "a466b52542eee2f64498809deb1d2476989bf25ca3b0c49021a907006bb98a0e"
+      "bytes": 3315,
+      "sha256": "494857032e994f9b7b87c46eebe3a35857a0ced13b9d91fce06d1494d316f5db"
     },
     {
       "path": "hardware-profiles/V021-HP-G002.md",
-      "bytes": 2937,
-      "sha256": "ee621c0854c56829093b04e6bddc5b3f2f3772e77f3cf756c75b26de229513b3"
+      "bytes": 3468,
+      "sha256": "cc0507bb7e50f2e2676634dbab21331134917beae61e5f1c5eaa3d4a48d535a2"
     },
     {
       "path": "hardware-profiles/V021-HP-G003.md",
-      "bytes": 3045,
-      "sha256": "8b10d3074f841307c5b031dd02eaef95ad167d4187a5cdde1a94eea1336b6cbb"
+      "bytes": 3576,
+      "sha256": "3acc77be8fe1a19f3fc8c9ea262c13e6f4064d73482b07467f5c88d80f83ecdf"
     },
     {
       "path": "hardware-profiles/V021-HP-G004.md",
-      "bytes": 3177,
-      "sha256": "22ba39eb9bc44e65f9637c9edcacc7c890675b7c0469d5697467a9868e33b335"
+      "bytes": 3708,
+      "sha256": "3fe976ee365ee80fc7909acb3e87f12a39be048c54c6bac09976643898c2f751"
     },
     {
       "path": "hardware-profiles/V021-HP-G006.md",
-      "bytes": 2123,
-      "sha256": "6c62ebb613503d11f39c369133f47e0985e43b252155760f4b01f8d5da94acf0"
+      "bytes": 2654,
+      "sha256": "facc7c6841abf77a28086e4e84dc1fa16c1a41446c0410e6a6553c7d7803d044"
     },
     {
       "path": "hardware-profiles/V022-HP-C001.md",
-      "bytes": 2853,
-      "sha256": "d1484b29e2b85165a24ae83ea431bf1375e46c136994c79ae96b4a35dace077f"
+      "bytes": 3451,
+      "sha256": "9021c2c32b84795171fe7ca02e8dd1b8dd65b9fcae721b29d5a6b451f2d600cd"
     },
     {
       "path": "hardware-profiles/V022-HP-C002.md",
-      "bytes": 2901,
-      "sha256": "2010cc085dd449f3c3d1e0da1d687f4066d4ccf7921d749a57d2bfc48fb74fea"
+      "bytes": 3432,
+      "sha256": "a38493623158ddeaa04b86ac0b0cc706dc0185dcbbba2eb8395a47dbee1c4116"
     },
     {
       "path": "hardware-profiles/V022-HP-C003.md",
-      "bytes": 2905,
-      "sha256": "2d96dbfab27e50ce11b0a5b911dceb6b70546f2a701576bb966edc17bb44c12b"
+      "bytes": 3503,
+      "sha256": "0d1efcc5a068ba960dc22796e24712831cc6d5422bc3d235eeabfa1b79c12726"
     },
     {
       "path": "hardware-profiles/V022-HP-C004.md",
-      "bytes": 2986,
-      "sha256": "63491178c927e7ade9d6f888fb1128de9c006b533e1e8633b8b7243bbef67692"
+      "bytes": 3584,
+      "sha256": "24bdecabafd023ddd080e7b0fd7d205905ef299c3494bb1d975678101a24d21b"
     },
     {
       "path": "hardware-profiles/V022-HP-C005.md",
-      "bytes": 2870,
-      "sha256": "79db21dfc6974924d9dc37c880ef19eef6b5eb6c296db4bb4dfe56c35408c178"
+      "bytes": 3468,
+      "sha256": "badf42baf9ca51be83211c5f0a61d8033ffc87dfcd622125a78804de5cb68ae6"
     },
     {
       "path": "hardware-profiles/V022-HP-C006.md",
-      "bytes": 2928,
-      "sha256": "5a870d6cacb0408e37c98181d85bf3269ac4773c25b64781b0dfe20c154b7d76"
+      "bytes": 3459,
+      "sha256": "7d63a3f8222416616cfb8ddf8a4927d9c0e75c2ae6b5fd2af94090c29e6dda2f"
     },
     {
       "path": "hardware-profiles/V022-HP-G002.md",
-      "bytes": 2245,
-      "sha256": "13254e27f23d49c027ff98b5de1e8d62eccedd217aaffc4ee5de892a0e3f561b"
+      "bytes": 2776,
+      "sha256": "f4a765e94764a51fb630b5f114997dbad650173c75af972b2c8f47614373b16a"
     },
     {
       "path": "hardware-profiles/V022-HP-G004.md",
-      "bytes": 2369,
-      "sha256": "3095310e43099ea23eccd541b899b97efed3d5c04b3d08a9729eaa9c17876b96"
+      "bytes": 2900,
+      "sha256": "ceb702d9984591f85967940f781171fe9d6e5bc8c56e08ad895085bfa70de42c"
     },
     {
       "path": "hardware-profiles/V023-HP-C001.md",
-      "bytes": 3304,
-      "sha256": "eed18562aa7aa2519bda200e9c42e7ddd240139325bd56fbe42fea2e179d6550"
+      "bytes": 3835,
+      "sha256": "559b7b30ad8bfe536dc354bdf45d8a75273bd149cd8e83324a903c7c30d8316b"
     },
     {
       "path": "hardware-profiles/V024-HP-C001.md",
-      "bytes": 4081,
-      "sha256": "c021279465cd6aac63c3b57a78a2d3a47a04c5f17f61c6ddffa40424ed3daa93"
+      "bytes": 4679,
+      "sha256": "54a0ea6ba3d405a57119c0ef29157cb3653f5fd9d06eeb66a5a0ef78dd4f2afb"
     },
     {
       "path": "hardware-profiles/V024-HP-C002.md",
-      "bytes": 3460,
-      "sha256": "8cd85e4d1ffb7699334de522addc9112531fecf10ce74c479c54b29d7b250997"
+      "bytes": 3991,
+      "sha256": "9a620fa4824d8ea765adce09d59d5e3177d857b1cbc5120597c73c2eee7feec9"
     },
     {
       "path": "hardware-profiles/V025-HP-C001.md",
-      "bytes": 3219,
-      "sha256": "9d7a0e0c0318dd31a40a6529104ea1899b9052db5c246c2dac9f255b6affbb7d"
+      "bytes": 3750,
+      "sha256": "f07bec78fcc7bf44d42d4d2c05e4ee5fcf61cc81602a0d9eff3f5b1710e92b05"
     },
     {
       "path": "hardware-profiles/V025-HP-C002.md",
-      "bytes": 3035,
-      "sha256": "b4b3fed48c5c21491208e06d963aa19b69faa8678cba0c003fa10011afa7baad"
+      "bytes": 3566,
+      "sha256": "d6298399529abf6b02851431a85a97c38ab13e10f1ab23a4c4ae885f02ae3c85"
     },
     {
       "path": "hardware-profiles/V025-HP-E01.md",
-      "bytes": 2999,
-      "sha256": "f68ab8fc216f9eb1e8832c3002472bee008a3f826872ebd8bd9fdf618e1d658f"
+      "bytes": 3529,
+      "sha256": "72a1884f15a98915a11e77f5136609ec6e0ba228d2d212eb3ae75e24350210c2"
     },
     {
       "path": "hardware-profiles/V025-HP-E02.md",
-      "bytes": 2928,
-      "sha256": "99b5f7d5ba1aedb9af839c2054fc610afe0523af25e1034df5369f3c3597a70a"
+      "bytes": 3458,
+      "sha256": "6ba64f3ccbae8b3b3ab5fd74db8e81d10250ac9c0c08c9db98e435363e03db8b"
     },
     {
       "path": "hardware-profiles/V025-HP-E03.md",
-      "bytes": 2951,
-      "sha256": "ec031dc54e22dd4a64d90aa8b0925973b1b3617f1a87cc287b8ced5ebd856845"
+      "bytes": 3481,
+      "sha256": "f059d9480165c02a1280f5b6579c4220880a70583543da8d0f52ee7518844756"
     },
     {
       "path": "hardware-profiles/V025-HP-E04.md",
-      "bytes": 2990,
-      "sha256": "08e61d7e8adada5c958f9ebaddc90dbbfd1e4916c8cb2f8be2cee865490022ed"
+      "bytes": 3520,
+      "sha256": "ee684846d90d39aa89738aba3a8190c8f83f4044db948887bd54de0ff50bc102"
     },
     {
       "path": "hardware-profiles/V025-HP-E05.md",
-      "bytes": 3906,
-      "sha256": "6bf7c09accc2662fb3c557181df1f608901bdc0b10d28859a050b1c7640e62da"
+      "bytes": 4436,
+      "sha256": "1a8214353e5eb70078d11831a2304f0382823692f4f6e2716c455f0054435d16"
     },
     {
       "path": "hardware-profiles/V025-HP-E06.md",
-      "bytes": 2925,
-      "sha256": "73fb557e2a76937fb9baff6ff701fe555d81a15ac5cf483c0b7efec5a32d9ec9"
+      "bytes": 3455,
+      "sha256": "7a22d5ede1c12003243b155a46429c138582d8cd6f016099ccf4d791571dbc85"
     },
     {
       "path": "hardware-profiles/V025-HP-G001.md",
-      "bytes": 1995,
-      "sha256": "bf95dc2cd0b5a7cbe8c867e974c36ef8c945528e48bafb44fda54ffaeb7d271f"
+      "bytes": 2526,
+      "sha256": "d1e2a5b725354d6ee245c3e285343121ecc3a70db983b88115650a5d49d70104"
     },
     {
       "path": "hardware-profiles/V025-HP-G003.md",
-      "bytes": 2467,
-      "sha256": "eed4d7952160934ab46a57df0bfcf056048f06a5f523d67910d3b6d1f72ca84c"
+      "bytes": 2998,
+      "sha256": "826e3905f8d7e58daa7ca4e9b0a51c022457fd1464044162c754cdcf53aff469"
     },
     {
       "path": "hardware-profiles/V025-HP-G004.md",
-      "bytes": 2121,
-      "sha256": "4b28a01688c6634c903f89b2b7b596bb60cb420b11ed7271e43bd995fc821a09"
+      "bytes": 2652,
+      "sha256": "4220b2296ed5ff25611bb68001988e00f510a1faa7d0c8dff11ee312a4c07f9a"
     },
     {
       "path": "hardware-profiles/V025-HP-G005.md",
-      "bytes": 2762,
-      "sha256": "6aa4e0f6698cabbc2d3188e2aafc83b2d2ca3b0b5ff909b2911240649b3ec121"
+      "bytes": 3293,
+      "sha256": "76702047d73da1763690b425a0f762eb770f296db7cabde91af3861bb6a4b46c"
     },
     {
       "path": "hardware-profiles/V025-HP-G006.md",
-      "bytes": 2452,
-      "sha256": "37a8fa53c8deee51248b85912579f1e8ff06693fa1bc33a4b7ccbdbf9b20cd43"
+      "bytes": 2983,
+      "sha256": "aefa09dcae16edd00d395ce9435feb14640398754556a02ac25fa98ed0457ea1"
     },
     {
       "path": "hardware-profiles/V025-HP-G007.md",
-      "bytes": 2470,
-      "sha256": "e4decbf120ecf560305a577dcb354e62e670dc21f4ba70e0b937227a8c701acf"
+      "bytes": 3001,
+      "sha256": "c99ac32723c2ce18926004c09efc566cf1cce5f07fae2512f2724dcbcaf704d4"
     },
     {
       "path": "hardware-profiles/V025-HP-G008.md",
-      "bytes": 2096,
-      "sha256": "a3ed5443775ea168f2cad5cc903accb42bc646a17c687a4c9b9b1000351ee463"
+      "bytes": 2627,
+      "sha256": "a6416cd0d0d3b4a3d98d0a0731d7ee5068475894ed6f7639dcfad0adf39be3ac"
     },
     {
       "path": "hardware-profiles/V025-HP-G009.md",
-      "bytes": 2060,
-      "sha256": "a171aae22193a62c4de9036fdf1e35050f34d7e909fc050415fc1f195bdd4fbc"
+      "bytes": 2591,
+      "sha256": "fd0f8de92996a826b36c12568b8f0c978045256c5746bdb40b99e68acebf591e"
     },
     {
       "path": "hardware-profiles/V026-HP-TEST.md",
-      "bytes": 3949,
-      "sha256": "6f3fd6557cb81d41b3208984cd70089e49c58b51599024ee778d9cd744a9dadb"
+      "bytes": 4547,
+      "sha256": "c72087bace49ecc7be1eb06a9988f0de4787016f489cc43b54706fa7a3800081"
     },
     {
       "path": "hardware-profiles/V027-HP-TEST.md",
-      "bytes": 3993,
-      "sha256": "fa6bf47b4b9be0f7c8803361c6cc9e4ef79633f3b86fde9ddb195c455672c66a"
+      "bytes": 4591,
+      "sha256": "c4a9b8590137c9f5d2e0b38d7008aaa950b9d910aec97c639334719f08860d16"
     },
     {
       "path": "hardware-profiles/V028-HP-C001.md",
-      "bytes": 3571,
-      "sha256": "0588c7af5980ae10b7878e0ca196daf6d5f224a076176c5988e60148acb42b55"
+      "bytes": 4169,
+      "sha256": "21a72213485845f905657d871fdd268e37b3be8d09584e56fb8f87c507b8dfd0"
     },
     {
       "path": "hardware-profiles/V028-HP-C002.md",
-      "bytes": 3381,
-      "sha256": "3519938dd113ce81f5ac9eb962b01554150c0cddf8cfbd1d238ddc4b93351278"
+      "bytes": 3979,
+      "sha256": "86c6a6094ea048adbcc621f5e8413959621651d1dd6f51115bc0c71a2d4dee84"
     },
     {
       "path": "hardware-profiles/V028-HP-C003.md",
-      "bytes": 3150,
-      "sha256": "aaec176381f70ea2646c4fab82d69e486cfc2420c08f3161defbcccb131cfe7e"
+      "bytes": 3681,
+      "sha256": "2a5faacf30d89337279522a0c945da3a42e6fd11d9a17171117c95f6e6e44b68"
     },
     {
       "path": "hardware-profiles/V028-HP-E01.md",
-      "bytes": 4381,
-      "sha256": "a5b49d3557ca7891a65cbb5524e71a4a09e06ed88a52af57c99957192149204e"
+      "bytes": 4911,
+      "sha256": "b13db43fffef883a17f10686173f6f8f25f38c4f0eb2df2177207c1fced0fe1e"
     },
     {
       "path": "hardware-profiles/V028-HP-E02.md",
-      "bytes": 3547,
-      "sha256": "8df34fa8b1b8302f9f582ce6a604ca30cd94eb9393e9f1bfceea6ce616a3917a"
+      "bytes": 4077,
+      "sha256": "258bbd752db2bde5673be4a1bc237196aedd28f88e56bc2285ee0307a2b668da"
     },
     {
       "path": "hardware-profiles/V028-HP-E03.md",
-      "bytes": 3006,
-      "sha256": "3c69b0e1dc8d61b249210a482ab357bc3d041da87609b7722ecef5c34911323c"
+      "bytes": 3536,
+      "sha256": "cd1fddbcec24bcad191a6c1a2fc8005bdabf59398fc934b5c62a512a01645b43"
     },
     {
       "path": "hardware-profiles/V028-HP-E04.md",
-      "bytes": 3156,
-      "sha256": "444b3b33238a2e38105c336cc462f998c2d85d476135361dcab84f378ccb4bfc"
+      "bytes": 3686,
+      "sha256": "1305e88720245a84073b0df052c860485dde31018248578f231bd0c130d21068"
     },
     {
       "path": "hardware-profiles/V028-HP-E05.md",
-      "bytes": 3081,
-      "sha256": "e54852797131d1628e80777e5eb287f4e0a096df00e42ab901b08f4237ada20c"
+      "bytes": 3611,
+      "sha256": "ff6490ed2b25e1373484474c0f4e6a774d333eafc1fc601ae3d339379930d0a8"
     },
     {
       "path": "hardware-profiles/V028-HP-E06.md",
-      "bytes": 2898,
-      "sha256": "4d892767a434c6efdf3caf3af39cc011ee7e300765452ac8a9b515fbf6e09ebe"
+      "bytes": 3428,
+      "sha256": "767665b933eb11580ee3ca768de72c3271b66a4cc6ceda7e2a2005ca4a42252c"
     },
     {
       "path": "hardware-profiles/V028-HP-E07.md",
-      "bytes": 2845,
-      "sha256": "6c7aa2e5993e439c6ccf45b097c716dabb577bd2d75fc04e6e98e71d1932463c"
+      "bytes": 3375,
+      "sha256": "df82a0a85b7fb02952911f23c99706918d30c2b080463148ac4307d98f066f6b"
     },
     {
       "path": "hardware-profiles/V028-HP-G002.md",
-      "bytes": 2077,
-      "sha256": "103712e779de1cc3beb4cb898e64d6fd04d15e69c366f0ff22b4405b57f26927"
+      "bytes": 2608,
+      "sha256": "4e9d9be1fb7fbe7e5c1bef18d135763138041a6c5a5f154479192387c6ad0d2f"
     },
     {
       "path": "hardware-profiles/V028-HP-G003.md",
-      "bytes": 1925,
-      "sha256": "3c8a716d07cbc7e38a000d8115782cb5da39a6fe1489b62308210b6dcf1c9c58"
+      "bytes": 2456,
+      "sha256": "824e699f6d47075c19d08e9c92a0b52ee7440655c5bfd0029ef731942f60d49e"
     },
     {
       "path": "hardware-profiles/V028-HP-G004.md",
-      "bytes": 2023,
-      "sha256": "6aaa6f68420d7e002b14ccbe919d451ecdfb94578df1506c89de3168e83fa322"
+      "bytes": 2554,
+      "sha256": "aaec2a107d54c5a83fe917df7f8566a9e40597b72d3b1c4d7e8d8e0af33b5950"
     },
     {
       "path": "hardware-profiles/V029-HP-C001.md",
-      "bytes": 9858,
-      "sha256": "0bb2432a72a48a86ae530f1767de5abc55c03fe0272f3eb1ef514a5b46137353"
+      "bytes": 10389,
+      "sha256": "60f9bb2f9d51745c80e8c3ebfb5fe96b7639f49abfc47687b75ca61fa021e6a4"
     },
     {
       "path": "hardware-profiles/V042-HP-G001.md",
-      "bytes": 2538,
-      "sha256": "ae058453c9f6eb45dadb9fac781ee7cdd359aa4e3de37e2000b55d66a7aaa645"
+      "bytes": 3069,
+      "sha256": "727ff73e38b07ffa7a1afa0cc505b6079a9f8ccd31abebb87b4936a58d876ade"
     },
     {
       "path": "hardware-profiles/V045-HP-TEST.md",
-      "bytes": 6102,
-      "sha256": "142f589ffdf6da9afbf65a9a11aa32dea629423eba8b6fd95331c5f0fe2145ba"
+      "bytes": 6633,
+      "sha256": "8af222d048f9ead98a21ee62d0ba01006bef0004e5bd478510cb5aaa84fa345b"
     },
     {
       "path": "hardware-profiles/V048-HP-C001.md",
-      "bytes": 3228,
-      "sha256": "66b28549a85940d010dc63ddef6770155517fa59aa23a3a54222898af1aedf45"
+      "bytes": 3759,
+      "sha256": "6355e2b337af6e1ca7de4daf2f2673a19dace8a85542b862ccf87e65a14c685b"
     },
     {
       "path": "hardware-profiles/V048-HP-E01.md",
-      "bytes": 3126,
-      "sha256": "6842b5e0e8866b8e7b7be1c5c23da37fde05dba1d72bb6f992a464a92211af92"
+      "bytes": 3656,
+      "sha256": "28c0596f2d3a093d9f80e87104878c9090823c3de81e3c7db7f34741ba7eb7d0"
     },
     {
       "path": "hardware-profiles/V048-HP-E02.md",
-      "bytes": 3147,
-      "sha256": "4ba58b326327dae97f7d79f8eaacc9eff1ab91bf16bf4b4ac50ad53f98647449"
+      "bytes": 3677,
+      "sha256": "c6efa977a5d07c24c6b786c6c2eea968d3a835add5bed4c30fecfd69060557d9"
     },
     {
       "path": "hardware-profiles/V049-HP-E01.md",
-      "bytes": 2939,
-      "sha256": "a2384c87f7d0efd99778816be5b2ea54df6df73868b8eb0dd07d2d259376aefb"
+      "bytes": 3469,
+      "sha256": "ee87364132497936eb162e875283a425edb2c69d60f0fb8166293206da67dffc"
     },
     {
       "path": "hardware-profiles/V049-HP-TEST.md",
-      "bytes": 3458,
-      "sha256": "f92dc18cd1996a50b901b73b2ca7822de9f598320887a53c3ea3ad716a08799f"
+      "bytes": 3989,
+      "sha256": "78beabd7339295a2a213e880006ddad3365b2c05c3af8b462e8cc83193fe1a04"
     },
     {
       "path": "hardware-profiles/V052-HP-C001.md",
-      "bytes": 2523,
-      "sha256": "6f6e7dadf7b2081bac9b695886333419051772cc1dc0d51bba72cd4753d045fc"
+      "bytes": 3054,
+      "sha256": "42adc3d864170b1b7b5dda472b212ff0a48393dfcde1b1196cd255a200af5191"
     },
     {
       "path": "hardware-profiles/V052-HP-C002.md",
-      "bytes": 2881,
-      "sha256": "54ca470f1a6532c9af2106825f1247d295076f822f545080b8055a35988c77d7"
+      "bytes": 3479,
+      "sha256": "7d64b1e07b8c36b91c7a7943ce9c0b16f011e90b443eef49b78d28bc9a988215"
     },
     {
       "path": "hardware-profiles/V052-HP-C003.md",
-      "bytes": 2908,
-      "sha256": "954ed941888811f8a61311f35ddde2f932c6f332b5d1a40970cdf809610e9172"
+      "bytes": 3506,
+      "sha256": "0d89da920fee13e03380a4ae831c1693b600b2590f9c473a87696e3af2462535"
     },
     {
       "path": "hardware-profiles/V053-HP-C001.md",
-      "bytes": 2934,
-      "sha256": "44cd0841fad1c8a1ade917d779e56e83b6e86b15311f64dcf6233e7e702e7d0f"
+      "bytes": 3465,
+      "sha256": "57ed17080b5e00e710474209718081f8bb9a825ed874f61a85d1b6375d5d8b5f"
     },
     {
       "path": "hardware-profiles/V053-HP-C002.md",
-      "bytes": 3052,
-      "sha256": "02d7db2d4b87b6d762ce30967e3e18060b0f5ea2ae1601030450e86d88f2f51e"
+      "bytes": 3583,
+      "sha256": "bf1885bf53a32cdba5f3c30672dbaadef3f03b7f4a1385a11c4f60aa0a8fd973"
     },
     {
       "path": "hardware-profiles/V053-HP-G001.md",
-      "bytes": 1927,
-      "sha256": "4afe3e89e3664ad6260abfe4080b4eb18f28145a01bc244f5f310bdf2ab898e4"
+      "bytes": 2458,
+      "sha256": "ca5ac2a048621f65580d3e1fe6d0296fb1579c10246fbfedde9b178ecb2c2925"
     },
     {
       "path": "hardware-profiles/V059-HP-E01.md",
-      "bytes": 3172,
-      "sha256": "5044cb360fd402334dc04b40c45f64dd3493edbe1433b07f6373dbdbbd05af6a"
+      "bytes": 3702,
+      "sha256": "2b7a109115303fe916c37f24b0b6e350673a7400f82a9970fe4f9492a4c0bed9"
     },
     {
       "path": "hardware-profiles/V059-HP-E02.md",
-      "bytes": 4501,
-      "sha256": "35d9b1dc70fd783e103cd3a25fbad0949fbab56015b5d09512e7b53dfdf855b6"
+      "bytes": 5031,
+      "sha256": "ae1084896aa0bdb5da9fa70aa2e2169ba1d323389077a35a12943f967b32050d"
     },
     {
       "path": "hardware-profiles/V059-HP-G001.md",
-      "bytes": 2407,
-      "sha256": "4c1e0ab46229c75a421a65bf658b39531c76d1090a521a24420d35ff8f64537a"
+      "bytes": 2938,
+      "sha256": "7054fa87b7d25575055c17d492c16eaf32dc8897992f85dbd5d7a8ce05316ef3"
     },
     {
       "path": "hardware-profiles/V059-HP-TEST.md",
-      "bytes": 5852,
-      "sha256": "f428e56d22317efd935ac3b6271108ba5322c8053c9f8f3e656317688fdf9e68"
+      "bytes": 6383,
+      "sha256": "9ec74f5269806e88f8ae43e62bf62a2d9a3a76e05ddcfd23f6715af124682c04"
     },
     {
       "path": "hardware-profiles.csv",
@@ -760,6 +760,171 @@
       "path": "inventory.json",
       "bytes": 129506,
       "sha256": "9b1073bd0cbbe3dd532963083ea87e77627df268681f3b07198974bcb415e9d6"
+    },
+    {
+      "path": "llmfit/LICENSE.llmfit-MIT.txt",
+      "bytes": 1067,
+      "sha256": "b52696dc0457bf58616f5017e5146b2932611b9357bb9824c7c91183fc36471f"
+    },
+    {
+      "path": "llmfit/mapping.md",
+      "bytes": 5473,
+      "sha256": "3110300ccd86b5652887eeaca83c546d931069d5ba763f314b8cb19626f0d065"
+    },
+    {
+      "path": "llmfit/native/benchmark-entries.json",
+      "bytes": 39915,
+      "sha256": "bfa6bd1d0b0fc3a6ebe2a08f9ac26e95863028a7bfe7573f9ddf2ff273f1e2b3"
+    },
+    {
+      "path": "llmfit/native/community-submissions.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "llmfit/native/hardware/v005-hp-test.json",
+      "bytes": 125,
+      "sha256": "3775118bdfdf9747c3b4e43addd57a34cc948479ab8a6d5b9fffe3af90a6ea40"
+    },
+    {
+      "path": "llmfit/native/hardware/v008-hp-c001.json",
+      "bytes": 125,
+      "sha256": "6bcc1f612013ce98f0e31d2d11f440edb5150811c9b19ef3ac4b9d28f13abf33"
+    },
+    {
+      "path": "llmfit/native/hardware/v012-hp-c001.json",
+      "bytes": 125,
+      "sha256": "490d397f468e8dc3126395da7470fcfef6570596e17d6d1a021669c50ce47b3e"
+    },
+    {
+      "path": "llmfit/native/hardware/v012-hp-e01.json",
+      "bytes": 125,
+      "sha256": "1194c3bc8c1ae8e3bf17317a0edce98dc5ef34e2e6c462804387b915e5642cfb"
+    },
+    {
+      "path": "llmfit/native/hardware/v019-hp-test.json",
+      "bytes": 126,
+      "sha256": "f8fd293c07bf5b880ccd18170341dbaf53f32cfe9d2db08e5942e3521056e025"
+    },
+    {
+      "path": "llmfit/native/hardware/v022-hp-c001.json",
+      "bytes": 125,
+      "sha256": "9239e959cd18b09b0b81de208908cd634c081166c9a918bb7c642bef4d8b936a"
+    },
+    {
+      "path": "llmfit/native/hardware/v022-hp-c003.json",
+      "bytes": 126,
+      "sha256": "ee3476ffe5d0013bf7ef204feac41d24400e67265e4872e6ba5b7b2689a1f5fb"
+    },
+    {
+      "path": "llmfit/native/hardware/v022-hp-c004.json",
+      "bytes": 126,
+      "sha256": "6d61218f7b7dc55f1f2e334a016b0cd129a09bbfe7851d767b81718380b1d86e"
+    },
+    {
+      "path": "llmfit/native/hardware/v022-hp-c005.json",
+      "bytes": 125,
+      "sha256": "f4136c35ea088f4692e735e7786cf0e4e10318eff6396724b4ef0d6bd9e8fd58"
+    },
+    {
+      "path": "llmfit/native/hardware/v024-hp-c001.json",
+      "bytes": 125,
+      "sha256": "996e4f306f9720dd1da9df16800e0c6656ba8c3aa0c1629bb789466f4330fbb3"
+    },
+    {
+      "path": "llmfit/native/hardware/v026-hp-test.json",
+      "bytes": 126,
+      "sha256": "b6f5e1b7ee084393fea318afc38efdf996d0ce84c79116c7326c12e5592df512"
+    },
+    {
+      "path": "llmfit/native/hardware/v027-hp-test.json",
+      "bytes": 125,
+      "sha256": "b8b8f45a6a60447224482af4a16c62138d09881ebfddde2b91bba5ba2c241061"
+    },
+    {
+      "path": "llmfit/native/hardware/v028-hp-c001.json",
+      "bytes": 126,
+      "sha256": "eb9502efd1fa3fd79117986255e7c3129c282714b4fd7ff85352dc9bb5f36e95"
+    },
+    {
+      "path": "llmfit/native/hardware/v028-hp-c002.json",
+      "bytes": 126,
+      "sha256": "dc4853ba8a0782f251812021144f921ca67f684f5d7c2456084aa87ae8ed24ef"
+    },
+    {
+      "path": "llmfit/native/hardware/v052-hp-c002.json",
+      "bytes": 124,
+      "sha256": "32b6b65eb624a3edb34dd4e92c04034ea5bfa11e499b2c3cfc3c76179ef0e3cf"
+    },
+    {
+      "path": "llmfit/native/hardware/v052-hp-c003.json",
+      "bytes": 124,
+      "sha256": "90de9bce7bff9af887af291ba67d164c028a5a5034ea93cadeaa025b6e395bf4"
+    },
+    {
+      "path": "llmfit/native/models.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "llmfit/research/benchmarks.json",
+      "bytes": 958625,
+      "sha256": "c0cc33a6be4ead89517e82a847bcbdf24653c676acf632af1add5d65656697d1"
+    },
+    {
+      "path": "llmfit/research/hardware.json",
+      "bytes": 731498,
+      "sha256": "a174c5ecd3d2efad524aa27cce9047841d5d44c5b917ba88d59b3bb109be4102"
+    },
+    {
+      "path": "llmfit/research/models.json",
+      "bytes": 122044,
+      "sha256": "cf61f9b5c66727319c35890ab8979be330008f7e589057a910e1bbbcb3452135"
+    },
+    {
+      "path": "llmfit/research/test-series.json",
+      "bytes": 266164,
+      "sha256": "1241fbed400f59c51cf23a8f11a177b05c30da4c150b1a41c77f93567a011eff"
+    },
+    {
+      "path": "llmfit/research/unit-conversions.json",
+      "bytes": 3316,
+      "sha256": "75a6371b4b45a3a423d1169da503e1b9dce29125dd964b543b7f2d0fe6eb704d"
+    },
+    {
+      "path": "llmfit/schema.md",
+      "bytes": 9649,
+      "sha256": "ad3e222f5fc4a0ac675f8ab13ffbd9cfea8679a27790ef3a9b8c4f282ac0d9a8"
+    },
+    {
+      "path": "llmfit/schemas/benchmark-entry.derived.schema.json",
+      "bytes": 2752,
+      "sha256": "ddda1abd276943cc13c440a0f7d63ec830a81fa8db8ae021a98e2457a5c4f296"
+    },
+    {
+      "path": "llmfit/schemas/community-benchmark.upstream.schema.json",
+      "bytes": 5030,
+      "sha256": "67d3f584e04c639005925a1980018eb83f18763bec4f8f3c43aefb3a1600450f"
+    },
+    {
+      "path": "llmfit/schemas/hardware-info.derived.schema.json",
+      "bytes": 1026,
+      "sha256": "bbc6e4bd9da8fdc7eaf475d5a25d7f2cb26e71b6af4dcc3d4f621c6bcda5532e"
+    },
+    {
+      "path": "llmfit/schemas/hardware-profile.upstream.schema.json",
+      "bytes": 3917,
+      "sha256": "0755dbd7e8b146d1165be9ce9126043c4379945f0048c122529efc191eb8d924"
+    },
+    {
+      "path": "llmfit/upstream-source-log.json",
+      "bytes": 2953,
+      "sha256": "94f26f3e8e30b5dd3b7b50caefb370acd2ab207f3a3f63c0e3161c412cd10e47"
+    },
+    {
+      "path": "llmfit/validation-report.json",
+      "bytes": 1971,
+      "sha256": "aab0cd7ec4ae500a112ab42ce376df9f7635f0de4feb0fd30ce45add758b51ce"
     },
     {
       "path": "performance-observations.csv",
@@ -783,8 +948,8 @@
     },
     {
       "path": "source-metadata.json",
-      "bytes": 1589,
-      "sha256": "19e4ef1f5ff942251adc12a49f5ea18bb4409c4009335b3caa6c04200761429e"
+      "bytes": 2555,
+      "sha256": "7ccc4fd82924ef546aac8f736149182bb0aa25d8b3b5b2e8253f003c57877438"
     },
     {
       "path": "test-series.csv",
@@ -793,8 +958,8 @@
     },
     {
       "path": "verification.json",
-      "bytes": 942,
-      "sha256": "2254725641625a2ffadf16031f672e15d8590c5f35f984ba157533815e357109"
+      "bytes": 1707,
+      "sha256": "bbb83760193b9b1ce00763c43070d4b9131f01b5c6313c019b07e2b808d3e4ed"
     }
   ]
 }

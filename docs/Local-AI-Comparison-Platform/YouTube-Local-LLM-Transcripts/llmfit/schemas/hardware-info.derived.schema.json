@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "hwClass": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gpuName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "chipVendor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "chipFamily": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "chipVariant": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cpu": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "os": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "vramGb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "unifiedMemoryGb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ramGb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "gpuCount": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 4294967295
+    }
+  }
+}

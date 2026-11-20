@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Local strict projection of pinnedRustBenchmarkEntry serialization;NOT an upstreamJSONschema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "hfId": {
+      "type": "string"
+    },
+    "engineName": {
+      "type": "string"
+    },
+    "quantization": {
+      "type": "string"
+    },
+    "tokSOut": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tokSTotal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ttftMs": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "peakVramGb": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "contextLength": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "batchSize": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "username": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "createdAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "verified": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "hardware": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "hwClass": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gpuName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "chipVendor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "chipFamily": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "chipVariant": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cpu": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vramGb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unifiedMemoryGb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ramGb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gpuCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    }
+  }
+}

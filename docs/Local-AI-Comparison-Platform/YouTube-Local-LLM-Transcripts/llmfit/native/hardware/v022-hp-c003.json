@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "name": "v022-hp-c003",
+  "hardware": {
+    "total_ram_gb": 192,
+    "unified_memory": false
+  }
+}

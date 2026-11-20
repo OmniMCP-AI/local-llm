@@ -1,3 +1,17 @@
+# llmfit-aligned research data (primary machine-readable structure)
+
+Updated2026-11-20T21:50:55.958610+08:00Asia/Shanghai. Upstreamdefaultbranch`main`pinnedto`26450cccaf3a3f14b1822875f2473847a744a718`;verifiedcurrentheadmatches priorlicensepin. **Use[llmfit/research/](llmfit/research/)forlosslessrecords with upstream-nativecoreprojections andexplicitresearch extensions.** OldCSVsandLCZstyleviewsarepreservedevidence,not a newlyinventedcompetingcore schema.
+
+-116hardware/profileenvelopes:16actualupstreamHardwareProfile-schema-compatibleminimalcores;100researchpartialhardwareprofiles.
+-450observations:127scalarBenchmarkEntryserialization-compatibleprojections;323remainresearch-onlymetrics/ranges/estimates. TheseareNOTcommunitysubmissions orverifiedbenchmarks.
+-140video-scopedmodelreferences;0completeLlmModelcatalogrecords and0communitysubmissions. Unknownrequiredfields are notinvented.
+-All450claimCSVrows,99hardwareCSVrows,116profiles,293links and242testseries preserved;fullBOM/evidence/experimentalconditions retained.
+-[schema.md](llmfit/schema.md),[mapping.md](llmfit/mapping.md),[validation-report.json](llmfit/validation-report.json),[MITnotice](llmfit/LICENSE.llmfit-MIT.txt).
+
+No llmfitinstallation/import/runtimeexecution,upstreambenchmarkcacheingestion,newYouTubecalls orrepositorywrites. Structuralchecks are documented,not a claim of testednativeimportsupport. Fullthird-partycaptions remainexcluded.
+
+---
+
 # Local-LLM video research:hardware profiles and test series
 
 Updated 2026-11-20T21:41:13.332271+08:00 · Asia/Shanghai. **Original selective research notes and caption-derived facts,NOT full scripts/transcripts.**

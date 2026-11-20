@@ -132,3 +132,7 @@ A dash in the BOM means unreported,not zero or includedfree.
 ## Scope
 
 Caption-only evidence;no chart/video viewing or independent hardware validation. ASR and source contradictions are retained. Full original caption text is not included. Original450claim records and99hardwarefact records are preserved byte-for-byte in their originalCSVs;new profiles/series are a separately typed organization layer.
+
+## llmfit-aligned machine-readable records
+
+Upstreamcommit`26450cccaf3a3f14b1822875f2473847a744a718`. Thisvideo has1losslessresearchprofiles;1have a minimalcore passingthe actualupstreamHardwareProfileJSONschema. Otherprofilesremain explicitlypartial,not paddedwithdefaults. Modelcatalogmetadata is incomplete;runconditions/prefill/concurrency/BOM/provenance remainnamespacedextensions. See[contract](llmfit/schema.md),[fieldmapping](llmfit/mapping.md),[validation](llmfit/validation-report.json). NativecompatibilityisNOTa completebuild,independentmeasurement or testedimport.

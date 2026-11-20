@@ -1,0 +1,42 @@
+{
+  "upstream_commit": "26450cccaf3a3f14b1822875f2473847a744a718",
+  "updated_Asia_Shanghai": "2026-11-20T21:50:55.958610+08:00",
+  "counts": {
+    "research_hardware_records": 116,
+    "native_hardware_profile_schema_compatible": 16,
+    "research_partial_hardware_profiles": 100,
+    "meaningful_hardware_info_projections": 103,
+    "model_reference_records": 140,
+    "native_complete_LlmModel_records": 0,
+    "research_partial_model_references": 140,
+    "research_observation_records": 450,
+    "native_BenchmarkEntry_structural_projections": 127,
+    "research_only_observations": 323,
+    "native_community_submissions": 0,
+    "preserved_profiles": 116,
+    "preserved_profile_links": 293,
+    "preserved_test_series": 242,
+    "preserved_hardware_fact_rows": 99,
+    "unit_conversions_time_to_ms": 14
+  },
+  "native_means": "Compatible with pinnedJSONschema or Rustfieldserialization only;NOT fullmachine,verifiedbenchmark,communitysubmission or nativeimporttest",
+  "validation": {
+    "json_parse_all_new_files": "pass",
+    "native_hardware_against_actual_upstream_schema": "pass",
+    "BenchmarkEntry_andHardwareInfo_against_declaration_derived_strict_checks": "pass",
+    "partial_model_projection_fieldtypes": "pass",
+    "preserved450_original_observations_and116fullprofiles_in_extensions": "pass",
+    "legacyCSVs_byte_identical": "pass",
+    "source_and_fieldguardchecks": "pass",
+    "llmfitCLI_orRust_deserialization_run": false,
+    "new_dependencies_installed": false,
+    "schema_check_implementation": "One-off offlinechecks cover type/required/properties/additionalProperties/const/enum/minimum/exclusiveMinimum/maximum/minLength/pattern/minItems/items used by selectedcontracts;not a generalJSONschemacertification"
+  },
+  "errors": [],
+  "not_done": [
+    "No llmfitinstallation/import/execution",
+    "No communitysubmissionfabrication",
+    "No thirdpartybenchmarkcacheorHFcatalogingestion",
+    "No newYouTube/networkbenchmarkcalls"
+  ]
+}
