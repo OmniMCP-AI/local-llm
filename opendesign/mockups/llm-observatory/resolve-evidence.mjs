@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,12 +6,11 @@ import { promisify } from "node:util";
 import { emptyEvidenceState, isPublicIssue, writeEvidenceState } from "./evidence-state.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { feedbackId } from "./feedback-policy.mjs";
+import { digest, readJson, readResearchSnapshot as snapshot } from "./research-released-snapshot.mjs";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const run = promisify(execFile);
-const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
-const readJson = async (name) => JSON.parse(await readFile(name, "utf8"));
 const optionalState = async (root) => readJson(join(root, "evidence-quarantine.json")).catch((error) => {
   if (error.code === "ENOENT") return emptyEvidenceState;
   throw error;
@@ -33,19 +31,6 @@ async function publicFiles(root, folder = "") {
 async function hashes(root) {
   return new Map(await Promise.all((await publicFiles(root)).map(async (name) =>
     ["/" + name, digest(await readFile(join(root, name)))])));
-}
-
-async function snapshot(root, release) {
-  const wiki = await readJson(join(root, "wiki/manifest.json"));
-  const pin = release ?? wiki.researchRelease;
-  if (!/^v1-[a-f0-9]{16}$/.test(pin)) throw new Error("Invalid research release");
-  const folder = join(root, "research", pin);
-  const [bytes, manifest] = await Promise.all([readFile(join(folder, "index.json")), readJson(join(folder, "manifest.json"))]);
-  const index = JSON.parse(bytes);
-  if (index.release !== pin || manifest.release !== pin || manifest.artifacts["index.json"] !== digest(bytes)) {
-    throw new Error("Research index and release manifest disagree");
-  }
-  return { wiki, index };
 }
 
 function intakeRecord(intake, evidenceId, release) {
