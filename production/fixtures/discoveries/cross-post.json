@@ -1,0 +1,11 @@
+{
+  "source_url": "https://video.example/watch/local-models-repost",
+  "original_url": "https://forum.example/topics/local-models/18",
+  "source_format": "video",
+  "published_at": "2026-11-19T16:00:00Z",
+  "consent": {
+    "authority": "authorized_representative",
+    "reference": "fixture-repost-grant",
+    "scope": "public_source_link"
+  }
+}
