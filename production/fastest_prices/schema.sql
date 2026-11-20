@@ -54,7 +54,15 @@ CREATE OR REPLACE FUNCTION fastest_prices.approve(input jsonb)
 RETURNS text LANGUAGE plpgsql AS $$
 DECLARE
     cohort_key text := input->>'id';
+    expiry text := input #>> '{authorization,expires_at}';
 BEGIN
+    IF input->'authorization' ? 'expires_at' THEN
+        IF expiry IS NULL OR expiry !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$' THEN
+            RAISE EXCEPTION 'Authorization expiry requires a UTC timestamp';
+        END IF;
+        PERFORM expiry::timestamptz;
+    END IF;
+
     INSERT INTO fastest_prices.cohort (id, document)
     VALUES (cohort_key, input) ON CONFLICT DO NOTHING;
 
@@ -154,12 +162,13 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
         'release_id', requested.id,
         'cohort_id', requested.cohort_id,
         'method', requested.method_version,
-        'status', CASE WHEN withdrawn.cohort_id IS NULL THEN 'published' ELSE 'withdrawn' END
-    ) || CASE WHEN withdrawn.cohort_id IS NULL THEN jsonb_build_object(
+        'status', CASE WHEN rights.available THEN 'published' ELSE 'withdrawn' END
+    ) || CASE WHEN rights.available THEN jsonb_build_object(
         'start', requested.start_day,
         'as_of', requested.as_of,
         'cohort', cohort.document - ARRAY['id', 'seller_aliases', 'authorization'],
         'decision_id', cohort.document #>> '{authorization,decision_id}',
+        'expires_at', cohort.document #>> '{authorization,expires_at}',
         'can_aggregate', cohort.document #>> '{authorization,aggregate}' = 'allow',
         'captures', coalesce((
             SELECT jsonb_agg(jsonb_build_object('checked_at', captured.document->'checked_at', 'status', captured.status)
@@ -192,6 +201,11 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
     FROM fastest_prices.release AS requested
     JOIN fastest_prices.cohort AS cohort ON cohort.id = requested.cohort_id
     LEFT JOIN fastest_prices.withdrawal AS withdrawn ON withdrawn.cohort_id = requested.cohort_id
+    CROSS JOIN LATERAL (
+        SELECT withdrawn.cohort_id IS NULL AND coalesce(
+            (cohort.document #>> '{authorization,expires_at}')::timestamptz > statement_timestamp(), true
+        ) AS available
+    ) AS rights
     WHERE requested.id = release_key;
 $$;
 

@@ -56,6 +56,14 @@ class ReleaseStore:
             raise ReleaseNotFound(release_id or "current")
         return json.loads(result)
 
+    def read_evidence(self, evidence_id):
+        """Resolve one evidence ID to its latest rights-filtered release."""
+        identifier = uuid.UUID(evidence_id)
+        result = self._query(f"SELECT fastest_release.read_evidence('{identifier}'::uuid);")
+        if not result:
+            raise ReleaseNotFound(evidence_id)
+        return json.loads(result)
+
     def read_many(self, release_ids):
         """Read explicitly pinned observations with one rights snapshot."""
         if not release_ids:
