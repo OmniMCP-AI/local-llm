@@ -421,6 +421,12 @@ rubric. A successful partial run can supply the phase it measured. Only rows
 with reviewed measurements and passing quality and privacy gates can compete
 on the chart. Chart points also require values on both selected axes.
 
+Choose **Team serving** to set limits for response time under four-user load,
+aggregate accepted output and wall energy per accepted request. The built-in
+serving rows start unmeasured. The [serving capture and intake instructions](fastest_serving/README.md)
+specify the workload, meter boundary and reviewed records for the same goals
+page and comparison API.
+
 Add a price UUID only after matching the tested machine to that exact
 whole-build revision. Configure `FASTEST_DATABASE_URL` with permission to
 execute `fastest_prices.read_release(uuid)`. Budget uses the lowest eligible

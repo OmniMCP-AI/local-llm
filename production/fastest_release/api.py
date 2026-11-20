@@ -12,7 +12,7 @@ from typing import Callable
 from urllib.parse import parse_qsl, urlencode
 
 from fastest_cost import DEFAULT_ACCEPTED, DEFAULT_MONTHS, MAX_ACCEPTED, MAX_MONTHS, calculate
-from fastest_goals import ENTRIES, METRICS, NUMBER, PRIVACY_LABELS
+from fastest_goals import ENTRIES, METRICS, NUMBER, PRIVACY_LABELS, SERVING_ENTRY, SERVING_METRICS
 from fastest_prices import PriceError, PriceReleaseNotFound
 from fastest_prices.result import eligible_offer
 
@@ -89,6 +89,13 @@ GOAL_PARAMS = {
     **{key: {"type": "string", "enum": list(METRICS)} for key in ("priority", "x", "y")},
     **{key: {"type": "string", "pattern": f"^{NUMBER.pattern}$"} for key in ("prefill", "decode")},
     "budget": {"type": "string", "pattern": f"^(?:{NUMBER.pattern})?$"},
+}
+COMPARISON_PARAMS = {
+    **GOAL_PARAMS,
+    "entry": {"type": "string", "enum": [*ENTRIES, SERVING_ENTRY]},
+    **{key: {"type": "string", "enum": [*METRICS, *SERVING_METRICS]} for key in ("priority", "x", "y")},
+    **{key: {"type": "string", "pattern": f"^{NUMBER.pattern}$"} for key in ("user_p95", "capacity")},
+    "wall_energy": {"type": "string", "pattern": f"^(?:{NUMBER.pattern})?$"},
 }
 COST_PARAMS = {
     "revision": {"type": "string", "pattern": r"^v1-[a-f0-9]{64}$"},
@@ -191,8 +198,8 @@ class PublicApi:
                 PROFILE_PARAMS, PROFILE_RESPONSE, ("kind", "id"),
             ),
             BASE + "/comparison": Operation(
-                self._goal_comparison, "Compare setups against the released text goals",
-                GOAL_PARAMS, {
+                self._goal_comparison, "Compare setups against released solo or team serving goals",
+                COMPARISON_PARAMS, {
                     "release_id": "string", "text_release": "string", "selection": "object",
                     "market": "object", "metrics": "object", "protocol": "string", "quality_rubric": "string",
                     "rows": "array", "recommendation": ["string", "null"], "alternatives": "array", "chart": "object",
@@ -378,11 +385,15 @@ class PublicApi:
             raise ReleaseNotFound(revision)
         selection = service.selection(parameters)
         result = service.evaluate(selection)
-        rights = {cell["id"]: _rights(cell["rights"]) for cell in service.text["cells"] if "rights" in cell}
-        return {**result,
-                "rights": {"export_scope": "public-release", "measurements": rights},
-                "citations": [{"url": f"/goals/{service.release_id}/text-pilot.html", "release_id": result["text_release"]}],
-                "url": service.url(selection)}
+        url = service.url(selection)
+        if selection["entry"] == SERVING_ENTRY:
+            rights = {cell: _rights(run["rights"]) for cell, run in service.serving.items() if "rights" in run}
+            citations = [{"url": url, "release_id": service.release_id}]
+        else:
+            rights = {cell["id"]: _rights(cell["rights"]) for cell in service.text["cells"] if "rights" in cell}
+            citations = [{"url": f"/goals/{service.release_id}/text-pilot.html", "release_id": result["text_release"]}]
+        return {**result, "rights": {"export_scope": "public-release", "measurements": rights},
+                "citations": citations, "url": url}
 
     def _advisor(self, parameters):
         return advise(parameters, self._goal_comparison, self._calculator)
