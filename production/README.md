@@ -41,3 +41,58 @@ These boundary tests start private PostgreSQL clusters on temporary Unix sockets
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -c -s tests -v
 ```
+
+## Reconcile the private video research seed
+
+From this directory, use the release database's schema owner to run the import
+and capture its seed ID. The ID is a digest of the mapper version, coverage, and
+source file hashes. Replaying the same input returns the same ID and leaves each
+record stored once. The import checks the retained views against their originals
+before writing the snapshot in one transaction.
+
+```sh
+export PYTHONDONTWRITEBYTECODE=1
+python3 -m fastest_release migrate
+python3 -m fastest_release research-import
+python3 -m fastest_release research-read SEED_ID
+python3 -m fastest_release research-read SEED_ID observation V001-P001
+python3 -m fastest_release research-read SEED_ID profile_association V001-P001
+```
+
+Use a record kind by itself to list that kind in the snapshot. The kinds are
+`profile`, `component`, `legacy_hardware`, `series`, `observation`,
+`profile_association`, and `model_reference`. Each source locator points to a
+CSV line or JSON record relative to the
+[transcript seed](../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/).
+BOM component IDs use the original CSV line number. Inspect a component's
+`original.profile_id` for the parent profile. An observation's original metric,
+value, unit, timestamp, and conditions stay in `original`. The observation
+carries its test series ID and any reported profile ID. The corresponding
+association supplies the original qualifying wording. Each partial model
+reference keeps the reported video-scoped label and the missing fields.
+
+Native records and partial projections have separate fields. The 16
+`HardwareProfile` cores are schema-compatible and all 116 builds are incomplete.
+The 127 `BenchmarkEntry` projections remain unverified creator reports. The
+research manifest includes the upstream commit and the retained
+[llmfit MIT notice](../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/llmfit/LICENSE.llmfit-MIT.txt).
+The importer writes only to the private `fastest_research` schema. Publication
+continues through the reviewed observation and rights checks above.
+
+### Verify the pinned llmfit contracts
+
+Run the native regression with Rust and Cargo through rustup, plus `curl` and
+`tar`. The verifier downloads the pinned source archive, prints the upstream
+input hashes, and uses the upstream Cargo lockfile in a disposable workspace.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 tests/verify_research_llmfit.py --toolchain 1.98.0
+```
+
+The tests cover the 16 strict hardware cores, 127 structural benchmarks and
+their nested hardware data, and 103 separately retained `HardwareInfo`
+projections. The pinned model deserializer reads 19,192 raw catalog records
+and the embedded loader returns 18,044 after normalization. The upstream
+community loader supplies 546 submissions that pass its Draft 7 schema. The
+140 video-scoped model references remain partial and the seed emits zero
+native models and zero community submissions.
