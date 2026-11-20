@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
-import { writeLocalHardwareProfiles } from "./catalog-local-build.mjs";
+import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
@@ -119,14 +119,15 @@ const runtimes = JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8"
   references: (references ?? []).filter(({ href }) => !isWithdrawn(href)),
 }));
 const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware, runtimes) : "";
-let localHardwareRelease = "";
+let localCatalogRelease = "";
+let localModelIds = [];
 if (!pages) {
   const localOutput = fileURLToPath(here("local-catalog/"));
   const { importLocalCatalog } = await import("./catalog-pg.mjs");
   const imported = await importLocalCatalog(hardware);
   console.log(`Imported local PostgreSQL catalog snapshot ${imported.snapshotId}`);
-  const license = JSON.parse(await readFile(here("catalog-models.json"), "utf8")).licenseNotice;
-  localHardwareRelease = await writeLocalHardwareProfiles(localOutput, imported, license);
+  localCatalogRelease = await writeLocalCatalogProfiles(localOutput, imported, imported.modelLicenseNotice);
+  localModelIds = imported.catalog.models.map(({ id }) => id);
 }
 const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
@@ -164,7 +165,8 @@ const result = await build({
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_RUNTIMES__: JSON.stringify(runtimes),
-    __FASTEST_LOCAL_HARDWARE_RELEASE__: JSON.stringify(localHardwareRelease),
+    __FASTEST_LOCAL_CATALOG_RELEASE__: JSON.stringify(localCatalogRelease),
+    __FASTEST_LOCAL_MODEL_IDS__: JSON.stringify(localModelIds),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
     __FASTEST_WIKI_PUBLIC_ROUTES__: JSON.stringify(Object.fromEntries(Object.keys(wikiRelease?.publicPages ?? {})
