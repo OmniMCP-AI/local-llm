@@ -9,6 +9,7 @@ import sys
 
 from . import PriceStore
 from .artifacts import ARTIFACT_NAMES
+from .refresh import refresh, register
 
 
 def main(argv=None):
@@ -18,6 +19,13 @@ def main(argv=None):
     commands.add_parser("migrate", help="Install the prices schema.")
     ingest = commands.add_parser("ingest", help="Append a reviewed source and collection bundle.")
     ingest.add_argument("bundle", type=Path)
+    approve = commands.add_parser("approve", help="Register the reviewed seller cohort.")
+    approve.add_argument("cohort", type=Path)
+    register_refresh = commands.add_parser("register-refresh", help="Register an approved HTTPS seller feed.")
+    register_refresh.add_argument("cohort_id")
+    register_refresh.add_argument("config", type=Path)
+    refresh_seller = commands.add_parser("refresh", help="Run one bounded seller refresh.")
+    refresh_seller.add_argument("cohort_id")
     publish = commands.add_parser("publish", help="Pin a dated release from the reviewed database rows.")
     publish.add_argument("cohort_id")
     publish.add_argument("start")
@@ -38,6 +46,14 @@ def main(argv=None):
             store.migrate()
         elif args.command == "ingest":
             print(store.ingest(json.loads(args.bundle.read_text(encoding="utf-8"))))
+        elif args.command == "approve":
+            print(store.approve(json.loads(args.cohort.read_text(encoding="utf-8"))))
+        elif args.command == "register-refresh":
+            register(store, args.cohort_id, json.loads(args.config.read_text(encoding="utf-8")))
+        elif args.command == "refresh":
+            result = refresh(store, args.cohort_id)
+            print(json.dumps(result, sort_keys=True))
+            return 0 if result["status"] in {"success", "deferred"} else 1
         elif args.command == "publish":
             print(store.publish(args.cohort_id, args.start, args.as_of))
         elif args.command == "artifact":

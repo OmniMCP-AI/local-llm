@@ -17,10 +17,14 @@ CREATE TABLE IF NOT EXISTS fastest_prices.capture (
     cohort_id text NOT NULL REFERENCES fastest_prices.cohort (id),
     id text NOT NULL,
     checked_at timestamptz NOT NULL,
-    status text NOT NULL CHECK (status IN ('success', 'failed')),
+    status text NOT NULL,
     document jsonb NOT NULL,
     UNIQUE (cohort_id, id)
 );
+
+ALTER TABLE fastest_prices.capture DROP CONSTRAINT IF EXISTS capture_status_check;
+ALTER TABLE fastest_prices.capture ADD CONSTRAINT capture_status_check
+    CHECK (status IN ('success', 'failed', 'incomplete'));
 
 CREATE TABLE IF NOT EXISTS fastest_prices.observation (
     capture_sequence bigint NOT NULL REFERENCES fastest_prices.capture (sequence),
@@ -139,19 +143,23 @@ CREATE OR REPLACE FUNCTION fastest_prices.publish(cohort_key text, window_start 
 RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE
     cutoff bigint;
+    pinned_method text;
     release_key uuid;
 BEGIN
     PERFORM fastest_prices.active_cohort(cohort_key);
-    SELECT coalesce(max(sequence), 0) INTO cutoff FROM fastest_prices.capture
+    SELECT coalesce(max(sequence), 0),
+        CASE WHEN bool_or(document ? 'source_adapter') THEN 'seller-day-landed-asking-v2' ELSE method_key END
+    INTO cutoff, pinned_method
+    FROM fastest_prices.capture
     WHERE cohort_id = cohort_key AND (checked_at AT TIME ZONE 'UTC')::date <= window_end;
 
     INSERT INTO fastest_prices.release (cohort_id, start_day, as_of, capture_cutoff, method_version)
-    VALUES (cohort_key, window_start, window_end, cutoff, method_key)
+    VALUES (cohort_key, window_start, window_end, cutoff, pinned_method)
     ON CONFLICT DO NOTHING;
 
     SELECT id INTO STRICT release_key FROM fastest_prices.release
     WHERE cohort_id = cohort_key AND start_day = window_start AND as_of = window_end AND capture_cutoff = cutoff
-        AND method_version = method_key;
+        AND method_version = pinned_method;
     RETURN release_key;
 END;
 $$;
@@ -183,18 +191,25 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
                 SELECT DISTINCT ON (day, observation.seller, observation.listing_id, kind)
                     (observation.observed_at AT TIME ZONE 'UTC')::date AS day,
                     observation.seller, observation.listing_id, observation.document->>'kind' AS kind,
-                    observation.document || jsonb_build_object(
+                    (observation.document - ARRAY['source_event_id', 'source_event_version']) || jsonb_build_object(
                         'seller', observation.seller,
                         'price', observation.price::text,
-                        'captured_at', captured.document->'checked_at'
+                        'captured_at', observation.captured_at
                     ) AS offer
-                FROM fastest_prices.observation AS observation
-                JOIN fastest_prices.capture AS captured ON captured.sequence = observation.capture_sequence
-                WHERE captured.cohort_id = requested.cohort_id AND captured.sequence <= requested.capture_cutoff
-                    AND (captured.checked_at AT TIME ZONE 'UTC')::date <= requested.as_of
+                FROM (
+                    SELECT offer.*, captured.checked_at, captured.document->'checked_at' AS captured_at,
+                        row_number() OVER (PARTITION BY offer.document->>'source_event_id'
+                            ORDER BY (offer.document->>'source_event_version')::bigint DESC NULLS LAST)
+                            AS event_rank
+                    FROM fastest_prices.observation AS offer
+                    JOIN fastest_prices.capture AS captured ON captured.sequence = offer.capture_sequence
+                    WHERE captured.cohort_id = requested.cohort_id AND captured.sequence <= requested.capture_cutoff
+                        AND (captured.checked_at AT TIME ZONE 'UTC')::date <= requested.as_of
+                ) AS observation
+                WHERE (observation.event_rank = 1 OR NOT observation.document ? 'source_event_id')
                     AND (observation.observed_at AT TIME ZONE 'UTC')::date BETWEEN requested.start_day AND requested.as_of
                 ORDER BY day, observation.seller, observation.listing_id, kind,
-                    observation.observed_at DESC, captured.checked_at DESC, captured.sequence DESC, observation.ordinal DESC
+                    observation.observed_at DESC, observation.checked_at DESC, observation.capture_sequence DESC, observation.ordinal DESC
             ) AS dedup
         ), '[]'::jsonb)
     ) ELSE '{}'::jsonb END
