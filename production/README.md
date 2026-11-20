@@ -4,6 +4,8 @@ PostgreSQL stores reviewed observation revisions and the current release pointer
 
 The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream releases and authored card applicability. It links matched retests to approved benchmark releases.
 
+[Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
+
 [Regional price cohorts](fastest_prices/README.md) publish dated reviewed offers and a historical range when the sample qualifies.
 
 [Discovery intake](fastest_discoveries/README.md) turns opt-in leads into attributed review candidates and protects withdrawn or restricted links.
@@ -61,6 +63,7 @@ price reader is configured.
 | `/api/v1/comparison` | The same selectors as the goals form, plus optional goals `revision`. Returns comparison values, gates, exclusions and the pinned page URL. |
 | `/api/v1/comparison/profile` | `kind` and profile `id`. Returns the controlled cohort's measurements and exclusions in display order. |
 | `/api/v1/historical-offers` | Price `release=<UUID>`. Returns reviewed quotes in their original currency, with freshness, eligibility, conditions and citations. |
+| `/api/v1/advisor` | Structured configuration or cost decision with clarification, abstention, or a cited answer. See the [guided advisor](fastest_release/ADVISOR.md). |
 | `/api/v1/calculator` | `scenario`, `monthly_accepted` and `months` match the cost page. An optional `revision` verifies the replayed calculation. Pass `scenario=illustrative` to reproduce the clearly labeled example. |
 
 Search, coverage, profile comparisons and historical offers accept `limit`

@@ -3,6 +3,9 @@ import re
 import uuid
 
 
+CONTRIBUTOR_COMPARISON = "Excluded from controlled comparisons. The measurement is contributor-reported."
+
+
 class InvalidObservation(ValueError):
     """The submitted observation is ineligible for the public release."""
 
@@ -58,8 +61,8 @@ def _strings(record, group, expected):
 def validate(observation):
     keys(observation, "evidence_id kind hardware artifact workload metric source rights fields", "observation")
     _uuid(observation["evidence_id"], "evidence_id")
-    if observation["kind"] not in ("synthetic", "measured"):
-        raise InvalidObservation("kind must be synthetic or measured")
+    if observation["kind"] not in ("synthetic", "measured", "contributor"):
+        raise InvalidObservation("kind must be synthetic, measured, or contributor")
 
     hardware = observation["hardware"]
     keys(hardware, "revision_id revision name configuration", "hardware")
@@ -104,6 +107,10 @@ def validate(observation):
     fields = observation["fields"]
     if not isinstance(fields, dict):
         raise InvalidObservation("fields must be an object")
+    if observation["kind"] == "contributor" and fields.get("comparison_eligibility") != {
+        "status": "known", "rights": "allow", "value": CONTRIBUTOR_COMPARISON,
+    }:
+        raise InvalidObservation("Contributor observations require the public comparison exclusion")
     for key, field in fields.items():
         if not isinstance(key, str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", key):
             raise InvalidObservation("field names must use lowercase letters, digits and underscores")

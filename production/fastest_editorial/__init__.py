@@ -91,6 +91,8 @@ def _select_story(store, release_id, origin, copy):
 
     if row["kind"] == "synthetic":
         return {"outcome": "no_story", "reason": "synthetic_release", "release": release}
+    if row["kind"] == "contributor":
+        return {"outcome": "no_story", "reason": "contributor_release", "release": release}
 
     metric = row["metric"]
     if (metric["id"], metric["version"], metric["statistic"], metric["unit"]) != (
