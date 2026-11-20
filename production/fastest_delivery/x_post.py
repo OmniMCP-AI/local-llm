@@ -1,22 +1,17 @@
 """An X post card made from the editorial release's exact numeric claim."""
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
-import errno
 from hashlib import sha256
 from io import BytesIO
-import json
-from pathlib import Path
 import re
-from tempfile import TemporaryDirectory
 from unicodedata import normalize
-from urllib.parse import urlsplit
 from zipfile import ZipFile, ZipInfo
 
-from fastest_editorial import generate_package
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, instant, json_bytes, read_sealed, require_window, retain, seal
+from .package import retain_package, verify_story
 
 
 PAYLOAD_FILES = ("post.txt", "chart.png", "chart-alt.txt")
@@ -37,27 +32,6 @@ COPY = {
         "單柱圖，刻度範圍為 0 至 {maximum} {unit}。",
     ),
 }
-
-
-def verify_story(store, draft):
-    if draft["outcome"] != "story":
-        raise ValueError("draft contains no approved evidence story")
-    citation = urlsplit(draft["story"]["evidence_destination"])
-    checked = generate_package(
-        store,
-        editorial_date=date.fromisoformat(draft["editorial_date"]),
-        locale=draft["locale"],
-        public_origin=f"{citation.scheme}://{citation.netloc}",
-        release_id=draft["release"]["release_id"],
-    )
-    if checked["outcome"] != "story":
-        raise ValueError(f"evidence is ineligible: {checked['reason']}")
-    if checked != draft:
-        raise ValueError("draft differs from the pinned public evidence")
-    chart = json.loads(store.artifact(draft["release"]["release_id"], "chart.json"))
-    if chart["status"] != "published":
-        raise ValueError("evidence is ineligible: withdrawn_release")
-    return chart["scale"]["maximum"]
 
 
 def _copy(draft, maximum):
@@ -122,21 +96,7 @@ def prepare(store, draft_path, output_dir):
         "files": {name: sha256(body).hexdigest() for name, body in files.items()},
     }, "payload_sha256")
     files["package.json"] = json_bytes(package)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / package["payload_sha256"]
-    with TemporaryDirectory(dir=output_dir, prefix=".review-") as staging:
-        pending = Path(staging) / "package"
-        pending.mkdir()
-        for name, body in files.items():
-            (pending / name).write_bytes(body)
-        try:
-            pending.rename(path)
-        except OSError as error:
-            if error.errno not in (errno.EEXIST, errno.ENOTEMPTY):
-                raise
-            if any((path / name).read_bytes() != body for name, body in files.items()):
-                raise ValueError(f"existing candidate differs from {path.name}") from None
-    return path.resolve()
+    return retain_package(output_dir, package["payload_sha256"], files)
 
 
 def _load_package(path):

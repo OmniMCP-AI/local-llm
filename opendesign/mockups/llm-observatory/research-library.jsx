@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { useLocale } from "./locale";
-import { filterResearch } from "./research-filter.mjs";
+import { filterResearch, readResearchFilters, researchReleaseUrl } from "./research-filter.mjs";
 import vocabulary from "./wiki/context-vocabulary.json";
-import index from "./wiki/research-index.json";
+import previewIndex from "./wiki/research-index.json";
+
+const index = __FASTEST_PAGES__ ? __FASTEST_RESEARCH_INDEX__ : previewIndex;
 
 const languages = ["en", "zh-Hans", "es", "ja", "ko", "de", "hi", "fr", "ar"];
 const taskIds = new Set(index.sources.flatMap(source => source.records.flatMap(record => record.topics)));
@@ -50,7 +52,7 @@ function SourceCard({ source, records, label, locale, filters, onFilter }) {
   const local = url.startsWith("#");
   const date = source.date && new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(source.date+"T00:00:00Z"));
   return <article className="research-card">
-    <div className="research-byline"><b>{label("formats",source.format)}</b><span>{source.publisher}</span><span>{date || label("ui","undated")}</span></div>
+    <div className="research-byline"><b>{label("formats",source.format)}</b><span>{source.publisher}</span>{source.language && <span>{source.language}</span>}<span>{date || label("ui","undated")}</span></div>
     <h2><a href={url} target={local ? undefined : "_blank"} rel={local ? undefined : "noreferrer"}>{source.title} <ArrowUpRight size={15}/></a></h2>
     <p>{source.context}</p>
     <div className="research-topics" aria-label={label("ui","topic")}>{Object.keys(source.topics).map(topic =>
@@ -77,11 +79,7 @@ export function ResearchLibrary({ go }) {
   const { locale } = useLocale();
   const label = useResearchLabels();
   const params = new URLSearchParams(location.hash.split("?")[1]);
-  const filters = { query: params.get("query") || "" };
-  for (const [key, values] of Object.entries(options)) {
-    const selected = params.get(key);
-    filters[key] = values.includes(selected) ? selected : key === "sort" ? "newest" : "";
-  }
+  const filters = readResearchFilters(params, vocabulary);
   function onFilter(key, value) {
     if (value) params.set(key, value);
     else params.delete(key);
@@ -104,7 +102,9 @@ export function ResearchLibrary({ go }) {
     ...(vocabulary.aliases[id] || [])].join(" ");
   const matches = filterResearch(index.sources, filters, locale, tagText);
   return <section className="research-library">
-    <header className="deep-heading"><div><h1>{label("ui","library")}</h1><p>{label("ui","intro")}</p></div></header>
+    <header className="deep-heading"><div><h1>{label("ui","library")}</h1><p>{label("ui","intro")}</p></div>
+      {index.release && <a className="btn outline" href={researchReleaseUrl(index.release, filters)}>HTML · Markdown · JSON</a>}
+    </header>
     <div className="research-controls">
       <label className="research-select">{searchLabel}<input type="search" value={filters.query} onChange={e=>onFilter("query",e.target.value)}/></label>
       <div className="research-filter-row">{select("format")}{select("topic")}{select("sort")}</div>
