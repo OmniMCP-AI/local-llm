@@ -1,0 +1,7 @@
+{
+  "llama-bench-jsonl-example": {
+    "status": "approved-metadata",
+    "review": "First-party examples/llama-bench/README.md at 1831f538f720d1d99fba146f24f0a8e970838cc4, lines 60–70 and 280–288. The pinned repository MIT license covers the documentation. Reviewed scope covers citation, reported configuration and measurement units for research discovery.",
+    "sha256": "fcda26033f6b52ad54c368baf160e0e624435cf3aca478aba56b784782f4a39a"
+  }
+}

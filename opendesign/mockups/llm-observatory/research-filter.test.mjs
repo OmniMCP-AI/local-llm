@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { filterResearch } from "./research-filter.mjs";
+import { withPreviewResults } from "./research-preview.mjs";
 
-const { sources } = JSON.parse(readFileSync(new URL("./wiki/research-index.json", import.meta.url)));
+const index = JSON.parse(readFileSync(new URL("./wiki/research-index.json", import.meta.url)));
+const { sources } = index;
 const vocab = JSON.parse(readFileSync(new URL("./wiki/context-vocabulary.json", import.meta.url)));
 const find = (filters) => filterResearch(sources, { query: "", ...filters }, "en", (group,id) => vocab[group][id][0]);
 const records = (filters) => find(filters).flatMap(match => match.records).map(row => row.id);
@@ -45,10 +47,27 @@ test("every record resolves to its source, series, dimension and approved vocabu
     for(const r of rows) {
       assert.ok(!ids.has(r.id) && Object.hasOwn(vocab.dimensions,r.dimension));
       ids.add(r.id);
-      assert.ok(r.seriesUrl.startsWith(source.note+"?plain=1#L"));
-      assert.ok(r.url.includes(source.id.split("/")[1]) && r.evidence && r.conditions);
+      if (source.format === "video") {
+        assert.ok(r.seriesUrl.startsWith(source.note+"?plain=1#L"));
+        assert.ok(r.url.includes(source.id.split("/")[1]));
+      } else {
+        const document = source.url.split("#")[0];
+        assert.ok(r.seriesUrl.startsWith(document+"#L"));
+        assert.ok(r.url.startsWith(document+"#L"));
+      }
+      assert.ok(r.evidence && r.conditions);
       assert.equal(Boolean(r.task), Boolean(r.topics.length));
       for(const id of r.topics) assert.ok(Object.hasOwn(vocab.topics,id));
     }
   }
+});
+
+test("the local preview enriches the 450 private video rows and retains the documentation metadata", async () => {
+  const preview = await withPreviewResults(index);
+  const videoRecords = preview.sources.filter(({ format }) => format === "video").flatMap(({ records }) => records);
+  assert.equal(videoRecords.length, 450);
+  assert.ok(videoRecords.every(({ reportedResult }) => reportedResult));
+  const example = preview.sources.find(({ id }) => id === "llama-bench-jsonl-example");
+  assert.equal(example.records.length, 2);
+  assert.ok(example.records.every(({ reportedResult }) => !reportedResult));
 });

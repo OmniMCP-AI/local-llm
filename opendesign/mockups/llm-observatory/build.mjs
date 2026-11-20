@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { writeResearchRelease } from "./research-release-build.mjs";
+import { readResearchApprovals, writeResearchRelease } from "./research-release-build.mjs";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
@@ -68,8 +68,7 @@ let researchIndex;
 let approvals = {};
 let evidenceState = emptyEvidenceState;
 if (pages) {
-  const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
-  approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
+  approvals = await readResearchApprovals(process.env.FASTEST_RESEARCH_METADATA_APPROVALS);
   const stateFile = process.env.FASTEST_EVIDENCE_STATE;
   if (stateFile) evidenceState = validateEvidenceState(JSON.parse(await readFile(stateFile, "utf8")));
   const blocked = new Set(Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn")

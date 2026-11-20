@@ -72,6 +72,10 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   assert.equal(await releaseDigest(output), await releaseDigest(rebuilt));
   const manifest = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
   assert.deepEqual(manifest.highlights.map(({ id }) => id), ["dual-rtx-2080-ti-nvlink", "open-benchmark-requests"]);
+  const research = JSON.parse(await readFile(join(output, "research", manifest.researchRelease, "index.json"), "utf8"));
+  const example = research.sources.find(({ id }) => id === "llama-bench-jsonl-example");
+  assert.deepEqual(example?.records.map(({ dimension }) => dimension), ["prefill", "generation"]);
+  assert.ok(!research.sources.some(({ format }) => format === "video"));
 
   await symlink(join(here, "functions"), join(scratch, "functions"), "dir");
   worker = spawn(process.execPath, [
