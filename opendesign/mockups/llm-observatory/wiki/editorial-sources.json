@@ -11,7 +11,8 @@
       "coding",
       "agent-workflows"
     ],
-    "context": "The v5 methodology includes FrontierCode repository changes judged for merge readiness and terminal-based scientific tasks. Its changes to the suite matter when reading scores across releases."
+    "context": "The v5 methodology includes FrontierCode repository changes judged for merge readiness and terminal-based scientific tasks. Its changes to the suite matter when reading scores across releases.",
+    "language": "en"
   },
   {
     "id": "aa-glm-5-2",
@@ -25,7 +26,8 @@
       "coding",
       "agent-workflows"
     ],
-    "context": "The publisher evaluates GLM-5.2 with Intelligence Index v4.1, GDPval-AA v2 knowledge-work tasks and SciCode. Its cost-per-task comparison uses API pricing."
+    "context": "The publisher evaluates GLM-5.2 with Intelligence Index v4.1, GDPval-AA v2 knowledge-work tasks and SciCode. Its cost-per-task comparison uses API pricing.",
+    "language": "en"
   },
   {
     "id": "together-evaluation-methods",
@@ -39,7 +41,8 @@
       "coding",
       "evidence-research"
     ],
-    "context": "The guide contrasts MMLU classification, GSM8K answer checking and HumanEval code execution. It explains how training-data overlap can distort benchmark interpretation."
+    "context": "The guide contrasts MMLU classification, GSM8K answer checking and HumanEval code execution. It explains how training-data overlap can distort benchmark interpretation.",
+    "language": "en"
   },
   {
     "id": "lcz-strata-quantization",
@@ -52,6 +55,7 @@
       "model-evaluation",
       "runtime-tuning"
     ],
-    "context": "The author compares capability and speed on a Radeon R9700. The model quantization and RAM loading policy both change, limiting what the reported differences can establish about either setting."
+    "context": "The author compares capability and speed on a Radeon R9700. The model quantization and RAM loading policy both change, limiting what the reported differences can establish about either setting.",
+    "language": null
   }
 ]

@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { writeResearchRelease } from "./research-release-build.mjs";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 
 const here = (name) => new URL(name, import.meta.url);
@@ -43,12 +45,26 @@ for (const [name, expected] of Object.entries(fullGraph.graph.research_inputs)) 
   const bytes = await readFile(here("wiki/" + name));
   if (createHash("sha256").update(bytes).digest("hex") !== expected) throw new Error("Research tags are stale: " + name + ". Run wiki/rebuild_graph.py.");
 }
+let researchIndex;
+if (pages) {
+  const approvalPath = process.env.FASTEST_RESEARCH_METADATA_APPROVALS;
+  const approvals = approvalPath ? JSON.parse(await readFile(approvalPath, "utf8")) : {};
+  researchIndex = await writeResearchRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/")), approvals);
+}
 const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
   if (!/^[a-z0-9-]+\.jpg$/.test(asset.file)) throw new Error("Invalid hardware photo filename: " + asset.file);
   const jpeg = await readFile(here("hardware-assets/" + asset.file));
   return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
 })));
-const catalogRelease = pages ? await writeCatalogRelease(fileURLToPath(here(".")), fileURLToPath(here("dist/"))) : "";
+const catalogDirectory = fileURLToPath(here("."));
+const hardware = await readHardwareCatalog(catalogDirectory);
+const hardwareDirectory = {
+  asOf: hardware.manifest.asOf,
+  coverage: hardware.manifest.coverage,
+  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source }) => ({ id, name, detail, aliases, source })),
+  machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
+};
+const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, fileURLToPath(here("dist/")), hardware) : "";
 const result = await build({
   entryPoints: [fileURLToPath(here("app.jsx"))],
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
@@ -61,7 +77,9 @@ const result = await build({
   define: {
     "process.env.NODE_ENV": '"production"',
     __FASTEST_PAGES__: String(pages),
+    __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex ?? null),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
+    __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(documents),
     __FASTEST_WIKI_GRAPH__: JSON.stringify(graph),
     __FASTEST_HARDWARE_ASSETS__: JSON.stringify(media),
@@ -89,6 +107,12 @@ const html = `<!doctype html>
 if (pages) {
   await mkdir(here("dist/"), { recursive: true });
   await writeFile(here("dist/index.html"), html);
+  await writeFile(here("dist/_headers"), "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff\n");
+  for (const name of await readdir(here("dist/research/"))) {
+    if (name !== researchIndex.release && /^v1-[a-f0-9]{16}$/.test(name)) {
+      await rm(here("dist/research/" + name), { recursive: true, force: true });
+    }
+  }
 } else {
   await writeFile(here("fastest-ai.html"), html);
 }

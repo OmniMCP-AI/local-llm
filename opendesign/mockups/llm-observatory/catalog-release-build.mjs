@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { modelIdPattern, modelShard } from "./catalog-paths.mjs";
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -10,17 +11,18 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
-export async function writeCatalogRelease(directory, output) {
-  const [sourceBytes, identityBytes, runtimeBytes] = await Promise.all([
+export async function writeCatalogRelease(directory, output, hardware) {
+  const [sourceBytes, identityBytes, runtimeBytes, hardwareSource] = await Promise.all([
     readFile(join(directory, "catalog-models.json")),
     readFile(join(directory, "catalog-identities.json")),
     readFile(join(directory, "catalog-runtimes.json")),
+    hardware ?? readHardwareCatalog(directory),
   ]);
   const source = JSON.parse(sourceBytes);
   if (source.commit !== upstream.commit) throw new Error("Review the new catalog source and its SHA-256 before publishing");
   const identities = JSON.parse(identityBytes);
   const runtimes = JSON.parse(runtimeBytes);
-  const release = "v1-" + sha256(Buffer.concat([sourceBytes, identityBytes, runtimeBytes])).slice(0, 16);
+  const release = "v1-" + sha256(Buffer.concat([sourceBytes, identityBytes, runtimeBytes, Buffer.from(hardwareSource.digest, "hex")])).slice(0, 16);
   const target = join(output, "catalog", release);
   const shards = new Map();
   const ids = new Set();
@@ -51,6 +53,7 @@ export async function writeCatalogRelease(directory, output) {
       license: source.catalogLicense,
       licenseUrl: source.catalogLicenseUrl,
     },
+    hardware: hardwareSource.manifest,
     artifactScope: "Selected upstream artifacts have individually pinned repository revisions and upstream digests. External benchmark caches are excluded.",
     coverage: {
       sourceRows: source.sourceRows,
@@ -72,6 +75,8 @@ export async function writeCatalogRelease(directory, output) {
     writeFile(join(target, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
     writeFile(join(target, "LICENSE.txt"), source.licenseNotice + "\n"),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
+    writeFile(join(data, "cards.json"), JSON.stringify(hardwareSource.catalog.cards)),
+    writeFile(join(data, "machines.json"), JSON.stringify(hardwareSource.catalog.machines)),
     ...[...shards].map(([key, rows]) => writeFile(join(data, key + ".json"), JSON.stringify(rows))),
   ]);
   return release;

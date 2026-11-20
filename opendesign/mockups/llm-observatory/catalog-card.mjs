@@ -69,6 +69,79 @@ export function runtimeCard(row) {
   };
 }
 
+export function hardwareCard(row, release, kind) {
+  const path = (type, id) => "/" + catalogPath(release, type, id);
+  const common = [["Catalog ID", row.id], ["Pinned source", "Open source record", row.source]];
+  const untested = "Untested in this release. No reviewed measurement is published for this identity.";
+
+  if (kind === "cards") {
+    return {
+      title: row.name,
+      kind: row.kind,
+      fields: [
+        ...common,
+        ["Manufacturer", row.manufacturer],
+        ["Board or product variant", row.variant],
+        ["Source names and lookup aliases", row.aliases.join(" · ") || "Unavailable"],
+        ["Reported nominal memory per device", row.memory ?? "Unknown"],
+        ["Runtime-usable memory", "Unknown"],
+        ...(row.parent ? [["Related product family or calibration", row.parent, path("cards", row.parent)]] : []),
+      ],
+      sections: [
+        ...(row.variants.length ? [{
+          title: "Distinct related variants",
+          fields: row.variants.map(({ id, name }) => ["Variant", name, path("cards", id)]),
+        }] : []),
+        ...(row.relatedProfiles.length ? [{
+          title: "Research source records",
+          fields: row.relatedProfiles.map(({ id }) => ["Hardware reference", id, path("machines", id)]),
+        }] : []),
+      ],
+      evidence: untested,
+    };
+  }
+
+  const sections = [{
+    title: "Memory",
+    fields: [
+      ["Installed system memory", row.memory.system ?? "Unknown"],
+      ["Reported nominal VRAM per device", row.memory.perDevice ?? "Unknown"],
+      ["Reported aggregate VRAM inventory", row.memory.aggregate ?? "Unknown"],
+      ["Reported allocation or limit", row.memory.allocation ?? "Unknown"],
+      ["Runtime-usable memory", "Unknown"],
+      ...(row.sourceMemory?.length ? [["Memory wording in source notes", row.sourceMemory.join(" · "), row.capture]] : []),
+    ],
+  }];
+  if (row.bom?.length) {
+    sections.push({
+      title: "Reported components",
+      fields: row.bom.map(({ category, part, quantity, source }) => [
+        category, [part ?? "Part unknown", quantity ? `quantity ${quantity}` : "quantity unknown"].join(" · "), source,
+      ]),
+    });
+  }
+  return {
+    title: row.name,
+    kind: row.kind,
+    fields: [
+      ...common,
+      ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
+      ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
+      ...(row.missingCoreFields ? [
+        ["Core build fields disclosed", `${row.coreFieldsReported} of ${row.coreFieldsTotal}`],
+        ["Missing core build fields", row.missingCoreFields.join(", ") || "None listed"],
+        ["Interconnect", row.interconnect ?? "Unknown"],
+      ] : []),
+      ...row.cardIds.map((id) => ["Linked card reference", id, path("cards", id)]),
+      ...(row.cardIds.length ? [] : [["Card identity", "No unambiguous discrete-card link in this snapshot"]]),
+    ],
+    sections,
+    evidence: row.associations
+      ? `${untested} ${row.associations} creator-reported research associations remain outside reviewed results.`
+      : untested,
+  };
+}
+
 function htmlFields(fields) {
   return `<dl>${fields.map(([name, value, href]) =>
     `<dt>${escapeHtml(name)}</dt><dd>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(value)}</a>` : escapeHtml(value)}</dd>`).join("")}</dl>`;
@@ -125,7 +198,7 @@ nav{display:flex;gap:1rem;flex-wrap:wrap} footer{margin-top:2rem;border-top:1px 
 </style>
 </head>
 <body>
-<header><nav aria-label="Catalog"><a href="/#catalog/models">Models</a><a href="/#catalog/runtimes">Runtimes</a><a href="${mdLink}">Markdown</a></nav></header>
+<header><nav aria-label="Catalog"><a href="/#catalog/cards">Cards</a><a href="/#catalog/machines">Machines</a><a href="/#catalog/models">Models</a><a href="/#catalog/runtimes">Runtimes</a><a href="${mdLink}">Markdown</a></nav></header>
 <main>
 <p>${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
 ${htmlFields(card.fields)}
