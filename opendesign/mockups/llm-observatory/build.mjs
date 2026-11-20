@@ -25,6 +25,12 @@ const pages = process.argv.includes("--pages");
 const outputArgument = process.argv.indexOf("--output");
 if (outputArgument !== -1 && (!pages || !process.argv[outputArgument + 1])) throw new Error("--output requires a Pages directory");
 const output = outputArgument === -1 ? fileURLToPath(here("dist/")) : resolve(process.argv[outputArgument + 1]);
+const releaseDate = (pages ? process.env.FASTEST_RELEASE_DATE : undefined) ??
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
+if (pages && (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate) || Number.isNaN(Date.parse(releaseDate)) ||
+    new Date(releaseDate).toISOString().slice(0, 10) !== releaseDate)) {
+  throw new Error("FASTEST_RELEASE_DATE must be a valid YYYY-MM-DD date");
+}
 const openccNotices = await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
 const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
@@ -122,7 +128,6 @@ if (!pages) {
   const license = JSON.parse(await readFile(here("catalog-models.json"), "utf8")).licenseNotice;
   localHardwareRelease = await writeLocalHardwareProfiles(localOutput, imported, license);
 }
-const releaseDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(new Date());
 const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
 const wikiRelease = pages ? await writeWikiRelease({

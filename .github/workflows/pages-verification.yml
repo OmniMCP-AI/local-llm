@@ -1,0 +1,33 @@
+name: Pages verification
+
+on:
+  pull_request:
+    paths:
+      - "opendesign/mockups/llm-observatory/**"
+      - ".github/workflows/pages-verification.yml"
+  push:
+    branches: [main]
+    paths:
+      - "opendesign/mockups/llm-observatory/**"
+      - ".github/workflows/pages-verification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: opendesign/mockups/llm-observatory
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: opendesign/mockups/llm-observatory/.node-version
+          cache: npm
+          cache-dependency-path: opendesign/mockups/llm-observatory/package-lock.json
+      - run: npm ci
+      - run: npm run test:pages
