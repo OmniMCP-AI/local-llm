@@ -6,6 +6,8 @@ The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream r
 
 [Regional price cohorts](fastest_prices/README.md) publish dated reviewed offers and a historical range when the sample qualifies.
 
+[Discovery intake](fastest_discoveries/README.md) turns opt-in leads into attributed review candidates and protects withdrawn or restricted links.
+
 [Text workload costs](fastest_cost/README.md) compare keeping a machine, upgrading, hourly rental, and a token-metered API at the same service targets.
 
 ## Run the example

@@ -1,0 +1,11 @@
+{
+  "source_url": "https://social.example/posts/63",
+  "original_url": "https://social.example/posts/63",
+  "source_format": "social",
+  "published_at": null,
+  "consent": {
+    "authority": "rights_holder",
+    "reference": "fixture-discovery-grant",
+    "scope": "discovery_only"
+  }
+}
