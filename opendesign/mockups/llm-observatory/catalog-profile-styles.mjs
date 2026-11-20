@@ -35,6 +35,11 @@ export const profileStyles = `
 .profile-fields dt { color: var(--profile-muted); font-size: .83rem; }
 .profile-fields dd { margin: .15rem 0 0; font-weight: 625; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .profile-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: .8rem; }
+.profile-spec-graphic { margin: 1rem 0; color: var(--profile-muted); font-size: .8rem; }
+.profile-spec-graphic meter { display: block; width: 100%; height: .75rem; margin-bottom: .4rem; }
+.profile-spec-graphic meter::-webkit-meter-bar { background: var(--profile-edge); border: 0; border-radius: .25rem; }
+.profile-spec-graphic meter::-webkit-meter-optimum-value { background: var(--profile-accent); border-radius: .25rem; }
+.profile-spec-graphic meter::-moz-meter-bar { background: var(--profile-accent); border-radius: .25rem; }
 .profile-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; margin-top: 1.25rem; }
 .profile-gallery figure { margin: 0; }
 .profile-gallery img { width: 100%; height: auto; max-height: 22rem; object-fit: contain; background: var(--profile-panel); outline: 1px solid #ffffff1a; }

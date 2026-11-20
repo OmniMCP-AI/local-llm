@@ -19,8 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 120);
   assert.equal(manifest.coverage.manufacturerMachines, 1);
-  assert.equal(manifest.coverage.cards, 104);
-  assert.ok(manifest.coverage.cardsWithVendorSpecs >= 39);
+  assert.equal(manifest.coverage.cards, 111);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 103);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 82);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 37);
+  assert.equal(manifest.coverage.boardPartnerCards, 3);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -44,4 +47,12 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   }
   assert.equal(find(catalog.machines, "V024-HP-C001").cardIds.length, 0);
   assert.deepEqual(find(catalog.machines, "V019-HP-TEST").cardIds.sort(), ["amd-radeon-rx-6600-xt", "t10-unresolved"].sort());
+});
+
+test("an image source withdrawal preserves its separately sourced board specification", async () => {
+  const { catalog } = await readHardwareCatalog(here, value => value?.includes("pg.asrock.com"));
+  const board = catalog.cards.find(({ id }) => id === "asrock-a770-pg-16go");
+  assert.equal(board.vendorSpec.designation, "A770 PG 16GO");
+  assert.equal(board.vendorSpec.gallery, undefined);
+  assert.ok(catalog.cards.find(({ id }) => id === "intel-arc-a770-16gb").variants.some(({ id }) => id === board.id));
 });

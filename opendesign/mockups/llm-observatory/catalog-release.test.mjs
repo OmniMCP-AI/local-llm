@@ -131,7 +131,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 104);
+  assert.equal(hardware.coverage.cards, 111);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -157,19 +157,58 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   assert.equal((await request("cards/nvidia-rtx-2080-ti-every-board.html")).status, 404);
 });
 
+function assertProfileFieldsAgree(html, markdown, id) {
+  const unescape = (value) => value.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"').replaceAll("&#39;", "'");
+  const plainMarkdown = markdown.replace(/\\([\\`*_{}\[\]<>|])/g, "$1");
+  for (const [, label, href, text] of html.matchAll(/<dt>(.*?)<\/dt><dd>(?:<a href="([^"]*)">)?([^<]*)(?:<\/a>)?<\/dd>/g)) {
+    const value = unescape(text);
+    const expected = href ? `[${value}](<${unescape(href)}>)` : value;
+    assert.ok(plainMarkdown.includes(`**${unescape(label)}** — ${expected}\n`), `${id}: ${unescape(label)}`);
+  }
+}
+
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 104], ["machines", 120]]) {
+  for (const [kind, count] of [["cards", 111], ["machines", 120]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
       const detail = kind + "/" + id;
-      for (const format of ["html", "md"]) {
+      const [html, markdown] = await Promise.all(["html", "md"].map(async (format) => {
         const response = await request(detail + "." + format);
         assert.equal(response.status, 200, detail + "." + format);
-        assert.ok((await response.text()).includes(source), id + " must retain its original source");
-      }
+        const body = await response.text();
+        assert.ok(body.includes(source), id + " must retain its original source");
+        return body;
+      }));
+      assertProfileFieldsAgree(html, markdown, id);
     }
+  }
+});
+
+test("source-backed GPU profiles distinguish a documented board from its GPU family", async (t) => {
+  const { request } = await buildFixture(t);
+  const board = "cards/asus-dual-rx9060xt-16g";
+  const variant = "cards/amd-radeon-rx-9060-xt-16gb";
+  for (const extension of ["html", "md"]) {
+    const response = await request(`${board}.${extension}`);
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.ok(body.includes("DUAL-RX9060XT-16G"));
+    assert.ok(body.includes("16 GB GDDR6"));
+    assert.ok(body.includes("Product images on ASUS"));
+    assert.ok(body.includes("dual-rx9060xt-16g/techspec/"));
+    assert.ok(body.includes(`${variant}.html`));
+
+    const product = await (await request(`${variant}.${extension}`)).text();
+    assert.ok(product.includes(`${board}.html`));
+    assert.ok(product.includes("320 GB/s"));
+    assert.match(product, /Exact memory variant/);
+
+    const family = await (await request(`cards/amd-radeon-rx-9060-xt.${extension}`)).text();
+    assert.match(family, /Multiple manufacturer configurations/);
+    assert.doesNotMatch(family, /Selected GPU:|aria-current="page"/);
   }
 });
 
@@ -179,6 +218,10 @@ test("GPU profiles highlight only identities with exact rated values", async (t)
   const markdown = await (await request("cards/amd-radeon-pro-w7800.md")).text();
   assert.match(html, /profile-chart-dot" href="[^"]*w7800.html" aria-current="page"/);
   assert.match(html, /32 GB · 576 GB\/s/);
+  assert.match(html, /<meter[^>]+aria-label="Nominal capacity · 32 GB/);
+  assert.match(html, /<meter[^>]+aria-label="Rated graphics power · 260 W/);
+  assert.match(markdown, /Nominal capacity · 32 GB on the catalog scale/);
+  assert.match(markdown, /Rated graphics power · 260 W on the catalog scale/);
   assert.match(markdown, /Selected GPU: 32 GB · Rated memory bandwidth \(GB\/s\): 576/);
   const ambiguous = await (await request("cards/nvidia-geforce-rtx-3060.html")).text();
   assert.match(ambiguous, /has no unambiguous pair of rated specifications/);
@@ -197,5 +240,8 @@ test("the offline catalog generates linked HTML and Markdown for every GPU", asy
     assert.ok(html.includes(`href="${id}.md"`), id);
     assert.ok(html.includes("../../../../fastest-ai.html#catalog/cards"), id);
     assert.ok(html.includes("On-board memory") && markdown.includes("On-board memory"), id);
+    assert.ok(html.includes("No approved observation is available") &&
+      markdown.includes("No approved observation is available"), id);
+    assertProfileFieldsAgree(html, markdown, id);
   }
 });
