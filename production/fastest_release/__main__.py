@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import sys
 
+from fastest_fit import FitEngineError
+
 from . import ReleaseError, ReleaseNotFound, ReleaseStore
 from .http import CONTENT_TYPES, make_server
 from .research import SEED_ROOT, import_seed, read_seed
@@ -28,6 +30,7 @@ def main(argv=None):
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", default=8000, type=int)
     serve.add_argument("--trusted-host", action="append", default=[], help="Allowed HTTP Host header, including its port if present.")
+    serve.add_argument("--fit-engine", type=Path, help="Path to the pinned fit executable built by fastest_fit.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -36,9 +39,10 @@ def main(argv=None):
     research_read.add_argument("identifier", nargs="?")
     args = parser.parse_args(argv)
 
-    if not args.database_url:
+    fit_engine = args.fit_engine if args.command == "serve" else None
+    if not args.database_url and fit_engine is None:
         parser.error("set FASTEST_DATABASE_URL or pass --database-url")
-    store = ReleaseStore(args.database_url)
+    store = ReleaseStore(args.database_url) if args.database_url else None
     try:
         if args.command == "migrate":
             store.migrate()
@@ -55,13 +59,13 @@ def main(argv=None):
         elif args.command == "research-read":
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
-            with make_server(store, args.host, args.port, args.trusted_host) as server:
+            with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()
     except KeyboardInterrupt:
         return 130
-    except (OSError, ValueError, ReleaseError, ReleaseNotFound) as error:
+    except (OSError, ValueError, ReleaseError, ReleaseNotFound, FitEngineError) as error:
         parser.exit(1, f"{error}\n")
     return 0
 
