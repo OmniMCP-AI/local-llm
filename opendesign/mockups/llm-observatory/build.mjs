@@ -85,7 +85,8 @@ const wikiDocuments = wikiRelease
   : documents;
 const releaseHighlights = wikiRelease?.highlights ?? activeHighlights(highlights, documents, releaseDate);
 const result = await build({
-  entryPoints: [fileURLToPath(here("app.jsx"))],
+  entryPoints: ["app", ...(pages ? ["price-entry"] : [])].map((name) => fileURLToPath(here(name + ".jsx"))),
+  outdir: fileURLToPath(here("dist/")),
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
   bundle: true,
   minify: true,
@@ -111,7 +112,8 @@ const result = await build({
   },
   legalComments: "inline",
 });
-const script = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
+const scriptFor = (name) => result.outputFiles.find(({ path }) => path.endsWith("/" + name + ".js"))
+  .text.replace(/<\/script/gi, "<\\/script");
 const previewHead = '<meta name="description" content="Interactive prototype for comparing local AI hardware, performance, and cost.">\n'
   + "<title>fastest.ai | Local AI benchmark explorer</title>";
 const html = `<!doctype html>
@@ -125,13 +127,30 @@ ${wikiRelease?.homeHead ?? previewHead}
 <body>
 <div id="root"></div>
 ${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open this file in a browser with JavaScript enabled.</noscript>"}
-<script>${script}</script>
+<script>${scriptFor("app")}</script>
 </body>
 </html>
 `;
 if (pages) {
   await mkdir(here("dist/"), { recursive: true });
   await writeFile(here("dist/index.html"), html);
+  const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
+  await writeFile(here("dist/prices.html"), `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Dated regional prices with original quotes and independent display currency.">
+<title>Regional price comparison · fastest.ai</title>
+<style>${priceStyles.join("\n")}</style>
+</head>
+<body>
+<div id="root"></div>
+<noscript><main><h1>Regional price comparison</h1><p><a href="/api/price-comparison">Read the exact price data</a>.</p></main></noscript>
+<script>${scriptFor("price-entry")}</script>
+</body>
+</html>
+`);
   for (const name of await readdir(here("dist/research/"))) {
     if (name !== researchIndex.release && /^v1-[a-f0-9]{16}$/.test(name)) {
       await rm(here("dist/research/" + name), { recursive: true, force: true });

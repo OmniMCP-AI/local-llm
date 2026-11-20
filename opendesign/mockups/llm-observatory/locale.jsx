@@ -9,6 +9,7 @@ import { costTranslations, eastAsianGermanCostTranslations } from "./cost-transl
 import { feedbackTranslations, eastAsianGermanFeedbackTranslations } from "./feedback-translations";
 import { siteTranslations, eastAsianGermanSiteTranslations } from "./site-translations";
 import { languages, resolveLanguage } from "./locale-settings.mjs";
+import { FX_DATE, FX_SOURCE, datedDisplayRate, hasReference, rates, supplementalRates } from "./display-fx.mjs";
 
 const translationOrder = ["hi", "es", "ar", "fr"];
 const translations = { ...catalogTranslations, ...comparisonTranslations, ...costTranslations, ...feedbackTranslations, ...siteTranslations };
@@ -20,22 +21,6 @@ const additionalTranslations = {
   ...eastAsianGermanFeedbackTranslations,
   ...eastAsianGermanSiteTranslations,
 };
-const FX_DATE = "2026-11-19";
-const FX_SOURCE = "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html";
-// Reference units per EUR from the ECB snapshot. Market quotes retain their source currency.
-const rates = {
-  EUR: 1, USD: 1.0992, JPY: 175.84, CZK: 24.427, DKK: 7.4742, GBP: 0.83581, HUF: 369.43,
-  PLN: 4.4170, RON: 5.3473, SEK: 11.1470, CHF: 0.9262, ISK: 137.20, NOK: 10.6475, TRY: 55.4737,
-  AUD: 1.6378, BRL: 6.4765, CAD: 1.5719, CNY: 7.3280, HKD: 8.6239, IDR: 20073.10, ILS: 3.6149,
-  INR: 102.5500, KRW: 1460.23, MXN: 20.7946, MYR: 4.5205, NZD: 1.9890, PHP: 70.014,
-  SGD: 1.4176, THB: 37.268, ZAR: 18.9948,
-};
-const supplementalRates = {
-  TWD: { unitsPerUsd: 32.87, label: "Federal Reserve H.10 · 2026-11-13", url: "https://fred.stlouisfed.org/series/DEXTAUS" },
-  BDT: { unitsPerUsd: 124.6598, label: "Bangladesh Bank", url: "https://www.bb.org.bd/en/index.php/econdata/rfrexrate" },
-  SAR: { unitsPerUsd: 3.75, label: "SAMA", url: "https://www.sama.gov.sa/en-US/MediaCenter/News/Pages/news-557.aspx" },
-};
-const hasReference = (code) => Object.hasOwn(rates, code) || Object.hasOwn(supplementalRates, code);
 const unsupportedCodedUnits = new Set(["XAG", "XAU", "XBA", "XBB", "XBC", "XBD", "XDR", "XPD", "XPT", "XSU", "XTS", "XUA", "XXX"]);
 const browserCodes = Intl.supportedValuesOf?.("currency") ?? [];
 const codes = [...new Set([...Object.keys(rates), ...Object.keys(supplementalRates), ...browserCodes])].filter((code) => !unsupportedCodedUnits.has(code)).sort();
@@ -133,9 +118,10 @@ function CurrencyRate({ currency, manual, setManual, t }) {
   </form>;
 }
 
-export function LocaleControls() {
+export function LocaleControls({ datedRatesOnly = false, sourceCurrency = "USD" }) {
   const { language, currency, locale, choice, setLanguage, setCurrency, setManual, manual, t, hasRate } = useLocale();
   const names = new Intl.DisplayNames([locale], { type: "currency" });
+  const hasDisplayRate = (code) => datedRatesOnly ? Boolean(datedDisplayRate(sourceCurrency, code)) : hasReference(code);
   const option = (code) => <option key={code} value={code}>{code} / {names.of(code)}</option>;
   return <details className="locale-controls">
     <summary aria-label={t("Language and currency", "语言与货币")}><Globe2 size={16} aria-hidden="true" />{languages[language].label}<span dir="ltr">{currency}</span><ChevronDown size={13} aria-hidden="true" /></summary>
@@ -145,12 +131,12 @@ export function LocaleControls() {
       </select></label>
       <label>{t("Display currency", "显示货币")} <select value={choice} onChange={(event) => setCurrency(event.target.value)}>
         <option value="auto">{t("Follow language", "跟随语言")} ({languages[language].currency})</option>
-        <optgroup label={t("Reference rates available", "有参考汇率")}>{codes.filter(hasReference).map(option)}</optgroup>
-        <optgroup label={t("Set a custom rate", "可手动设置汇率")}>{codes.filter((code) => !hasReference(code)).map(option)}</optgroup>
+        <optgroup label={t("Reference rates available", "有参考汇率")}>{codes.filter(hasDisplayRate).map(option)}</optgroup>
+        <optgroup label={datedRatesOnly ? t("Display FX unavailable", "缺少显示汇率") : t("Set a custom rate", "可手动设置汇率")}>{codes.filter((code) => !hasDisplayRate(code)).map(option)}</optgroup>
       </select></label>
-      {!hasReference(currency) && <CurrencyRate key={currency} currency={currency} manual={manual} setManual={setManual} t={t} />}
+      {!datedRatesOnly && !hasReference(currency) && <CurrencyRate key={currency} currency={currency} manual={manual} setManual={setManual} t={t} />}
       <p>{t("Market and original quote currency stay the same.", "市场与原始报价币种保持不变。")}</p>
-      {!hasRate && <p role="status">{t("Showing source currencies until a rate is supplied.", "在填写汇率前显示原始报价币种。")}</p>}
+      {!datedRatesOnly && !hasRate && <p role="status">{t("Showing source currencies until a rate is supplied.", "在填写汇率前显示原始报价币种。")}</p>}
     </div>
   </details>;
 }
@@ -162,7 +148,7 @@ export function LocaleStatus() {
     {language !== "en" && <span>{t("Some research and detail pages are in their original language.", "部分研究资料和深层页面保留原文。")}</span>}
     <span>{hasReference(currency) ? t("Display FX when needed", "换算参考汇率") : hasRate ? t("Custom display rate, with reference cross-rates", "自定义显示汇率，使用参考交叉汇率") : t("Display FX unavailable. Showing source currencies.", "缺少显示汇率，暂用原始币种。")}
       {hasRate && <> / <a href={FX_SOURCE} target="_blank" rel="noreferrer" dir="ltr">ECB {FX_DATE}</a></>}
-      {extra && <> / <a href={extra.url} target="_blank" rel="noreferrer" dir="ltr">{extra.label} ({currency})</a></>}
+      {extra && <> / <a href={extra.url} target="_blank" rel="noreferrer" dir="ltr">{extra.label}{extra.date && " " + extra.date} ({currency})</a></>}
     </span>
   </div>;
 }

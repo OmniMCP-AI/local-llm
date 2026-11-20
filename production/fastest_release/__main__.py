@@ -71,7 +71,8 @@ def main(argv=None):
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
                              profile_releases=args.profile_release,
                              profile_archives=[archive.split(",") for archive in args.profile_archive],
-                             goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1]) as server:
+                             goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1],
+                             price_reader=price_reader) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

@@ -127,7 +127,7 @@ function Header({ page, navigate }) {
     <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); navigate("Explorer", true); }}>
       <span className="brand-mark"><Activity size={19} strokeWidth={2.4} aria-hidden="true" /></span>fastest<span>.ai</span>
     </a>
-    <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => <a key={name} href={"#" + route} aria-current={page === name ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate(name, true); }}>{t(name, chineseRoutes[name])}</a>)}</nav>
+    <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => <a key={name} href={__FASTEST_PAGES__ && route === "prices" ? "/prices" : "#" + route} aria-current={page === name ? "page" : undefined} onClick={(e) => { if (__FASTEST_PAGES__ && route === "prices") return; e.preventDefault(); navigate(name, true); }}>{t(name, chineseRoutes[name])}</a>)}</nav>
     <LocaleControls />
   </div></header>;
 }
