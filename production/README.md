@@ -42,6 +42,58 @@ These boundary tests start private PostgreSQL clusters on temporary Unix sockets
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -c -s tests -v
 ```
 
+## Estimate fit for a selected machine
+
+From this directory, build the native adapter with an installed Rust 1.98.0
+toolchain, then pass the executable to the release server. The fit routes can
+run on their own. Set `FASTEST_DATABASE_URL` to serve benchmark releases on
+the same listener.
+
+```sh
+export PYTHONDONTWRITEBYTECODE=1
+python3 -m fastest_fit build /tmp/fastest-fit-26450cc
+python3 -m fastest_release serve --fit-engine /tmp/fastest-fit-26450cc
+```
+
+Open [Estimate model fit](http://127.0.0.1:8000/fit). The form accepts
+`?machine=llmfit-nvidia-rtx-4090` to preselect that catalog profile.
+Use `GET /fit.json` for JSON. Pass `machine`, the artifact SHA-256 as
+`artifact`, `runtime`, `context`, `ram_reserved_gib`, and
+`vram_reserved_gib`. Supply `cpu_cores` from the selected configuration
+for CPU offload. The result ID hashes the selected inputs, provenance,
+calculation settings, and engine revision. The endpoint serves estimates
+without recording a benchmark or a successful model run.
+
+The first supported recipe is the upstream RTX 4090 example preset with one
+CUDA GPU, the reviewed GGUF catalog files, and llama.cpp. The preset supplies
+system RAM and bandwidth assumptions. NVIDIA supplies the 24 GiB GPU size.
+The form starts at 4,096 tokens with 8 GiB of system RAM and 2 GiB of VRAM
+reserved. Adjust these assumptions for the intended use. The JSON includes
+the pinned sources, both available memory pools, runtime release,
+quantization, fit level, run mode, context, and nullable speed and latency.
+Throughput comes from a model of hardware capability. It can differ greatly
+from an actual run.
+
+Partial profiles, missing inputs, and unsupported runtime or format
+combinations return a qualification. When the core recommends another
+quantization or shortens context, the response gives a separate estimate of
+the selected artifact's memory and withholds the exact fit verdict.
+
+Run the fit fixtures when evaluating an upstream upgrade.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m fastest_fit verify
+```
+
+The build uses the same archive pin and checked Cargo lockfile as the research
+contract verifier. A candidate update must review the preset and catalog
+payload hashes, run both verifiers, and compare the reviewed GPU and CPU
+offload outputs. The fixtures exercise the same real HTTP path with different
+worker bandwidth and model settings on one physical host. For a cross-host
+check, run the verifier on a second worker. Keep the prior deployment and
+its revision-named executable together for rollback. The server checks the
+executable's llmfit revision on startup.
+
 ## Reconcile the private video research seed
 
 From this directory, use the release database's schema owner to run the import

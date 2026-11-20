@@ -23,6 +23,16 @@
         "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
         "license": "Apache-2.0",
         "tokenizer": null
+      },
+      {
+        "repository": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+        "path": "qwen2.5-0.5b-instruct-q8_0.gguf",
+        "format": "GGUF",
+        "quantization": "Q8_0",
+        "sha256": "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e",
+        "license": "Apache-2.0",
+        "tokenizer": null
       }
     ]
   }
