@@ -38,6 +38,8 @@ Replaying the exact document returns its existing release ID and leaves the curr
 
 For a rights withdrawal, run `python3 -m fastest_release withdraw EVIDENCE_UUID "editorial reason"` using the publisher login. All affected routes, including historical revisions and manifests, return an HTTP 410 withdrawal notice on the next read. The editorial reason is private. Every served response is marked `no-store`. Any separately distributed copies need their own withdrawal handling.
 
+For an audited benchmark resolution, pass a private request JSON file to `python3 -m fastest_release.resolution`. Include `action`, the pinned `previousRelease`, `evidenceId`, and the exact published `sourceLocator`. A correction also carries the reviewed `correction` observation. The publisher transaction returns the resulting release and exact before and after hashes for affected benchmark artifacts. A retry returns the same audit result. When a benchmark shares the affected Pages source locator, the [Pages review command](../README.md#review-a-correction-or-rights-withdrawal) can run this transaction and collect the audit alongside the wiki and research changes.
+
 The Python interfaces are `ReleaseStore.migrate()`, `publish(observation)`, `read(release_id=None)`, `artifact(release_id, name)`, and `withdraw(evidence_id, reason)`. `read()` resolves the current pointer and returns the released row or a withdrawal record. Keep the release ID to access the same snapshot in other formats.
 
 ## Query the public release API

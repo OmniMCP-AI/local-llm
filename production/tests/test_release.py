@@ -143,6 +143,41 @@ class ReleaseTest(unittest.TestCase):
         for name, digest in manifest["artifacts"].items():
             self.assertEqual(digest, sha256(self.store.artifact(corrected, name).encode()).hexdigest())
 
+    def test_operator_correction_and_withdrawal_account_for_exact_published_benchmark_bytes(self):
+        from fastest_release.resolution import resolve_benchmark
+
+        first = self.store.publish(self.observation)
+        evidence_id = self.observation["evidence_id"]
+        locator = self.observation["source"]["locator"]
+        original_chart = self.store.artifact(first, "chart.json")
+        self.observation["metric"]["value"] = "41.000000000001"
+        self.observation["source"]["revision"] = "fixture-v2"
+        self.observation["rights"]["decision_id"] = str(uuid4())
+        arguments = {"evidenceId": evidence_id, "sourceLocator": locator, "previousRelease": first}
+        with self.assertRaises(ReleaseError):
+            resolve_benchmark(self.store, {**arguments, "sourceLocator": "different",
+                                          "action": "correct", "correction": self.observation})
+        corrected = resolve_benchmark(self.store, {**arguments, "action": "correct", "correction": self.observation})
+        second = corrected["release"]
+        self.assertEqual(self.store.read()["previous_release_id"], first)
+        self.assertIn(sha256(original_chart.encode()).hexdigest(), corrected["earlierExports"].values())
+        self.assertIn("41.000000000001", self.store.artifact(second, "chart.json"))
+        self.assertEqual(self.store.artifact(first, "chart.json"), original_chart)
+        self.assertEqual(resolve_benchmark(self.store, {**arguments, "action": "correct", "correction": self.observation}),
+                         corrected)
+
+        withdrawal = {**arguments, "action": "withdraw"}
+        withdrawn = resolve_benchmark(self.store, withdrawal)
+        self.assertEqual(resolve_benchmark(self.store, withdrawal), withdrawn)
+        by_path = {entry["path"]: entry for entry in withdrawn["changes"]}
+        old_chart = by_path[f"/releases/{first}/chart.json"]
+        self.assertEqual(old_chart["before"], sha256(original_chart.encode()).hexdigest())
+        self.assertEqual(old_chart["after"], sha256(self.store.artifact(first, "chart.json").encode()).hexdigest())
+        self.assertIn(f"/releases/{second}/benchmark.md", by_path)
+        self.assertEqual(self.store.read()["status"], "withdrawn")
+        self.assertEqual(self.store.read(first)["status"], "withdrawn")
+        self.assertNotIn("37.625", self.store.artifact(first, "chart.json"))
+
     def test_ineligible_observation_does_not_advance_current(self):
         original = self.store.publish(self.observation)
         self.observation["rights"]["core"] = "deny"
@@ -479,10 +514,11 @@ class ReleaseTest(unittest.TestCase):
 
         self.store.withdraw(self.observation["evidence_id"], "Private withdrawal reason")
         self.store.withdraw(self.observation["evidence_id"], "Retry")
-        for release_id in (original, corrected):
+        for release_id in ("current", original, corrected):
             for name in ("benchmark.md", "benchmark.html", "chart.json", "table.json", "manifest.json"):
                 with self.subTest(release_id=release_id, name=name):
-                    status, headers, body = request("GET", f"/releases/{release_id}/{name}")
+                    status, headers, body = request("GET", f"/releases/{release_id}/{name}",
+                                                    **{"If-None-Match": '"prior-public-release"'})
                     self.assertEqual(status, 410)
                     self.assertEqual(headers["Cache-Control"], "no-store")
                     for private in ("37.625", "41.125", self.observation["evidence_id"], "Private withdrawal reason"):

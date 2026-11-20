@@ -112,3 +112,23 @@ test("only the submitted message and explicitly shared context are accepted", as
   assert.match(html, /Queued for review/);
   assert.ok(!html.includes(note.message) && !html.includes(attached.entity));
 });
+
+test("a resolved opted-in receipt reveals only its approved public resolution", async (t) => {
+  const database = new DatabaseSync(":memory:");
+  t.after(() => database.close());
+  database.exec(await readFile(new URL("./feedback-schema.sql", import.meta.url), "utf8"));
+  const env = { FEEDBACK_DB: d1(database) };
+  const submitted = await submit(env, {
+    ...note, requestId: randomUUID(), context: { page: "Wiki", entity: "research", release: "v1-aaaaaaaaaaaaaaaa" },
+  });
+  const { id } = await submitted.json();
+  const resolution = "/wiki/evidence-updates#" + "9".repeat(64);
+  database.prepare("INSERT INTO feedback_resolution (receipt_id, public_path) VALUES (?, ?)").run(id, resolution);
+  const response = await lookup(env, id);
+  const status = await response.json();
+  assert.equal(response.headers.get("X-Robots-Tag"), "noindex");
+  assert.deepEqual(status, { id, status: "reviewed", resolution });
+  const html = await (await lookup(env, id, { Accept: "text/html" })).text();
+  assert.ok(html.includes(resolution));
+  assert.ok(!html.includes(note.message) && !html.includes("v1-aaaaaaaaaaaaaaaa"));
+});

@@ -30,7 +30,7 @@ function researchMemory(profile, native, exceptions) {
   };
 }
 
-export async function readHardwareCatalog(directory) {
+export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
   const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
@@ -64,20 +64,24 @@ export async function readHardwareCatalog(directory) {
   }));
   if (profiles.size !== inventoryProfiles.size || profiles.size !== mappedProfiles.size) throw new Error("Hardware research inventory counts disagree");
 
-  const cards = index([...inventory.cards, ...variants].map((record) => {
+  const withdrawnProfiles = new Set([...profiles.values()].filter(({ id, source_url, source }) =>
+    [id, source_url, source].some(isWithdrawn)).map(({ id }) => id));
+  const cards = index([...inventory.cards, ...variants].flatMap((record) => {
     const metadata = { ...record, ...cardMetadata[record.id] };
     const matcher = matchers.get(record.id);
     const sourceProfile = /\/hardware-profiles\/([^/]+)\.md$/.exec(record.source ?? "")?.[1];
     const profileIds = unique([sourceProfile, ...(metadata.profiles ?? [])]);
-    const associatedProfiles = profileIds.map((id) => {
+    const allowedIds = profileIds.filter((id) => !withdrawnProfiles.has(id));
+    const associatedProfiles = allowedIds.map((id) => {
       if (!profiles.has(id)) throw new Error(`Unknown card provenance profile: ${id}`);
       return { id, source: profiles.get(id).source };
     });
     const source = matcher?.source ?? associatedProfiles[0]?.source;
+    if (!source && profileIds.length && !allowedIds.length) return [];
     if (!source) throw new Error(`Unreconciled hardware source: ${record.id}`);
     const brand = /^(amd|intel|nvidia)-/.exec(record.id)?.[1];
     const manufacturer = { amd: "AMD", intel: "Intel", nvidia: "NVIDIA" }[brand];
-    return {
+    return [{
       id: record.id,
       name: metadata.name,
       source,
@@ -85,7 +89,7 @@ export async function readHardwareCatalog(directory) {
       manufacturer: metadata.manufacturer ?? manufacturer ?? "Unresolved",
       kind: ["amd-instinct-mi300", "t10-unresolved"].includes(record.id)
         ? "Unresolved family reference" : "Component reference",
-      aliases: unique([...(metadata.aliases ?? []), matcher?.alias, ...profileIds.map((id) => (
+      aliases: unique([...(metadata.aliases ?? []), matcher?.alias, ...allowedIds.map((id) => (
         id === "V019-HP-TEST" ? null : fact(profiles.get(id).gpu)
       ))]),
       lookupSource: matcher?.source ?? null,
@@ -94,13 +98,16 @@ export async function readHardwareCatalog(directory) {
       parent: metadata.parent ?? null,
       relatedProfiles: associatedProfiles,
       // Only explicit source/variant links can narrow a family reference to a specific board.
-      explicitProfiles: metadata.profiles ?? [],
+      explicitProfiles: (metadata.profiles ?? []).filter((id) => !withdrawnProfiles.has(id)),
       resolveShortAliases: metadata.resolveShortAliases ?? true,
-    };
+    }];
   }));
   if ([...matchers.keys()].some((id) => !cards.has(id))) throw new Error("Missing eligible llmfit card matcher");
   for (const card of cards.values()) {
-    if (card.parent && !cards.has(card.parent)) throw new Error(`Unknown card family: ${card.parent}`);
+    if (card.parent && !cards.has(card.parent)) {
+      if (!withdrawnProfiles.size) throw new Error(`Unknown card family: ${card.parent}`);
+      cards.delete(card.id);
+    }
   }
 
   const names = new Map();
@@ -113,16 +120,16 @@ export async function readHardwareCatalog(directory) {
       names.set(alias, !names.has(alias) || existing === card.id ? card.id : null);
     }
   }
-  const machines = [...profiles.values()].map((profile) => {
+  const machines = [...profiles.values()].filter(({ id }) => !withdrawnProfiles.has(id)).map((profile) => {
     const { id, name, source, source_url, linked_observation_ids } = profile;
     const kind = profileKind(profile);
     const explicit = [...cards.values()].filter((card) => card.explicitProfiles.includes(id));
     const cardIds = profileCards[id] ?? (explicit.length
       ? explicit.map((card) => card.id)
       : unique([names.get(key(profile.gpu))]));
-    if (cardIds.some((id) => !cards.has(id))) throw new Error(`Unknown card in machine: ${id}`);
+    if (!withdrawnProfiles.size && cardIds.some((id) => !cards.has(id))) throw new Error(`Unknown card in machine: ${id}`);
     return {
-      id, name, source, kind, cardIds,
+      id, name, source, kind, cardIds: cardIds.filter((id) => cards.has(id)),
       detail: kind === "Component reference" ? kind : `${kind} / ${profile.core_fields_reported} of ${profile.core_fields_total} build fields reported`,
       capture: source_url,
       coreFieldsReported: profile.core_fields_reported,
@@ -178,7 +185,7 @@ export async function readHardwareCatalog(directory) {
       lookupSha256: upstream.lookupSha256,
       presets: upstream.presets.map(({ path, sha256 }) => ({ source: upstreamLink(upstream.commit, path), sha256 })),
     },
-    research: {
+    research: withdrawnProfiles.size ? { visibility: "rights-filtered" } : {
       commit: research.commit,
       profiles: `${researchBase}/hardware-profiles.json`,
       profilesSha256: research.profilesSha256,
@@ -192,7 +199,7 @@ export async function readHardwareCatalog(directory) {
       researchOnlyCards: researchOnly,
       cardsWithBothSources: cards.size - upstreamOnly - researchOnly,
       unresolvedCardReferences: catalog.cards.filter(({ kind }) => kind === "Unresolved family reference").length,
-      researchProfiles: profiles.size,
+      researchProfiles: machines.length,
       researchComponentReferences: componentReferences,
       partialMachines: machines.length - componentReferences,
       upstreamPresets: presets.length,
