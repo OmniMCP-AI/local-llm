@@ -1,0 +1,176 @@
+"""Read released evidence over MCP stdio using the loopback public API."""
+
+import argparse
+import asyncio
+from contextlib import closing
+from http.client import HTTPConnection, HTTPException
+from importlib.metadata import version
+import json
+import re
+from urllib.parse import urlencode
+
+from jsonschema import Draft202012Validator
+from mcp import McpError, types
+from mcp.server import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server.stdio import stdio_server
+from referencing import Registry
+
+
+SDK_VERSION = "1.30.0"
+PROTOCOL_VERSION = "2025-11-25"
+API_VERSION = "1.0.0"
+OPENAPI_PATH = "/api/v1/openapi.json"
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+CATALOG_URI = "fastest://v1/catalog"
+EVIDENCE_TEMPLATE = "fastest://v1/releases/{release_id}/evidence"
+EVIDENCE_URI = re.compile(r"fastest://v1/releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/evidence")
+TOOL_PATHS = {
+    "v1_search": "/api/v1/search",
+    "v1_coverage": "/api/v1/coverage",
+    "v1_evidence": "/api/v1/evidence",
+    "v1_comparison": "/api/v1/comparison",
+    "v1_profile_comparison": "/api/v1/comparison/profile",
+    "v1_historical_offers": "/api/v1/historical-offers",
+    "v1_calculator": "/api/v1/calculator",
+}
+PUBLIC_ERRORS = {
+    400: "Invalid public evidence selection.",
+    404: "Public release or operation unavailable.",
+    410: "Public rights have ended for this release.",
+    429: "Public evidence request limit reached.",
+}
+UNAVAILABLE = "Public evidence service unavailable."
+
+
+class PublicApiError(Exception):
+    pass
+
+
+def get_json(port, path, arguments=None):
+    try:
+        if arguments:
+            path += "?" + urlencode(arguments)
+        with closing(HTTPConnection("127.0.0.1", port, timeout=5)) as client:
+            client.request("GET", path)
+            response = client.getresponse()
+            if response.status != 200:
+                raise PublicApiError(PUBLIC_ERRORS.get(response.status, UNAVAILABLE))
+            if response.headers.get_content_type() not in {"application/json", "application/vnd.oai.openapi+json"}:
+                raise PublicApiError(UNAVAILABLE)
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+        if len(body) > MAX_RESPONSE_BYTES:
+            raise PublicApiError("Public response exceeds the MCP limit. Select a smaller page where available.")
+        data = json.loads(body)
+        if not isinstance(data, dict):
+            raise PublicApiError(UNAVAILABLE)
+        return data
+    except (HTTPException, OSError, ValueError, RecursionError):
+        raise PublicApiError(UNAVAILABLE) from None
+
+
+def build_server(port):
+    description = get_json(port, OPENAPI_PATH)
+    if description.get("info", {}).get("version") != API_VERSION:
+        raise PublicApiError("The listener must serve public API version " + API_VERSION + ".")
+
+    tools = {}
+    validators = {}
+    for name, path in TOOL_PATHS.items():
+        operation = description["paths"].get(path, {}).get("get")
+        if operation is None:
+            continue
+        properties, required = {}, []
+        for parameter in operation["parameters"]:
+            schema = dict(parameter["schema"])
+            if schema["type"] == "string":
+                schema.setdefault("maxLength", 128)
+            properties[parameter["name"]] = schema
+            if parameter["required"]:
+                required.append(parameter["name"])
+        input_schema = {"type": "object", "properties": properties, "required": required,
+                        "additionalProperties": False}
+        tools[name] = types.Tool(
+            name=name, description=operation["summary"], inputSchema=input_schema,
+            annotations=types.ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False),
+        )
+        validators[name] = Draft202012Validator(input_schema, registry=Registry())
+
+    server = Server("fastest-ai-evidence", version=API_VERSION,
+                    instructions="Cite the public result's release or revision ID with its sources and exclusions.")
+
+    def read(path, arguments=None):
+        result = get_json(port, path, arguments)
+        if result.get("api_version") != API_VERSION:
+            raise PublicApiError(UNAVAILABLE)
+        return result
+
+    @server.list_tools()
+    async def list_tools():
+        return list(tools.values())
+
+    @server.call_tool(validate_input=False)
+    async def call_tool(name, arguments):
+        # Reject invalid selectors without echoing client-supplied values.
+        try:
+            if name not in tools:
+                raise PublicApiError("Unsupported read-only tool.")
+            if not validators[name].is_valid(arguments):
+                raise PublicApiError(PUBLIC_ERRORS[400])
+            return read(TOOL_PATHS[name], arguments)
+        except PublicApiError as error:
+            return types.CallToolResult(isError=True, content=[types.TextContent(type="text", text=str(error))])
+
+    @server.list_resources()
+    async def list_resources():
+        return [types.Resource(uri=CATALOG_URI, name="Public catalog", mimeType="application/json")]
+
+    @server.list_resource_templates()
+    async def list_resource_templates():
+        if "v1_evidence" not in tools:
+            return []
+        return [types.ResourceTemplate(uriTemplate=EVIDENCE_TEMPLATE, name="Pinned public evidence",
+                                       mimeType="application/json")]
+
+    @server.read_resource()
+    async def read_resource(uri):
+        address = str(uri)
+        evidence = EVIDENCE_URI.fullmatch(address)
+        if address == CATALOG_URI:
+            name, arguments = "v1_search", None
+        elif evidence and "v1_evidence" in tools:
+            name, arguments = "v1_evidence", {"release": evidence[1]}
+        else:
+            raise McpError(types.ErrorData(code=-32002, message="Public resource unavailable."))
+        try:
+            result = read(TOOL_PATHS[name], arguments)
+        except PublicApiError as error:
+            raise McpError(types.ErrorData(code=-32002, message=str(error))) from None
+        return [ReadResourceContents(content=json.dumps(result, ensure_ascii=False), mime_type="application/json")]
+
+    return server
+
+
+async def serve(server):
+    async with stdio_server() as (reader, writer):
+        await server.run(reader, writer, server.create_initialization_options())
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--port", default=8000, type=int,
+                        help="Port of the local public API listener on 127.0.0.1 (default 8000)")
+    args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error("--port must be from 1 to 65535")
+    if version("mcp") != SDK_VERSION or types.LATEST_PROTOCOL_VERSION != PROTOCOL_VERSION:
+        parser.exit(1, f"Install MCP Python SDK {SDK_VERSION} from fastest_mcp/requirements.txt.\n")
+    try:
+        server = build_server(args.port)
+    except (PublicApiError, KeyError, TypeError, AttributeError) as error:
+        parser.exit(1, (str(error) if isinstance(error, PublicApiError) else UNAVAILABLE) + "\n")
+    asyncio.run(serve(server))
+
+
+if __name__ == "__main__":
+    main()
