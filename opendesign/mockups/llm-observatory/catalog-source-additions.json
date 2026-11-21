@@ -31,6 +31,22 @@
       "parent": "nvidia-geforce-rtx-5060-ti-16gb"
     },
     {
+      "id": "asus-t1-rtx5060ti-o8g-gaming",
+      "name": "ASUS T1 GeForce RTX 5060 Ti 8 GB OC Edition",
+      "manufacturer": "ASUS",
+      "variant": "T1-RTX5060TI-O8G-GAMING",
+      "source": "https://www.asus.com/ca-en/motherboards-components/graphics-cards/asus/t1-rtx5060ti-o8g-gaming/techspec/",
+      "parent": "nvidia-geforce-rtx-5060-ti"
+    },
+    {
+      "id": "colorful-igame-rtx5060ti-mini-w-oc-8gb",
+      "name": "Colorful iGame GeForce RTX 5060 Ti Mini W OC 8 GB",
+      "manufacturer": "Colorful",
+      "variant": "iGame GeForce RTX 5060 Ti Mini W OC 8GB",
+      "source": "https://www.colorful.cn/home/new?id=09e8d6a3-f28d-419e-bc68-2b25cbe99968",
+      "parent": "nvidia-geforce-rtx-5060-ti"
+    },
+    {
       "id": "asrock-a770-pg-16go",
       "name": "ASRock Intel Arc A770 Phantom Gaming 16 GB OC",
       "manufacturer": "ASRock",
@@ -780,6 +796,49 @@
         "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rx9060xt-16g/techspec/",
         "label": "Product images on ASUS",
         "scope": "ASUS Dual Radeon RX 9060 XT 16 GB (DUAL-RX9060XT-16G)"
+      }
+    },
+    "asus-t1-rtx5060ti-o8g-gaming": {
+      "designation": "T1-RTX5060TI-O8G-GAMING",
+      "source": "https://www.asus.com/ca-en/motherboards-components/graphics-cards/asus/t1-rtx5060ti-o8g-gaming/techspec/",
+      "locator": "Tech Specs · T1-RTX5060TI-O8G-GAMING",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "8 GB GDDR7",
+        "Memory bus": "128-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCI Express 5.0",
+        "CUDA cores": "4608",
+        "Default boost clock": "2632 MHz",
+        "OC mode clock": "2662 MHz",
+        "Display outputs": "1 × HDMI 2.1b, 3 × DisplayPort 2.1b",
+        "Dimensions": "269 × 120 × 50 mm",
+        "Slot width": "2.5",
+        "Recommended system power (W)": "550",
+        "Power connectors": "1 × 8-pin",
+        "Interconnect": "NVLink and CrossFire unsupported"
+      },
+      "gallery": {
+        "source": "https://www.asus.com/bt/motherboards-components/graphics-cards/asus/t1-rtx5060ti-o8g-gaming/",
+        "label": "T1 product images on ASUS",
+        "scope": "ASUS illustrations of T1-RTX5060TI-O8G-GAMING from multiple angles"
+      }
+    },
+    "colorful-igame-rtx5060ti-mini-w-oc-8gb": {
+      "designation": "iGame GeForce RTX 5060 Ti Mini W OC 8GB",
+      "source": "https://www.colorful.cn/home/new?id=09e8d6a3-f28d-419e-bc68-2b25cbe99968",
+      "locator": "January 26, 2026 launch announcement · 8GB SKU row and white Mini series features",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "8 GB",
+        "Form factor and cooling": "Single fan · compact ITX design",
+        "Finish": "White",
+        "Lighting": "Adjustable ARGB"
+      },
+      "gallery": {
+        "source": "https://www.colorful.cn/home/new?id=09e8d6a3-f28d-419e-bc68-2b25cbe99968",
+        "label": "White Mini series images on Colorful",
+        "scope": "White Mini series illustrations shared across the announced models"
       }
     },
     "intel-arc-a770": {

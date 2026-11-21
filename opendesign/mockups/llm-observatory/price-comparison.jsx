@@ -65,6 +65,26 @@ function Offers({ price, copy, currency, locale, now }) {
   </section>;
 }
 
+function References({ price, copy }) {
+  return <section aria-labelledby="price-references">
+    <h2 id="price-references">{copy.references}</h2>
+    {price.references.length === 0 ? <p>{copy.referencesEmpty}</p> : <>
+      <p>{copy.referenceSource} · <a href={price.source_locator}><bdi>{price.source_name}</bdi></a></p>
+      <div className="table-wrap" role="region" aria-labelledby="price-references" tabIndex={0}>
+        <table><thead><tr>
+          <th scope="col">{copy.sourceDate}</th><th scope="col">{copy.marketplace}</th><th scope="col">{copy.postCoupon}</th>
+        </tr></thead><tbody>{price.references.map((reference, index) =>
+          <tr key={index}>
+            <th scope="row"><ObservationTime value={reference.observed_on} unknown={copy.unknown} /></th>
+            <td><bdi>{reference.marketplace}</bdi></td>
+            <td className="original-quote"><Money amount={reference.price} currency={price.currency} unknown={copy.unknown} /></td>
+          </tr>)}</tbody></table>
+      </div>
+      <p>{copy.referenceTerms}</p>
+    </>}
+  </section>;
+}
+
 function Coverage({ price, copy }) {
   const days = price.days ?? [];
   if (days.length === 0) return null;
@@ -134,23 +154,28 @@ export function HostedPrices() {
 
 export function PriceRelease({ data, query, copy, currency, locale, now = new Date() }) {
   const { price } = data;
+  const citation = price.data_class === "reviewed_citations";
   return <>
     {price.data_class === "illustrative" && <p className="price-example">{copy.example}</p>}
     <dl className="price-terms">
       <div><dt>{copy.market}</dt><dd data-market={price.market}><bdi>{price.market}</bdi></dd></div>
-      <div><dt>{copy.destination}</dt><dd><bdi>{price.destination}</bdi></dd></div>
+      <div><dt>{copy.destination}</dt><dd><bdi>{price.destination ?? copy.unknown}</bdi></dd></div>
       <div><dt>{copy.scope}</dt><dd><bdi>{price.scope.id} · {price.scope.revision_id}</bdi></dd></div>
-      <div><dt>{copy.condition}</dt><dd><bdi>{price.condition}</bdi></dd></div>
+      <div><dt>{copy.condition}</dt><dd><bdi>{price.condition ?? copy.unknown}</bdi></dd></div>
       <div><dt>{copy.asOf}</dt><dd><ObservationTime value={price.as_of} unknown={copy.unknown} /></dd></div>
-      <div><dt>{copy.collection}</dt><dd>{copy[price.adapter_status] ?? copy.unknown}</dd></div>
-      <div><dt>{copy.lastSuccess}</dt><dd><ObservationTime value={price.last_success_at} unknown={copy.unknown} />
-        {price.last_success_age_days != null && <><br /><small>{copy.ageDays} · {price.last_success_age_days}</small></>}</dd></div>
+      {!citation && <>
+        <div><dt>{copy.collection}</dt><dd>{copy[price.adapter_status] ?? copy.unknown}</dd></div>
+        <div><dt>{copy.lastSuccess}</dt><dd><ObservationTime value={price.last_success_at} unknown={copy.unknown} />
+          {price.last_success_age_days != null && <><br /><small>{copy.ageDays} · {price.last_success_age_days}</small></>}</dd></div>
+      </>}
       <div><dt>{copy.release}</dt><dd><bdi>{price.release_id}</bdi> · <bdi>{price.authorization_decision_id}</bdi></dd></div>
     </dl>
     <p className="price-links"><a href={"/prices?" + query}>{copy.pinned}</a><a href={dataRoute + "?" + query}>{copy.exact}</a></p>
-    <Offers price={price} copy={copy} currency={currency} locale={locale} now={now} />
-    <Coverage price={price} copy={copy} />
-    {query.has("goal") && <Decision decision={data.decision} copy={copy} />}
-    {query.has("cost") && <Economics economics={data.economics} copy={copy} />}
+    {citation ? <References price={price} copy={copy} /> : <>
+      <Offers price={price} copy={copy} currency={currency} locale={locale} now={now} />
+      <Coverage price={price} copy={copy} />
+      {query.has("goal") && <Decision decision={data.decision} copy={copy} />}
+      {query.has("cost") && <Economics economics={data.economics} copy={copy} />}
+    </>}
   </>;
 }

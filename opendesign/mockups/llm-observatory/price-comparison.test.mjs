@@ -63,6 +63,24 @@ test("the edge preserves original offers, exact market, pinned release and decis
   assert.equal((await mismatched.json()).decision, null);
 });
 
+test("the edge publishes citation-only prices without related purchase advice", async (t) => {
+  const source = {
+    ...price, data_class: "reviewed_citations", offers: [],
+    references: [{ observed_on: "2026-11-01", price: "812.30" }],
+  };
+  const fetchMock = t.mock.method(globalThis, "fetch", async (url) => {
+    assert.equal(url.pathname, `/price-releases/${releaseId}/prices.json`);
+    return Response.json(source);
+  });
+  const response = await request({
+    release: releaseId, goal: "/goals/" + "a".repeat(64) + ".json",
+    cost: "/costs.json?revision=v1-" + "b".repeat(64),
+  }, { FASTEST_RELEASE_ORIGIN: origin });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { status: "published", releaseId, price: source, decision: null, economics: null });
+  assert.equal(fetchMock.mock.callCount(), 1);
+});
+
 test("the edge refuses an upstream price redirect without exposing the destination", async (t) => {
   const fetchMock = t.mock.method(globalThis, "fetch", async () =>
     Response.redirect("https://elsewhere.example/private-preview"));
@@ -194,4 +212,19 @@ test("localized price release displays current expiry and pinned collection gaps
   assert.match(pinned, /Fresh at release/);
   assert.match(pinned, /Stale/);
   assert.doesNotMatch(pinned, /Available at release/);
+
+  const sourceLocator = "https://reference.example.test/product/example-accelerator-16";
+  const citation = loaded.exports.default({
+    ...props, copy: priceCopy("en"), locale: "en", currency: "USD",
+    data: { price: {
+      ...price, scope: { kind: "sku", id: "fixture-board", revision_id: "fixture-board-v1" },
+      data_class: "reviewed_citations", currency: "CNY", destination: null, condition: null, as_of: "2026-11-04",
+      source_name: "Fixture Price Monitor", source_locator: sourceLocator, offers: [],
+      references: [{ observed_on: "2026-11-01", marketplace: "Fixture Marketplace", price: "812.30" }],
+    } },
+    query: new URLSearchParams({ goal: "fixture", cost: "fixture" }),
+  });
+  for (const label of ["Historical price references", "Original post-coupon price", "2026-11-01", "812.30 CNY",
+    "Fixture Marketplace", "Fixture Price Monitor", sourceLocator, "Unknown"]) assert.ok(citation.includes(label), label);
+  assert.doesNotMatch(citation, /Dated offers|Collection status|Display estimate|Available at release|Pinned decision order|Pinned cost scenario/);
 });
