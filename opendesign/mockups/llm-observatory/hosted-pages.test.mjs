@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { modelShard } from "./catalog-paths.mjs";
 import { importLocalCatalog } from "./catalog-pg.mjs";
+import { onRequestGet as readPage } from "./functions/_middleware.js";
 import { onRequestGet as readCatalogProfile } from "./functions/catalog/[release]/[[path]].js";
 import { withLocalPages } from "./pages-test-server.mjs";
 
@@ -73,6 +74,10 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   assert.equal(await releaseDigest(output), await releaseDigest(rebuilt));
   const manifest = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
   assert.deepEqual(manifest.highlights.map(({ id }) => id), ["dual-rtx-2080-ti-nvlink", "open-benchmark-requests"]);
+  const home = await readFile(join(output, "index.html"), "utf8");
+  const homeMarkdown = await readFile(join(output, "index.md"), "utf8");
+  assert.match(home, /<section data-home-highlights><h2>Research highlights<\/h2>/);
+  assert.doesNotMatch(home + homeMarkdown, /Observed inventory tool-policy benchmark|\/agent-task\//);
   const community = await readFile(join(output, "wiki/community/index.html"), "utf8");
   const issues = "https://github.com/OmniMCP-AI/local-llm/issues/new?template=";
   for (const template of ["benchmark-request.yml", "result-correction.yml"]) {
@@ -188,6 +193,78 @@ test("the official Qwen model profile links the observed GGUF inventory benchmar
     getReport = () => Response.json(invalid);
     assert.doesNotMatch(await profile("md"), /agent-task|tool-policy benchmark/);
   }
+});
+
+test("homepage discovery links the pinned inventory report while its public review is live", async (t) => {
+  const pin = "b".repeat(64);
+  const releaseOrigin = "https://release.example.test";
+  const reportUrl = releaseOrigin + "/agent-task/" + pin + "/agent-task";
+  const label = "Observed inventory tool-policy benchmark";
+  const heading = "## Research highlights";
+  const staticEntry = "- [Open research request](/wiki/community.md)\n";
+  const staticMarkdown = "# fastest.ai\n\n" + heading + "\n\n" + staticEntry;
+  const staticManifest = { release: "wiki-static", highlights: [{ id: "open-benchmark-requests", priority: 10 }] };
+  const env = {
+    FASTEST_RELEASE_ORIGIN: releaseOrigin,
+    FASTEST_AGENT_TASK_RELEASE: pin,
+    ASSETS: { fetch: () => Response.json({ paths: [] }) },
+  };
+  let markdown = staticMarkdown;
+  async function home(path, bindings = env, method = "GET") {
+    const response = await readPage({
+      request: new Request(origin + path, { method }),
+      env: bindings,
+      next: () => path === "/index.md"
+        ? new Response(markdown, { headers: { "Content-Type": "text/markdown", "Content-Length": String(markdown.length) } })
+        : Response.json(staticManifest),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    return response;
+  }
+  const { artifact } = JSON.parse(await readFile(new URL("../../../production/fastest_text/plan.json", import.meta.url)));
+  const report = {
+    schema_version: 1,
+    kind: "measured",
+    conditions: { protocol_id: "inventory-agent-comparison-shared-ci-cpu@1", artifact },
+    environment: { backend: "CPU" },
+    contexts: ["bundle", "split"].map(id => ({ id, review: { decision: "allow" }, attempts: [{}] })),
+  };
+  let status = 200;
+  const upstream = t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(String(url), reportUrl + ".json");
+    assert.equal(options.cache, "no-store");
+    assert.equal(options.redirect, "manual");
+    return Response.json(report, { status });
+  });
+
+  const discovery = await home("/index.md");
+  assert.equal(discovery.headers.get("Content-Length"), null);
+  const body = await discovery.text();
+  assert.ok(body.includes(`[${label}](${reportUrl}.md)`));
+  assert.match(body, /shared CI CPU/);
+  assert.ok(body.indexOf(label) < body.indexOf(staticEntry));
+  const manifest = await (await home("/wiki/manifest.json")).json();
+  assert.equal(manifest.release, staticManifest.release);
+  assert.equal(manifest.highlights[0].href, reportUrl + ".html");
+  assert.equal(manifest.highlights[0].markdown, reportUrl + ".md");
+  assert.deepEqual(manifest.highlights.slice(1), staticManifest.highlights);
+
+  markdown = "# fastest.ai\n";
+  assert.ok((await (await home("/index.md")).text()).includes(heading + "\n\n- [" + label));
+  markdown = staticMarkdown;
+  assert.equal(await (await home("/index.md", { ...env, FASTEST_AGENT_TASK_RELEASE: undefined })).text(), staticMarkdown);
+  assert.equal((await home("/index.md", env, "HEAD")).body, null);
+  assert.equal(upstream.mock.callCount(), 3);
+
+  for (const inactive of [404, 410, 503]) {
+    status = inactive;
+    assert.equal(await (await home("/index.md")).text(), staticMarkdown);
+    assert.deepEqual(await (await home("/wiki/manifest.json")).json(), staticManifest);
+  }
+  report.contexts[1].review.decision = "deny";
+  status = 200;
+  assert.equal(await (await home("/index.md")).text(), staticMarkdown);
 });
 
 const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
