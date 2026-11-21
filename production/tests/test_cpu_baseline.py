@@ -138,6 +138,7 @@ class CPUBaselineTests(unittest.TestCase):
             (RUNNER.replace('"84a9bf2f"', '"aaaaaaaa"'), "pinned llama.cpp build"),
             (RUNNER.replace('"n_threads": 1', '"n_threads": 2'), "pinned CPU invocation"),
             (RUNNER.replace("CPU KV buffer", "CUDA0 KV buffer"), "CPU-only buffer placement"),
+            (RUNNER.replace("CPU KV buffer", "CPU_AARCH64 KV buffer"), "CPU-only buffer placement"),
             (RUNNER.replace("4000000000", "0"), "positive timed decode samples"),
             (RUNNER.replace("range(1, 8)", "range(1, 7)"), "positive timed decode samples"),
             (RUNNER + '\nprint("failed to decode", file=sys.stderr)\n', "logged an error"),
@@ -151,6 +152,18 @@ class CPUBaselineTests(unittest.TestCase):
                 self.assertFalse(self.output.exists())
 
 
+
+
+    def test_accepts_x86_cpu_weight_repacking_with_zero_offloaded_layers(self):
+        script = RUNNER.replace(
+            'print("load_tensors: CPU_Mapped model buffer size = 468.00 MiB", file=sys.stderr)',
+            'print("load_tensors: offloaded 0/25 layers to GPU", file=sys.stderr)\n'
+            'print("load_tensors: CPU_Mapped model buffer size = 463.00 MiB", file=sys.stderr)\n'
+            'print("load_tensors: CPU_AARCH64 model buffer size = 5.00 MiB", file=sys.stderr)',
+        )
+        self.assertEqual(self.capture(script), ((0, ""), (0, "")))
+        candidate = json.loads((self.output / "candidate.json").read_text())
+        self.assertIn("x86_64", candidate["hardware"]["configuration"])
 
     def test_reports_a_conflicting_context_with_safe_placement_details(self):
         result, replay = self.capture(RUNNER.replace("n_ctx = 128 (padded)", "n_ctx = 256 (padded)"))

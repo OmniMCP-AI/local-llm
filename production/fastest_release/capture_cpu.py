@@ -110,9 +110,10 @@ def build_receipt(directory, runner):
     context_tokens = set(placement["context_tokens"])
     # b5163 logs the context at initialization and again before and after KV padding.
     # The official CPU asset registers an unused RPC backend with zero devices.
+    # b5163 uses CPU_AARCH64 for host-allocated weight repacking on AVX2 as well as Arm.
     if not (
         not placement["devices"] and all(actual == 0 for actual, _ in placement["offloaded_layers"]) and
-        buffer_devices["model"] and buffer_devices["model"] <= {"CPU", "CPU_Mapped", "CPU_REPACK"} and
+        buffer_devices["model"] and buffer_devices["model"] <= {"CPU", "CPU_Mapped", "CPU_REPACK", "CPU_AARCH64"} and
         buffer_devices["kv"] == {"CPU"} and buffer_devices["compute"] == {"CPU"} and
         context_tokens == {TOKENS}
     ):
