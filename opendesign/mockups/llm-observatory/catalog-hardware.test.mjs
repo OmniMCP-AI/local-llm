@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 123);
   assert.equal(manifest.coverage.manufacturerMachines, 4);
-  assert.equal(manifest.coverage.cards, 111);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 103);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 82);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 37);
-  assert.equal(manifest.coverage.boardPartnerCards, 3);
+  assert.equal(manifest.coverage.cards, 112);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 105);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 83);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 45);
+  assert.equal(manifest.coverage.boardPartnerCards, 4);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -40,7 +40,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
 
   assert.equal(find(catalog.cards, "nvidia-a100").variant, "PCIe 40 GB calibration");
   assert.equal(find(catalog.cards, "nvidia-a100-sxm").variant, "SXM calibration");
-  assert.equal(find(catalog.cards, "amd-instinct-mi300").kind, "Unresolved family reference");
+  const mi300 = find(catalog.cards, "amd-instinct-mi300");
+  assert.equal(mi300.kind, "Unresolved family reference");
+  assert.equal(mi300.vendorSpec.facts.Architecture, "CDNA 3");
+  assert.equal(mi300.vendorSpec.facts["Memory configuration"], undefined);
+  assert.equal(mi300.memory, null);
   assert.ok(find(catalog.cards, "amd-radeon-rx-7600"));
   for (const id of ["amd-radeon-instinct-mi50-16gb", "amd-radeon-instinct-mi50-32gb", "nvidia-tesla-v100-16gb", "nvidia-tesla-v100-32gb", "nvidia-tesla-v100-sxm2", "nvidia-geforce-rtx-2080-ti-colorful-modified"]) {
     assert.ok(find(catalog.cards, id), id);
@@ -98,4 +102,14 @@ test("a source withdrawal removes boards whose parent identity disappears", asyn
   assert.ok(catalog.cards.some(({ id }) => id === "amd-radeon-rx-9070-xt"));
   assert.ok(!catalog.cards.some(({ id }) => id === "amd-radeon-rx-9060-xt-16gb"));
   assert.ok(!catalog.cards.some(({ id }) => id === "asus-dual-rx9060xt-16g"));
+});
+
+test("a manufacturer source withdrawal removes independently sourced boards under that release", async () => {
+  const withdrawn = "https://www.nvidia.cn/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/";
+  const { catalog } = await readHardwareCatalog(here, value => value === withdrawn);
+  const ids = catalog.cards.map(({ id }) => id);
+  assert.ok(ids.includes("nvidia-geforce-rtx-5090-d"));
+  assert.ok(ids.includes("nvidia-geforce-rtx-5090-d-v2"));
+  assert.ok(!ids.includes("nvidia-geforce-rtx-5090-d-32gb"));
+  assert.ok(!ids.includes("asus-rog-astral-rtx5090d-o32g-gaming"));
 });

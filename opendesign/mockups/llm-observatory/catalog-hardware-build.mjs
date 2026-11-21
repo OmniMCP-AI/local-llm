@@ -83,6 +83,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
 
   const withdrawnProfiles = new Set([...profiles.values()].filter(({ id, source_url, source }) =>
     [id, source_url, source].some(isWithdrawn)).map(({ id }) => id));
+  const withdrawnCards = new Set();
   const cards = index([...inventory.cards, ...variants].flatMap((record) => {
     const metadata = { ...record, ...cardMetadata[record.id] };
     const matcher = matchers.get(record.id);
@@ -94,7 +95,10 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       return { id, source: profiles.get(id).source };
     });
     const source = matcher?.source ?? associatedProfiles[0]?.source;
-    if (!source && profileIds.length && !allowedIds.length) return [];
+    if (!source && profileIds.length && !allowedIds.length) {
+      withdrawnCards.add(record.id);
+      return [];
+    }
     if (!source) throw new Error(`Unreconciled hardware source: ${record.id}`);
     const brand = /^(amd|intel|nvidia)-/.exec(record.id)?.[1];
     const manufacturer = { amd: "AMD", intel: "Intel", nvidia: "NVIDIA" }[brand];
@@ -122,7 +126,10 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   }));
   if ([...matchers.keys()].some((id) => !cards.has(id))) throw new Error("Missing eligible llmfit card matcher");
   for (const { id, name, manufacturer, variant, source, parent = null } of additions.cards) {
-    if (isWithdrawn(source) || isWithdrawn(id)) continue;
+    if (isWithdrawn(source) || isWithdrawn(id)) {
+      withdrawnCards.add(id);
+      continue;
+    }
     if (cards.has(id)) throw new Error(`Already cataloged GPU: ${id}`);
     const spec = vendorSpec(id);
     if (!spec || spec.source !== source) throw new Error(`Missing manufacturer specification for GPU: ${id}`);
@@ -133,11 +140,18 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       vendorSpec: spec,
     });
   }
-  for (const card of cards.values()) {
-    if (card.parent && !cards.has(card.parent)) {
-      if (!withdrawnProfiles.size && !isWithdrawn(card.parent)) throw new Error(`Unknown card family: ${card.parent}`);
-      cards.delete(card.id);
+  let previousCardCount;
+  do {
+    previousCardCount = cards.size;
+    for (const { id, parent } of cards.values()) {
+      if (withdrawnCards.has(parent)) {
+        cards.delete(id);
+        withdrawnCards.add(id);
+      }
     }
+  } while (cards.size < previousCardCount);
+  for (const { parent } of cards.values()) {
+    if (parent && !cards.has(parent)) throw new Error(`Unknown card family: ${parent}`);
   }
 
   const names = new Map();
