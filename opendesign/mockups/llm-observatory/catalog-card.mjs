@@ -1,3 +1,4 @@
+import { guidanceSections } from "./catalog-guidance.mjs";
 import { catalogPath, hardwareDirectoryPath, modelCollectionPath, runtimeDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
 import { bandwidthAxis, cardPosition, cardRatings, memoryAxis, speedAxis } from "./catalog-position.mjs";
 import { axisTitle, renderCoordinatePlot } from "./coordinate-plot.mjs";
@@ -73,6 +74,7 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, r
       ...runtimeFields,
     ],
     sections: [
+      ...guidanceSections("models", row),
       ...(supplemental ? [{
         title: "Reviewed publisher metadata",
         fields: [
@@ -124,7 +126,7 @@ export function runtimeCard(row, { local = false, observation, review = false } 
       ...(row.latestRelease ? [["Latest verified upstream release", row.latestRelease.tag, row.latestRelease.url]] : []),
       ["Release documentation", "Read the documentation", row.docs],
     ],
-    sections: [...(observation ? [{
+    sections: [...guidanceSections("runtimes", row), ...(observation ? [{
       title: "Runtime release watch",
       fields: [
         ["Last observed stable release", observation.release?.tag ?? "No stable release observed", observation.release?.url],
@@ -218,6 +220,7 @@ export function hardwareCard(row, release, kind, {
         ...(row.parent ? [[modified ? "Base GPU identity" : "Related product family or calibration", row.parent, path("cards", row.parent)]] : []),
       ],
       sections: [
+        ...guidanceSections("cards", row),
         ...(modified ? [{
           title: "Memory modification evidence",
           fields: [
@@ -266,7 +269,7 @@ export function hardwareCard(row, release, kind, {
   const factory = row.kind === "Complete factory configuration";
   const creator = row.buildSource;
   const topology = topologyRevisionHref(topologyRevision, local ? "../../../../fastest-ai.html" : "/");
-  const sections = [{
+  const sections = [...guidanceSections("machines", row), {
     title: "Memory",
     fields: [
       ["Installed system memory", row.memory.system ?? "Unknown"],
