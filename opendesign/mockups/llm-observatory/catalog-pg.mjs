@@ -7,6 +7,7 @@ import { readCatalogModelFiles } from "./catalog-release-build.mjs";
 import { modelRepositoryMap } from "./catalog-search.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 import { readEvidenceState, withdrawnPublisherSource } from "./evidence-state.mjs";
+import { estimateBattleTitles } from "./battle-title-signals.mjs";
 
 const project = new URL(".", import.meta.url);
 const docs = new URL("../../../docs/", project);
@@ -27,11 +28,12 @@ function canonicalJson(value) {
 function publicCatalogDigest(catalog) {
   const byId = rows => rows.toSorted((a, b) => a.id < b.id ? -1 : Number(a.id > b.id));
   const { source, hardware, runtimes, identities, discovery, sourceManifest, topologies, photos,
-    supplement, supplementalModels } = catalog;
+    supplement, supplementalModels, battleTitleSignals } = catalog;
   return sha256(encode(canonicalJson([
     { ...source, models: byId(source.models) }, hardware.manifest, byId(hardware.catalog.cards),
     byId(hardware.catalog.machines), byId(runtimes), identities, discovery, sourceManifest, topologies, photos,
     ...(supplement ? [supplement, byId(supplementalModels)] : []),
+    ...(battleTitleSignals ? [battleTitleSignals] : []),
   ])));
 }
 
@@ -113,7 +115,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   isPublisherWithdrawn) {
   const publisherFilter = isPublisherWithdrawn ?? withdrawnPublisherSource(await readEvidenceState());
   const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos,
-    manufacturerSource] = await Promise.all([
+    manufacturerSource, titleSample] = await Promise.all([
     readFile(new URL("catalog-pg.sql", project), "utf8"),
     readCatalogModelFiles(fileURLToPath(project), publisherFilter),
     ...["catalog-runtimes.json", "catalog-topics.json"].map(name => readJson(project, name)),
@@ -123,6 +125,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     readJson(project, "catalog-topology.json"),
     readCatalogPhotos(project),
     readFile(new URL(manufacturerSourcePath.split("/").at(-1), project), "utf8"),
+    readJson(project, "battle-title-sample.json"),
   ]);
   const { source: models, identities, discovery, sourceManifest, supplement, supplementalModels } = modelFiles;
   const { models: modelRows, ...modelMetadata } = models;
@@ -130,6 +133,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     id, { ...identity, artifacts: identity.artifacts ?? [] },
   ]));
   const { cards, machines } = hardware.catalog;
+  const battleTitleSignals = estimateBattleTitles(titleSample, hardware.catalog);
   documents.push([manufacturerSourcePath, sha256(manufacturerSource), manufacturerSource]);
   const { topologies, records: topologyTables } = topologyRecords(reports, machines, documents, photos);
   const byPosition = new Map(inventory.map(row => [Number(row.position), row.id]));
@@ -147,11 +151,13 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
         supplement,
       },
       modelLicenseNotice: models.licenseNotice,
+      battleTitleSample: titleSample,
+      battleTitleSignals,
       pages: {
         hardware: hardware.manifest, modelMetadata, sourceManifest,
         projectionDigest: publicCatalogDigest({
           source: models, hardware, runtimes, identities: reviewedIdentities, discovery, sourceManifest, topologies, photos,
-          supplement, supplementalModels,
+          supplement, supplementalModels, battleTitleSignals,
         }),
         runtimeProjects: runtimes.length,
         topologyRevisions: topologies.length,
@@ -196,7 +202,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   ].join("\n");
   runCatalogSql(database, id, input, "PostgreSQL catalog import failed", true);
   const { catalog, runtimes: importedRuntimes, modelManifest, modelLicenseNotice,
-    topologies: importedTopologies, photos: importedPhotos } = readSnapshot(database, id);
+    topologies: importedTopologies, photos: importedPhotos, battleTitleSignals: importedTitleSignals } = readSnapshot(database, id);
   if (catalog.cards.length !== cards.length || catalog.machines.length !== machines.length) {
     throw new Error("PostgreSQL catalog coverage differs from the source");
   }
@@ -208,7 +214,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     throw new Error("PostgreSQL model coverage differs from the source");
   }
   return { ...hardware, catalog, snapshotId: id, runtimes: importedRuntimes, modelManifest, modelLicenseNotice,
-    topologies: importedTopologies, photos: importedPhotos };
+    topologies: importedTopologies, photos: importedPhotos, battleTitleSignals: importedTitleSignals };
 }
 
 function readSnapshot(database, id, full = false) {
@@ -278,13 +284,14 @@ function readSnapshot(database, id, full = false) {
         'small', (SELECT count(*) FROM ranked_models WHERE rankings ? 'small')
       ),
       'modelLicenseNotice', snapshot.document->>'modelLicenseNotice',
+      'battleTitleSignals', snapshot.document->'battleTitleSignals',
       'pages', snapshot.document->'pages'
     ) FROM fastest_catalog.snapshot snapshot WHERE snapshot.id = :'snapshot_id';
     COMMIT;`;
   const result = runCatalogSql(database, id, input, "PostgreSQL catalog read failed", !full);
   if (!result.trim()) throw new Error("PostgreSQL catalog snapshot was not found: " + id);
-  const { runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos, ...catalog } = JSON.parse(result);
-  return { catalog, runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos };
+  const { runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos, battleTitleSignals, ...catalog } = JSON.parse(result);
+  return { catalog, runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos, battleTitleSignals };
 }
 
 function runCatalogSql(database, id, input, errorMessage, showDetails) {
@@ -297,7 +304,7 @@ function runCatalogSql(database, id, input, errorMessage, showDetails) {
 }
 
 export function readPublishedCatalog(database, id) {
-  const { catalog, runtimes, modelManifest, pages, topologies, photos } = readSnapshot(database, id, true);
+  const { catalog, runtimes, modelManifest, pages, topologies, photos, battleTitleSignals } = readSnapshot(database, id, true);
   if (!pages?.hardware?.coverage || !pages.modelMetadata || !pages.sourceManifest ||
       !pages.projectionDigest || !modelManifest?.discovery || !Number.isInteger(pages.topologyRevisions)) {
     throw new Error("PostgreSQL catalog snapshot has no Pages publication metadata: " + id);
@@ -334,7 +341,7 @@ export function readPublishedCatalog(database, id) {
   }
   const withoutRank = ({ rank, ...row }) => row;
   const projection = {
-    snapshotId: id, runtimes, identities, topologies, photos, supplement, supplementalModels,
+    snapshotId: id, runtimes, identities, topologies, photos, supplement, supplementalModels, battleTitleSignals,
     source: { ...pages.modelMetadata, models }, sourceManifest: pages.sourceManifest,
     discovery: { ...modelManifest.discovery, popular: popular.map(withoutRank), small: small.map(withoutRank) },
     hardware: { catalog: { cards, machines }, manifest: pages.hardware },

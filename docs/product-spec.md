@@ -202,6 +202,10 @@ Every public destination has versioned Markdown. Frontmatter holds page ID, rout
 
 ### Multi-goal comparison and scaling
 
+The **One-on-one battles** section compares two exact GPU catalog identities or two machine configurations. Show the source for each side and highlight differences that could change a purchase or deployment decision, including memory, bandwidth, rated power, fit, topology, parts, and applicable runtime support. Show the reason whenever a price, energy, or performance comparison lacks equivalent evidence. Preserve both identities and the published snapshot in share links and Markdown.
+
+Rank site comparisons by opted-in submissions in the past 30 days. Count each request once, regardless of the left or right order. The PostgreSQL ranking stores the hardware identifiers, release and a retry token. Show suggested pairs when usage is sparse. A separate YouTube title estimate counts distinct videos in a dated, reviewed sample and links to the original titles. A single-GPU matchup uses family-level title mentions and excludes titles that explicitly refer to multi-GPU setups. Machine title matches require an identifiable catalog configuration. A title match supplies discovery context. Performance decisions use reviewed evidence with matching test conditions.
+
 Start with two or three editable limits for solo use, team serving or efficiency. Keep required limits, chart axes and preferred sort metric independent. Show pass, miss, unknown or ineligible for each goal, the size of a miss, and coverage. Keep a failed goal visible until the visitor changes it. A Pareto chart uses complete, eligible observations for its named axes.
 
 Compare prefill at a stated input length, decode, TTFT, end-to-end time, per-user latency and aggregate capacity under a named load, usable memory, scoped power/energy, quality and cost. Each metric keeps its own run and protocol. A four-user result and a solo result may describe the same machine under different workloads. Price carries market, date, currency and condition.
