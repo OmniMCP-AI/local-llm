@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
+import { Client } from "pg";
 import { withLocalPages } from "./pages-test-server.mjs";
 import sourceIndex from "./wiki/research-index.json" with { type: "json" };
 
@@ -92,13 +93,14 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   await writeFile(join(previous, "downloads/earlier-guide/index.html"), "<h1>Archived export</h1>");
   const internalBytes = "Deployment configuration outside the public evidence routes";
   await writeFile(join(previous, "_internal-fixture"), internalBytes);
+  const sharedContext = { page: "/wiki/research/", release: old, entity: "Reviewer's \\ notes" };
   await writeFile(requestPath, JSON.stringify({
     action: "withdraw",
     evidenceId,
     sourceId: evidenceId,
     sourceLocator: source.url,
     intake: { id: receipt, category: "correction", status: "queued", message: "private contribution",
-      context_json: JSON.stringify({ page: "/wiki/research/", release: old }) },
+      context_json: JSON.stringify(sharedContext) },
   }));
 
   await run(process.execPath, ["resolve-evidence.mjs", requestPath, previous, candidate, approvals]);
@@ -123,9 +125,21 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   });
   assert.equal(report.changes.find(({ path }) => path === "/sitemap.xml").after, digest(await read("sitemap.xml")));
   assert.ok(report.notificationDraft.includes(digest(markdown)));
-  assert.match(report.receiptUpdate, /UPDATE|INSERT/);
+  assert.match(report.receiptUpdate, /^SELECT fastest_feedback\.link_feedback_resolution\(/);
   assert.ok(report.receiptUpdate.includes(receipt));
   assert.ok(report.receiptUpdate.includes(report.resolutionPath));
+  if (process.env.FASTEST_TEST_FEEDBACK_DATABASE_URL && process.env.FASTEST_TEST_DATABASE_URL) {
+    const publisher = new Client({ connectionString: process.env.FASTEST_TEST_DATABASE_URL });
+    await publisher.connect();
+    try {
+      await publisher.query("BEGIN");
+      await publisher.query(`INSERT INTO fastest_feedback.feedback_submission (id, request_id, category, message, context_json)
+        VALUES ($1, gen_random_uuid(), 'correction', 'Private test contribution', $2)`, [receipt, sharedContext]);
+      assert.deepEqual((await publisher.query(report.receiptUpdate)).rows, [{ linked: true }]);
+    } finally {
+      await publisher.query("ROLLBACK").finally(() => publisher.end());
+    }
+  }
   const policy = JSON.parse(await read("evidence-quarantine.json"));
   assert.deepEqual(policy.publisherWithdrawals, [retiredPublisher]);
   assert.ok(policy.paths.includes("/research/" + old + "/*"));
