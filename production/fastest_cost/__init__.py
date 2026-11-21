@@ -315,7 +315,8 @@ def _sensitivity(scenario, workload, accepted, months):
     return rows
 
 
-def calculate(selection=None, *, reviewed_path=None, price_reader=None, tariff_references_path=None):
+def calculate(selection=None, *, reviewed_path=None, price_reader=None, tariff_references_path=None,
+              tariff_references_reader=None):
     """Return the versioned JSON-compatible comparison for public query selectors."""
     selection = {} if selection is None else selection
     if selection.keys() - PUBLIC_FIELDS:
@@ -348,8 +349,12 @@ def calculate(selection=None, *, reviewed_path=None, price_reader=None, tariff_r
             "service_hours": "hours", "latency": "ms", "token_rates": "per million tokens",
         },
     }
-    if name == "evidence" and tariff_references_path is not None:
-        references = read_tariff_references(tariff_references_path)
+    if name == "evidence":
+        references = None
+        if tariff_references_reader is not None:
+            references = tariff_references_reader()
+        elif tariff_references_path is not None:
+            references = read_tariff_references(tariff_references_path)
         if references is not None:
             identity["tariff_references"] = references
     identity_bytes = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")

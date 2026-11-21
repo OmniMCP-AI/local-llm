@@ -30,6 +30,9 @@ Use one tariff row for each quoted rate component. Each row identifies the provi
 
 Every tariff candidate must reference a `captured` source probe in the same bundle. Use a `no_quote` probe by itself when the source provides no applicable rate. With an intake operator connection, join `fastest_intake.tariff_candidate`, `fastest_intake.source_probe` and `fastest_intake.batch` on batch and source to inspect the terms, cited URL and check time. Operator review can approve [tariff references for public display](../fastest_cost/README.md#configure-reviewed-tariff-references) or [workload-specific calculation inputs](../fastest_cost/README.md#configure-reviewed-evidence).
 
+Intake migration installs the tariff approval tables and the origin's
+rights-filtered function. Intake stats count retained reviews and withdrawals.
+
 Review rights, exact identity, methodology, and current offer status before preparing a release. The public pricing and benchmark endpoints read their existing reviewed stores.
 
 ## Import source-reported GPU inference trials

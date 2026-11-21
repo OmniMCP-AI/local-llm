@@ -250,17 +250,20 @@ def _active_reference(row, now):
 def read_tariff_references(path):
     try:
         record = json.loads(path.read_text(encoding="utf-8"))
-        keys(record, "schema_version revision authorization references", "reviewed tariff references")
-        require(type(record["schema_version"]) is int and record["schema_version"] == 1,
-                "Unsupported tariff reference schema version.")
-        now = datetime.now(timezone.utc)
-        if not _authorized(record["authorization"], now, "tariff reference"):
-            return None
-        revision(record["revision"])
-        rows = record["references"]
-        require(isinstance(rows, list) and len(rows) <= 128, "Provide up to 128 tariff references.")
-        active = [row for row in rows if _active_reference(row, now)]
-        require(len({row["id"] for row in rows}) == len(rows), "Duplicate tariff reference ID.")
-        return {**record, "references": active} if active else None
+        return active_tariff_references(record, datetime.now(timezone.utc))
     except (OSError, ValueError) as error:
         raise CostInputError(f"Invalid reviewed tariff references: {error}") from error
+
+
+def active_tariff_references(record, now):
+    keys(record, "schema_version revision authorization references", "reviewed tariff references")
+    require(type(record["schema_version"]) is int and record["schema_version"] == 1,
+            "Unsupported tariff reference schema version.")
+    if not _authorized(record["authorization"], now, "tariff reference"):
+        return None
+    revision(record["revision"])
+    rows = record["references"]
+    require(isinstance(rows, list) and len(rows) <= 128, "Provide up to 128 tariff references.")
+    active = [row for row in rows if _active_reference(row, now)]
+    require(len({row["id"] for row in rows}) == len(rows), "Duplicate tariff reference ID.")
+    return {**record, "references": active} if active else None

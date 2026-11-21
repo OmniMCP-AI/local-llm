@@ -60,8 +60,53 @@ and horizon. A changed or retired revision returns 404 on replay.
 
 ## Configure reviewed tariff references
 
-Start the release server from `production/` with the optional reference
-manifest.
+### PostgreSQL approval
+
+From `production/`, run `python3 -B -m fastest_intake migrate` with an
+intake operator connection. Review each captured component, its effective
+period, billing scope, qualification and source probe URL. Approve only
+components whose projected fields and citation may be made public.
+
+Save the approved selection as a private JSON file with these fields.
+
+| Field | Required contents |
+| --- | --- |
+| `schema_version` | Integer 1. |
+| `decision_id` | The canonical UUID of the completed publication review. Use a new decision for a changed selection or expiry. |
+| `expires_at` | A future UTC timestamp in `YYYY-MM-DDTHH:MM:SSZ` format. |
+| `candidates` | Between 1 and 128 components. Each has a `batch_id` from intake, the exact captured `source`, the candidate `id`, and a reviewed public `source_label`. IDs must be unique within the selection. |
+
+Run `python3 -B -m fastest_cost approve /private/tariff-approval.json` with the
+operator connection. The command prints the SHA-256 pin of the retained
+approval. The snapshot keeps the original decimal scale and unit, the captured
+HTTPS source probe URL, and the UTC batch check time. Replaying the same
+approval returns the same pin, regardless of the order of the candidates. New
+intake batches do not change the snapshot.
+
+Grant the origin role access to the projection function.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_cost_public TO origin_reader;
+GRANT EXECUTE ON FUNCTION fastest_cost_public.read_tariff_references(text) TO origin_reader;
+```
+
+Start the origin with its reader connection and the exact pin.
+
+```sh
+python3 -B -m fastest_release serve --cost-tariff-references-pin "$TARIFF_REVIEW_PIN"
+```
+
+The projection exposes active approved components and their publication
+decision. Private batch IDs, source IDs, notes and capture locators stay in
+intake. Effective dates use UTC with an exclusive end date. Approval expiry
+removes the entire block. Run `python3 -B -m fastest_cost withdraw "$TARIFF_REVIEW_PIN"`
+with the operator connection to retire it immediately. Replaying the approval
+preserves the withdrawal, and links to the retired calculator revision return 404.
+
+### File manifest
+
+To use a reviewed file instead, start the server from `production/` with
+the reference manifest.
 
 ```sh
 python3 -B -m fastest_release serve --cost-tariff-references /private/reviewed-tariffs.json
@@ -86,8 +131,7 @@ Use an operator-reviewed JSON object with these fields.
 Each component has `id`, `kind`, `provider`, `offering`, `revision`,
 `market`, `region`, `currency`, `amount`, `unit`, `component`,
 `effective_from`, `effective_until`, `qualification`, `source`,
-`checked_at` and `citation`. For PostgreSQL-derived references, join the
-candidate to its captured source probe and batch in the private intake.
+`checked_at` and `citation`.
 Keep the original amount as a decimal string and the original billing unit
 from [the tariff intake schema](../fastest_intake/README.md). Copy each
 known effective date as `YYYY-MM-DD` or use null for an unspecified date.
@@ -113,4 +157,7 @@ retired.
 - Nominal cost adds upfront and monthly costs, then subtracts residual value only at the selected terminal month. Discounted cost uses monthly end-of-period cash flows and the versioned effective monthly rate. The assumed terminal residual is held fixed when the horizon changes. Simple payback divides positive incremental upfront cash by positive recurring savings and omits the terminal residual. Zero upfront can yield immediate payback if recurring savings are positive. The result distinguishes payback beyond the horizon, infeasible service, unknown inputs and nonpositive savings.
 - Sensitivity changes one input at a time to 50% and 150% of its base value. Monthly accepted tasks round down for the low case and up for the high case, with one as the lower bound. Each case reruns the same service and cost equations.
 
-Run `python3 -B -m unittest discover -s tests -p 'test_cost.py'` from `production/` for the calculation and HTTP checks.
+Run `python3 -B -m unittest discover -s tests -p 'test_cost.py'` from `production/`
+for the calculation and HTTP checks. With `initdb`, `postgres`, `pg_isready`
+and `psql` on `PATH`, run `python3 -B -m unittest discover -s tests -p test_release.py -k serves_only_pinned_reviewed_tariff`
+to check the approval and withdrawal workflow against a temporary PostgreSQL cluster.
