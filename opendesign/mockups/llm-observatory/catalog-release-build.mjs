@@ -40,7 +40,7 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
 }
 
-export function prepareCatalogRelease({ source, identities, discovery, sourceManifest, hardware, runtimes, digest, snapshotId }) {
+export function prepareCatalogRelease({ source, identities, discovery, sourceManifest, hardware, runtimes, digest, snapshotId, topologies }) {
   const release = "v1-" + (snapshotId ?? digest).slice(0, 16);
   const shards = new Map();
   const ids = new Set();
@@ -91,9 +91,16 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
       withExactArtifacts: reviewed.filter((row) => row.artifacts?.length).length,
       exactArtifacts: reviewed.flatMap((row) => row.artifacts ?? []).length,
       runtimeProjects: runtimes.length,
+      ...(topologies && { topologyRevisions: topologies.length }),
     },
   };
-  return { manifest, shards, hardware, runtimes, licenseNotice: source.licenseNotice };
+  const topologyByMachine = new Map(topologies?.map(({ id, revision }) => [id, revision]));
+  const machines = hardware.catalog.machines.map(row => {
+    const topologyRevision = topologyByMachine.get(row.id);
+    return topologyRevision ? { ...row, topologyRevision } : row;
+  });
+  return { manifest, shards, hardware: { ...hardware, catalog: { ...hardware.catalog, machines } },
+    runtimes, licenseNotice: source.licenseNotice };
 }
 
 export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }) {

@@ -1,4 +1,4 @@
-import { catalogPath } from "./catalog-paths.mjs";
+import { catalogPath, topologyRevisionHref } from "./catalog-paths.mjs";
 import { cardPosition, cardRatings } from "./catalog-position.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 
@@ -189,6 +189,7 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
   }
 
   const factory = row.kind === "Complete factory configuration";
+  const topology = topologyRevisionHref(row.topologyRevision);
   const sections = [{
     title: "Memory",
     fields: [
@@ -239,6 +240,7 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
         ["Model fit", "Estimate fit for this configuration", "/fit?machine=" + encodeURIComponent(row.id)],
       ] : []),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
+      ...(topology ? [["Topology revision", "Explore this configuration", topology]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [
         ["Core build fields disclosed", `${row.coreFieldsReported} of ${row.coreFieldsTotal}`],

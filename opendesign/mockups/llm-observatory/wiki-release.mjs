@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
-import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyPresets, topologyView } from "./topology.mjs";
+import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyView } from "./topology.mjs";
+import { topologyRevisionHref } from "./catalog-paths.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -52,12 +53,12 @@ function renderBody(body, resolveLink, format) {
   }).join("\n\n");
 }
 
-export function renderTopologyReference(format, presets = topologyPresets, scalingUrl = null) {
+export function renderTopologyReference(format, presets, scalingUrl = null) {
   const interactive = "/#wiki/technology";
   const rows = presets.map(({ label, report }) => {
     const view = topologyView(report);
     return {
-      label, report,
+      label, report, topology: topologyRevisionHref(report.revision),
       summary: `${view.installedCount} ${view.installedCount === 1 ? "card" : "cards"}`,
       active: view.activeCount ?? "Unknown",
       inventory: view.parts.map(({ slot, label: name, memory }) => `${slot}. ${name} · ${memory ?? "VRAM unknown"}`).join(" / "),
@@ -71,8 +72,8 @@ export function renderTopologyReference(format, presets = topologyPresets, scali
 
 ${scalingUrl ? `[Open the 1→N GPU scaling report](${scalingUrl})` : scalingUnavailable}
 
-${rows.map(({ label, report, summary, active, inventory, links }) =>
-  `- [${label} · ${report.id}](${report.source}) · ${summary} · Active cards ${active} · ${markdown(inventory)} · Inter-card link ${links}`).join("\n")}
+${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
+  `- [${label} · ${report.id}](${report.source})${topology ? ` · [Explore this configuration](${topology})` : ""} · ${summary} · Active cards ${active} · ${markdown(inventory)} · Inter-card link ${links}`).join("\n")}
 
 ## Conceptual inference stages
 
@@ -83,8 +84,8 @@ ${inferenceStages.map(({ title, note }, index) => `${index + 1}. **${title}.** $
 <p>${scalingUrl ? `<a href="${escape(scalingUrl)}">Open the 1→N GPU scaling report</a>` : scalingUnavailable}</p>
 <div style="overflow-x:auto"><table><caption>Source-reported layouts</caption>
 <thead><tr><th scope="col">Layout</th><th scope="col">Installed</th><th scope="col">Active cards</th><th scope="col">Inventory by slot</th><th scope="col">Inter-card link</th></tr></thead>
-<tbody>${rows.map(({ label, report, summary, active, inventory, links }) =>
-  `<tr><th scope="row"><a href="${escape(report.source)}">${escape(label)} · ${escape(report.id)}</a></th><td>${summary}</td><td>${active}</td><td>${escape(inventory)}</td><td>${escape(links)}</td></tr>`).join("\n")}</tbody></table></div>
+<tbody>${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
+  `<tr><th scope="row"><a href="${escape(report.source)}">${escape(label)} · ${escape(report.id)}</a>${topology ? `<br><a href="${topology}">Explore this configuration</a>` : ""}</th><td>${summary}</td><td>${active}</td><td>${escape(inventory)}</td><td>${escape(links)}</td></tr>`).join("\n")}</tbody></table></div>
 <h2>Conceptual inference stages</h2><ol>${inferenceStages.map(({ title, note }) =>
   `<li><strong>${escape(title)}.</strong> ${escape(note)}</li>`).join("")}</ol></section>`;
 }
@@ -125,7 +126,7 @@ export function activeHighlights(highlights, pages, releaseDate) {
 
 export async function writeWikiRelease({
   output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
-  topologies, scalingUrl, advisorUrl,
+  topologies = [], scalingUrl, advisorUrl,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
@@ -152,7 +153,7 @@ export async function writeWikiRelease({
       source === id ? [target] : target === id ? [source] : []))]
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
     const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
-      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, topologies && selectTopologyPresets(topologies), scalingUrl) : "");
+      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl) : "");
     const { title, kind, summary, entity, evidence, methods, media } = doc;
     return { id, source: "wiki/pages/" + id + ".md", title, kind, summary, entity, evidence, methods, media,
       aliases, neighbors, html: body("html"), md: body("md") };
