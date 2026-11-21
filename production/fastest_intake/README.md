@@ -199,3 +199,44 @@ LEFT JOIN fastest_intake.scaling_capture_transport AS transport
     ON transport.comparison_run_id = attempt.run_id
 ORDER BY run.capture_sha256, attempt.role;
 ```
+
+## Import private fixed-token text timing
+
+Run from `production` with `FASTEST_DATABASE_URL` set to the intake operator database.
+
+```sh
+python3 -B -m fastest_intake migrate
+python3 -B -m fastest_intake ingest-text-capture /path/to/private/fixed-token-run
+python3 -B -m fastest_intake stats
+```
+
+Pass the directory from the [fixed-token collector](../fastest_text/README.md#run-the-fixed-token-protocol).
+The importer checks the pinned protocol and shard claims, verifies the build evidence and runner file
+digests, and reconciles the phase and repetition outcomes with the invocation, JSONL, and logged
+accelerator placement. Replay preserves the same run and attempts. Both phase rows remain visible
+in finalized blocked and interrupted captures. A phase that was never entered has outcome
+`not-run`. A subsection without a verifiable phase outcome has status `unavailable`. An observed
+failed, timed-out, interrupted, or unmeasured repetition has an outcome and a null `elapsed_ns`.
+
+The original ambient-load M4 packet uses its earlier `sources.sha256` inventory. To import that
+packet, use `python3 -B -m fastest_intake ingest-text-ambient-m4 /path/to/private/ambient-m4-run`.
+The importer checks the sealed benchmark events, pinned build and model checksums, and the two
+runner logs. It identifies this evidence as ambient desktop load and records the quiet-host
+attestation as false.
+
+PostgreSQL retains exact provenance, observed placement, SHA-256 digests, and integer nanoseconds.
+Keep the original packet, build evidence, raw logs, command lines, environment values, and
+completion content in restricted storage. Client latency remains missing under the fixed-token
+protocol. Imported runs stay held for review and Chinese-task quality stays unreviewed. Follow
+the [text-pilot review workflow](../fastest_text/README.md#review-and-ingest-runner-evidence)
+for the public two-machine comparison.
+
+```sql
+SELECT run.capture_sha256, run.cell_id, run.capture_status, run.review_status,
+       phase.phase, phase.outcome, phase.placement,
+       attempt.attempt_number, attempt.outcome, attempt.elapsed_ns
+FROM fastest_intake.text_capture_run AS run
+JOIN fastest_intake.text_capture_phase AS phase USING (capture_sha256)
+LEFT JOIN fastest_intake.text_capture_attempt AS attempt USING (capture_sha256, phase)
+ORDER BY run.started_at, run.capture_sha256, phase.phase, attempt.attempt_number;
+```

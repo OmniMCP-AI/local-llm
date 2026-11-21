@@ -269,6 +269,41 @@ CREATE TABLE IF NOT EXISTS fastest_intake.scaling_capture_transport (
     attached_at timestamptz NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.text_capture_run (
+    capture_sha256 text PRIMARY KEY CHECK (capture_sha256 ~ '^[0-9a-f]{64}$'),
+    evidence_sha256 text NOT NULL CHECK (evidence_sha256 ~ '^[0-9a-f]{64}$'),
+    capture_status text NOT NULL CHECK (capture_status IN ('complete', 'incomplete', 'blocked', 'interrupted')),
+    packet_kind text NOT NULL CHECK (packet_kind IN ('fixed-token-v1', 'ambient-m4-legacy')),
+    cell_id text NOT NULL CHECK (cell_id IN ('apple-m4', 'rtx-4090')),
+    review_status text NOT NULL CHECK (review_status = 'held'),
+    started_at timestamptz NOT NULL,
+    finished_at timestamptz NOT NULL CHECK (finished_at >= started_at),
+    metadata jsonb NOT NULL CHECK (jsonb_typeof(metadata) = 'object')
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.text_capture_phase (
+    capture_sha256 text REFERENCES fastest_intake.text_capture_run(capture_sha256),
+    phase text CHECK (phase IN ('prefill', 'decode')),
+    outcome text NOT NULL CHECK (outcome IN ('complete', 'partial', 'failed', 'oom', 'invalid-output', 'incomplete',
+                                             'timeout', 'interrupted', 'not-run', 'unavailable')),
+    receipt_sha256 text CHECK (receipt_sha256 ~ '^[0-9a-f]{64}$'),
+    placement jsonb CHECK (jsonb_typeof(placement) = 'object'),
+    files jsonb CHECK (jsonb_typeof(files) = 'object'),
+    PRIMARY KEY (capture_sha256, phase),
+    CHECK (outcome IN ('not-run', 'unavailable') OR (receipt_sha256 IS NOT NULL AND placement IS NOT NULL))
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.text_capture_attempt (
+    capture_sha256 text,
+    phase text,
+    attempt_number integer CHECK (attempt_number BETWEEN 1 AND 20),
+    outcome text NOT NULL CHECK (outcome IN ('success', 'failed', 'oom', 'timeout', 'interrupted', 'unmeasured')),
+    elapsed_ns bigint CHECK (elapsed_ns > 0),
+    PRIMARY KEY (capture_sha256, phase, attempt_number),
+    FOREIGN KEY (capture_sha256, phase) REFERENCES fastest_intake.text_capture_phase(capture_sha256, phase),
+    CHECK ((outcome = 'success') = (elapsed_ns IS NOT NULL))
+);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;
 
 COMMIT;
