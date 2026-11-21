@@ -18,6 +18,7 @@ import { Highlights } from "./highlights";
 import { MethodsPage } from "./methods";
 import { LocaleControls, LocaleProvider, LocaleStatus, quoteCurrency, useLocale } from "./locale";
 import { SiteName } from "./site-name";
+import { BattlePage } from "./battles";
 
 const release = "Demo snapshot, Nov 20, 2026";
 const states = {
@@ -25,12 +26,12 @@ const states = {
   untested: "Untested", cloud: "Cloud baseline",
 };
 const routes = {
-  Explorer: "explorer", Compare: "goals",
+  Explorer: "explorer", Compare: "goals", Battles: "battle",
   ...(__FASTEST_RELEASE_ORIGIN__ ? { "Guided advisor": "advisor" } : {}),
   Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
 };
 const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__, __FASTEST_CATALOG_POSTGRES__);
-const chineseRoutes = { Explorer: "探索", Compare: "目标对比", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
+const chineseRoutes = { Explorer: "探索", Compare: "目标对比", Battles: "对决", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
 const chineseWorkload = { text: "文本生成", image: "图像生成", agent: "智能体任务" };
 const defaults = {
   work: "text", context: "short", region: "us", budget: 2800, condition: "new",
@@ -86,7 +87,7 @@ function routeFrom(hash = location.hash) {
   const [route, slug, focus] = path.split("/");
   const name = Object.keys(routes).find((entry) => routes[entry] === route) || "Explorer";
   const model = route === "catalog" && slug === "models" ? new URLSearchParams(query).get("model") : null;
-  return { name, route, model, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
+  return { name, route, model, query, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
 }
 
 function limitReason(row, { work, context, region, condition, rule }) {
@@ -424,7 +425,7 @@ function AgentPage({ onCopy }) {
 function App() {
   const { t, locale } = useLocale();
   const [state, setState] = useState(initialState);
-  const [{ name: page, route, model, slug, focus }, setRoute] = useState(routeFrom);
+  const [{ name: page, route, model, slug, focus, query }, setRoute] = useState(routeFrom);
   const [panel, setPanel] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [toast, setToast] = useState("");
@@ -545,6 +546,7 @@ function App() {
       </> : page === "Price watch" ? <><PricePage state={state} set={set} onEvidence={(row) => setPanel({ kind: "price", row })} /><WikiDetails slug="prices" go={go} onCopy={copy} /></>
         : page === "For agents" ? <><AgentPage onCopy={copy} /><WikiDetails slug="agents" go={go} onCopy={copy} /></>
         : page === "Compare" ? <GoalPage state={state} set={set} go={go} onCopy={copy} />
+        : page === "Battles" ? <BattlePage slug={slug} query={query} go={go} onCopy={copy} />
         : page === "Methods" ? <MethodsPage go={go} />
         : page === "Costs" ? <CostPage key={slug || "costs"} initialMethod={slug} go={go} />
         : page === "Catalog" && slug === "topics" ? <CatalogTopics go={go} />

@@ -12,6 +12,6 @@ export function pagesFileRoutes(path) {
 }
 
 export function checkedPagesFile(path) {
-  return /^\/(?:index\.(?:html|md)|robots\.txt|sitemap\.xml|llms\.txt|evidence-quarantine\.json)$/.test(path) ||
-    /^\/(?:wiki|research|catalog|catalog-data|downloads)\//.test(path);
+  return /^\/(?:index\.(?:html|md)|battles\.md|robots\.txt|sitemap\.xml|llms\.txt|evidence-quarantine\.json)$/.test(path) ||
+    /^\/(?:wiki|research|catalog|catalog-data|downloads|battles)\//.test(path);
 }
