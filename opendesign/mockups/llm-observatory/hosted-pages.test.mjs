@@ -17,6 +17,11 @@ import { withLocalPages } from "./pages-test-server.mjs";
 const run = promisify(execFile);
 const here = fileURLToPath(new URL(".", import.meta.url));
 const origin = "https://fastest.ai";
+const expandedRuntimeFeeds = {
+  "mlx-lm": "ml-explore/mlx-lm",
+  openvino: "openvinotoolkit/openvino.genai",
+  aiter: "ROCm/aiter",
+};
 
 test("a production Pages catalog requires a database and an exact pin before writing output", async (t) => {
   const output = await mkdtemp(join(tmpdir(), "fastest-pages-required-pin-"));
@@ -274,6 +279,21 @@ test("runtime profile pairs link the official observed release and exact watch s
     assert.doesNotMatch(page, /ignore-prerelease/);
   }
   assert.doesNotMatch(await profile("mlx-lm", "html"), /runtime-releases/);
+  for (const [id, repository] of Object.entries(expandedRuntimeFeeds)) {
+    report.sources[id] = { ...report.sources["llama.cpp"], repository };
+    const observed = `https://github.com/${repository}/releases/tag/${tag}`;
+    const runtimeWatchUrl = `${releaseOrigin}/runtime-releases#runtime-${id}`;
+    report.releases.push({
+      runtime_id: id, status: "current", tag, prerelease: false, published_at: refreshedAt, source_url: observed,
+    });
+    const pinned = catalog.find((row) => row.id === id).releaseUrl;
+    for (const extension of ["html", "md"]) {
+      const page = await profile(id, extension);
+      for (const value of [pinned, observed, refreshedAt, runtimeWatchUrl]) {
+        assert.ok(page.includes(value), `${id} ${extension} missing ${value}`);
+      }
+    }
+  }
   assert.doesNotMatch(await profile("llama.cpp", "md", null), /runtime-releases/);
   report.sources["llama.cpp"].stale = true;
   report.sources["llama.cpp"].last_error = "Upstream service unavailable";
@@ -334,6 +354,22 @@ test("the Runtimes directory data exposes official captures without implying fre
   assert.equal(vllm.feedUrl, "https://github.com/vllm-project/vllm/releases");
   assert.deepEqual(await directory("http://release.example.test"), { runtimes: [] });
   assert.equal(mock.mock.callCount(), 1);
+
+  const expanded = Object.fromEntries(Object.entries(expandedRuntimeFeeds).map(([id, repository]) =>
+    [id, { ...sources.ollama, repository }]));
+  const releases = Object.entries(expandedRuntimeFeeds).map(([id, repository]) => ({
+    runtime_id: id, status: "current", prerelease: false, tag: "v-test",
+    published_at: refreshedAt, source_url: `https://github.com/${repository}/releases/tag/v-test`,
+  }));
+  upstream = () => Response.json({ ...report, sources: { ...sources, ...expanded }, releases });
+  const all = await directory(releaseOrigin);
+  assert.deepEqual(all.runtimes.map(({ id }) => id), [...Object.keys(official), ...Object.keys(expanded)]);
+  for (const [id, repository] of Object.entries(expandedRuntimeFeeds)) {
+    const capture = all.runtimes.find((row) => row.id === id);
+    assert.equal(capture.watchUrl, `${releaseOrigin}/runtime-releases#runtime-${id}`);
+    assert.equal(capture.release.url, `https://github.com/${repository}/releases/tag/v-test`);
+    assert.equal(capture.refreshedAt, refreshedAt);
+  }
 
   upstream = () => Response.json({ ...report, sources: { ...sources, ollama: { mode: "fixture" } } });
   assert.deepEqual(await directory(releaseOrigin), { runtimes: [] });
