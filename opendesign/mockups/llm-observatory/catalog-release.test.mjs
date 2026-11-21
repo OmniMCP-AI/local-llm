@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
-import { importLocalCatalog } from "./catalog-pg.mjs";
+import { importLocalCatalog, readPublishedCatalog } from "./catalog-pg.mjs";
 import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
 import { onRequestGet as goToFit } from "./functions/fit.js";
 
@@ -70,6 +70,36 @@ test("the released card keeps repository, family, revision and artifact identiti
   }
 
   assert.equal((await request("models/Corianas/does-not-exist.html")).status, 404);
+});
+
+const recentModels = [
+  ["thinkingmachines/Inkling-2-Mini", "ed40e7da625f594fc9c4990f5f66be24873c22d7", "26.4B total", "5.4B effective", "https://www.apache.org/licenses/LICENSE-2.0"],
+  ["thinkingmachines/Inkling-2-Small", "885d78bfca61a7e9a498e33cfa7ad35850533b8c", "594B total", "17B active", "https://www.apache.org/licenses/LICENSE-2.0"],
+  ["moonshotai/Kimi-K3.1-Pro", "d9e99b0792a5e93b78ea9bea62a68167e36ddd9e", "2.8T total", "104B activated",
+    "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/d9e99b0792a5e93b78ea9bea62a68167e36ddd9e/LICENSE"],
+];
+
+function assertReviewedModel(body, [id, revision, total, active, license]) {
+  for (const value of [id, `https://huggingface.co/${id}/blob/${revision}/README.md`, total, active, license,
+    "Input modalities", "Text, image", "Output modalities", "2026-11-21"]) {
+    assert.ok(body.includes(value), `${id} lacks ${value}`);
+  }
+  assert.doesNotMatch(body, /Popular rank|Small rank|Downloads in the Hub snapshot|\/blob\/main\//);
+}
+
+test("reviewed releases have pinned source-backed cards outside the llmfit counts", async (t) => {
+  const { read, request } = await buildFixture(t);
+  const manifest = JSON.parse(await read("manifest.json"));
+  assert.equal(manifest.coverage.publishedRows, 19_192);
+  for (const model of recentModels) {
+    for (const ext of ["html", "md"]) {
+      const response = await request("models/" + model[0] + "." + ext);
+      assert.equal(response.status, 200);
+      assertReviewedModel(await response.text(), model);
+    }
+  }
+  assert.equal(manifest.supplement.repositories, 3);
+  assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
 });
 
 test("reviewed repository and conversion artifacts retain their own revisions and digests", async (t) => {
@@ -433,11 +463,22 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     assertFactoryProfile(html, markdown, profile);
   }
   assert.equal(manifest.models.inventory, 19_192);
-  assert.equal(manifest.models.profiles, 300);
+  assert.equal(manifest.models.profiles, 303);
+  assert.equal(manifest.models.supplement.repositories, 3);
   assert.equal(manifest.models.popular, 300);
   assert.equal(manifest.models.small, 75);
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
   assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
+  const published = readPublishedCatalog(testDatabase, imported.snapshotId);
+  assert.equal(published.source.models.length, 19_192);
+  assert.deepEqual(published.supplementalModels.map(({ id }) => id).sort(), recentModels.map(([id]) => id).sort());
+  for (const model of recentModels) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
+      readFile(join(root, "models", model[0] + "." + ext), "utf8")));
+    assertReviewedModel(html, model);
+    assertReviewedModel(markdown, model);
+    assertProfileFieldsAgree(html, markdown, model[0]);
+  }
   for (const ext of ["html", "md"]) {
     const body = await readFile(join(root, "models/Qwen/Qwen2.5-0.5B-Instruct." + ext), "utf8");
     assert.match(body, /Popular rank.*11/);

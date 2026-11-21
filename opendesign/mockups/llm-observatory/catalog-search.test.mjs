@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { queryModelCatalog } from "./catalog-search.mjs";
+import { modelCollections, queryModelCatalog } from "./catalog-search.mjs";
+import { readCatalogModelFiles } from "./catalog-release-build.mjs";
 
 const rows = JSON.parse(await readFile(new URL("catalog-models.json", import.meta.url))).models;
 const identities = JSON.parse(await readFile(new URL("catalog-identities.json", import.meta.url)));
@@ -32,4 +34,18 @@ test("small and popular shelves preserve dated Hub ranks and resolvable reposito
     const page = queryModelCatalog(shelf.map(row => byId.get(row.id)), identities, { ranked: true, pageSize: 3 });
     assert.deepEqual(page.rows.map(row => row.id), shelf.slice(0, 3).map(row => row.id));
   }
+});
+
+test("recent publisher records are discoverable by their exact ID and source tags", async () => {
+  const { source, discovery, supplementalModels } = await readCatalogModelFiles(fileURLToPath(new URL(".", import.meta.url)));
+  const { all, recent, popular, small } = modelCollections(source.models, discovery, supplementalModels);
+  assert.equal(all.length, 19_195);
+  assert.deepEqual(recent.map(({ id }) => id), [
+    "thinkingmachines/Inkling-2-Mini", "thinkingmachines/Inkling-2-Small", "moonshotai/Kimi-K3.1-Pro",
+  ]);
+  assert.deepEqual(popular.map(({ id }) => id), discovery.popular.map(({ id }) => id));
+  assert.deepEqual(small.map(({ id }) => id), discovery.small.map(({ id }) => id));
+  assert.deepEqual(queryModelCatalog(all, identities, {
+    query: "MOONSHOTAI/KIMI-K3.1-PRO", license: "kimi-k3.1-pro", tag: "Image and text to text",
+  }).rows.map(({ id }) => id), ["moonshotai/Kimi-K3.1-Pro"]);
 });

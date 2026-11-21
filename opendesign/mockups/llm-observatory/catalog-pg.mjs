@@ -23,10 +23,12 @@ function canonicalJson(value) {
 
 function publicCatalogDigest(catalog) {
   const byId = rows => rows.toSorted((a, b) => a.id < b.id ? -1 : Number(a.id > b.id));
-  const { source, hardware, runtimes, identities, discovery, sourceManifest, topologies, photos } = catalog;
+  const { source, hardware, runtimes, identities, discovery, sourceManifest, topologies, photos,
+    supplement, supplementalModels } = catalog;
   return sha256(encode(canonicalJson([
     { ...source, models: byId(source.models) }, hardware.manifest, byId(hardware.catalog.cards),
     byId(hardware.catalog.machines), byId(runtimes), identities, discovery, sourceManifest, topologies, photos,
+    ...(supplement ? [supplement, byId(supplementalModels)] : []),
   ])));
 }
 
@@ -109,7 +111,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     readJson(project, "catalog-topology.json"),
     readCatalogPhotos(project),
   ]);
-  const { source: models, identities, discovery, sourceManifest } = modelFiles;
+  const { source: models, identities, discovery, sourceManifest, supplement, supplementalModels } = modelFiles;
   const { models: modelRows, ...modelMetadata } = models;
   const reviewedIdentities = Object.fromEntries(Object.entries(identities).map(([id, identity]) => [
     id, { ...identity, artifacts: identity.artifacts ?? [] },
@@ -121,19 +123,21 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   for (const row of inventory) if (!distinctVideos.has(row.id)) distinctVideos.set(row.id, row);
   const { popular, small, ...discoveryCapture } = discovery;
   const collections = Object.entries({ popular, small });
-  const expectedModelProfiles = new Set(collections.flatMap(([, rows]) => rows.map(row => row.id)));
+  const expectedModelProfiles = new Set([...popular, ...small, ...supplementalModels].map(row => row.id));
   const records = {
     snapshot: [[encode({
       ...hardware.manifest,
       models: {
         source: { url: models.upstream, commit: models.commit, license: models.catalogLicense, licenseUrl: models.catalogLicenseUrl },
         discovery: discoveryCapture,
+        supplement,
       },
       modelLicenseNotice: models.licenseNotice,
       pages: {
         hardware: hardware.manifest, modelMetadata, sourceManifest,
         projectionDigest: publicCatalogDigest({
           source: models, hardware, runtimes, identities: reviewedIdentities, discovery, sourceManifest, topologies, photos,
+          supplement, supplementalModels,
         }),
         runtimeProjects: runtimes.length,
         topologyRevisions: topologies.length,
@@ -147,7 +151,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     machine_gpu: machines.flatMap(row => row.cardIds.map(id => [row.id, id])),
     machine_part: machines.flatMap(row => (row.bom ?? []).map((part, index) => [row.id, index, encode(part)])),
     ...topologyTables,
-    model_repository: modelRows.map(row => {
+    model_repository: [...modelRows, ...supplementalModels].map(row => {
       const { artifacts, ...identity } = identities[row.id] ?? {};
       return [row.id, encode(identities[row.id] ? { ...row, identity } : row)];
     }),
@@ -183,6 +187,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     throw new Error("PostgreSQL catalog coverage differs from the source");
   }
   if (modelManifest.inventory !== modelRows.length ||
+    catalog.models.filter(row => row.supplemental).length !== supplement.repositories ||
     collections.some(([collection, rows]) => modelManifest[collection] !== rows.length) ||
     catalog.models.length !== expectedModelProfiles.size ||
     catalog.models.some(row => !expectedModelProfiles.has(row.id))) {
@@ -246,11 +251,13 @@ function readSnapshot(database, id, full = false) {
           )) END
         ) ORDER BY repository.id COLLATE "C"), '[]'::json)
         FROM fastest_catalog.model_repository repository
-        ${full ? "LEFT JOIN" : "JOIN"} ranked_models ranked ON ranked.repository_id = repository.id
+        LEFT JOIN ranked_models ranked ON ranked.repository_id = repository.id
         WHERE repository.snapshot_id = :'snapshot_id'
+        ${full ? "" : "AND (ranked.rankings IS NOT NULL OR repository.document ? 'supplemental')"}
       ),
       'modelManifest', snapshot.document->'models' || jsonb_build_object(
-        'inventory', (SELECT count(*) FROM fastest_catalog.model_repository WHERE snapshot_id = :'snapshot_id'),
+        'inventory', (SELECT count(*) FROM fastest_catalog.model_repository
+          WHERE snapshot_id = :'snapshot_id' AND NOT (document ? 'supplemental')),
         'popular', (SELECT count(*) FROM ranked_models WHERE rankings ? 'popular'),
         'small', (SELECT count(*) FROM ranked_models WHERE rankings ? 'small')
       ),
@@ -289,19 +296,25 @@ export function readPublishedCatalog(database, id) {
   const identities = Object.create(null);
   const popular = [];
   const small = [];
-  const models = records.map(({ identity, discovery, ...row }) => {
+  const models = [];
+  const supplementalModels = [];
+  for (const { identity, discovery, ...row } of records) {
     if (identity) identities[row.id] = identity;
     if (discovery?.popular) popular.push(discovery.popular);
     if (discovery?.small) small.push(discovery.small);
-    return row;
-  });
+    (row.supplemental ? supplementalModels : models).push(row);
+  }
+  const { supplement } = modelManifest;
+  if (models.length !== modelManifest.inventory || supplementalModels.length !== (supplement?.repositories ?? 0)) {
+    throw new Error("PostgreSQL model inventory differs from its publication metadata: " + id);
+  }
   for (const rows of [popular, small]) {
     rows.sort((a, b) => a.rank - b.rank);
     if (rows.some(({ rank }, index) => rank !== index + 1)) throw new Error("PostgreSQL catalog rankings are incomplete: " + id);
   }
   const withoutRank = ({ rank, ...row }) => row;
   const projection = {
-    snapshotId: id, runtimes, identities, topologies, photos,
+    snapshotId: id, runtimes, identities, topologies, photos, supplement, supplementalModels,
     source: { ...pages.modelMetadata, models }, sourceManifest: pages.sourceManifest,
     discovery: { ...modelManifest.discovery, popular: popular.map(withoutRank), small: small.map(withoutRank) },
     hardware: { catalog: { cards, machines }, manifest: pages.hardware },

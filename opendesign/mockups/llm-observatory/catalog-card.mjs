@@ -8,7 +8,9 @@ const escapeMarkdown = (value) => value.replace(/[\n\r]/g, " ").replace(/[\\`*_{
 const count = new Intl.NumberFormat("en");
 
 export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture } = {}) {
-  const { family, familySource, revision, artifacts = [] } = row.identity ?? {};
+  const { supplemental } = row;
+  const { family, familySource, artifacts = [] } = row.identity ?? {};
+  const revision = row.identity?.revision ?? supplemental?.revision;
   const artifactSections = artifacts.map((artifact) => {
     const base = `https://huggingface.co/${artifact.repository}`;
     const pinned = base + "/blob/" + artifact.revision;
@@ -43,11 +45,25 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
       ["Family", family ?? "Family unavailable", familySource],
       ["Repository revision", revision ?? "Revision unavailable", revision && row.source + "/tree/" + revision],
       ["Exact artifact", artifacts.length ? `${artifacts.length} linked files` : "Exact artifact unavailable"],
-      ["llmfit snapshot tags", row.detail || "Tags unavailable"],
-      ["Model license tag", row.license || "Model license unavailable"],
+      [supplemental ? "Publisher task" : "llmfit snapshot tags", row.detail || "Tags unavailable"],
+      supplemental ? ["Model license", supplemental.licenseName, supplemental.licenseUrl]
+        : ["Model license tag", row.license || "Model license unavailable"],
       ...runtimeFields,
     ],
     sections: [
+      ...(supplemental ? [{
+        title: "Reviewed publisher metadata",
+        fields: [
+          ["Publisher model card", "Pinned README", supplemental.cardUrl],
+          ["Upstream revision date", supplemental.revisionDate, supplemental.infoUrl],
+          ["Metadata reviewed", supplemental.capturedAt],
+          ["Model card SHA-256", supplemental.cardSha256],
+          ...(supplemental.licenseSha256 ? [["License file SHA-256", supplemental.licenseSha256]] : []),
+          ["Publisher parameter counts", supplemental.parameters, supplemental.cardUrl],
+          ["Input modalities", supplemental.inputs.join(", "), supplemental.cardUrl],
+          ["Output modalities", supplemental.outputs.join(", "), supplemental.cardUrl],
+        ],
+      }] : []),
       ...(ranked && discoveryCapture ? [{
         title: "Hugging Face model discovery",
         fields: [
