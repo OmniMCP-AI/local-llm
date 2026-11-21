@@ -52,6 +52,24 @@ test("a replacement invalidates affected links and does not inherit original con
   assert.equal(topologyView(report, {}).links.length, 1);
 });
 
+test("a draft substitution shows the selected card's manufacturer-rated VRAM per slot", () => {
+  const report = topologyPresets[1].report;
+  const card = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-4090");
+  const draft = topologyView(report, { 2: card });
+  assert.deepEqual(draft.parts.map(({ memory }) => memory), ["12 GB", "24 GB (manufacturer-rated)"]);
+  assert.deepEqual(topologyView(report).parts.map(({ memory }) => memory), ["12 GB", "12 GB"]);
+  assert.equal(draftFitRequest(draft), null);
+});
+
+test("a substitution with unresolved VRAM keeps that slot unknown", () => {
+  const report = topologyPresets[1].report;
+  for (const id of ["nvidia-geforce-rtx-3060", "nvidia-geforce-rtx-2080-ti-colorful-modified"]) {
+    const card = catalog.cards.find((row) => row.id === id);
+    const draft = topologyView(report, { 2: card });
+    assert.deepEqual(draft.parts.map(({ memory }) => memory), ["12 GB", null], id);
+  }
+});
+
 test("only the pinned example scenario can request native fit after a swap", () => {
   const card = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-4090");
   const report = reports.find(({ id }) => id === "V005-HP-TEST");

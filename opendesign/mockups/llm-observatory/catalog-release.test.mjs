@@ -338,6 +338,24 @@ test("the offline catalog generates linked HTML and Markdown for every GPU", asy
   }
 });
 
+test("offline machine profiles link to the exact topology revision in the standalone app", async (t) => {
+  const temporary = await mkdtemp(join(tmpdir(), "fastest-local-topology-"));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  const output = join(temporary, "local-catalog");
+  const hardware = await readHardwareCatalog(here);
+  const id = "V021-HP-C001";
+  const revision = "topology-" + "a".repeat(64);
+  const release = await writeLocalCatalogProfiles(output, {
+    ...hardware, topologies: [{ id, revision }],
+  }, "Test license");
+  const machines = join(output, "catalog", release, "machines");
+  const href = "../../../../fastest-ai.html#wiki/gpu-topology/" + revision;
+  const [html, markdown] = await Promise.all(["html", "md"].map(ext => readFile(join(machines, id + "." + ext), "utf8")));
+  assert.ok(html.includes(`href="${href}"`));
+  assert.ok(markdown.includes(`[Explore this configuration](<${href}>)`));
+  assertProfileFieldsAgree(html, markdown, id);
+});
+
 test("the offline catalog writes ranked model pairs with relative companion and runtime links", async (t) => {
   const temporary = await mkdtemp(join(tmpdir(), "fastest-local-model-"));
   t.after(() => rm(temporary, { recursive: true, force: true }));

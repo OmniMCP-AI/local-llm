@@ -102,9 +102,6 @@ if (projection && ((withdrawn.length && isWithdrawn(JSON.stringify(published))) 
 if (pages) researchIndex = await writeResearchRelease(catalogDirectory, output, approvals);
 const photos = published?.photos ?? await readCatalogPhotos(here("."));
 const media = Object.fromEntries(Object.entries(photos).filter(([, asset]) => !isWithdrawn(asset.source)));
-const topologyReports = published?.topologies ?? (await import("./catalog-topology.json", { with: { type: "json" } })).default;
-const publicTopologies = topologyReports.filter(({ source, id, links = [] }) =>
-  ![source, id, ...links.map(link => link.source)].some(isWithdrawn));
 const publicDocuments = Object.fromEntries(Object.entries(documents)
   .filter(([, { evidence, status }]) => !isWithdrawn(evidence) && status !== "withdrawn")
   .map(([id, doc]) => {
@@ -142,14 +139,19 @@ if (pages) {
 }
 let localCatalogRelease = "";
 let localModelIds = [];
+let topologyReports = published?.topologies;
 if (!pages) {
   const localOutput = fileURLToPath(here("local-catalog/"));
   const { importLocalCatalog } = await import("./catalog-pg.mjs");
   const imported = await importLocalCatalog(hardware);
+  topologyReports = imported.topologies;
   console.log(`Imported local PostgreSQL catalog snapshot ${imported.snapshotId}`);
   localCatalogRelease = await writeLocalCatalogProfiles(localOutput, imported, imported.modelLicenseNotice);
   localModelIds = imported.catalog.models.map(({ id }) => id);
 }
+topologyReports ??= (await import("./catalog-topology.json", { with: { type: "json" } })).default;
+const publicTopologies = topologyReports.filter(({ source, id, links = [] }) =>
+  ![source, id, ...links.map(link => link.source)].some(isWithdrawn));
 const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
 const wikiRelease = pages ? await writeWikiRelease({

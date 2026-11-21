@@ -96,7 +96,7 @@ export function runtimeCard(row, { local = false } = {}) {
   };
 }
 
-export function hardwareCard(row, release, kind, { local = false, peers = [] } = {}) {
+export function hardwareCard(row, release, kind, { local = false, peers = [], topologyRevision = row.topologyRevision } = {}) {
   const path = (type, id) => local ? `../${type}/${id}.html` : "/" + catalogPath(release, type, id);
   const common = [["Catalog ID", row.id], ["Pinned source", "Open source record", row.source]];
   const untested = "Untested in this release. No reviewed measurement is published for this identity.";
@@ -189,7 +189,7 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
   }
 
   const factory = row.kind === "Complete factory configuration";
-  const topology = topologyRevisionHref(row.topologyRevision);
+  const topology = topologyRevisionHref(topologyRevision, local ? "../../../../fastest-ai.html" : "/");
   const sections = [{
     title: "Memory",
     fields: [
