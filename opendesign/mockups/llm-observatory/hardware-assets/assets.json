@@ -649,5 +649,15 @@
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "alt": "ASUS T1 GeForce RTX 5060 Ti OC Edition with its 8 GB exhibit placard",
     "scope": "gpu"
+  },
+  "rtx-4060-ti-founders-review": {
+    "file": "rtx-4060-ti-founders-review.jpg",
+    "credit": "极客湾Geekerwan / Wikimedia Commons (converted to JPEG and resized)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RTX4060TI%E8%AF%84%E6%B5%8B%EF%BC%9A%E5%8F%AA%E6%AF%943060TI%E5%BF%AB10%25_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_15.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "NVIDIA GeForce RTX 4060 Ti 8 GB Founders Edition, backplate and display connectors, from Geekerwan review",
+    "scope": "gpu"
   }
 }
