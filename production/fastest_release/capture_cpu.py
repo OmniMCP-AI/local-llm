@@ -107,11 +107,22 @@ def build_receipt(directory, runner):
     placement = effective_placement(stderr, ["RPC"])
     buffer_devices = {kind: {device for device, sizes in placement["buffers_mib"].items() if kind in sizes}
                       for kind in ("model", "kv", "compute")}
+    context_tokens = set(placement["context_tokens"])
+    # b5163 logs the context at initialization and again before and after KV padding.
     # The official CPU asset registers an unused RPC backend with zero devices.
-    require(not placement["devices"] and all(actual == 0 for actual, _ in placement["offloaded_layers"]) and
-            buffer_devices["model"] and buffer_devices["model"] <= {"CPU", "CPU_Mapped", "CPU_REPACK"} and
-            buffer_devices["kv"] == {"CPU"} and buffer_devices["compute"] == {"CPU"} and
-            placement["context_tokens"] == [TOKENS], "Runner logs do not confirm CPU-only buffer placement.")
+    if not (
+        not placement["devices"] and all(actual == 0 for actual, _ in placement["offloaded_layers"]) and
+        buffer_devices["model"] and buffer_devices["model"] <= {"CPU", "CPU_Mapped", "CPU_REPACK"} and
+        buffer_devices["kv"] == {"CPU"} and buffer_devices["compute"] == {"CPU"} and
+        context_tokens == {TOKENS}
+    ):
+        observed = {
+            "devices": sorted(placement["devices"]), "offloaded_layers": placement["offloaded_layers"],
+            "buffers": {kind: sorted(devices) for kind, devices in buffer_devices.items()},
+            "context_tokens": sorted(context_tokens),
+        }
+        detail = json.dumps(observed, sort_keys=True)[:1024]
+        raise ValueError(f"Runner logs do not confirm CPU-only buffer placement. Observed {detail}")
     started, _ = phase_progress(stderr, {"input_tokens": 0}, REPETITIONS)
     samples = row.get("samples_ns")
     require(stderr.splitlines().count("llama-bench: benchmark 1/1: warmup generation run") == 1 and

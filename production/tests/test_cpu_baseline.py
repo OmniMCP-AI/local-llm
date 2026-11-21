@@ -40,7 +40,9 @@ if sys.argv[sys.argv.index("-sm") + 1] == "none":
     sys.exit(1)
 assert sys.argv[1:] == expected, sys.argv
 print("load_tensors: CPU_Mapped model buffer size = 468.00 MiB", file=sys.stderr)
+print("llama_context: n_ctx         = 128", file=sys.stderr)
 print("llama_context: n_ctx = 128", file=sys.stderr)
+print("llama_context: n_ctx = 128 (padded)", file=sys.stderr)
 print("llama_kv_cache: CPU KV buffer size = 3.00 MiB", file=sys.stderr)
 print("llama_context: CPU compute buffer size = 50.00 MiB", file=sys.stderr)
 print("llama-bench: benchmark 1/1: warmup generation run", file=sys.stderr)
@@ -148,6 +150,19 @@ class CPUBaselineTests(unittest.TestCase):
                 self.assertIsNone(replay)
                 self.assertFalse(self.output.exists())
 
+
+
+    def test_reports_a_conflicting_context_with_safe_placement_details(self):
+        result, replay = self.capture(RUNNER.replace("n_ctx = 128 (padded)", "n_ctx = 256 (padded)"))
+        self.assertEqual(result[0], 1)
+        self.assertIn("CPU-only buffer placement", result[1])
+        self.assertIn('"context_tokens": [128, 256]', result[1])
+        self.assertIn('"compute": ["CPU"]', result[1])
+        self.assertIn('"kv": ["CPU"]', result[1])
+        self.assertIn('"model": ["CPU_Mapped"]', result[1])
+        self.assertIn('"devices": []', result[1])
+        self.assertIsNone(replay)
+        self.assertFalse(self.output.exists())
 
     def test_failed_run_reports_bounded_stderr_with_work_path_redacted(self):
         aborted = (
