@@ -15,6 +15,7 @@ const svgCoord = value => (value * 1000).toFixed(3);
 function numericAxis(values, { zero = true, reverse = false, tickCount = 5, domain } = {}) {
   const minimum = Math.min(...values, ...(zero ? [0] : []));
   const maximum = Math.max(...values, ...(zero ? [0] : []));
+  if (minimum === maximum && !zero && !domain) return { at: () => .5, ticks: [minimum] };
   const range = maximum - minimum || Math.max(1, Math.abs(maximum) * .1);
   const approximate = range / tickCount;
   const magnitude = 10 ** Math.floor(Math.log10(approximate));
@@ -36,9 +37,7 @@ function categoricalAxis(values) {
 
 function axisMarkup(ticks, at, axis, direction) {
   const step = Math.max(1, Math.ceil(ticks.length / 8));
-  return ticks.map((value, index) => {
-    const marker = index % step === 0 || index === ticks.length - 1;
-    if (!marker) return "";
+  return ticks.filter((_, index) => index % step === 0 || index === ticks.length - 1).map((value, index) => {
     return `<span class="coordinate-tick coordinate-tick-${direction}${index % 2 ? " coordinate-tick-minor" : ""}" style="--at:${percent(at(value))}"><span>${escape(tickText(axis, value))}</span></span>`;
   }).join("");
 }
@@ -101,7 +100,7 @@ export function renderCoordinatePlot({
   const paths = lines.filter(points => points.length > 1).map(points =>
     `<polyline data-series="${escape(points[0].series ?? "")}" points="${points.map(point => `${svgCoord(point.left)},${svgCoord(point.top)}`).join(" ")}" />`).join("");
   const areaHeight = targetArea && topFor(targetArea.y);
-  const area = targetArea ? `<div class="coordinate-target-area" style="--area-width:${percent(x.at(targetArea.x))};--area-height:${percent(yAxis.reverse ? areaHeight : 1 - areaHeight)};${yAxis.reverse ? "top:0" : "bottom:0"}"></div>` : "";
+  const area = targetArea ? `<div class="coordinate-target-area" style="--area-width:${percent(x.at(targetArea.x))};--area-height:${percent(areaHeight)};top:0"></div>` : "";
   const width = `min(3.5rem, ${percent(.58 / Math.max(1, x.ticks.length))})`;
   return `<div class="coordinate-plot coordinate-${kind}" role="group" aria-label="${escape(title)}" dir="ltr">
 <div class="coordinate-heading"><strong>${escape(axisTitle(yAxis))}</strong><label><input type="checkbox"${showLabels ? " checked" : ""}> ${escape(labelsLabel)}</label></div>
