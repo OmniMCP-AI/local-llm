@@ -25,6 +25,8 @@
 !production/fastest_agent_task/harness.py
 !production/fastest_agent_task/publication.py
 !production/fastest_agent_task/task.json
+!production/fastest_agent_task/hosted.py
+!production/fastest_agent_task/measure.py
 !production/fastest_cost/*.py
 !production/fastest_cost/illustrative.json
 !production/fastest_fit/__init__.py
