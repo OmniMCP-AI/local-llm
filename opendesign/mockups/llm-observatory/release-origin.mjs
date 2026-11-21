@@ -16,11 +16,24 @@ export function releaseOrigin(value) {
   }
 }
 
-export function navigationHref(route, pages, origin) {
+export function navigationHref(route, pages, origin, catalogPostgres = false) {
   if (pages && route === "prices") return "/prices";
   if (pages && origin) {
     if (Object.hasOwn(productionRoutes, route)) return origin + productionRoutes[route];
     if (Object.hasOwn(pagesRoutes, route)) return pagesRoutes[route];
   }
+  if (catalogPostgres && (route === "machines" || route === "models")) return "#catalog/" + route;
   return "#" + route;
+}
+
+export const explorerDemo = "explorer-demo";
+
+export function catalogHome(route, catalogPostgres, origin) {
+  if (!catalogPostgres || (!origin && route === explorerDemo)) return null;
+  return {
+    catalog: "#catalog",
+    prices: navigationHref("prices", true, origin),
+    benchmarks: origin ? navigationHref("explorer", true, origin) : null,
+    demo: origin ? null : "#" + explorerDemo,
+  };
 }

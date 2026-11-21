@@ -85,6 +85,22 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   });
 });
 
+test("PostgreSQL Pages visitors enter the released catalog and can explicitly open an unconfigured preview example", async () => {
+  const { catalogHome, navigationHref } = await import("./release-origin.mjs");
+  const origin = "https://release.fastest.example";
+  const home = catalogHome("explorer", true, null);
+  assert.deepEqual(home, { catalog: "#catalog", prices: "/prices", benchmarks: null, demo: "#explorer-demo" });
+  assert.equal(catalogHome(home.demo.slice(1), true, null), null);
+  const production = { catalog: "#catalog", prices: "/prices", benchmarks: origin + "/profiles", demo: null };
+  assert.deepEqual(catalogHome("explorer", true, origin), production);
+  assert.deepEqual(catalogHome("explorer-demo", true, origin), production);
+  assert.equal(catalogHome("explorer", false, null), null);
+  assert.equal(navigationHref("machines", true, null, true), "#catalog/machines");
+  assert.equal(navigationHref("models", true, null, true), "#catalog/models");
+  assert.equal(navigationHref("machines", true, origin, true), origin + "/profiles#machines");
+  assert.equal(navigationHref("machines", true, null), "#machines");
+});
+
 const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
 const testCatalogReader = process.env.FASTEST_TEST_CATALOG_READER_URL;
 test("production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs", {
