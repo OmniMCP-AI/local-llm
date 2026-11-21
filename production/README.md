@@ -166,11 +166,12 @@ withdrawal and calculator parity.
 
 ## Connect an MCP client
 
-The local adapter uses MCP **2025-11-25** over **stdio**. The verified client
-is the official MCP Python SDK `ClientSession` from `mcp==1.30.0`, which is
-also the adapter's SDK pin. Responses retain the public API `1.0.0` payload,
-including revision IDs, citations, units, unknowns, exclusions and decimal
-strings. [MCP stdio specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) · [Python SDK release](https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0)
+The adapter uses MCP **2025-11-25** over **stdio** and opt-in **Streamable
+HTTP**. The verified client is the official MCP Python SDK `ClientSession` from
+`mcp==1.30.0`, using `stdio_client` or `streamable_http_client` respectively.
+The adapter uses the same SDK pin. Responses retain the public API `1.0.0`
+payload, including revision IDs, citations, units, unknowns, exclusions and
+decimal strings. [MCP transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) · [Python SDK release](https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0)
 
 From `production/`, start `python3 -m fastest_release serve` with the readers
 you want to expose. Install the adapter dependencies into the Python environment
@@ -185,6 +186,34 @@ argument list can use the following command, substituting absolute paths.
   "args": ["/path/to/local-llm/production/fastest_mcp", "--port", "8000"]
 }
 ```
+
+### Serve Streamable HTTP
+
+Start the same adapter on a separate loopback port.
+
+```sh
+python3 -m fastest_mcp --port 8000 --transport streamable-http --http-port 8001
+```
+
+Configure a Streamable HTTP client to connect to `http://127.0.0.1:8001/mcp`.
+Both transports expose the operations below. The HTTP endpoint is stateless.
+It returns JSON to POST requests and responds to GET with HTTP 405. Requests
+are limited to 64 KiB and MCP responses use `Cache-Control: no-store`.
+
+For external access, run the gateway alongside the public API listener.
+The listener must accept the gateway's loopback `Host` for the port selected by
+`--port`. The release image includes this allowance for its configured port.
+Expose `/mcp` through a TLS reverse proxy. Add
+`--http-origin https://mcp.example.com` to allow that exact authority. Configure
+the proxy to preserve `Host` and any client `Origin` header, bypass caching, and
+enforce per-client limits. Use a lowercase HTTPS origin without a path or a
+default port. The gateway accepts a present `Origin` only when it
+matches the request's allowed authority. A native client may omit it. The
+gateway stays on loopback. After verifying the proxied endpoint, give clients
+the HTTPS URL, for example `https://mcp.example.com/mcp`. Resolve relative
+evidence citations against the public release origin.
+
+### Read released evidence
 
 | MCP operation | Released data |
 | --- | --- |
@@ -229,10 +258,10 @@ The adapter caps each upstream response at 2 MiB. It sends requests directly to
 its configured origins, uses fixed GET paths and rejects redirects. Client
 selectors cannot change the destination or run private queries.
 
-The wire tests start disposable listeners and exercise the official client.
-They compare profile evidence, exclusions, withdrawal and exact calculator
-decimals, check catalog results against the Pages API payload, and replay hosted
-agent-task attempt outcomes and wall times against the pinned public report.
+The wire tests start disposable listeners and exercise the official client
+over both transports. They compare profile evidence, exclusions, withdrawal and
+exact calculator decimals, check catalog results against the Pages API payload,
+and replay hosted agent-task outcomes and wall times against the pinned report.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -s tests -k mcp -v

@@ -1,4 +1,4 @@
-"""Read public evidence and catalog metadata over MCP stdio."""
+"""Read public evidence and catalog metadata over MCP."""
 
 import argparse
 import asyncio
@@ -153,8 +153,8 @@ def build_server(port, catalog_origin=None):
     server = Server("fastest-ai-evidence", version=API_VERSION,
                     instructions="Cite the public result's release or revision ID with its sources and exclusions.")
 
-    def read(path, arguments=None):
-        result = get_json(connect_evidence, path, arguments)
+    async def read(path, arguments=None):
+        result = await asyncio.to_thread(get_json, connect_evidence, path, arguments)
         if result.get("api_version") != API_VERSION:
             raise PublicApiError(UNAVAILABLE)
         return result
@@ -174,11 +174,11 @@ def build_server(port, catalog_origin=None):
             if not validators[name].is_valid(arguments):
                 raise PublicApiError(PUBLIC_ERRORS[400])
             if name == PAGES_CATALOG_TOOL:
-                result = get_json(connect_catalog, PAGES_CATALOG_PATH, arguments)
+                result = await asyncio.to_thread(get_json, connect_catalog, PAGES_CATALOG_PATH, arguments)
                 if result.get("apiVersion") != "1":
                     raise PublicApiError(UNAVAILABLE)
                 return result
-            return read(TOOL_PATHS[name], arguments)
+            return await read(TOOL_PATHS[name], arguments)
         except PublicApiError as error:
             return types.CallToolResult(isError=True, content=[types.TextContent(type="text", text=str(error))])
 
@@ -211,7 +211,7 @@ def build_server(port, catalog_origin=None):
         else:
             raise McpError(types.ErrorData(code=-32002, message="Public resource unavailable."))
         try:
-            result = read(TOOL_PATHS[name], arguments)
+            result = await read(TOOL_PATHS[name], arguments)
         except PublicApiError as error:
             raise McpError(types.ErrorData(code=-32002, message=str(error))) from None
         return [ReadResourceContents(content=json.dumps(result, ensure_ascii=False), mime_type="application/json")]
@@ -224,21 +224,44 @@ async def serve(server):
         await server.run(reader, writer, server.create_initialization_options())
 
 
+def http_origin(origin):
+    match = re.fullmatch(r"https://[a-z0-9-]+(?:\.[a-z0-9-]+)*(?::([1-9][0-9]{0,4}))?", origin)
+    port = int(match[1]) if match and match[1] else None
+    if not match or (port is not None and (port == 443 or port > 65535)):
+        raise argparse.ArgumentTypeError("--http-origin must be a canonical HTTPS origin (omit the default port)")
+    return origin
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", default=8000, type=int,
                         help="Port of the local public API listener on 127.0.0.1 (default 8000)")
     parser.add_argument("--catalog-origin", help="Optional origin of the published Pages catalog (HTTPS or loopback HTTP)")
+    parser.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio",
+                        help="MCP transport (default stdio)")
+    parser.add_argument("--http-port", default=8001, type=int,
+                        help="Streamable HTTP listener on 127.0.0.1 (default 8001)")
+    parser.add_argument("--http-origin", type=http_origin,
+                        help="Optional canonical HTTPS origin for a reverse proxy in Streamable HTTP mode")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("--port must be from 1 to 65535")
+    if not 0 <= args.http_port <= 65535:
+        parser.error("--http-port must be from 0 to 65535")
+    if args.http_origin and args.transport != "streamable-http":
+        parser.error("--http-origin requires --transport streamable-http")
     if version("mcp") != SDK_VERSION or types.LATEST_PROTOCOL_VERSION != PROTOCOL_VERSION:
         parser.exit(1, f"Install MCP Python SDK {SDK_VERSION} from fastest_mcp/requirements.txt.\n")
     try:
         server = build_server(args.port, args.catalog_origin)
     except (PublicApiError, KeyError, TypeError, AttributeError) as error:
         parser.exit(1, (str(error) if isinstance(error, PublicApiError) else UNAVAILABLE) + "\n")
-    asyncio.run(serve(server))
+    if args.transport == "streamable-http":
+        from .http import serve_http
+
+        serve_http(server, args.http_port, args.http_origin)
+    else:
+        asyncio.run(serve(server))
 
 
 if __name__ == "__main__":
