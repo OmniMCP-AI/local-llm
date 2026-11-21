@@ -511,4 +511,4 @@ remain available.
 
 ## Price and evaluation source intake
 
-Capture source checks, GPU price and tariff candidates, and published model evaluations in PostgreSQL before editorial review. [Private intake workflow](fastest_intake/README.md)
+Capture source checks, GPU price and tariff candidates, published model evaluations, and private image-pilot timings in PostgreSQL before editorial review. [Private intake workflow](fastest_intake/README.md)

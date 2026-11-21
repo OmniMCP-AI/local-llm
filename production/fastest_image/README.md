@@ -43,6 +43,10 @@ From `production`, capture into a new private directory using the same environme
 
 Capture queues the fixed warmup seed 731000 and then the five repeats 731001–731005. Each repeat changes only the sampler seed. It measures from just before local `POST /prompt` to the end of the local PNG read or terminal failure, with monotonic offsets for sampler start, decode start, save start and execution completion. The last phase covers PNG retrieval. The warmup stays in the ledger for audit and is excluded from the comparison. The client stops queueing after a 180-second timeout or unsuccessful warmup and preserves the observed prefix. Keep the attempt JSON, private PNGs and server logs. Stop the dedicated server with Ctrl+C when the run ends.
 
+## Retain private timing
+
+Import a sealed private capture packet into PostgreSQL with the [image-pilot intake command](../fastest_intake/README.md#import-private-image-pilot-timing). Its attempt rows preserve the warmup, repeats, failures and timing offsets while blind scoring and publication review are pending.
+
 ## Review and publish
 
 Use [the synthetic ledger](../fixtures/synthetic-image-pilot.json) as a field guide. Copy the capture’s attempt list to `attempts`, including failed requests and their observed phase endpoints. Set `kind` to `measured` for a verified run that follows the pinned protocol. Supply the exact runtime, workflow, checkpoint and lock digests, runtime flags and hardware details. Link to a versioned public evidence record over HTTPS and retain the underlying run privately. Record a public-release allow decision covering the published fields. Use reviewer pseudonyms and rights-cleared notes.
