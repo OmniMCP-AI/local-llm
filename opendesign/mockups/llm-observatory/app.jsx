@@ -13,7 +13,7 @@ import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
 import { CatalogModelProfile, CatalogTopics, SourceCatalog } from "./catalog";
 import { CostPage } from "./costs";
-import { navigationHref } from "./release-origin.mjs";
+import { catalogHome, explorerDemo, navigationHref } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
 import { MethodsPage } from "./methods";
 import { LocaleControls, LocaleProvider, LocaleStatus, quoteCurrency, useLocale } from "./locale";
@@ -29,7 +29,7 @@ const routes = {
   ...(__FASTEST_RELEASE_ORIGIN__ ? { "Guided advisor": "advisor" } : {}),
   Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
 };
-const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__);
+const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__, __FASTEST_CATALOG_POSTGRES__);
 const chineseRoutes = { Explorer: "探索", Compare: "目标对比", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
 const chineseWorkload = { text: "文本生成", image: "图像生成", agent: "智能体任务" };
 const defaults = {
@@ -86,7 +86,7 @@ function routeFrom(hash = location.hash) {
   const [route, slug, focus] = path.split("/");
   const name = Object.keys(routes).find((entry) => routes[entry] === route) || "Explorer";
   const model = route === "catalog" && slug === "models" ? new URLSearchParams(query).get("model") : null;
-  return { name, model, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
+  return { name, route, model, slug: /^[a-z0-9-]+$/.test(slug ?? "") ? slug : null, focus: /^[a-z0-9-]+$/.test(focus ?? "") ? focus : null };
 }
 
 function limitReason(row, { work, context, region, condition, rule }) {
@@ -132,37 +132,51 @@ function Modes({ active, onChoose }) {
   </div>;
 }
 
-function Header({ page, navigate }) {
+function Header({ page, slug, go }) {
   const { t } = useLocale();
+  const current = __FASTEST_CATALOG_POSTGRES__ && page === "Catalog" && ["machines", "models"].includes(slug)
+    ? "#catalog/" + slug : "#" + routes[page];
   return <header className="site-header"><div className="nav-inner">
-    <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); navigate("Explorer", true); }}>
+    <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); go("#explorer"); }}>
       <span className="brand-mark"><Activity size={19} strokeWidth={2.4} aria-hidden="true" /></span>
       <SiteName />
     </a>
     <nav aria-label={t("Main navigation", "主导航")}>{Object.entries(routes).map(([name, route]) => {
       const href = hrefFor(route);
       const internal = href.startsWith("#");
-      return <a key={name} href={href} aria-current={internal && page === name ? "page" : undefined}
-        onClick={internal ? (event) => { event.preventDefault(); navigate(name, true); } : undefined}>
-        {t(name, chineseRoutes[name])}</a>;
+      const label = __FASTEST_CATALOG_POSTGRES__ && !__FASTEST_RELEASE_ORIGIN__ && name === "Compare"
+        ? t("Compare demo", "对比演示")
+        : __FASTEST_CATALOG_POSTGRES__ && !__FASTEST_RELEASE_ORIGIN__ && name === "Costs"
+          ? t("Costs demo", "成本演示")
+          : t(name, chineseRoutes[name]);
+      return <a key={name} href={href} aria-current={href === current ? "page" : undefined}
+        onClick={internal ? (event) => { event.preventDefault(); go(href); } : undefined}>
+        {label}</a>;
     })}</nav>
     <LocaleControls />
   </div></header>;
 }
 
-function Hero({ onExplore, onMethod }) {
+function Hero({ onExplore, onMethod, catalogLinks }) {
   const { t } = useLocale();
   return <section className="hero">
     <div className="hero-image" aria-hidden="true"><img src={__FASTEST_HERO_IMAGE__} alt="" fetchPriority="high" /></div>
     <div className="hero-content">
       <h1>{t("Find your fastest", "找到最快的")}<br />{t("local AI setup.", "本地 AI 配置。")}</h1>
-      <p>{t("Compare what fits, how it performs, and what it costs.", "对比模型适配性、运行性能和总体成本。")}</p>
-      <div className="hero-actions">
+      <p>{catalogLinks && !catalogLinks.benchmarks
+        ? t("Browse sourced hardware and model records. Benchmark releases are unavailable in this preview.", "浏览有来源的硬件与模型记录。此预览无法访问已发布的评测。")
+        : t("Compare what fits, how it performs, and what it costs.", "对比模型适配性、运行性能和总体成本。")}</p>
+      {catalogLinks ? <div className="hero-actions">
+        {catalogLinks.benchmarks && <a className="btn mint" href={catalogLinks.benchmarks}>{t("Explore benchmarks", "探索性能评测")} <ArrowUpRight size={16} aria-hidden="true" /></a>}
+        <a className={catalogLinks.benchmarks ? "btn outline" : "btn mint"} href={catalogLinks.catalog}>{t("Source catalog", "来源目录")} <ArrowRight size={16} aria-hidden="true" /></a>
+        <a className="hero-link" href={catalogLinks.prices}>{t("Price watch", "价格趋势")} <ArrowRight size={15} aria-hidden="true" /></a>
+        {catalogLinks.demo && <a className="hero-link" href={catalogLinks.demo}>{t("Open Explorer demo", "打开探索演示")} <ArrowRight size={15} aria-hidden="true" /></a>}
+      </div> : <div className="hero-actions">
         {__FASTEST_RELEASE_ORIGIN__
           ? <a className="btn mint" href={hrefFor("explorer")}>{t("Explore benchmarks", "探索性能评测")} <ArrowUpRight size={16} aria-hidden="true" /></a>
           : <button className="btn mint" onClick={onExplore}>{t("Explore benchmarks", "探索性能评测")} <ArrowDown size={16} aria-hidden="true" /></button>}
         <button className="hero-link" onClick={onMethod}>{t("How we compare", "了解对比方法")} <ArrowUpRight size={15} aria-hidden="true" /></button>
-      </div>
+      </div>}
     </div>
   </section>;
 }
@@ -410,7 +424,7 @@ function AgentPage({ onCopy }) {
 function App() {
   const { t, locale } = useLocale();
   const [state, setState] = useState(initialState);
-  const [{ name: page, model, slug, focus }, setRoute] = useState(routeFrom);
+  const [{ name: page, route, model, slug, focus }, setRoute] = useState(routeFrom);
   const [panel, setPanel] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [toast, setToast] = useState("");
@@ -439,14 +453,13 @@ function App() {
     }
     if (top) window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const navigate = (name, top) => go(routes[name], top);
   const copy = async (value, message) => {
     try { await navigator.clipboard.writeText(value); setToast(message); }
     catch { setManualCopy(value); }
   };
   const share = () => {
     const next = new URL(location.href);
-    next.hash = "explorer";
+    next.hash = route === explorerDemo ? explorerDemo : "explorer";
     next.search = new URLSearchParams({ ...state, compare: state.compare.join(",") }).toString();
     copy(next.toString(), "Comparison link copied");
   };
@@ -458,7 +471,7 @@ function App() {
     const others = state.compare.filter((item) => item !== id);
     set({ compare: [id, ...others].slice(0, 4) });
     setSelectedId(id);
-    go("#explorer", false);
+    go(__FASTEST_CATALOG_POSTGRES__ ? explorerDemo : "explorer", false);
     requestAnimationFrame(() => document.getElementById("comparison")?.scrollIntoView());
   };
   const onEvidence = (row) => { setSelectedId(row.id); setPanel({ kind: "evidence", row }); };
@@ -474,13 +487,22 @@ function App() {
   const highlightedId = points.some((point) => point.id === selectedId) ? selectedId : result?.id;
   const showEvidence = (id) => onEvidence(configurations.find((row) => row.id === id));
   const comparisons = state.compare.map((id) => configurations.find((row) => row.id === id));
+  const catalogLinks = page === "Explorer" ? catalogHome(route, __FASTEST_CATALOG_POSTGRES__, __FASTEST_RELEASE_ORIGIN__) : null;
+  const showDemoNotice = __FASTEST_CATALOG_POSTGRES__ && !catalogLinks && (
+    ["Explorer", "Compare", "Costs", "Machines", "Price watch", "For agents"].includes(page) || (page === "Models" && slug)
+  );
+  const catalogPage = __FASTEST_CATALOG_POSTGRES__ && !showDemoNotice;
+  const snapshotDate = catalogPage ? Date.parse(__FASTEST_HARDWARE_DIRECTORY__.asOf) : Date.UTC(2026, 10, 20);
   return <>
-    <Header page={page} navigate={navigate} />
+    <Header page={page} slug={slug} go={go} />
     <main className="main-shell">
       <LocaleStatus />
-      {page === "Explorer" ? <>
-        <Hero onExplore={explore} onMethod={openMethod} />
+      {showDemoNotice && <p className="demo-notice">{t("Demo prices and benchmark results are illustrative.", "演示价格和评测结果仅供示例。")}</p>}
+      {page === "Explorer" && <>
+        <Hero onExplore={explore} onMethod={openMethod} catalogLinks={catalogLinks} />
         <Highlights go={go} />
+      </>}
+      {page === "Explorer" ? !catalogLinks && <>
         <Modes active={state.flow} onChoose={(flow) => { set({ flow }); requestAnimationFrame(explore); }} />
         <ExploreLenses go={go} />
         <section id="explore" className="explore-section">
@@ -531,12 +553,14 @@ function App() {
           <SourceCatalog key={page + "/" + (slug || "")} initialKind={page === "Models" ? "models" : slug || "cards"} go={go} onCopy={copy} />
           <WikiDetails slug={slug === "runtimes" ? "runtimes" : page === "Models" ? "models" : "catalog"} go={go} onCopy={copy} />
         </> : <KnowledgePage screen={page} slug={slug} focus={focus} state={state} set={set} go={go} onCopy={copy} addToCompare={addToCompare} />}
-      <footer><span>fastest.ai</span><small>{t("Demo snapshot", "演示快照")} / {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(Date.UTC(2026, 10, 20))}</small><button className="text-button" onClick={openMethod}>{t("Methodology", "评测方法")} <ArrowUpRight size={14} /></button></footer>
+      <footer><span>fastest.ai</span><small>{catalogPage ? t("Catalog snapshot", "目录快照") : t("Demo snapshot", "演示快照")} / {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(snapshotDate)}</small>
+        {catalogPage ? <a className="text-button" href={hrefFor("methods")}>{t("Methodology", "评测方法")} <ArrowUpRight size={14} /></a>
+          : <button className="text-button" onClick={openMethod}>{t("Methodology", "评测方法")} <ArrowUpRight size={14} /></button>}</footer>
     </main>
     <Drawer panel={panel} close={() => setPanel(null)} state={state} onCompare={onCompare} onEvidence={onEvidence} go={go} />
     {!!toast && <div className="toast" role="status"><Check size={18} />{toast}</div>}
     {!!manualCopy && <div className="overlay"><div className="copy-dialog" role="dialog" aria-modal="true" aria-labelledby="copy-title"><h3 id="copy-title">Copy this value</h3><textarea aria-label="Value to copy" readOnly autoFocus onFocus={(e) => e.currentTarget.select()} value={manualCopy} /><button className="btn dark" onClick={() => setManualCopy("")}>Done</button></div></div>}
-    <FeedbackBubble page={page} entity={slug} release={__FASTEST_PAGES__ && slug === "research" ? __FASTEST_RESEARCH_INDEX__.release : release} onCopy={copy} />
+    <FeedbackBubble page={page} entity={slug} release={__FASTEST_PAGES__ && slug === "research" ? __FASTEST_RESEARCH_INDEX__.release : catalogPage ? __FASTEST_CATALOG_RELEASE__ : release} onCopy={copy} />
   </>;
 }
 

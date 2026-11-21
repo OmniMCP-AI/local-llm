@@ -185,6 +185,7 @@ const result = await build({
   define: {
     "process.env.NODE_ENV": '"production"',
     __FASTEST_PAGES__: String(pages),
+    __FASTEST_CATALOG_POSTGRES__: String(catalogPostgres),
     __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),

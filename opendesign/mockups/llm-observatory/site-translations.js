@@ -1,5 +1,11 @@
 // Hindi, Spanish, Modern Standard Arabic, French, Bengali.
 export const siteTranslations = {
+  "Compare demo": ["तुलना का डेमो", "Demo de comparación", "عرض المقارنة التجريبي", "Démo de comparaison"],
+  "Costs demo": ["लागत का डेमो", "Demo de costes", "عرض التكاليف التجريبي", "Démo des coûts"],
+  "Browse sourced hardware and model records. Benchmark releases are unavailable in this preview.": ["स्रोतों सहित हार्डवेयर और मॉडल रिकॉर्ड देखें। इस पूर्वावलोकन में बेंचमार्क रिलीज़ उपलब्ध नहीं हैं।", "Consulta registros de hardware y modelos con sus fuentes. Las publicaciones de benchmarks no están disponibles en esta vista previa.", "تصفح سجلات العتاد والنماذج مع مصادرها. إصدارات اختبارات الأداء غير متاحة في هذه المعاينة.", "Consultez les fiches de matériel et de modèles avec leurs sources. Les résultats publiés des benchmarks sont indisponibles dans cet aperçu."],
+  "Open Explorer demo": ["एक्सप्लोरर डेमो खोलें", "Abrir demo del explorador", "فتح العرض التجريبي للمستكشف", "Ouvrir la démo de l’explorateur"],
+  "Demo prices and benchmark results are illustrative.": ["डेमो में दी गई कीमतें और बेंचमार्क नतीजे उदाहरण हैं।", "Los precios y resultados de la demo son ilustrativos.", "الأسعار ونتائج اختبارات الأداء في العرض التجريبي هي أمثلة توضيحية.", "Les prix et résultats de la démo sont donnés à titre d’exemple."],
+  "Catalog snapshot": ["कैटलॉग स्नैपशॉट", "Instantánea del catálogo", "لقطة من الدليل", "Instantané du catalogue"],
   "Explorer": ["खोजें", "Explorar", "استكشاف", "Explorer", "অন্বেষণ"],
   "Compare": ["तुलना", "Comparar", "مقارنة", "Comparer", "তুলনা"],
   "Methods": ["परीक्षण विधियाँ", "Métodos", "طرق الاختبار", "Méthodes", "পরীক্ষার পদ্ধতি"],
@@ -148,6 +154,12 @@ export const siteTranslations = {
 
 // Japanese, Korean, German.
 export const eastAsianGermanSiteTranslations = {
+  "Compare demo": ["比較デモ", "비교 데모", "Vergleichsdemo"],
+  "Costs demo": ["コストデモ", "비용 데모", "Kostendemo"],
+  "Browse sourced hardware and model records. Benchmark releases are unavailable in this preview.": ["出典付きのハードウェアとモデルの情報をご覧ください。このプレビューでは公開ベンチマークを利用できません。", "출처가 있는 하드웨어와 모델 정보를 둘러보세요. 이 미리보기에서는 공개 벤치마크를 이용할 수 없습니다.", "Hardware- und Modelldaten mit Quellen durchsuchen. Veröffentlichte Benchmarks sind in dieser Vorschau nicht verfügbar."],
+  "Open Explorer demo": ["エクスプローラーのデモを開く", "탐색기 데모 열기", "Explorer-Demo öffnen"],
+  "Demo prices and benchmark results are illustrative.": ["デモの価格とベンチマーク結果は例示です。", "데모의 가격과 벤치마크 결과는 예시입니다.", "Die Preise und Benchmark-Ergebnisse in der Demo sind Beispiele."],
+  "Catalog snapshot": ["カタログのスナップショット", "카탈로그 스냅샷", "Katalog-Schnappschuss"],
   "Explorer": ["構成を探す", "탐색", "Entdecken"],
   "Compare": ["比較", "비교", "Vergleichen"],
   "Methods": ["測定方法", "측정 방법", "Methoden"],

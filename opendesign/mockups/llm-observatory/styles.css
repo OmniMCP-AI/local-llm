@@ -103,6 +103,7 @@ svg { flex-shrink: 0; }
 .hero h1 { font-size: 66px; line-height: .93; font-weight: 650; letter-spacing: -.074em; }
 .hero p { max-width: 53ch; color: var(--color-ink-2); font-size: 15px; line-height: 1.45; margin-top: 13px; }
 .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 17px; margin-top: 17px; }
+.demo-notice { padding: 8px 12px; margin: 12px 0; color: var(--color-ink-2); background: var(--color-paper-3); border-inline-start: 3px solid var(--color-accent); font-size: 13px; }
 
 .btn, .hero-link, .text-button, .result-secondary, .icon-btn, .table-name {
   display: inline-flex;
