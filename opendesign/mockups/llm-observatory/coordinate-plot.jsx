@@ -20,9 +20,16 @@ export function CoordinatePlot({ onSelect, showLabels = false, ...chart }) {
     const mark = event.target.closest("button[data-point-id]");
     if (mark) onSelect?.(mark.dataset.pointId);
   };
+  const handleKeyDown = (event) => {
+    if (!onSelect || (event.key !== "Enter" && event.key !== " ")) return;
+    const mark = event.target.closest("button[data-point-id]");
+    if (!mark) return;
+    event.preventDefault();
+    onSelect(mark.dataset.pointId);
+  };
   return <>
     <style>{coordinatePlotStyles}</style>
-    <div ref={content} onClick={handleClick}
+    <div ref={content} onClick={handleClick} onKeyDown={handleKeyDown}
       onFocus={(event) => { focused.current = event.target.dataset.pointId; }}
       onBlur={() => { focused.current = null; }}
       dangerouslySetInnerHTML={{ __html: markup }} />
