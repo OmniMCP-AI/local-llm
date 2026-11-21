@@ -223,9 +223,9 @@ ${backlinksHtml}
 <h1>fastest.ai</h1><p>Also known as ${alternateName}.</p><p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
 <a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
-${availableHighlights.length ? `<section><h2>Research highlights</h2><ul>
+<section data-home-highlights${availableHighlights.length ? "" : " hidden"}><h2>Research highlights</h2><ul>
 ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">${escape(title)}</a> · ${escape(summary)}</li>`).join("\n")}
-</ul></section>` : ""}
+</ul></section>
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",

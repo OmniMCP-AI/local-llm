@@ -1,7 +1,7 @@
 import textPlan from "../../../production/fastest_text/plan.json" with { type: "json" };
 import { releaseOrigin } from "./release-origin.mjs";
 
-const modelId = "Qwen/Qwen2.5-7B-Instruct";
+export const observedAgentTaskModelId = "Qwen/Qwen2.5-7B-Instruct";
 const { artifact } = textPlan;
 const protocolId = "inventory-agent-comparison-shared-ci-cpu@1";
 
@@ -9,7 +9,7 @@ function isObservedComparison(report) {
   const observed = report?.conditions?.artifact;
   return report?.schema_version === 1 && report.kind === "measured" &&
     report.conditions?.protocol_id === protocolId && report.environment?.backend === "CPU" &&
-    artifact.repository === modelId + "-GGUF" && observed?.repository === artifact.repository &&
+    artifact.repository === observedAgentTaskModelId + "-GGUF" && observed?.repository === artifact.repository &&
     observed.revision === artifact.revision && observed.quantization === artifact.quantization &&
     Array.isArray(observed.shards) && observed.shards.length === artifact.shards.length &&
     artifact.shards.every(({ path, sha256, bytes }, i) =>
@@ -20,7 +20,7 @@ function isObservedComparison(report) {
 }
 
 export async function observedAgentTask(id, env) {
-  if (id !== modelId) return null;
+  if (id !== observedAgentTaskModelId) return null;
   const origin = releaseOrigin(env.FASTEST_RELEASE_ORIGIN);
   const pin = env.FASTEST_AGENT_TASK_RELEASE;
   if (!origin || !/^[a-f0-9]{64}$/.test(pin ?? "")) return null;
@@ -36,10 +36,13 @@ export async function observedAgentTask(id, env) {
   }
 
   const files = `https://huggingface.co/${artifact.repository}/blob/${artifact.revision}/`;
+  const html = base + ".html";
   return {
     title: "Observed agent benchmark for the exact GGUF artifact",
+    html,
+    markdown: base + ".md",
     fields: [
-      ["Report", "Observed inventory tool-policy benchmark", base + ".html"],
+      ["Report", "Observed inventory tool-policy benchmark", html],
       ["Benchmark artifact", artifact.repository + " · " + artifact.quantization, artifact.source],
       ["Artifact revision", artifact.revision],
       ...artifact.shards.map(({ path }) => ["GGUF shard", path, files + path]),
