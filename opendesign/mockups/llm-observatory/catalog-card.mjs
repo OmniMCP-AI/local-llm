@@ -7,6 +7,18 @@ const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[c
 const escapeMarkdown = (value) => value.replace(/[\n\r]/g, " ").replace(/[\\`*_{}\[\]<>|]/g, "\\$&");
 const count = new Intl.NumberFormat("en");
 
+function publisherEvaluationTable(evaluations) {
+  if (!evaluations?.length) return null;
+  return {
+    title: "Publisher-reported benchmark results",
+    summary: "These scores describe task quality in the publisher’s evaluation. Local inference performance and machine rankings require separate measurements.",
+    headings: ["Benchmark", "Reported score", "Harness", "Execution hardware", "Pinned model-card row"],
+    rows: evaluations.map(({ benchmark, version, scorePercent, harness, source, cardUrl, executionHardware }) => [
+      [`${benchmark} v${version}`, source], [`${scorePercent}%`], [harness], [executionHardware ?? "Unknown"], ["Model card", cardUrl],
+    ]),
+  };
+}
+
 export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture } = {}) {
   const { supplemental } = row;
   const { family, familySource, artifacts = [] } = row.identity ?? {};
@@ -78,7 +90,8 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
       }] : []),
       ...artifactSections,
     ],
-    evidence: "Catalog metadata provides discovery. Tested compatibility, fit estimates and eligible benchmark results are unavailable in this catalog card.",
+    publisherEvaluations: publisherEvaluationTable(supplemental?.publisherEvaluations),
+    evidence: "Catalog metadata provides discovery. Tested compatibility, fit estimates and eligible local benchmark results are unavailable in this catalog card.",
   };
 }
 
@@ -297,6 +310,25 @@ const positionTitle = "GPU position by rated specifications";
 const positionBasis = "Manufacturer-rated specifications. Each point is one GPU identity with a single reported capacity and a value on both axes.";
 const noPosition = "This GPU has no unambiguous pair of rated specifications for these axes.";
 
+function evaluationsHtml({ title, summary, headings, rows }) {
+  const rowHtml = rows.map((row) => {
+    const [[label, link], ...other] = row;
+    return `<tr><th scope="row"><a href="${escapeHtml(link)}">${escapeHtml(label)}</a></th>${
+      other.map(([value, href]) => `<td>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(value)}</a>`
+        : escapeHtml(value)}</td>`).join("")}</tr>`;
+  }).join("\n");
+  return `<section class="profile-section"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(summary)}</p>
+<table class="profile-chart-table"><thead><tr>${headings.map(heading => `<th scope="col">${escapeHtml(heading)}</th>`).join("")}</tr></thead>
+<tbody>${rowHtml}</tbody></table></section>`;
+}
+
+function evaluationsMarkdown({ title, summary, headings, rows }) {
+  return [`## ${title}`, "", summary, "", `| ${headings.join(" | ")} |`,
+    `| ${headings.map(() => "---").join(" | ")} |`,
+    ...rows.map(row => `| ${row.map(([value, href]) => href ? `[${escapeMarkdown(value)}](<${href}>)`
+      : escapeMarkdown(value)).join(" | ")} |`), ""];
+}
+
 function positionHtml({ label, points, selected }) {
   const max = (values, step) => Math.max(step, Math.ceil(Math.max(...values) / step) * step);
   const x = max(points.map(point => point.capacity), 16);
@@ -334,6 +366,7 @@ export function renderCard(card, { release, pathname, markdown, local = false })
   const visuals = card.visuals ?? [];
   const photos = card.photos ?? [];
   const position = card.position;
+  const evaluations = card.publisherEvaluations;
 
   if (markdown) {
     return [
@@ -361,6 +394,7 @@ export function renderCard(card, { release, pathname, markdown, local = false })
       ] : []),
       ...markdownFields(card.fields),
       ...sections.flatMap(({ title, fields }) => ["", `## ${escapeMarkdown(title)}`, "", ...markdownFields(fields)]),
+      ...(evaluations ? ["", ...evaluationsMarkdown(evaluations)] : []),
       "",
       "## Evidence",
       "",
@@ -394,6 +428,7 @@ ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, sourc
   </figcaption></figure>`).join("")}</div>` : ""}
 <section class="profile-section"><h2>Catalog details</h2>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("\n")}
+${evaluations ? evaluationsHtml(evaluations) : ""}
 </main>
 <footer class="profile-footer">Release <code>${release}</code> · <a href="${manifestLink}">Coverage and sources</a> · <a href="${licenseLink}">llmfit MIT notice</a></footer></div>
 </body>

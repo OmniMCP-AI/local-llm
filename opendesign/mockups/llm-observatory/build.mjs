@@ -159,6 +159,7 @@ const wikiRelease = pages ? await writeWikiRelease({
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
   researchRelease: researchIndex.release,
   catalogRelease,
+  catalogApi: catalogPostgres,
   documents: publicDocuments,
   topologies: publicTopologies,
   scalingUrl,
