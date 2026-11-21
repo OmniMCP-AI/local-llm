@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 124);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
-  assert.equal(manifest.coverage.cards, 116);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 109);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 87);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 49);
-  assert.equal(manifest.coverage.boardPartnerCards, 8);
+  assert.equal(manifest.coverage.cards, 148);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 141);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 119);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 63);
+  assert.equal(manifest.coverage.boardPartnerCards, 9);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -51,6 +51,52 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   }
   assert.equal(find(catalog.machines, "V024-HP-C001").cardIds.length, 0);
   assert.deepEqual(find(catalog.machines, "V019-HP-TEST").cardIds.sort(), ["amd-radeon-rx-6600-xt", "t10-unresolved"].sort());
+});
+
+test("official memory variants retain their own specifications and family links", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const cards = new Map(catalog.cards.map(card => [card.id, card]));
+  for (const [id, parent, memory, field, value] of [
+    ["intel-arc-a770-8gb", "intel-arc-a770", "8 GB GDDR6", "Memory bandwidth", "512 GB/s"],
+    ["nvidia-geforce-gtx-1650-gddr5", "nvidia-geforce-gtx-1650", "4 GB GDDR5", "Boost clock (MHz)", "1665"],
+    ["nvidia-geforce-gtx-1650-gddr6", "nvidia-geforce-gtx-1650", "4 GB GDDR6", "Boost clock (MHz)", "1590"],
+    ["nvidia-geforce-rtx-3080-10gb", "nvidia-geforce-rtx-3080", "10 GB GDDR6X", "Rated graphics power (W)", "320"],
+    ["nvidia-geforce-rtx-3080-12gb", "nvidia-geforce-rtx-3080", "12 GB GDDR6X", "Rated graphics power (W)", "350"],
+    ["nvidia-geforce-rtx-5060-ti-8gb", "nvidia-geforce-rtx-5060-ti", "8 GB GDDR7", "Memory bus", "128-bit"],
+  ]) {
+    assert.ok(cards.get(parent).variants.some(variant => variant.id === id), id);
+    const { vendorSpec, relatedProfiles } = cards.get(id);
+    assert.equal(vendorSpec.scope, "Exact memory variant");
+    assert.equal(vendorSpec.facts["Memory configuration"], memory);
+    assert.equal(vendorSpec.facts[field], value);
+    assert.ok(vendorSpec.locator);
+    assert.deepEqual(relatedProfiles, []);
+  }
+});
+
+test("official accelerator and workstation configurations keep form-factor specifications distinct", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const cards = new Map(catalog.cards.map(card => [card.id, card]));
+  for (const [id, parent, field, value] of [
+    ["nvidia-a100-sxm-40gb", "nvidia-a100-sxm", "Memory bandwidth", "1555 GB/s"],
+    ["nvidia-a100-sxm-80gb", "nvidia-a100-sxm", "Memory bandwidth", "2039 GB/s"],
+    ["nvidia-h200-sxm", "nvidia-h200", "Maximum TDP (W)", "Up to 700 W (configurable)"],
+    ["nvidia-h200-nvl", "nvidia-h200", "Form factor", "Dual-slot PCIe"],
+    ["nvidia-tesla-p100-pcie-12gb", "nvidia-tesla-p100", "Memory bandwidth", "549 GB/s"],
+    ["nvidia-tesla-p100-sxm2-16gb", "nvidia-tesla-p100", "Form factor", "SXM2"],
+    ["nvidia-tesla-v100-pcie-32gb", "nvidia-tesla-v100-32gb", "Rated graphics power (W)", "250"],
+    ["nvidia-tesla-v100-sxm2-32gb", "nvidia-tesla-v100-sxm", "Rated graphics power (W)", "300"],
+    ["nvidia-rtx-pro-6000-blackwell-max-q", "nvidia-rtx-pro-6000", "Rated graphics power (W)", "300"],
+  ]) {
+    assert.ok(cards.get(parent).variants.some(variant => variant.id === id), id);
+    const { vendorSpec, relatedProfiles } = cards.get(id);
+    assert.equal(vendorSpec.facts[field], value);
+    assert.ok(vendorSpec.locator);
+    assert.deepEqual(relatedProfiles, []);
+  }
+  for (const id of ["nvidia-cmp-170hx-hynix", "nvidia-cmp-170hx-samsung", "nvidia-geforce-rtx-2080-ti-modified-22gb", "t10-unresolved"]) {
+    assert.equal(cards.get(id).vendorSpec, null);
+  }
 });
 
 test("exact factory configurations carry a sourced system bill of materials", async () => {
@@ -119,8 +165,9 @@ test("withdrawing the Colorful launch announcement removes just its sourced RTX 
   const { catalog, manifest } = await readHardwareCatalog(here, value => value === source);
   const family = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5060-ti");
   assert.deepEqual(family.variants.map(({ id }) => id).sort(), [
-    "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb", "pny-vcg5060t8dfxpb1-o",
+    "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb", "nvidia-geforce-rtx-5060-ti-8gb",
+    "pny-vcg5060t8dfxpb1-o",
   ]);
-  assert.equal(manifest.coverage.boardPartnerCards, 7);
+  assert.equal(manifest.coverage.boardPartnerCards, 8);
   assert.ok(!JSON.stringify(catalog).includes(source));
 });
