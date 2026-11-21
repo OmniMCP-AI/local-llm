@@ -334,9 +334,9 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     return { ...row, ...(gallery.length && { photos: gallery }), ...(published && { video: published }) };
   });
   const cardPhotos = new Map();
-  const photoSources = new Set();
-  const photoDigests = new Set();
   for (const [cardId, { topology, photos: ids = [] }] of Object.entries(gpuPhotoIds)) {
+    const photoSources = new Set();
+    const photoDigests = new Set();
     if (!cards.has(cardId) && !withdrawnCards.has(cardId)) throw new Error("Unknown GPU for photo gallery: " + cardId);
     const gallery = [...(topology ? [topology] : []), ...ids].map(id => {
       const photo = gpuPhotos[id];
