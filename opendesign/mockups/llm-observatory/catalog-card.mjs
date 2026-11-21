@@ -457,7 +457,7 @@ export function catalogDocument({ title, home = "/", mdLink, release, review, ca
   const chinese = { Explorer: "探索", Compare: "目标对比", Battles: "对决", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
   const traditional = { Explorer: "探索", Compare: "目標比較", Battles: "對決", "Guided advisor": "配置顧問", Methods: "評測方法", Costs: "成本", Catalog: "目錄", Machines: "整機", Models: "模型", Wiki: "知識庫", "Price watch": "價格趨勢", "For agents": "智慧體" };
   for (const label of Object.keys(navigationRoutes(releaseOrigin))) {
-    const source = local && (label === "Compare" || label === "Costs") ? label + " demo" : label;
+    const source = label;
     const regional = siteTranslations[source] ?? [];
     const east = eastAsianGermanSiteTranslations[source] ?? [];
     translations[source] = { "zh-Hans": chinese[label], "zh-Hant": traditional[label], hi: regional[0], es: regional[1], ar: regional[2], fr: regional[3], ja: east[0], ko: east[1], de: east[2] };
@@ -475,9 +475,9 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<l
 </head>
 <body class="profile-document"><div class="profile-shell">
 <header class="profile-header"><a class="profile-brand" href="${home}">fastest.ai / localdecode.com</a><nav class="profile-nav" aria-label="Main navigation">${Object.entries(navigationRoutes(releaseOrigin)).map(([label, route]) => {
-    const href = navigationHref(route, !local, releaseOrigin, true);
+    const href = navigationHref(route, !local, releaseOrigin, !local);
     const destination = href.startsWith("#") ? home + href : href;
-    const displayLabel = local && (label === "Compare" || label === "Costs") ? label + " demo" : label;
+    const displayLabel = label;
     return `<a href="${escapeHtml(destination)}"${route === "catalog" ? ' aria-current="page"' : ""}>${escapeHtml(displayLabel)}</a>`;
   }).join("")}</nav><details class="profile-locale"><summary>Language and currency</summary><label>Language <select id="profile-language">${Object.entries(languages).map(([tag, value]) => `<option value="${tag}" lang="${tag}">${value.label}</option>`).join("")}</select></label><label>Display currency <select id="profile-currency"><option value="auto">Follow language</option></select></label><form id="profile-rate" hidden><label>Units per USD <input id="profile-rate-value" type="number" min="0" step="any" required></label><button type="submit">Apply rate</button></form></details><nav class="profile-actions profile-catalog-nav" aria-label="Catalog">${review
     ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a><a href="${modelCollectionPath(release)}">Model catalog</a><a href="${runtimeDirectoryPath(release)}">Runtime catalog</a>`
