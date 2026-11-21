@@ -1,5 +1,6 @@
 import { catalogPath, hardwareDirectoryPath, modelCollectionPath, runtimeDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
-import { cardPosition, cardRatings } from "./catalog-position.mjs";
+import { bandwidthAxis, cardPosition, cardRatings, memoryAxis, speedAxis } from "./catalog-position.mjs";
+import { axisTitle, renderCoordinatePlot } from "./coordinate-plot.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -181,7 +182,7 @@ export function hardwareCard(row, release, kind, {
       title: row.name,
       kind: row.kind,
       source: vendor?.source ?? row.source,
-      position: modified ? null : cardPosition(row, peers, id => path("cards", id)),
+      position: cardPosition(row, peers, id => path("cards", id)),
       visuals: [
         { title: "On-board memory", graphic: graphic("Nominal capacity", "capacity", "GB"), fields: [
           memoryField,
@@ -346,7 +347,10 @@ export function markdownFields(fields) {
 
 const positionTitle = "GPU position by rated specifications";
 const positionBasis = "Manufacturer-rated specifications. Each point is one GPU identity with a single reported capacity and a value on both axes.";
-const noPosition = "This GPU has no unambiguous pair of rated specifications for these axes.";
+const speedTitle = "Measured GPU decode speed";
+const speedUnavailable = "Measured decode speed unavailable. This release has no matched, reviewed single-GPU cohort for one model, artifact, context and runtime protocol.";
+const illustrationCaption = "Original schematic · conceptual GPU and memory layout";
+const gpuAxis = { label: "GPU", categorical: true };
 
 function evaluationsHtml({ title, summary, headings, rows }, heading) {
   const rowHtml = rows.map((row) => {
@@ -367,28 +371,74 @@ function evaluationsMarkdown({ title, summary, headings, rows }) {
       : escapeMarkdown(value)).join(" | ")} |`), ""];
 }
 
-function positionHtml({ label, points, selected }) {
-  const max = (values, step) => Math.max(step, Math.ceil(Math.max(...values) / step) * step);
-  const x = max(points.map(point => point.capacity), 16);
-  const y = max(points.map(point => point.value), 100);
-  const aria = point => `${point.name}, ${point.capacity} GB, ${point.value} ${label}`;
-  const current = point => point === selected ? ' aria-current="page"' : "";
-  return `<section class="profile-section"><h2>${positionTitle}</h2><p>${positionBasis}</p>
-<div class="profile-chart"><span class="profile-chart-y">${escapeHtml(label)}</span>
-<div class="profile-chart-grid" role="group" aria-label="GPU position map">
-<span class="profile-chart-max">${y}</span>
-${points.map(point => `<a class="profile-chart-dot" href="${escapeHtml(point.href)}"${current(point)}
-  style="left:${point.capacity / x * 100}%;bottom:${point.value / y * 100}%"
-  title="${escapeHtml(aria(point))}" aria-label="${escapeHtml(aria(point))}"></a>`).join("")}</div>
-<div class="profile-chart-x"><span>0</span><span>Nominal GPU memory (GB)</span><span>${x}</span></div></div>
-<div class="profile-chart-legend"><span>${points.length} plotted GPUs</span>${selected
-    ? `<strong>◆ ${escapeHtml(selected.name)} · ${selected.capacity} GB · ${selected.value} ${label.match(/\(([^)]+)\)$/)[1]}</strong>`
-    : `<span>${noPosition}</span>`}</div>
-<details><summary>View chart data</summary><table class="profile-chart-table">
-<thead><tr><th scope="col">GPU</th><th scope="col">Memory (GB)</th><th scope="col">${escapeHtml(label)}</th><th scope="col">Source</th></tr></thead><tbody>
-${points.map(point => `<tr${current(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
-<td>${point.capacity}</td><td>${point.value}</td><td><a href="${escapeHtml(point.source)}">Manufacturer</a></td></tr>`).join("")}
-</tbody></table></details></section>`;
+function positionHtml({ id, name, points, capacityPoints }, heading) {
+  const selected = points.find(point => point.id === id);
+  const capacity = capacityPoints.find(point => point.id === id);
+  const active = point => point.id === id ? ' aria-current="page"' : "";
+  const atlas = {
+    title: positionTitle, xAxis: memoryAxis, yAxis: bandwidthAxis, points, selectedId: id,
+    emptyText: "The release has no comparable manufacturer-rated memory and bandwidth pairs.",
+  };
+  const gpuLabels = new Map(capacityPoints.map(point => [point.id, point.short]));
+  const memory = {
+    title: "GPU memory capacity", xAxis: { ...gpuAxis, formatTick: id => gpuLabels.get(id) }, yAxis: memoryAxis, kind: "bar", points: capacityPoints,
+    selectedId: id, emptyText: "The release has no comparable manufacturer-rated memory capacities.",
+  };
+  const speed = { title: speedTitle, xAxis: memoryAxis, yAxis: speedAxis, points: [], emptyText: speedUnavailable };
+  return `<section class="profile-section"><${heading}>${positionTitle}</${heading}><p>${positionBasis}</p>
+<p class="profile-chart-note">${selected ? `◆ ${escapeHtml(name)} · ${selected.x} GB · ${selected.y} GB/s`
+    : `${escapeHtml(name)} has no unambiguous pair of rated specifications for these axes.`}</p>
+${renderCoordinatePlot(atlas)}
+<details><summary>View chart data (${points.length} GPUs)</summary><table class="profile-chart-table">
+<thead><tr><th scope="col">GPU</th><th scope="col">${axisTitle(memoryAxis)}</th><th scope="col">${axisTitle(bandwidthAxis)}</th><th scope="col">Source</th></tr></thead><tbody>
+${points.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
+<td>${point.x}</td><td>${point.y}</td><td><a href="${escapeHtml(point.source)}">Manufacturer</a></td></tr>`).join("")}
+</tbody></table></details></section>
+<section class="profile-section"><${heading}>GPU memory capacity</${heading}>
+<p>Manufacturer-rated memory per GPU, ordered by capacity.</p>
+<p class="profile-chart-note">${capacity ? `◆ ${escapeHtml(name)} · ${capacity.y} GB`
+    : `${escapeHtml(name)} has no unambiguous manufacturer-rated capacity on this scale.`}</p>
+${renderCoordinatePlot(memory)}
+<details><summary>View memory data (${capacityPoints.length} GPUs)</summary><table class="profile-chart-table">
+<thead><tr><th scope="col">GPU</th><th scope="col">${axisTitle(memoryAxis)}</th><th scope="col">Source</th></tr></thead><tbody>
+${capacityPoints.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
+<td>${point.y}</td><td><a href="${escapeHtml(point.source)}">Manufacturer</a></td></tr>`).join("")}
+</tbody></table></details></section>
+<section class="profile-section"><${heading}>${speedTitle}</${heading}>${renderCoordinatePlot(speed)}</section>`;
+}
+
+function positionMarkdown({ id, name, points, capacityPoints }) {
+  const selected = points.find(point => point.id === id);
+  const capacity = capacityPoints.find(point => point.id === id);
+  const noPair = `${name} has no unambiguous pair of rated specifications for these axes.`;
+  const link = point => `[${escapeMarkdown(point.name)}](<${point.href}>)`;
+  const source = point => `[Manufacturer](<${point.source}>)`;
+  return [
+    `## ${positionTitle}`, "", positionBasis, "",
+    selected ? `Selected GPU: ${name} · ${selected.x} GB · ${selected.y} GB/s` : noPair,
+    "", `| GPU | ${axisTitle(memoryAxis)} | ${axisTitle(bandwidthAxis)} | Source |`, "| --- | ---: | ---: | --- |",
+    ...points.map(point => `| ${link(point)} | ${point.x} | ${point.y} | ${source(point)} |`),
+    "", "## GPU memory capacity", "", "Manufacturer-rated memory per GPU, ordered by capacity.", "",
+    capacity ? `Selected GPU: ${name} · ${capacity.y} GB` : `${name} has no unambiguous manufacturer-rated capacity on this scale.`,
+    "", `| GPU | ${axisTitle(memoryAxis)} | Source |`, "| --- | ---: | --- |",
+    ...capacityPoints.map(point => `| ${link(point)} | ${point.y} | ${source(point)} |`),
+    "", `## ${speedTitle}`, "", speedUnavailable, "",
+  ];
+}
+
+function cardIllustration(title, capacity) {
+  return `<figure class="profile-card-schematic">
+<svg viewBox="0 0 550 180" role="img" aria-label="Conceptual GPU and memory layout for ${escapeHtml(title)}">
+  <path d="M22 26h505v126H22z M32 16v146 M62 152v13h129v-13" fill="none" stroke="#646058" stroke-width="2" stroke-linejoin="round" />
+  <path d="M175 67h43m-43 49h43m113-49h46m-46 49h46m-101-80v17m0 75v20" fill="none" stroke="#ff9858" stroke-width="2" />
+  <rect x="218" y="53" width="113" height="75" rx="6" fill="#382820" stroke="#ff9858" stroke-width="2" />
+  <rect x="63" y="52" width="112" height="79" rx="6" fill="#202a2d" stroke="#85a3aa" stroke-width="2" />
+  <rect x="377" y="52" width="112" height="79" rx="6" fill="#202a2d" stroke="#85a3aa" stroke-width="2" />
+  <g fill="#f3eee5" font-family="system-ui,sans-serif" font-size="15" text-anchor="middle">
+    <text x="274" y="97">Processor</text><text x="119" y="97">Memory</text><text x="433" y="97">Memory</text>
+  </g>
+</svg>
+<figcaption>${illustrationCaption}${capacity ? ` · ${capacity} GB nominal` : ""}</figcaption></figure>`;
 }
 
 export function catalogDocument({ title, home = "/", mdLink, release, review, canonical, main, root = `/catalog/${release}` }) {
@@ -450,13 +500,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       ]),
       ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
         `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
-      ...(position ? [
-        `## ${positionTitle}`, "", positionBasis, "",
-        position.selected ? `Selected GPU: ${position.selected.capacity} GB · ${position.label}: ${position.selected.value}` : noPosition,
-        "", `| GPU | Memory (GB) | ${position.label} | Source |`, "| --- | ---: | ---: | --- |",
-        ...position.points.map(point => `| [${escapeMarkdown(point.name)}](<${point.href}>) | ${point.capacity} | ${point.value} | [Manufacturer](<${point.source}>) |`),
-        "",
-      ] : []),
+      ...(position ? [illustrationCaption, "", ...positionMarkdown(position)] : []),
       ...markdownFields(card.fields),
       ...sections.flatMap(({ title, fields }) => ["", `## ${escapeMarkdown(title)}`, "", ...markdownFields(fields)]),
       ...(evaluations ? ["", ...evaluationsMarkdown(evaluations)] : []),
@@ -486,11 +530,13 @@ export function renderCardContent(card, { mdLink, nested = false } = {}) {
 <div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}${mdLink ? `<a href="${mdLink}">Markdown</a>` : ""}</div></div>
 ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
   `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
-${position ? positionHtml(position) : ""}
+
+${position ? cardIllustration(card.title, position.capacityPoints.find(point => point.id === position.id)?.y) : ""}
 ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
   ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}
   </figcaption></figure>`).join("")}</div>` : ""}
+${position ? positionHtml(position, heading) : ""}
 <section class="profile-section"><${heading}>Catalog details</${heading}>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${htmlFields(fields)}</section>`).join("\n")}
 ${publisherEvaluations ? evaluationsHtml(publisherEvaluations, heading) : ""}`;

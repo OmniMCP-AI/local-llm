@@ -20,18 +20,22 @@ export function cardRatings({ vendorSpec }) {
   };
 }
 
+export const memoryAxis = { label: "Nominal GPU memory", unit: "GB" };
+export const bandwidthAxis = { label: "Rated memory bandwidth", unit: "GB/s" };
+export const speedAxis = { label: "Measured decode speed", unit: "tok/s" };
+
 export function cardPosition(card, peers, linkTo) {
-  const current = cardRatings(card);
-  const metric = current.capacity && !current.bandwidth && current.power ? "power" : "bandwidth";
-  const points = peers.flatMap(row => {
-    const point = cardRatings(row);
-    return point.capacity && point[metric] ? [{
-      id: row.id, name: row.name, capacity: point.capacity, value: point[metric],
-      source: row.vendorSpec.source, href: linkTo(row.id),
-    }] : [];
+  const rated = peers.map(row => {
+    const { capacity, bandwidth } = cardRatings(row);
+    return {
+      id: row.id, name: row.name,
+      short: row.name.replace(/^(NVIDIA (?:GeForce |Tesla )?|AMD (?:Radeon |Instinct )?|Intel )/, ""),
+      capacity, bandwidth, source: row.vendorSpec?.source, href: linkTo(row.id),
+    };
   });
-  return {
-    label: metric === "power" ? "Rated graphics power (W)" : "Rated memory bandwidth (GB/s)",
-    points, selected: points.find(point => point.id === card.id),
-  };
+  const points = rated.filter(({ capacity, bandwidth }) => capacity && bandwidth)
+    .map(point => ({ ...point, x: point.capacity, y: point.bandwidth }));
+  const capacityPoints = rated.filter(({ capacity }) => capacity).sort((a, b) => b.capacity - a.capacity)
+    .map(point => ({ ...point, x: point.id, y: point.capacity, xText: point.name }));
+  return { id: card.id, name: card.name, points, capacityPoints };
 }

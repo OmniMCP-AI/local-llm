@@ -557,7 +557,9 @@ test("released modified GPU profiles expose seller and lab evidence in both form
     for (const body of [html, markdown]) {
       for (const field of fields) assert.ok(body.includes(field), field);
       assert.match(body, /Runtime-usable memory[^\n]*Unknown/);
-      assert.doesNotMatch(body, /GPU position by rated specifications/);
+      assert.match(body, /GPU position by rated specifications/);
+      assert.match(body, /has no unambiguous pair of rated specifications/);
+      assert.doesNotMatch(body, /aria-current="page"|Selected GPU:/);
     }
     assertProfileFieldsAgree(html, markdown, id);
   }
@@ -655,16 +657,16 @@ test("GPU profiles highlight only identities with exact rated values", async (t)
   const { request } = await buildFixture(t);
   const html = await (await request("cards/amd-radeon-pro-w7800.html")).text();
   const markdown = await (await request("cards/amd-radeon-pro-w7800.md")).text();
-  assert.match(html, /profile-chart-dot" href="[^"]*w7800.html" aria-current="page"/);
+  assert.match(html, /coordinate-mark" href="[^"]*w7800.html" aria-current="page"/);
   assert.match(html, /32 GB · 576 GB\/s/);
   assert.match(html, /<meter[^>]+aria-label="Nominal capacity · 32 GB/);
   assert.match(html, /<meter[^>]+aria-label="Rated graphics power · 260 W/);
   assert.match(markdown, /Nominal capacity · 32 GB on the catalog scale/);
   assert.match(markdown, /Rated graphics power · 260 W on the catalog scale/);
-  assert.match(markdown, /Selected GPU: 32 GB · Rated memory bandwidth \(GB\/s\): 576/);
+  assert.match(markdown, /Selected GPU: AMD Radeon PRO W7800 · 32 GB · 576 GB\/s/);
   const ambiguous = await (await request("cards/nvidia-geforce-rtx-3060.html")).text();
   assert.match(ambiguous, /has no unambiguous pair of rated specifications/);
-  assert.doesNotMatch(ambiguous, /profile-chart-dot"[^>]*aria-current/);
+  assert.doesNotMatch(ambiguous, /coordinate-mark"[^>]*aria-current/);
 });
 
 test("the offline catalog generates linked HTML and Markdown for every GPU", async (t) => {
