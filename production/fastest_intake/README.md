@@ -35,6 +35,15 @@ rights-filtered function. Intake stats count retained reviews and withdrawals.
 
 Review rights, exact identity, methodology, and current offer status before preparing a release. The public pricing and benchmark endpoints read their existing reviewed stores.
 
+## Benchmark collection sources
+
+**Local LLM Benchmarks**, maintained by Donato Capitella, is a candidate for source-reported local inference and agent-task data. Keep its release eligibility pending source review. [Benchmark hub](https://local-llm-benchmarks.dev/)
+
+| Collection | Intake fields | Access and review |
+| --- | --- | --- |
+| [Speed by context depth](https://local-llm-benchmarks.dev/speed) | Keep prompt processing and token generation separate. Preserve the run ID, backend/build, model revision and quantization, hardware and device count, context depth, serving mode, concurrency, request rate, repeats, and run-specific settings. Distinguish cached-prefix extensions and post-first-token timing from native full-prefix runs. | Direct automated access to the Speed page returned HTTP 403 on November 21, 2026. The site advertises reference use and excludes training. Prefer a publisher-provided export with reviewed collection and display terms. [Robots policy](https://local-llm-benchmarks.dev/robots.txt) |
+| [Terminal-Bench-Local Core-19](https://kyuz0.github.io/terminal-bench-mini/) | Preserve suite revision and denominator, exact model and runtime, attempt count, and verified pass outcome. Keep legacy Mini-20 runs in a separate cohort. | Start with commit-pinned structured results from the publisher. The repository notice documents locally produced result artifacts and separately identifies the license for vendored tasks. Review the result reuse scope before public release. [Results repository](https://github.com/kyuz0/terminal-bench-mini/tree/main/results/suites) · [Provenance notice](https://github.com/kyuz0/terminal-bench-mini/blob/main/NOTICE.md) |
+
 ## Import source-reported GPU inference trials
 
 Use one `inference_trials` row per source-reported metric or outcome. Every row needs a distinct `id`, a `source` that refers to a captured probe in the same bundle, the exact table, row or section `locator`, an `outcome`, and `qualification` describing what the evidence can establish. The probe records the source URL. Use a pinned document or revision URL when available.
