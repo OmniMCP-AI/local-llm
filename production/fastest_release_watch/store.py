@@ -47,18 +47,23 @@ def record(database, mode, observed_at, releases=(), error=None):
 
 
 def snapshot(database, as_of):
-    mode = last_attempt = last_error = last_success = None
+    status = None
     rows = []
     if database.exists():
         with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as db, db:
             db.execute("BEGIN")
             if db.execute("SELECT 1 FROM sqlite_schema WHERE name = 'source_status'").fetchone():
-                mode, last_attempt, last_error, last_success = db.execute(
+                status = db.execute(
                     "SELECT mode, last_attempt, last_error, last_success FROM source_status",
                 ).fetchone()
                 rows = db.execute(
                     "SELECT observed_at, document FROM release_revision ORDER BY observed_at DESC, rowid DESC",
                 ).fetchall()
+    return build_snapshot(as_of, status, rows)
+
+
+def build_snapshot(as_of, status, rows):
+    mode, last_attempt, last_error, last_success = status or (None, None, None, None)
     stale = last_success is None or timestamp(as_of) - timestamp(last_success) > STALE_AFTER
     return {
         "schema": "fastest.ai/runtime-release-watch/v1",

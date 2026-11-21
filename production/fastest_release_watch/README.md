@@ -1,14 +1,14 @@
 # llama.cpp release watch
 
-Refresh one official GitHub releases page into a local SQLite history. Use the
+Refresh one official GitHub releases page into PostgreSQL. Use the
 review report to see the last successful refresh, upstream edits and superseded
 releases, and authored notes for exact card configurations.
 
 ## Run a fixture replay
 
 Run from `production/` with Python 3.11 or later. The supplied fixture contains
-synthetic releases and a sample suggested technique. Use a separate state file
-for live runs.
+synthetic releases and a sample suggested technique. The explicit `--db PATH`
+option also opens existing SQLite histories.
 
 ```sh
 python3 -B -m fastest_release_watch --db watch-demo.sqlite3 refresh \
@@ -21,12 +21,24 @@ The reporter writes to standard output. Select `html`, `markdown`, or `json`.
 Save or publish those public review views through the project's normal
 publishing process. `--as-of` sets the freshness check clock.
 
-## Refresh the live feed
+## Refresh the live feed in PostgreSQL
+
+Run from `production/` with `psql` on your path. Point `FASTEST_DATABASE_URL` at
+the project PostgreSQL database using a libpq connection string or configured
+service. The initial migration needs permission to create the watcher schema.
+Refreshes need write access to that schema.
 
 ```sh
-python3 -B -m fastest_release_watch --db watch.sqlite3 refresh
-python3 -B -m fastest_release_watch --db watch.sqlite3 report
+export FASTEST_DATABASE_URL='service=fastest-publisher'
+python3 -B -m fastest_release_watch --postgres migrate
+python3 -B -m fastest_release_watch --postgres refresh
+python3 -B -m fastest_release_watch --postgres report
 ```
+
+The migration creates the `fastest_release_watch` schema. Reports can use a
+read-only login with `USAGE` on the schema and `SELECT` on `source_status` and
+`release_revision`. Use separate databases for PostgreSQL fixture replays and
+live refreshes.
 
 The source allowlist contains the public [llama.cpp GitHub releases
 endpoint](https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1).
@@ -45,7 +57,7 @@ show the last attempt, any latest error, and the last successful refresh. A
 success older than 24 hours is stale. Late replay cannot advance the success
 timestamp or re-promote a previously recorded revision. The bounded feed window
 covers releases observed by the watcher. Older releases already observed remain
-in the local history as they fall out of the page.
+in the database as they fall out of the page.
 
 Each retained revision is keyed by repository, release ID and a digest of
 selected release fields. Changes to the tag, notes, release properties or
@@ -76,9 +88,11 @@ approved benchmark service to publish measurements.
 
 For `fastest_ai_verified`, add a `retest` object with canonical
 `baseline_release_id` and `tuned_release_id` UUIDs for two existing measured
-benchmark releases. Set `FASTEST_DATABASE_URL` to a read-only release-service
-login. Use `--evidence-origin https://benchmarks.example` for a review document
-served separately from its evidence. Both observations must have the same
+benchmark releases. The PostgreSQL report login also needs access to the
+approved release reader. With SQLite watcher history, set `FASTEST_DATABASE_URL`
+to the read-only release-service login. For a review document served separately
+from its evidence, use `--evidence-origin https://benchmarks.example`. Both
+observations must have the same
 hardware revision and configuration, exact artifact, workload and metric
 contract. Their public fields must include matching `runtime_id`,
 `runtime_build`, `card_id`, `configuration_id`, `os_version`,
@@ -89,6 +103,9 @@ benchmark service provides their measurements and handles withdrawal. Re-render
 or remove distributed review copies after an evidence withdrawal.
 
 ## Test
+
+The PostgreSQL cases use the PostgreSQL command-line tools and a temporary
+Unix-socket cluster.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_release_watch.py -v

@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 import os
 from pathlib import Path
 import sqlite3
@@ -8,14 +9,18 @@ from fastest_release import ReleaseError, ReleaseStore
 
 from . import feed, store
 from .applicability import apply_notes
+from .postgres import PostgresStore, WatchStorageError
 from .render import render
 from .retest import evidence_origin
 
 
 def main():
     parser = argparse.ArgumentParser(description="Watch the official llama.cpp release feed")
-    parser.add_argument("--db", type=Path, required=True, help="Local SQLite history file")
+    storage = parser.add_mutually_exclusive_group(required=True)
+    storage.add_argument("--db", type=Path, help="Local SQLite history file")
+    storage.add_argument("--postgres", action="store_true", help="PostgreSQL history using FASTEST_DATABASE_URL")
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("migrate", help="Initialize PostgreSQL watcher storage")
     refresh = commands.add_parser("refresh")
     refresh.add_argument("--fixture", type=Path)
     refresh.add_argument("--observed-at", help="UTC observation time for fixture replay")
@@ -27,13 +32,23 @@ def main():
     args = parser.parse_args()
 
     try:
-        if args.command == "report":
+        database_url = os.environ.get("FASTEST_DATABASE_URL")
+        if args.postgres and not database_url:
+            raise ValueError("Set FASTEST_DATABASE_URL for PostgreSQL watcher storage")
+        postgres = PostgresStore(database_url) if args.postgres else None
+
+        if args.command == "migrate":
+            if postgres is None:
+                parser.error("migrate requires --postgres")
+            postgres.migrate()
+        elif args.command == "report":
             feed.timestamp(args.as_of)
-            database_url = os.environ.get("FASTEST_DATABASE_URL")
             read_release = ReleaseStore(database_url).read if database_url else None
-            report = apply_notes(store.snapshot(args.db, args.as_of), args.notes, read_release, args.evidence_origin or "")
+            history = postgres.snapshot(args.as_of) if postgres else store.snapshot(args.db, args.as_of)
+            report = apply_notes(history, args.notes, read_release, args.evidence_origin or "")
             print(render(report, args.format))
         else:
+            record = postgres.record if postgres else partial(store.record, args.db)
             if bool(args.fixture) != bool(args.observed_at):
                 raise ValueError("--fixture and --observed-at must be supplied together")
             observed_at = args.observed_at or feed.utc_now()
@@ -48,12 +63,12 @@ def main():
                 releases = feed.decode(body)
             except (OSError, ValueError) as error:
                 message = "Could not read the fixture" if isinstance(error, OSError) else str(error)
-                store.record(args.db, mode, observed_at, error=message)
+                record(mode, observed_at, error=message)
                 raise
-            store.record(args.db, mode, observed_at, releases)
+            record(mode, observed_at, releases)
     except (ReleaseError, TimeoutExpired):
         parser.exit(1, "Release watch: Could not read the approved benchmark release\n")
-    except (OSError, ValueError, sqlite3.Error) as error:
+    except (OSError, ValueError, sqlite3.Error, WatchStorageError) as error:
         parser.exit(1, f"Release watch: {error}\n")
 
 
