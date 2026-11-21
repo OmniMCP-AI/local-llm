@@ -403,6 +403,17 @@ test("a GPU photo stays on the exact board when the catalog also contains other 
   assert.equal(card("intel-arc-a770-8gb").photos, undefined);
   assert.equal(card("intel-arc-a770-16gb").photos.length, 3);
   assert.equal(card("nvidia-geforce-rtx-3080-12gb").photos, undefined);
+  const founders = card("nvidia-geforce-rtx-4060-ti-8gb").photos[0];
+  assert.match(founders.alt, /4060 Ti 8 GB Founders Edition/);
+  assert.equal(card("nvidia-geforce-rtx-4060-ti").photos[0].source, founders.source);
+  assert.equal(card("nvidia-geforce-rtx-4060-ti-16gb").photos, undefined);
+  for (const markdown of [false, true]) {
+    const release = "v1-1234567890abcdef";
+    const page = renderCard(hardwareCard(card("nvidia-geforce-rtx-4060-ti-8gb"), release, "cards"), {
+      release, pathname: `/catalog/${release}/cards/nvidia-geforce-rtx-4060-ti-8gb.${markdown ? "md" : "html"}`, markdown,
+    });
+    assert.ok(page.includes(founders.source) && page.includes(founders.author) && page.includes(founders.licenseUrl));
+  }
 });
 
 test("HP ZBook AI PC retains its exact SKU, shared memory and source-linked parts", async () => {
