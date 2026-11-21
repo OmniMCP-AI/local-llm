@@ -302,10 +302,12 @@ class ReleaseTest(unittest.TestCase):
             GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid),
                 fastest_release.read_evidence(uuid), fastest_prices.read_release(uuid) TO origin_reader;
         """)
+        image_plan = json.loads((FIXTURE.parents[1] / "fastest_image" / "plan.json").read_text(encoding="utf-8"))
 
         def replay(origin, host):
+            headers = {"Host": host} if host else {}
+
             def get(path, *, decode=True):
-                headers = {"Host": host} if host else {}
                 with urlopen(Request(origin + path, headers=headers), timeout=5) as response:
                     self.assertEqual(response.headers["Cache-Control"], "no-store")
                     return json.load(response) if decode else response.read().decode()
@@ -330,7 +332,17 @@ class ReleaseTest(unittest.TestCase):
             costs = get("/api/v1/calculator?scenario=illustrative")
             self.assertEqual(costs["options"]["upgrade"]["totals"]["nominal_cost"], "589.472")
             self.assertIn("589.472", get(costs["url"], decode=False))
-            return evidence, first, second, costs
+            with urlopen(Request(origin + "/image-pilot", headers=headers), timeout=5) as response:
+                report_path = response.geturl().removeprefix(origin)
+                self.assertRegex(report_path, r"^/image-pilot/[a-f0-9]{64}/image-pilot\.html$")
+                self.assertIn(b"Exact workflow", response.read())
+            report_base = report_path.removesuffix("image-pilot.html")
+            pilot = get(report_base + "image-pilot.json")
+            self.assertEqual(pilot["evidence_kind"], "planned")
+            self.assertEqual(pilot["workflow"], image_plan["workflow"])
+            workflow = get(report_base + image_plan["workflow"]["path"], decode=False)
+            self.assertEqual(sha256(workflow.encode("utf-8")).hexdigest(), image_plan["workflow"]["sha256"])
+            return evidence, first, second, costs, pilot
 
         with self.deployed_origin() as (origin, host):
             initial = replay(origin, host)
