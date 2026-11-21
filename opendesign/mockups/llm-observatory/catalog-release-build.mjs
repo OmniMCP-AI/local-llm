@@ -1,3 +1,4 @@
+import { guidanceVersion, profileGuidance } from "./catalog-guidance.mjs";
 import { runtimeOverview } from "./runtime-overview.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -121,7 +122,7 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
     hardware ?? readHardwareCatalog(directory),
   ]);
   const runtimes = JSON.parse(runtimeBytes);
-  const digest = sha256(Buffer.concat([Buffer.from("publisher-benchmark-dates-v1"), models.sourceBytes, models.identityBytes, runtimeBytes,
+  const digest = sha256(Buffer.concat([Buffer.from("publisher-benchmark-dates-v1:" + guidanceVersion), models.sourceBytes, models.identityBytes, runtimeBytes,
     Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : []),
     ...(models.supplement?.projectionSha256 ? [Buffer.from(models.supplement.projectionSha256, "hex")] : [])]));
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
@@ -150,7 +151,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     ids.add(row.id);
     const key = modelShard(row.id);
     if (!shards.has(key)) shards.set(key, []);
-    shards.get(key).push({ ...row, identity: identities[row.id], ...(ranks.has(row.id) && {
+    shards.get(key).push({ ...row, guidance: profileGuidance("models", row), identity: identities[row.id], ...(ranks.has(row.id) && {
       discovery: ranks.get(row.id), discoveryCapture: { capturedAt, source: rankingSource },
     }) });
   }
@@ -164,6 +165,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
   const reviewed = Object.values(identities);
   const manifest = {
     release,
+    guidanceVersion,
     ...(snapshotId && {
       snapshotId,
       discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length },
@@ -190,10 +192,10 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
   const topologyByMachine = new Map(topologies?.map(({ id, revision }) => [id, revision]));
   const machines = hardware.catalog.machines.map(row => {
     const topologyRevision = topologyByMachine.get(row.id);
-    return topologyRevision ? { ...row, topologyRevision } : row;
+    return { ...row, guidance: profileGuidance("machines", row), ...(topologyRevision && { topologyRevision }) };
   });
-  return { manifest, shards, hardware: { ...hardware, catalog: { ...hardware.catalog, machines } },
-    runtimes, licenseNotice: source.licenseNotice };
+  return { manifest, shards, hardware: { ...hardware, catalog: { ...hardware.catalog, cards: hardware.catalog.cards.map(row => ({ ...row, guidance: profileGuidance("cards", row) })), machines } },
+    runtimes: runtimes.map(row => ({ ...row, guidance: profileGuidance("runtimes", row) })), licenseNotice: source.licenseNotice };
 }
 
 export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }, { catalogApi = true } = {}) {

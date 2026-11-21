@@ -922,3 +922,37 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     await assert.rejects(readFile(join(root, "models/Corianas/1.3b." + ext), "utf8"), { code: "ENOENT" });
   }
 });
+
+test("profile guidance links reviewed source facts and states evidence gaps across exports", async (t) => {
+  const { request, readData } = await buildFixture(t);
+  const cases = [
+    ["cards/amd-instinct-mi100", "cards.json", "amd-instinct-mi100", "32 GB HBM2", "https://www.amd.com/en/products/specifications/accelerators.html"],
+    ["machines/cangemi-wrx90-dual-rtx-3090", "machines.json", "cangemi-wrx90-dual-rtx-3090", "128 GB DDR5 ECC RDIMM", "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/README.md#the-system-at-a-glance"],
+    ["models/ibm-granite/granite-4.2-3b", "ib.json", "ibm-granite/granite-4.2-3b", "3B dense", "https://huggingface.co/ibm-granite/granite-4.2-3b/blob/4e9c275e232f10211ec88644d106a1f6a1b60e06/README.md"],
+    ["runtimes/llama.cpp", "runtimes.json", "llama.cpp", "GGUF", "https://github.com/ggml-org/llama.cpp/blob/v1.0.0/README.md"],
+  ];
+  for (const [path, data, id, fact, source] of cases) {
+    const row = (await readData(data)).find(item => item.id === id);
+    assert.equal(row.guidance.version, "profile-guidance-v1");
+    assert.ok(row.guidance.strengths.some(item => item.text.includes(fact) && item.source === source));
+    assert.ok(row.guidance.limitations.some(item => item.text.includes("unavailable")));
+    for (const extension of ["html", "md"]) {
+      const response = await request(path + "." + extension);
+      assert.equal(response.status, 200);
+      const text = await response.text();
+      for (const value of ["Strengths", "Limitations", "profile-guidance-v1", fact, source]) {
+        assert.ok(text.includes(value), `${path}.${extension} missing ${value}`);
+      }
+    }
+  }
+});
+
+test("profiles without reviewed source facts disclose the guidance gap", async (t) => {
+  const { request, readData } = await buildFixture(t);
+  const id = "Corianas/1.3b";
+  const row = (await readData("co.json")).find(item => item.id === id);
+  assert.deepEqual(row.guidance.strengths, []);
+  const html = await (await request(`models/${id}.html`)).text();
+  assert.match(html, /Evidence unavailable for a reviewed strength/);
+  assert.match(html, /Tested local compatibility and inference performance are unavailable/);
+});
