@@ -18,7 +18,7 @@ COPY production/fastest_release/__init__.py production/fastest_release/__main__.
 COPY production/fastest_release_watch/__init__.py production/fastest_release_watch/applicability.py \
      production/fastest_release_watch/feed.py production/fastest_release_watch/postgres.py \
      production/fastest_release_watch/render.py production/fastest_release_watch/retest.py \
-     production/fastest_release_watch/store.py ./fastest_release_watch/
+     production/fastest_release_watch/review.py production/fastest_release_watch/store.py ./fastest_release_watch/
 COPY production/fastest_agent_task/__init__.py production/fastest_agent_task/__main__.py \
      production/fastest_agent_task/evidence.py production/fastest_agent_task/harness.py \
      production/fastest_agent_task/publication.py production/fastest_agent_task/task.json \
