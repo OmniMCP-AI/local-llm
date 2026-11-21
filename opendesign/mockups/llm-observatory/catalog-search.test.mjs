@@ -39,9 +39,10 @@ test("small and popular shelves preserve dated Hub ranks and resolvable reposito
 test("recent publisher records supplement existing repositories without duplicating search or changing ranks", async () => {
   const { source, discovery, supplementalModels } = await readCatalogModelFiles(fileURLToPath(new URL(".", import.meta.url)));
   const { all, recent, popular, small } = modelCollections(source.models, discovery, supplementalModels);
-  assert.equal(all.length, 19_196);
+  assert.equal(all.length, 19_197);
   assert.deepEqual(recent.map(({ id }) => id), [
-    "thinkingmachines/Inkling-2-Mini", "thinkingmachines/Inkling-2-Small", "moonshotai/Kimi-K3.1-Pro",
+    "thinkingmachines/Inkling-2-Mini", "thinkingmachines/Inkling-2-Small", "NousResearch/Arete-27B",
+    "moonshotai/Kimi-K3.1-Pro", "google/gemma-4-E2B-it", "google/gemma-4-E4B-it",
     "mistralai/Mistral-Large-4-1T-A52B", "ibm-granite/granite-4.2-3b",
   ]);
   const graniteId = "ibm-granite/granite-4.2-3b";
@@ -51,6 +52,14 @@ test("recent publisher records supplement existing repositories without duplicat
   assert.equal(granite[0].supplemental.revision, "4e9c275e232f10211ec88644d106a1f6a1b60e06");
   assert.deepEqual(popular.map(({ id }) => id), discovery.popular.map(({ id }) => id));
   assert.deepEqual(small.map(({ id }) => id), discovery.small.map(({ id }) => id));
+  for (const [id, tag] of [
+    ["google/gemma-4-E2B-it", "5.1B parameters"],
+    ["google/gemma-4-E4B-it", "8.0B parameters"],
+    ["NousResearch/Arete-27B", "Text generation"],
+  ]) {
+    const matches = queryModelCatalog(all, identities, { query: id, tag, license: "apache-2.0" });
+    assert.deepEqual(matches.rows.map(row => row.id), [id]);
+  }
   assert.deepEqual(queryModelCatalog(all, identities, {
     query: "MOONSHOTAI/KIMI-K3.1-PRO", license: "kimi-k3.1-pro", tag: "Image and text to text",
   }).rows.map(({ id }) => id), ["moonshotai/Kimi-K3.1-Pro"]);

@@ -89,6 +89,52 @@ const recentModels = [
       "d242ebedb53ffd7e26c220e3305665ca47e4e5267fa62ff4cdeb3953b8353c78"]],
 ];
 
+const gemmaAndAreteProfiles = [
+  {
+    id: "google/gemma-4-E2B-it",
+    revision: "4adf15748de9e1a0097b6274cee9c15836c41c37",
+    digest: "3e0608a6be80e3eb040a5aa6c76707809503deb85be6360184a118fb6156526c",
+    parameters: "2.3B effective parameters and 5.1B total",
+    inputs: "Text, image, audio",
+    benchmark: "LiveCodeBench v6",
+    score: "44%",
+    heading: "benchmark-results",
+    line: 92,
+  },
+  {
+    id: "google/gemma-4-E4B-it",
+    revision: "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+    digest: "b21e4f69614ccd77baa2f3797d05311040dee07b989cb9f0d25111aa4b605b2c",
+    parameters: "4.5B effective parameters and 8B total",
+    inputs: "Text, image, audio",
+    benchmark: "LiveCodeBench v6",
+    score: "52%",
+    heading: "benchmark-results",
+    line: 92,
+  },
+  {
+    id: "NousResearch/Arete-27B",
+    revision: "108f0afbdcfaa1ceeda4a635004304dfff6d4da2",
+    digest: "c22421177d0e1f47bc0d9428b672c78b0635778025350ef694f113b2bfb7fef1",
+    parameters: "27B parameter scale",
+    inputs: "Text",
+    benchmark: "Terminal-Bench v2.1",
+    score: "70%",
+    heading: "general-and-agentic-capabilities",
+    line: 155,
+  },
+];
+
+function assertGemmaOrAreteProfile(body, { id, revision, digest, parameters, inputs, benchmark, score, heading, line }) {
+  const card = `https://huggingface.co/${id}/blob/${revision}/README.md`;
+  for (const value of [id, card, digest, parameters, "Apache License 2.0", "https://www.apache.org/licenses/LICENSE-2.0",
+    "Input modalities", inputs, "Output modalities", "Publisher-reported benchmark results", benchmark, score,
+    "Unreported in model card", "Execution hardware", "Unknown", `${card}#${heading}`, `${card}#L${line}`]) {
+    assert.ok(body.includes(value), `${id} lacks ${value}`);
+  }
+  assert.doesNotMatch(body, /Small rank|[\d.]+B active/);
+}
+
 function assertReviewedModel(body, [id, revision, total, active, license, inputs = "Text, image", extra = []]) {
   for (const value of [id, `https://huggingface.co/${id}/blob/${revision}/README.md`, total, active, license,
     "Input modalities", inputs, "Output modalities", "2026-11-21", ...extra]) {
@@ -139,9 +185,20 @@ test("reviewed model cards retain pinned sources and llmfit counts", async (t) =
       assertPublisherScore(body, model);
     }
   }
-  assert.equal(manifest.supplement.repositories, 5);
-  assert.equal(manifest.supplement.publisherResults, 3);
+  assert.equal(manifest.supplement.repositories, 8);
+  assert.equal(manifest.supplement.publisherResults, 6);
   assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
+});
+
+test("compact Gemma and Arete cards publish selected scores from their own pinned model cards", async (t) => {
+  const { request } = await buildFixture(t);
+  for (const model of gemmaAndAreteProfiles) {
+    for (const ext of ["html", "md"]) {
+      const response = await request(`models/${model.id}.${ext}`);
+      assert.equal(response.status, 200);
+      assertGemmaOrAreteProfile(await response.text(), model);
+    }
+  }
 });
 
 test("rebuilding a withdrawn publisher evaluation changes the catalog pin and preserves other model metadata", async (t) => {
@@ -722,8 +779,8 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     assertExact5060TiBoard(html, markdown, board);
   }
   assert.equal(manifest.models.inventory, 19_192);
-  assert.equal(manifest.models.profiles, 305);
-  assert.equal(manifest.models.supplement.repositories, 5);
+  assert.equal(manifest.models.profiles, 308);
+  assert.equal(manifest.models.supplement.repositories, 8);
   assert.equal(manifest.models.popular, 300);
   assert.equal(manifest.models.small, 75);
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
@@ -764,7 +821,8 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   assert.deepEqual(published.source.models.find(({ id }) => id === "ibm-granite/granite-4.2-3b"),
     JSON.parse(await readFile(join(here, "catalog-models.json"), "utf8")).models
       .find(({ id }) => id === "ibm-granite/granite-4.2-3b"));
-  assert.deepEqual(published.supplementalModels.map(({ id }) => id).sort(), recentModels.map(([id]) => id).sort());
+  assert.deepEqual(published.supplementalModels.map(({ id }) => id).sort(),
+    [...recentModels.map(([id]) => id), ...gemmaAndAreteProfiles.map(({ id }) => id)].sort());
   for (const model of recentModels) {
     const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
       readFile(join(root, "models", model[0] + "." + ext), "utf8")));
@@ -773,6 +831,13 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     assertPublisherScore(html, model);
     assertPublisherScore(markdown, model);
     assertProfileFieldsAgree(html, markdown, model[0]);
+  }
+  for (const profile of gemmaAndAreteProfiles) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
+      readFile(join(root, "models", profile.id + "." + ext), "utf8")));
+    assertGemmaOrAreteProfile(html, profile);
+    assertGemmaOrAreteProfile(markdown, profile);
+    assertProfileFieldsAgree(html, markdown, profile.id);
   }
   for (const ext of ["html", "md"]) {
     const body = await readFile(join(root, "models/Qwen/Qwen2.5-0.5B-Instruct." + ext), "utf8");
