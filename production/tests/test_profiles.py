@@ -110,3 +110,65 @@ class ProfileRoutesTest(unittest.TestCase):
                 server.shutdown()
                 worker.join(timeout=5)
                 self.assertFalse(worker.is_alive())
+
+    def test_qwen_and_machine_profiles_link_to_the_pinned_text_pilot(self):
+        with make_server(None, port=0) as server:
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                with closing(http.client.HTTPConnection(*server.server_address, timeout=5)) as client:
+                    def get(path):
+                        client.request("GET", path)
+                        response = client.getresponse()
+                        return response.status, response.headers, response.read()
+
+                    status, headers, _ = get("/text-pilot")
+                    self.assertEqual(status, 307)
+                    report = headers["Location"]
+                    self.assertRegex(report, r"^/text-pilot/[a-f0-9]{64}/text-pilot\.html$")
+                    base = report.removesuffix("text-pilot.html")
+                    status, _, manifest = get(base + "manifest.json")
+                    self.assertEqual(status, 200)
+                    self.assertIn(sha256(manifest).hexdigest(), report)
+
+                    hashes = json.loads(manifest)["files"]
+                    self.assertEqual(set(hashes), {"text-pilot.html", "text-pilot.md", "text-pilot.json"})
+                    files = {}
+                    for name, digest in hashes.items():
+                        status, headers, body = get(base + name)
+                        self.assertEqual(status, 200, name)
+                        self.assertEqual(headers["Cache-Control"], "no-store")
+                        self.assertEqual(sha256(body).hexdigest(), digest)
+                        files[name] = body
+                    dataset = json.loads(files["text-pilot.json"])
+                    self.assertEqual(dataset["evidence_kind"], "planned")
+                    self.assertEqual(dataset["artifact"]["revision"], "bb5d59e06d9551d752d08b292a50eb208b07ab1f")
+                    self.assertEqual(dataset["runtime"]["revision"], "84a9bf2fc2875205f0806fbbfbb66dc67204094c")
+                    self.assertEqual([cell["id"] for cell in dataset["cells"]], ["apple-m4", "rtx-4090"])
+                    for cell in dataset["cells"]:
+                        self.assertEqual(cell["status"], "blocked")
+                        self.assertEqual(cell["attempts"], [])
+                        self.assertEqual(cell["quality"]["review_count"], 0)
+                        self.assertEqual(set(cell["metrics"]), {"prefill", "decode", "ttft", "first_visible_answer"})
+                        for metric in cell["metrics"].values():
+                            self.assertEqual(metric["status"], "missing")
+                            self.assertEqual(metric["sample_count"], 0)
+                            self.assertIsNone(metric["value"])
+                        for extension in ("html", "md"):
+                            page = files[f"text-pilot.{extension}"].decode()
+                            self.assertIn(cell["blocker"], page)
+                            self.assertIn("事实保真", page)
+                    self.assertIn(b'href="./text-pilot.md">Markdown</a>', files["text-pilot.html"])
+                    self.assertEqual(get(base + "private.json")[0], 404)
+
+                    _, index, _ = get("/profiles")
+                    profile_base = index["Location"].removesuffix("index.html")
+                    for profile in ("models/qwen2.5-7b-instruct", "machines/apple-m4", "machines/rtx-4090"):
+                        for extension in ("html", "md"):
+                            status, _, body = get(f"{profile_base}{profile}.{extension}")
+                            self.assertEqual(status, 200)
+                            self.assertIn(b"/text-pilot", body)
+            finally:
+                server.shutdown()
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())

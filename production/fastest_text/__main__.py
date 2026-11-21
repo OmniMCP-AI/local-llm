@@ -72,13 +72,18 @@ def render(dataset, data_hash):
         '<link rel="alternate" type="text/markdown" href="./text-pilot.md">',
         '<main><h1>Two-machine text pilot</h1>',
         f"<p>{escape(label)}</p>",
-        '<p><a href="./text-pilot.json">Typed data</a> · <a href="./manifest.json">Manifest</a></p>',
+        '<p><a href="./text-pilot.md">Markdown</a> · <a href="./text-pilot.json">Typed data</a> · '
+        '<a href="./manifest.json">Manifest</a></p>',
     ]
 
     def paragraph(value, lang=None):
         md.append(markdown_text(value))
         lang_attr = f' lang="{lang}"' if lang else ""
         html.append(f"<p{lang_attr}>{escape(value)}</p>")
+
+    def source_link(label, url):
+        md.append(f"[{label}]({url})")
+        html.append(f'<p><a href="{escape(url)}">{escape(label)}</a></p>')
 
     def heading(value):
         md.append(f"## {markdown_text(value)}")
@@ -106,10 +111,12 @@ def render(dataset, data_hash):
     paragraph(f"Initial access check recorded on {dataset['access_checked_on']}.")
     heading("Fixed-token throughput")
     paragraph(f"{artifact['repository']} at {artifact['revision']}, {artifact['quantization']}, {artifact['license']}.")
+    source_link("Pinned model files", artifact["source"])
     paragraph(f"Tokenizer uses the {artifact['tokenizer']}.")
     for shard in artifact["shards"]:
         paragraph(f"{shard['path']} · SHA-256 {shard['sha256']}")
     paragraph(f"{runtime['name']} {runtime['tag']} at {runtime['revision']}. Protocol {protocol['id']}.")
+    source_link("Pinned runtime source", runtime["source"])
     paragraph(f"Goal per machine: {protocol['warm_samples_per_phase']} warm samples per phase.")
     for item in ("warmup", "cache", "load", "input"):
         paragraph(protocol[item])

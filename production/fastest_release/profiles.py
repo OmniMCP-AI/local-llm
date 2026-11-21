@@ -10,6 +10,7 @@ from uuid import UUID
 
 from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import PACKAGE as IMAGE_PACKAGE
+from fastest_text import TEXT_PILOT_ROUTE
 from fastest_text.__main__ import PLAN_PATH as TEXT_PLAN
 
 from .artifacts import _markdown_text, _source_url
@@ -19,6 +20,9 @@ MODELS = {
     "qwen2.5-7b-instruct": ("Qwen2.5 7B Instruct", TEXT_PLAN),
     "sdxl-turbo": ("SDXL Turbo", IMAGE_PACKAGE / "plan.json"),
 }
+
+
+TEXT_PILOT_LABEL = "Two-machine text pilot and Chinese task rubric"
 
 
 RUN_ID = re.compile(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
@@ -380,10 +384,11 @@ class ProfileRelease:
             files = [artifact] if "sha256" in artifact else artifact["shards"]
             file_list = "".join(f"<li>{escape(file['path'])} · <code>{file['sha256']}</code></li>" for file in files)
             workflow = cohort["workflow"]
-            pilot_link = ""
             if workflow:
                 file_list += f"<li>Workflow <code>{workflow['sha256']}</code></li>"
                 pilot_link = f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot and exact workflow</a></p>'
+            else:
+                pilot_link = f'<p><a href="{TEXT_PILOT_ROUTE}">{TEXT_PILOT_LABEL}</a></p>'
             exclusions = []
             for item in cohort["exclusions"]:
                 link = f'<a href="{item["profile_url"]}">{escape(item["profile_name"])}</a>' if item["profile_url"] else "Source release"
@@ -425,6 +430,8 @@ class ProfileRelease:
             if cohort["workflow"]:
                 lines.append(f"- Workflow `{cohort['workflow']['sha256']}`")
                 lines.extend(["", f"[Two-machine image pilot and exact workflow]({IMAGE_PILOT_ROUTE})"])
+            else:
+                lines.extend(["", f"[{TEXT_PILOT_LABEL}]({TEXT_PILOT_ROUTE})"])
             lines.append("")
             primary = cohort["primary_metric"]
             if cohort["rows"]:

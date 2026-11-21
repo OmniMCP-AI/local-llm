@@ -18,6 +18,7 @@ from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import report_artifacts as image_report_artifacts
 from fastest_pilot_bundle import bundle_manifest, digest
 from fastest_prices import PriceError, PriceReleaseNotFound
+from fastest_text import TEXT_PILOT_ROUTE
 
 from . import CONTRIBUTOR_RECEIPT_PATH, ReleaseError, ReleaseNotFound
 from .advisor_page import ROUTE as ADVISOR_ROUTE, render as render_advisor
@@ -96,8 +97,25 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     image_manifest = bundle_manifest(image_report_id, image_files)
     image_base = f"{IMAGE_PILOT_ROUTE}/{digest(image_manifest)}/"
     image_files["manifest.json"] = image_manifest
-    image_types = {"html": CONTENT_TYPES["benchmark.html"], "md": CONTENT_TYPES["benchmark.md"],
+    text_manifest = default_goals.text_artifact("manifest.json")
+    text_base = f"{TEXT_PILOT_ROUTE}/{digest(text_manifest)}/"
+    text_files = {name: default_goals.text_artifact(name) for name in (
+        "text-pilot.html", "text-pilot.md", "text-pilot.json", "manifest.json",
+    )}
+    pilot_redirects = {
+        IMAGE_PILOT_ROUTE: image_base + "image-pilot.html",
+        TEXT_PILOT_ROUTE: (
+            f"/goals/{goals.release_id}/text-pilot.html" if goals.text["evidence_kind"] == "measured"
+            else text_base + "text-pilot.html"
+        ),
+    }
+    pilot_types = {"html": CONTENT_TYPES["benchmark.html"], "md": CONTENT_TYPES["benchmark.md"],
                    "json": "application/json", "txt": "text/plain; charset=utf-8"}
+    pilot_files = {
+        base + name: (content, pilot_types[name.rsplit(".", 1)[1]])
+        for base, files in ((image_base, image_files), (text_base, text_files))
+        for name, content in files.items()
+    }
     cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader)
     api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader, cost_reader=cost_reader)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
@@ -152,12 +170,10 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(status, body, content_type)
             if path == "/profiles/interaction.js":
                 return self._respond(200, profile_script, "text/javascript; charset=utf-8")
-            if path == IMAGE_PILOT_ROUTE:
-                return self._respond(307, location=image_base + "image-pilot.html")
-            if path.startswith(image_base):
-                name = path.removeprefix(image_base)
-                if name in image_files:
-                    return self._respond(200, image_files[name], image_types[name.rsplit(".", 1)[1]])
+            if path in pilot_redirects:
+                return self._respond(307, location=pilot_redirects[path])
+            if path in pilot_files:
+                return self._respond(200, *pilot_files[path])
             if path in {"/profiles", "/profiles/current"}:
                 return self._respond(307, location=profiles.base + "/index.html")
             if path in profile_indexes:
@@ -188,6 +204,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<p><a href="/goals">Compare setups by goal</a></p>'
                     '<p><a href="/advisor">Guided advisor</a></p>'
                     '<p><a href="/costs">Compare text workload costs</a></p>'
+                    f'<p><a href="{TEXT_PILOT_ROUTE}">Two-machine text pilot</a></p>'
                     f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot</a></p>'
                     f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
