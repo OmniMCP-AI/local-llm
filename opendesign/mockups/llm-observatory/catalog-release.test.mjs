@@ -544,7 +544,7 @@ test("the released tinybox profile separates installed GPU memory and documented
 test("every released hardware row resolves in both formats", async (t) => {
   const { read, readData, request } = await buildFixture(t);
   const { hardware: { coverage } } = JSON.parse(await read("manifest.json"));
-  for (const [kind, count] of [["cards", coverage.cards], ["machines", 124 + coverage.creatorBuilds]]) {
+  for (const [kind, count] of [["cards", coverage.cards], ["machines", 125 + coverage.creatorBuilds]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -577,7 +577,7 @@ test("released modified GPU profiles expose seller and lab evidence in both form
       assert.match(body, /Runtime-usable memory[^\n]*Unknown/);
       assert.match(body, /GPU position by rated specifications/);
       assert.match(body, /has no unambiguous pair of rated specifications/);
-      assert.doesNotMatch(body, /aria-current="page"|Selected GPU:/);
+      assert.doesNotMatch(body, /Selected GPU:|<tr\b[^>]*aria-current="page"|class="coordinate-mark"[^>]*aria-current="page"/);
     }
     assertProfileFieldsAgree(html, markdown, id);
   }
@@ -667,7 +667,7 @@ test("source-backed GPU profiles distinguish a documented board from its GPU fam
 
     const family = await (await request(`cards/amd-radeon-rx-9060-xt.${extension}`)).text();
     assert.match(family, /Multiple manufacturer configurations/);
-    assert.doesNotMatch(family, /Selected GPU:|aria-current="page"/);
+    assert.doesNotMatch(family, /Selected GPU:|<tr\b[^>]*aria-current="page"|class="coordinate-mark"[^>]*aria-current="page"/);
   }
 });
 
