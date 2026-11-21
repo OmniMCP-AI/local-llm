@@ -46,6 +46,13 @@ LABELS = {
     "idle_kwh": "Idle energy (kWh)",
     "cooling_kwh": "External cooling energy (kWh)",
 }
+TARIFF_HEADING = "Reviewed tariff references"
+TARIFF_DESCRIPTION = "Quoted tariff components. Cost calculations require separately reviewed workload inputs."
+TARIFF_UNITS = {
+    "kwh": "kWh", "month": "month", "instance_hour": "instance hour",
+    "million_input_tokens": "million input tokens", "million_cached_input_tokens": "million cached input tokens",
+    "million_output_tokens": "million output tokens",
+}
 SERIES = (("#12565c", ""), ("#8f3b11", "10 4"), ("#37428f", "3 3"), ("#87416c", "9 3 2 3"))
 TITLE = "Compare text workload costs"
 
@@ -62,7 +69,7 @@ def _query(result):
     assumptions = result["assumptions"]
     selection = {"scenario": result["scenario"], "monthly_accepted": assumptions["monthly_accepted"],
                  "months": assumptions["months"]}
-    if result["estimate_kind"] == "reviewed":
+    if result["estimate_kind"] == "reviewed" or "tariff_references" in result:
         selection["revision"] = result["revision"]
     return urlencode(selection)
 
@@ -110,6 +117,17 @@ def _tables(result):
     if result["estimate_kind"] == "reviewed":
         yield ("Reviewed sources", ("Input", "Source", "Revision"), [
             (item.get("scope", "workload"), item["locator"], item["revision"]) for item in result["citations"]
+        ])
+
+    if "tariff_references" in result:
+        yield (TARIFF_HEADING, ("Provider and offering", "Market and region", "Component", "Rate",
+                               "Effective from", "Effective until (exclusive)", "Qualification",
+                               "Source", "Source checked (UTC)", "Tariff revision"), [
+            (f'{row["provider"]} · {row["offering"]}', f'{row["market"]} · {row["region"]}', row["component"],
+             f'{row["currency"]} {row["amount"]} / {TARIFF_UNITS[row["unit"]]}',
+             row["effective_from"], row["effective_until"], row["qualification"],
+             (row["source"], row["citation"]["locator"]), row["checked_at"], row["revision"])
+            for row in result["tariff_references"]["references"]
         ])
 
     yield (f"Cost at selected volume ({currency})", ("Metric", *OPTION_LABELS.values()), [
@@ -208,11 +226,25 @@ def _curve(result):
     )
 
 
+def _html_cell(value):
+    if isinstance(value, tuple):
+        label, url = value
+        return f'<a href="{escape(url)}">{escape(label)}</a>'
+    return escape(_show(value))
+
+
+def _markdown_cell(value):
+    if isinstance(value, tuple):
+        label, url = value
+        return f"[{markdown_text(label)}](<{url.replace('|', '%7C')}>)"
+    return markdown_text(_show(value))
+
+
 def _html_table(columns, rows, heading):
     headers = "".join(f'<th scope="col">{escape(column)}</th>' for column in columns)
     cells = "".join(
         f'<tr><th scope="row">{escape(_show(row[0]))}</th>'
-        + "".join(f"<td>{escape(_show(value))}</td>" for value in row[1:]) + "</tr>"
+        + "".join(f"<td>{_html_cell(value)}</td>" for value in row[1:]) + "</tr>"
         for row in rows
     )
     return (f'<div class="table-wrap" role="region" aria-label="{escape(heading)}" tabindex="0">'
@@ -233,7 +265,8 @@ def _render_html(result, query):
             section = f'<h2>Cumulative cost ({result["inputs"]["price_basis"]["currency"]})</h2>{_curve(result)}'
             sections.append(section + f"<details><summary>{escape(title)}</summary>{table}</details>")
         else:
-            sections.append(f"<h2>{escape(title)}</h2>{table}")
+            note = f"<p>{TARIFF_DESCRIPTION}</p>" if title == TARIFF_HEADING else ""
+            sections.append(f"<h2>{escape(title)}</h2>{note}{table}")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{TITLE} · fastest.ai</title>
@@ -287,7 +320,9 @@ def render(result, path):
         "— indicates an unavailable value or a charge outside the option’s scope.",
     ]
     for title, columns, rows in _tables(result):
-        sections.extend((f"## {markdown_text(title)}",
-                         "\n".join("| " + " | ".join(markdown_text(_show(value)) for value in row) + " |"
-                                   for row in (columns, ("---",) * len(columns), *rows))))
+        sections.append(f"## {markdown_text(title)}")
+        if title == TARIFF_HEADING:
+            sections.append(TARIFF_DESCRIPTION)
+        sections.append("\n".join("| " + " | ".join(map(_markdown_cell, row)) + " |"
+                                  for row in (columns, ("---",) * len(columns), *rows)))
     return "\n\n".join(sections) + "\n"

@@ -44,6 +44,8 @@ def main(argv=None):
     serve.add_argument("--goal-cohort", type=Path, action="append", default=[],
                        help="Keep a reviewed goals cohort available. The last manifest becomes current.")
     serve.add_argument("--cost-scenario", type=Path, help="Read a reviewed cost scenario for the public evidence view.")
+    serve.add_argument("--cost-tariff-references", type=Path,
+                       help="Show reviewed tariff references in Costs without using them as calculation inputs.")
     serve.add_argument("--contributor-receipts", action="store_true",
                        help="Serve private contributor receipt links using the configured release reader.")
     serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
@@ -87,7 +89,8 @@ def main(argv=None):
                              goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1],
                              price_reader=price_reader, scaling_pair=args.scaling_pair, cost_scenario=args.cost_scenario,
                              contributor_receipts=args.contributor_receipts,
-                             agent_task_release=args.agent_task_release) as server:
+                             agent_task_release=args.agent_task_release,
+                             cost_tariff_references=args.cost_tariff_references) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

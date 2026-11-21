@@ -10,7 +10,7 @@ import re
 
 from fastest_text.__main__ import PLAN_PATH
 
-from .reviewed import CostInputError, read_reviewed
+from .reviewed import CostInputError, read_reviewed, read_tariff_references
 
 METHOD = "same-text-workload-cost-v1"
 OPTION_LABELS = {"keep": "Keep machine", "upgrade": "Upgrade", "rental": "Rent GPU", "api": "Use API"}
@@ -315,7 +315,7 @@ def _sensitivity(scenario, workload, accepted, months):
     return rows
 
 
-def calculate(selection=None, *, reviewed_path=None, price_reader=None):
+def calculate(selection=None, *, reviewed_path=None, price_reader=None, tariff_references_path=None):
     """Return the versioned JSON-compatible comparison for public query selectors."""
     selection = {} if selection is None else selection
     if selection.keys() - PUBLIC_FIELDS:
@@ -348,6 +348,10 @@ def calculate(selection=None, *, reviewed_path=None, price_reader=None):
             "service_hours": "hours", "latency": "ms", "token_rates": "per million tokens",
         },
     }
+    if name == "evidence" and tariff_references_path is not None:
+        references = read_tariff_references(tariff_references_path)
+        if references is not None:
+            identity["tariff_references"] = references
     identity_bytes = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     with localcontext(ACCOUNTING):
         options = _options(scenario, workload, accepted, months)

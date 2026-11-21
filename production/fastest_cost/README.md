@@ -58,6 +58,53 @@ scenario from public calculations. Expired authorization also removes it.
 Links to the reviewed output pin the result revision for the chosen demand
 and horizon. A changed or retired revision returns 404 on replay.
 
+## Configure reviewed tariff references
+
+Start the release server from `production/` with the optional reference
+manifest.
+
+```sh
+python3 -B -m fastest_release serve --cost-tariff-references /private/reviewed-tariffs.json
+```
+
+Costs shows approved components in the **Public evidence** view. The same
+`tariff_references` block appears in `/costs.json` and `/api/v1/calculator`.
+The references keep their source currency, billing units, effective dates
+and eligibility terms. A workload comparison still requires separate approved
+inputs through `--cost-scenario`. For example, a time-of-use rate requires an
+energy allocation by band, and a quoted rental base rate requires evidence
+of applicable billing charges and same-task service capacity.
+
+Use an operator-reviewed JSON object with these fields.
+
+| Field | Required contents |
+| --- | --- |
+| `schema_version`, `revision` | Integer 1 and an immutable manifest revision. Change it when updating the reviewed components. |
+| `authorization` | The same `status`, `decision_id` and UTC `expires_at` fields as the reviewed scenario. This decision covers every approved component in the manifest. |
+| `references` | Up to 128 separately cited tariff components reviewed for public display. Each has a unique `id`. |
+
+Each component has `id`, `kind`, `provider`, `offering`, `revision`,
+`market`, `region`, `currency`, `amount`, `unit`, `component`,
+`effective_from`, `effective_until`, `qualification`, `source`,
+`checked_at` and `citation`. For PostgreSQL-derived references, join the
+candidate to its captured source probe and batch in the private intake.
+Keep the original amount as a decimal string and the original billing unit
+from [the tariff intake schema](../fastest_intake/README.md). Copy each
+known effective date as `YYYY-MM-DD` or use null for an unspecified date.
+Use a public source name for `source` and the batch's check time in UTC
+`YYYY-MM-DDTHH:MM:SSZ` for `checked_at`. The `citation` object contains
+the exact public HTTPS `locator` and the component's tariff `revision`.
+Include public fields approved for export and keep raw intake packets
+private.
+
+The server reads the manifest on each evidence request. Replace it
+atomically after review. Effective dates apply from the start date through
+the day before the end date, evaluated against the current UTC date.
+Remove individual components by replacing the manifest. Setting
+`authorization.status` to `withdrawn` or reaching `expires_at` removes
+the entire block. Exact links return 404 once their displayed revision is
+retired.
+
 ## Accounting assumptions
 
 - Service uses one simultaneous request. Required attempts round up from the requested accepted tasks divided by the expected acceptance rate. Rejected attempts consume time, energy and API tokens. Capacity uses the allowed active hours, time per attempt and acceptance rate, rounding down to whole attempts and accepted tasks. Active hours must fit the utilization limit and, for rental, leave room for paid idle. Quality, privacy, p95 completion latency and capacity must all qualify for a comparable operating cost.

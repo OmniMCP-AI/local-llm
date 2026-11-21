@@ -72,6 +72,23 @@ PRICE_OFFER["properties"].update({
     "availability": {"type": "string", "description": "Availability at the pinned release date."},
     "expires_at": {"type": ["string", "null"], "format": "date-time"},
 })
+TARIFF_REFERENCES = _object({
+    "schema_version": {"type": "integer", "const": 1},
+    "revision": "string",
+    "authorization": _object({
+        "status": {"type": "string", "const": "approved"}, "decision_id": UUID_PARAM,
+        "expires_at": {"type": "string", "format": "date-time"},
+    }),
+    "references": _array(_object({
+        "id": "string", "kind": "string", "provider": "string", "offering": "string", "revision": "string",
+        "market": "string", "region": "string", "currency": "string", "amount": "string", "unit": "string",
+        "component": "string", "qualification": "string", "source": "string",
+        "effective_from": {"type": ["string", "null"], "format": "date"},
+        "effective_until": {"type": ["string", "null"], "format": "date"},
+        "checked_at": {"type": "string", "format": "date-time"},
+        "citation": _object({"locator": {"type": "string", "format": "uri"}, "revision": "string"}),
+    })),
+})
 
 PAGE = {
     "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 25},
@@ -181,9 +198,11 @@ def _rights(document):
 
 
 class PublicApi:
-    def __init__(self, store, profiles, profile_versions, goals, goal_versions, price_reader, *, cost_reader=calculate):
+    def __init__(self, store, profiles, profile_versions, goals, goal_versions, price_reader, *,
+                 cost_reader=calculate, tariff_references_enabled=False):
         self.price_reader = price_reader
         self.cost_reader = cost_reader
+        self.tariff_references_enabled = tariff_references_enabled
         self.store = store
         self.profiles = profiles
         self.profile_versions = profile_versions
@@ -271,6 +290,8 @@ class PublicApi:
         paths = {}
         for path, operation in self.operations.items():
             success = _object({"api_version": {"type": "string", "const": VERSION}, **operation.fields})
+            if path == BASE + "/calculator" and self.tariff_references_enabled:
+                success["properties"]["tariff_references"] = TARIFF_REFERENCES
             problem = _object({"api_version": "string", "error": "string"})
             paths[path] = {"get": {
                 "operationId": path.removeprefix(BASE + "/").replace("/", "_").replace("-", "_"),
@@ -428,7 +449,7 @@ class PublicApi:
             raise ReleaseNotFound(revision)
         selection = {"scenario": result["scenario"],
                      **_pick(result["assumptions"], "months", "monthly_accepted")}
-        if result["estimate_kind"] == "reviewed":
+        if result["estimate_kind"] == "reviewed" or "tariff_references" in result:
             selection["revision"] = result["revision"]
         exclusions = {key: option["service"]["reasons"] for key, option in result["options"].items()
                       if option["service"]["reasons"]}

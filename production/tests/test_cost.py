@@ -132,6 +132,46 @@ def reviewed_scenario():
     }
 
 
+def reviewed_tariff_references():
+    return {
+        "schema_version": 1,
+        "revision": "fixture-tariff-references-v1",
+        "authorization": {"status": "approved", "decision_id": "88392cd1-c0d7-45bc-9140-bdd4c01b6d4a",
+                          "expires_at": "2099-11-30T00:00:00Z"},
+        "references": [
+            {
+                "id": "fixture-on-peak", "kind": "electricity", "provider": "Fixture Electric",
+                "offering": "Residential time-of-use", "revision": "fixture-residential@1",
+                "market": "CA", "region": "Ontario", "currency": "CAD", "amount": "0.3100", "unit": "kwh",
+                "component": "On peak", "effective_from": "2020-01-01", "effective_until": "2099-12-01",
+                "qualification": "Weekdays 5–8 p.m. local time.", "source": "Utility rate schedule",
+                "checked_at": "2025-11-01T00:00:00Z",
+                "citation": {"locator": "https://example.test/electricity#time-of-use",
+                             "revision": "fixture-residential@1"},
+            },
+            {
+                "id": "fixture-monthly", "kind": "electricity", "provider": "Fixture Electric",
+                "offering": "Residential time-of-use", "revision": "fixture-residential@1",
+                "market": "CA", "region": "Ontario", "currency": "CAD", "amount": "24.00", "unit": "month",
+                "component": "Fixed service charge", "effective_from": "2020-01-01", "effective_until": "2099-12-01",
+                "qualification": "One charge per eligible customer account.", "source": "Utility rate schedule",
+                "checked_at": "2025-11-01T00:00:00Z",
+                "citation": {"locator": "https://example.test/electricity#monthly",
+                             "revision": "fixture-residential@1"},
+            },
+            {
+                "id": "fixture-cloud", "kind": "rental", "provider": "Fixture Cloud", "offering": "Fixture GPU Linux",
+                "revision": "fixture-cloud@1", "market": "US", "region": "West", "currency": "USD",
+                "amount": "0.52600", "unit": "instance_hour", "component": "Base compute",
+                "effective_from": "2025-01-01", "effective_until": None,
+                "qualification": "Linux on demand. Storage and transfer charges may apply.",
+                "source": "Cloud pricing catalog", "checked_at": "2025-11-01T00:00:00Z",
+                "citation": {"locator": "https://example.test/cloud#meter", "revision": "fixture-cloud@1"},
+            },
+        ],
+    }
+
+
 class CostHttpTests(unittest.TestCase):
     def test_html_markdown_and_json_use_the_same_revision_and_workload(self):
         query = "?scenario=illustrative&monthly_accepted=18000&months=12"
@@ -183,6 +223,97 @@ class CostHttpTests(unittest.TestCase):
                 self.assertEqual(retired["estimate_kind"], "unavailable")
                 self.assertIsNone(retired["options"]["api"]["totals"]["nominal_cost"])
                 self.assertNotIn("example.test", json.dumps(retired))
+
+    def test_reviewed_tariff_references_have_format_and_api_parity_without_pricing_the_workload(self):
+        with TemporaryDirectory(prefix="fastest-cost-test-") as root:
+            path = Path(root) / "tariffs.json"
+            manifest = reviewed_tariff_references()
+            path.write_text(json.dumps(manifest))
+            with cost_server(cost_tariff_references=path) as base:
+                def read(route):
+                    with urlopen(base + route, timeout=5) as response:
+                        self.assertEqual(response.headers["Cache-Control"], "no-store")
+                        return response.read().decode()
+
+                result = json.loads(read("/costs.json"))
+                block = result["tariff_references"]
+                self.assertEqual(block["revision"], "fixture-tariff-references-v1")
+                self.assertEqual(block["references"], manifest["references"])
+                calculator = json.loads(read("/api/v1/calculator"))
+                self.assertEqual(calculator["tariff_references"], block)
+                api = json.loads(read("/api/v1/openapi.json"))
+                schema = api["paths"]["/api/v1/calculator"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+                self.assertNotIn("tariff_references", schema["required"])
+                row_schema = schema["properties"]["tariff_references"]["properties"]["references"]["items"]
+                self.assertEqual(row_schema["properties"]["amount"]["type"], "string")
+                self.assertEqual(row_schema["properties"]["effective_until"]["type"], ["string", "null"])
+                self.assertEqual(calculator["revision"], result["revision"])
+                self.assertIn("revision=" + result["revision"], calculator["url"])
+                query = "?" + calculator["url"].partition("?")[2]
+                self.assertEqual(json.loads(read("/costs.json" + query)), result)
+                self.assertEqual(json.loads(read("/api/v1/calculator" + query)), calculator)
+                for route in ("/costs", "/costs.md"):
+                    content = read(route + query)
+                    for expected in (result["revision"], "Reviewed tariff references", "CAD 0.3100",
+                                     "CAD 24.00", "USD 0.52600", "instance hour", "2020-01-01", "2099-12-01",
+                                     "Weekdays 5–8 p.m. local time.", "Linux on demand.",
+                                     "https://example.test/electricity#time-of-use", "https://example.test/cloud#meter"):
+                        self.assertIn(expected, content)
+                    self.assertIn("revision=" + result["revision"], content)
+                base_result = calculate()
+                self.assertNotEqual(base_result["revision"], result["revision"])
+                self.assertEqual({key: value for key, value in result.items() if key not in
+                                  {"revision", "tariff_references"}}, {
+                                      key: value for key, value in base_result.items() if key != "revision"
+                                  })
+                self.assertEqual(json.loads(read("/costs.json?scenario=illustrative")),
+                                 calculate({"scenario": "illustrative"}))
+
+    def test_tariff_reference_effective_dates_and_authorization_retire_exact_replays(self):
+        with TemporaryDirectory(prefix="fastest-cost-test-") as root:
+            path = Path(root) / "tariffs.json"
+            scenario_path = Path(root) / "scenario.json"
+            scenario_path.write_text(json.dumps(reviewed_scenario()))
+            manifest = reviewed_tariff_references()
+            path.write_text(json.dumps(manifest))
+            with cost_server(cost_scenario=scenario_path, cost_tariff_references=path) as base:
+                def fetch(route):
+                    with urlopen(base + route, timeout=5) as response:
+                        return response.read().decode()
+
+                def assert_retired(query):
+                    for route in ("/costs", "/costs.md", "/costs.json", "/api/v1/calculator"):
+                        with self.assertRaises(HTTPError) as error:
+                            fetch(route + query)
+                        with error.exception as response:
+                            self.assertEqual(response.code, 404)
+                            self.assertNotIn("Fixture Electric", response.read().decode())
+
+                original = json.loads(fetch("/costs.json"))
+                original_query = "?revision=" + original["revision"]
+                manifest["references"][0]["effective_until"] = datetime.now(timezone.utc).date().isoformat()
+                manifest["references"][1]["effective_from"] = "2099-01-01"
+                path.write_text(json.dumps(manifest))
+                current = json.loads(fetch("/api/v1/calculator"))
+                self.assertEqual([row["id"] for row in current["tariff_references"]["references"]], ["fixture-cloud"])
+                for route in ("/costs", "/costs.md"):
+                    self.assertNotIn("Fixture Electric", fetch(route))
+                self.assertEqual(current["options"]["api"]["totals"]["nominal_cost"], "132.7104")
+                self.assertEqual(original["options"], current["options"])
+                assert_retired(original_query)
+
+                current_query = "?revision=" + current["revision"]
+                for authorization in ({"status": "withdrawn"}, {"expires_at": "2020-01-01T00:00:00Z"}):
+                    manifest["authorization"] = {**reviewed_tariff_references()["authorization"], **authorization}
+                    path.write_text(json.dumps(manifest))
+                    for route in ("/costs.json", "/api/v1/calculator"):
+                        retired = json.loads(fetch(route))
+                        self.assertNotIn("tariff_references", retired)
+                        self.assertNotIn("Fixture Cloud", json.dumps(retired))
+                        self.assertEqual(retired["options"], original["options"])
+                    for route in ("/costs", "/costs.md"):
+                        self.assertNotIn("Reviewed tariff references", fetch(route))
+                    assert_retired(current_query)
 
     def test_reviewed_bom_uses_the_exact_live_whole_build_price_rights(self):
         scenario = reviewed_scenario()

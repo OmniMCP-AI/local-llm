@@ -1,4 +1,4 @@
-"""Validate the operator's dated, rights-cleared cost inputs."""
+"""Validate the operator's dated, rights-cleared cost evidence."""
 
 from datetime import date, datetime, timezone
 from decimal import Context, Decimal, localcontext
@@ -23,10 +23,18 @@ OPERATION_FIELDS = {
     "api": "input_per_million cached_input_per_million output_per_million cached_input_ratio monthly_fee",
 }
 CONDITIONS = ("new", "used", "refurbished", "open_box")
+TARIFF_UNITS = {
+    "electricity": ("kwh", "month"),
+    "rental": ("instance_hour", "month"),
+    "api": ("million_input_tokens", "million_cached_input_tokens", "million_output_tokens", "month"),
+}
+TARIFF_TEXT = "id provider offering region component qualification source"
+TARIFF_FIELDS = (TARIFF_TEXT + " kind revision market currency amount unit effective_from effective_until "
+                 "checked_at citation")
 
 
 class CostInputError(ValueError):
-    """The operator's reviewed scenario cannot be loaded safely."""
+    """The operator's reviewed cost evidence cannot be loaded safely."""
 
 
 def require(condition, message):
@@ -124,6 +132,20 @@ def match_purchase(purchase, price_basis, config_revision, price_reader, now):
     return {"locator": offer["source_locator"], "revision": identifier}
 
 
+def _authorized(authorization, now, label):
+    keys(authorization, "status decision_id expires_at", f"{label} authorization")
+    require(authorization["status"] in ("approved", "withdrawn") and canonical_uuid(authorization["decision_id"])
+            and valid_expiry(authorization["expires_at"]), f"Invalid {label} publication authorization.")
+    return authorization["status"] == "approved" and datetime.fromisoformat(authorization["expires_at"]) > now
+
+
+def _validate_citation(citation, pinned, label):
+    revision(pinned)
+    keys(citation, "locator revision", f"{label} citation")
+    require(citation["revision"] == pinned and is_public_locator(citation["locator"]),
+            f"A {label} citation must identify the reviewed revision and public HTTPS locator.")
+
+
 def read_reviewed(path, workload, empty, price_reader):
     try:
         return _read_reviewed(json.loads(path.read_text(encoding="utf-8")), workload, empty, price_reader)
@@ -135,11 +157,8 @@ def _read_reviewed(record, workload, empty, price_reader):
     keys(record, "schema_version revision authorization workload price_basis options citations", "reviewed cost scenario")
     require(type(record["schema_version"]) is int and record["schema_version"] == 1, "Unsupported cost schema version.")
     authorization = record["authorization"]
-    keys(authorization, "status decision_id expires_at", "cost authorization")
-    require(authorization["status"] in ("approved", "withdrawn") and canonical_uuid(authorization["decision_id"])
-            and valid_expiry(authorization["expires_at"]), "Invalid cost publication authorization.")
     now = datetime.now(timezone.utc)
-    if authorization["status"] == "withdrawn" or datetime.fromisoformat(authorization["expires_at"]) <= now:
+    if not _authorized(authorization, now, "cost"):
         return None
     require(record["workload"] == {field: workload[field] for field in WORKLOAD_FIELDS},
             "The cost workload must match the pinned task, rubric, token mix and completion boundary.")
@@ -188,11 +207,7 @@ def _read_reviewed(record, workload, empty, price_reader):
 
     require(citations.keys() == expected.keys(), "Each cost input requires a scoped citation.")
     for scope, pinned in expected.items():
-        revision(pinned)
-        citation = citations[scope]
-        keys(citation, "locator revision", "cost citation")
-        require(citation["revision"] == pinned and is_public_locator(citation["locator"]),
-                "A cost citation must identify the reviewed revision and public HTTPS locator.")
+        _validate_citation(citations[scope], pinned, "cost")
     public_citations = [
         {"scope": scope, **citation} for scope, citation in {**citations, **purchase_citations}.items()
         if not scope.endswith(".purchase") or options[scope.split(".")[0]]["purchase"] is not None
@@ -202,3 +217,50 @@ def _read_reviewed(record, workload, empty, price_reader):
         "price_basis": {**basis, "source_path": citations["scenario"]["locator"]},
         "options": {**empty["options"], **options},
     }
+
+
+def _effective_date(value):
+    if value is None:
+        return None
+    require(isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value),
+            "Invalid tariff effective date.")
+    return date.fromisoformat(value)
+
+
+def _active_reference(row, now):
+    keys(row, TARIFF_FIELDS, "tariff reference")
+    require(all(plain_text(row[field]) for field in TARIFF_TEXT.split()), "Invalid tariff reference text.")
+    kind = row["kind"]
+    require(isinstance(kind, str) and row["unit"] in TARIFF_UNITS.get(kind, ()), "Invalid tariff billing unit.")
+    require(plain_text(row["market"]) and re.fullmatch(r"[A-Z]{2}", row["market"])
+            and plain_text(row["currency"]) and re.fullmatch(r"[A-Z]{3}", row["currency"]),
+            "Invalid tariff market or currency.")
+    amount = row["amount"]
+    require(plain_text(amount) and re.fullmatch(r"(?:0|[1-9][0-9]{0,11})(?:\.[0-9]+)?", amount),
+            "Tariff amounts require decimal strings in the original currency.")
+    require(valid_expiry(row["checked_at"]) and datetime.fromisoformat(row["checked_at"]) <= now,
+            "Invalid tariff source check time.")
+    _validate_citation(row["citation"], row["revision"], "tariff")
+    start, end = (_effective_date(row[field]) for field in ("effective_from", "effective_until"))
+    require(start is None or end is None or start < end, "Invalid tariff effective period.")
+    today = now.date()
+    return (start is None or start <= today) and (end is None or today < end)
+
+
+def read_tariff_references(path):
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        keys(record, "schema_version revision authorization references", "reviewed tariff references")
+        require(type(record["schema_version"]) is int and record["schema_version"] == 1,
+                "Unsupported tariff reference schema version.")
+        now = datetime.now(timezone.utc)
+        if not _authorized(record["authorization"], now, "tariff reference"):
+            return None
+        revision(record["revision"])
+        rows = record["references"]
+        require(isinstance(rows, list) and len(rows) <= 128, "Provide up to 128 tariff references.")
+        active = [row for row in rows if _active_reference(row, now)]
+        require(len({row["id"] for row in rows}) == len(rows), "Duplicate tariff reference ID.")
+        return {**record, "references": active} if active else None
+    except (OSError, ValueError) as error:
+        raise CostInputError(f"Invalid reviewed tariff references: {error}") from error
