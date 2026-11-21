@@ -8,8 +8,9 @@ import re
 from urllib.parse import quote
 from uuid import UUID
 
-from fastest_text.__main__ import PLAN_PATH as TEXT_PLAN
+from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import PACKAGE as IMAGE_PACKAGE
+from fastest_text.__main__ import PLAN_PATH as TEXT_PLAN
 
 from .artifacts import _markdown_text, _source_url
 
@@ -379,8 +380,10 @@ class ProfileRelease:
             files = [artifact] if "sha256" in artifact else artifact["shards"]
             file_list = "".join(f"<li>{escape(file['path'])} · <code>{file['sha256']}</code></li>" for file in files)
             workflow = cohort["workflow"]
+            pilot_link = ""
             if workflow:
                 file_list += f"<li>Workflow <code>{workflow['sha256']}</code></li>"
+                pilot_link = f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot and exact workflow</a></p>'
             exclusions = []
             for item in cohort["exclusions"]:
                 link = f'<a href="{item["profile_url"]}">{escape(item["profile_name"])}</a>' if item["profile_url"] else "Source release"
@@ -396,7 +399,7 @@ class ProfileRelease:
 <p>{escape('GGUF ' + artifact['quantization'] if 'shards' in artifact else 'Safetensors FP16')} · {escape(artifact['license'])}</p>
 <p>Runtime {escape(cohort['runtime']['name'])} at <code>{cohort['runtime']['revision']}</code>. The planned machine and backend vary together.</p>
 <details><summary>Exact files and ranking rules</summary><ul>{file_list}</ul><ul>{rules}</ul></details>
-{self.measurements(cohort, profile['kind'], selected)}{excluded_table}</section>""")
+{pilot_link}{self.measurements(cohort, profile['kind'], selected)}{excluded_table}</section>""")
         header = (f'<header><p><a href="{self.base}/index.html">Machine and model comparisons</a></p>'
                   f'<h1>{escape(profile["name"])}</h1><p>Release <code>{self.id}</code> · '
                   f'<a href="{json_url}">Typed comparison data</a> · <a href="{md_url}">Markdown</a></p></header>')
@@ -421,6 +424,7 @@ class ProfileRelease:
                 lines.append(f"- `{file['path']}` · `{file['sha256']}`")
             if cohort["workflow"]:
                 lines.append(f"- Workflow `{cohort['workflow']['sha256']}`")
+                lines.extend(["", f"[Two-machine image pilot and exact workflow]({IMAGE_PILOT_ROUTE})"])
             lines.append("")
             primary = cohort["primary_metric"]
             if cohort["rows"]:
