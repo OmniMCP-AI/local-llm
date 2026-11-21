@@ -7,11 +7,11 @@ node research-context-cli.mjs CURRENT_PAGES evaluate
 node research-context-cli.mjs CURRENT_PAGES suggest together-evaluation-methods
 ```
 
-Each proposal has a source revision, subject, facet, locator, rule digest and stable proposal ID. Article suggestions name the matching title or editorial summary field and cite the publication URL. Case suggestions cite the individual record and use its declared metric name. Explicit forecast markers can use the same record’s conditions and evidence class. When a dimension is ambiguous, the tool abstains. It never takes a case task from the article’s tags or prose. The reviewed tags, curator task prose and mapped dimension are evaluation targets. Model weights stay unchanged.
+Each proposal has a source revision, subject, facet, locator, rule digest and stable proposal ID. Article suggestions name the matching title or editorial summary field and cite the publication URL. Case suggestions cite the individual record and use its declared metric name. Explicit forecast markers can use the same record’s conditions and evidence class. When a dimension is ambiguous, the tool abstains. Case-task suggestions use record-local evidence. The reviewed article topics, case-task tags and mapped dimensions are evaluation targets. Model weights stay unchanged.
 
 ## Replay a rule change
 
-Update `context-suggestion-rules.json` or draft a copy and increment its version. The tool combines the scoped rule aliases with the released vocabulary’s aliases. The rule digest covers the engine version, rules and released vocabulary. A changed rule engine also needs a new rule release. Use `FASTEST_CONTEXT_RULES` to evaluate a draft.
+Update `context-suggestion-rules.json` or draft a copy and increment its version. The tool combines the scoped rule aliases with the released vocabulary’s aliases. The rule digest covers the engine version, rules and released vocabulary. A changed rule engine also needs a new rule release. Rules that omit `engineVersion` replay the original engine, which preserves prior reviewed releases and proposal IDs. Use `FASTEST_CONTEXT_RULES` to evaluate a draft or replay [frozen v1 rules](context-suggestion-rules-v1.json).
 
 ```sh
 FASTEST_CONTEXT_RULES=draft-rules.json node research-context-cli.mjs CURRENT_PAGES evaluate split.json
@@ -43,6 +43,8 @@ The files hold the approved editorial assignments and audit history for the sugg
 
 ## Rules v1 replay
 
+The results below use `FASTEST_CONTEXT_RULES=wiki/context-suggestion-rules-v1.json`.
+
 The default Pages research release `v1-09d6dff4b52d4427` contains nine development sources and four held-out sources across three publisher families. The held-out sources are two articles, one blog and one forum post. Three report English and one has no recorded language.
 
 | Facet | Subjects | Precision | Recall | Abstentions | Scope transfers |
@@ -53,10 +55,10 @@ The default Pages research release `v1-09d6dff4b52d4427` contains nine developme
 
 The default public holdout covers English and one unrecorded language. Guides and the approved llama-bench documentation example are in development. The four-source public replay measures agreement with the released annotations on that sample.
 
-## Operator-local replay
+## Rules v1 operator-local replay
 
 ```sh
-node research-context-cli.mjs CURRENT_PAGES evaluate-local
+FASTEST_CONTEXT_RULES=wiki/context-suggestion-rules-v1.json node research-context-cli.mjs CURRENT_PAGES evaluate-local
 ```
 
 The checked-in replay split extends the pinned Pages index with an `annotatedSources` allowlist from the local Graphify index. Pass a different split JSON as the next argument to replay another source. The private JSON report includes the annotation index SHA-256, Pages release, rule digest and exact held-out source IDs. It reports both language families and the language tags recorded in the input, including caption language tags. The command screens out withdrawn IDs and prefers the pinned Pages revision when a source appears in both inputs. Publication and assignment review require the existing release workflow. [Operator-local split](context-calibration-local-split.json)
@@ -91,7 +93,7 @@ The replay found zero article-to-case transfers across 108 task subjects. Note 0
 The Taiwan source `youtube/DEPF8rAprS4` was on the development side of the earlier local replay. Its own frozen-rules report covers one source and one family outside the default holdout counts. The case labels cover the available captions, whose final 67.2 seconds are missing relative to the listed duration. [Local note 042](../../../../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/042-DEPF8rAprS4.md)
 
 ```sh
-node research-context-cli.mjs CURRENT_PAGES evaluate-local wiki/context-calibration-zh-tw-regression-split.json
+FASTEST_CONTEXT_RULES=wiki/context-suggestion-rules-v1.json node research-context-cli.mjs CURRENT_PAGES evaluate-local wiki/context-calibration-zh-tw-regression-split.json
 ```
 
 | Recorded language | Sources | Article topic | Case task | Case dimension |
@@ -101,3 +103,33 @@ node research-context-cli.mjs CURRENT_PAGES evaluate-local wiki/context-calibrat
 The two generation labels matched the reported ordinary and draft-assisted generation records. The rules abstained on the retained-intelligence claim, which the local note marks as marketing with an undefined evaluation basis. The three Taiwan case records have zero annotated task labels.
 
 Both regional videos need an approved metadata revision to enter live suggestions. Applying a suggestion requires an explicit editor decision. The reviewed-release rollback commands above restore the immediate eligible predecessor. Benchmark eligibility still comes from the cohort, protocol and evidence.
+
+## Rules v2 regression replay
+
+The v2 engine treats a named electrical measurement such as “wall power” or “prefill power” as the dimension when prefill or decode describes the measurement phase. It matches the electrical phrase in the case metric label and retains that phrase and the record locator in the proposal. Explicit forecast evidence takes precedence. If another dimension such as memory also matches, the tool abstains. In the source note, the power readings at 7:53 and 7:59 have explicit W units. The index carries their metric labels and conditions. Daily consumption labels remain unresolved when the index lacks a clear electrical measurement phrase. [Local note 045](../../../../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/045-MhZABCEOUWY.md)
+
+The `zh-HK` case metric “fine-tuning efficiency improvement” supports the fine-tuning task at 0:35. The image-generation comparison supports a topic from the editorial summary at article scope. The three general-acceleration claims remain unassigned. The `zh-TW` editorial summary explicitly describes draft-assisted generation, which supports the runtime-tuning topic. Its three tasks and the marketing claim’s dimension still draw abstentions. These changes use the English annotation fields for both regional sources. [Local note 014](../../../../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/014-ao6B7GR8tQY.md), [Local note 042](../../../../docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/042-DEPF8rAprS4.md)
+
+```sh
+FASTEST_CONTEXT_RULES=wiki/context-suggestion-rules-v1.json node research-context-cli.mjs CURRENT_PAGES evaluate-local
+node research-context-cli.mjs CURRENT_PAGES evaluate-local
+node research-context-cli.mjs CURRENT_PAGES evaluate-local wiki/context-calibration-zh-tw-regression-split.json
+```
+
+Both rule versions used Pages research release `v1-09d6dff4b52d4427` and annotation index SHA-256 `323e3e34d1a5d522a66477ea14ba49e622eead0f079067edc273ff06186365f3`. The v2 rule digest is `7ef3305747a2713b8ad15ca436a521c0e101ec915de2b365496567986aea0c62`. The default local split keeps 18 sources in nine complete families, including the paired forecast cross-posts. This regression reuses previously evaluated annotations, including the documented `V045-P010` error. The v2 change has no independent holdout in this replay.
+
+| Replay and facet | v1 precision, recall, abstentions | v2 precision, recall, abstentions |
+| --- | --- | --- |
+| Local article topic | 4/4, 4/53, 15/18 | 5/5, 5/53, 14/18 |
+| Local case task | 7/7, 7/17, 102/108 | 8/8, 8/17, 101/108 |
+| Local case dimension | 91/92, 91/108, 16/108 | 94/94, 94/108, 14/108 |
+| `zh` case dimension | 9/10, 9/13, 3/13 | 11/11, 11/13, 2/13 |
+| `zh-HK` article topic | —, 0/3, 1/1 | 1/1, 1/3, 0/1 |
+| `zh-HK` case task | —, 0/1, 5/5 | 1/1, 1/1, 4/5 |
+| `zh-TW` article topic, on the separate split | —, 0/2, 1/1 | 1/1, 1/2, 0/1 |
+
+`V045-P010` changes from prefill to energy. Previous abstentions on `V045-P009` and `V021-P043` become energy suggestions. Both versions had zero article-to-case and forecast-to-measurement transfers. The public replay remained at 3/3 article-topic precision, 3/11 recall, and 2/4 abstentions, with no case subjects.
+
+A second regression replay put all 43 annotated sources in both the allowlist and replay set. Across 30 source families and 452 case records, dimension precision and recall moved from 343/350 and 343/452 to 352/356 and 352/452. Dimension abstentions fell from 102 to 96, and both scope-transfer counts stayed at zero.
+
+The editor CLI test stages an explicit unclassified decision in v1 and an accepted energy suggestion in v2 using an approved test fixture. Rolling back restores the v1 assignment and proposal ID. Live release and rollback continue to depend on eligible source revisions and an explicit editor review.
