@@ -189,6 +189,8 @@ class CostHttpTests(unittest.TestCase):
                 self.assertIn(result["options"]["upgrade"]["totals"]["nominal_cost"], content)
                 if extension == "":
                     self.assertIn("<svg", content)
+                    self.assertIn("Show point labels", content)
+                    self.assertIn("Ownership month: 0 · Cumulative cost:", content)
                     self.assertIn("scenario=illustrative&amp;monthly_accepted=18000&amp;months=12", content)
             with urlopen(base + "/costs") as response:
                 content = response.read().decode()

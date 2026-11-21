@@ -5,6 +5,7 @@ from html import escape
 import json
 from urllib.parse import urlencode
 
+from fastest_chart import chart_with_labels, point_details
 from fastest_text.__main__ import markdown_text
 
 from . import MAX_ACCEPTED, MAX_MONTHS, OPTION_LABELS
@@ -201,29 +202,39 @@ def _curve(result):
     span = high - low or 1
     width, height = 720, 245
     left, right, top, bottom = 104, 694, 22, 197
-    legend, paths = [], []
+    legend, paths, marks = [], [], []
+    currency = result["inputs"]["price_basis"]["currency"]
     for (key, label), (color, dash) in zip(OPTION_LABELS.items(), SERIES):
         if points[0][key] is None:
             continue
-        coords = " ".join(
-            f'{left + (right - left) * row["month"] / months:.2f},'
-            f'{bottom - (bottom - top) * (Decimal(row[key]) - low) / span:.2f}'
+        coordinates = [
+            (left + (right - left) * row["month"] / months,
+             bottom - (bottom - top) * (Decimal(row[key]) - low) / span)
             for row in points
-        )
+        ]
+        coords = " ".join(f"{x:.2f},{y:.2f}" for x, y in coordinates)
+        for (x, y), row in zip(coordinates, points):
+            amount = f"{row[key]} {currency}"
+            summary = f"{label} · Ownership month: {row['month']} · Cumulative cost: {amount}"
+            marks.append(f'<g class="chart-point" tabindex="0" aria-label="{escape(summary)}">'
+                         f'{point_details(x, y, summary, amount, end=x > 540)}'
+                         f'<circle cx="{x:.2f}" cy="{y:.2f}" r="3" fill="{color}"/></g>')
         paths.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/>')
         legend.append(f'<li><svg width="24" height="12" aria-hidden="true"><path d="M 1 6 H 23" '
                       f'stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/></svg>{escape(label)}</li>')
-    currency = escape(result["inputs"]["price_basis"]["currency"])
-    return (
-        f'<svg viewBox="0 0 {width} {height}" role="img" aria-labelledby="curve-title" class="curve">'
+    currency = escape(currency)
+    svg = (
+        f'<svg viewBox="0 0 {width} {height}" role="group" aria-labelledby="curve-title" class="curve">'
         f'<title id="curve-title">Cumulative nominal cost in {currency} by month. An exact table follows.</title>'
         f'<path d="M {left} {top} H {right} M {left} {top} V {bottom} H {right}" fill="none" stroke="#a2afb3"/>'
-        f'<g fill="currentColor" font-size="13"><text x="{left - 8}" y="{top + 4}" text-anchor="end">{high}</text>'
+        f'<g fill="currentColor" font-size="13"><text x="{left}" y="14">Cumulative cost ({currency})</text><text x="{left - 8}" y="{top + 4}" text-anchor="end">{high}</text>'
         f'<text x="{left - 8}" y="{bottom + 4}" text-anchor="end">{low}</text>'
         f'<text x="{left}" y="219" text-anchor="middle">Month 0</text>'
         f'<text x="{right}" y="219" text-anchor="end">Month {months}</text></g>'
-        + "".join(paths) + "</svg><ul class='legend'>" + "".join(legend) + "</ul>"
+        f'<text x="{(left + right) / 2}" y="239" text-anchor="middle">Ownership month</text>'
+        + "".join(paths) + "".join(marks) + "</svg>"
     )
+    return chart_with_labels(svg) + "<ul class='legend'>" + "".join(legend) + "</ul>"
 
 
 def _html_cell(value):

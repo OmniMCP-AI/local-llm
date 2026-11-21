@@ -8,6 +8,7 @@ import re
 from urllib.parse import quote
 from uuid import UUID
 
+from fastest_chart import chart_with_labels, point_details
 from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import PACKAGE as IMAGE_PACKAGE
 from fastest_text import TEXT_PILOT_ROUTE
@@ -321,24 +322,26 @@ class ProfileRelease:
         x_max = max(Decimal(1), *(Decimal(run["metrics"][secondary]["value"]) for run in rows))
         y_max = max(Decimal(1), *(Decimal(run["metrics"][primary]["value"]) for run in rows))
         points = []
+        horizontal, vertical = cohort["metrics"][secondary], cohort["metrics"][primary]
         for run in rows:
             x = 42 + 228 * Decimal(run["metrics"][secondary]["value"]) / x_max
             y = 150 - 120 * Decimal(run["metrics"][primary]["value"]) / y_max
-            values = ", ".join(f'{run["metrics"][metric]["value"]} {run["metrics"][metric]["unit"]}'
-                               for metric in (secondary, primary))
-            label = escape(f"{self.row_label(run, kind)} · {values}")
-            points.append(f'<a {self.run_selector(run, selected)} aria-label="{label}"><title>{label}</title>'
-                          f'<circle class="hit" cx="{x:.3f}" cy="{y:.3f}" r="14"/>'
+            values = [f'{run["metrics"][axis]["value"]} {run["metrics"][axis]["unit"]}'
+                      for axis in (secondary, primary)]
+            label = f"{self.row_label(run, kind)} · {horizontal['label']}: {values[0]} · {vertical['label']}: {values[1]}"
+            points.append(f'<a {self.run_selector(run, selected)} class="chart-point" aria-label="{escape(label)}">'
+                          f'{point_details(x, y, label, self.row_label(run, kind), end=x > 150)}'
+                          f'<circle class="hit" cx="{x:.3f}" cy="{y:.3f}" r="12"/>'
                           f'<circle class="mark" cx="{x:.3f}" cy="{y:.3f}" r="5"/></a>')
-        horizontal, vertical = cohort["metrics"][secondary], cohort["metrics"][primary]
-        return ("<figure><figcaption>Overview map</figcaption>"
-                '<svg class="overview-map" role="group" aria-label="Measured run overview" viewBox="0 0 300 180">'
-                '<path class="axis" d="M42 25 V150 H275"/><text x="32" y="166" font-size="9">0</text>'
-                f'<text x="270" y="166" text-anchor="end" font-size="9">{x_max}</text>'
-                f'<text x="36" y="34" text-anchor="end" font-size="9">{y_max}</text>'
-                + "".join(points) + '</svg>'
-                f'<p>Horizontal · {horizontal["label"]} ({horizontal["unit"]})<br>'
-                f'Vertical · {vertical["label"]} ({vertical["unit"]})</p></figure>')
+        svg = ('<svg class="overview-map" role="group" aria-label="Measured run overview" viewBox="0 0 300 193">'
+               f'<text x="42" y="16" font-size="10">{escape(vertical["label"])} ({escape(vertical["unit"])})</text>'
+               '<path class="axis" d="M42 25 V150 H275"/><text x="37" y="166" font-size="9">0</text>'
+               f'<text x="270" y="166" text-anchor="end" font-size="9">{x_max}</text>'
+               f'<text x="36" y="34" text-anchor="end" font-size="9">{y_max}</text>'
+               f'<text x="158" y="183" text-anchor="middle" font-size="10">{escape(horizontal["label"])} '
+               f'({escape(horizontal["unit"])})</text>' + "".join(points) + '</svg>')
+        return f"<figure><figcaption>Overview map</figcaption>{chart_with_labels(svg)}</figure>"
+
 
     def measurements(self, cohort, kind, selected):
         if not cohort["rows"]:

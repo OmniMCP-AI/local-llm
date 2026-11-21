@@ -6,6 +6,8 @@ from hashlib import sha256
 from html import escape
 import json
 
+from fastest_chart import chart_with_labels, point_details
+
 from .result import CITATION_METHOD, DAY_LABELS, RANGE_LABELS, REFRESH_METHOD
 
 
@@ -132,20 +134,32 @@ def _chart(result):
     low, high = min(values), max(values)
     height = high - low or 1
     circles = []
+    currency = escape(result["currency"])
     for offer, price in zip(points, values):
         day = offer["observed_at"][:10]
-        x = 30 + 580 * (date.fromisoformat(day) - start).days / span
-        y = 145 - 110 * float((price - low) / height)
-        label = f"{day} · {offer['seller']} · {offer['landed_price']} {result['currency']}"
-        circles.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="4"><title>{escape(label)}</title></circle>')
+        x = 64 + 546 * (date.fromisoformat(day) - start).days / span
+        y = 145 - 106 * float((price - low) / height)
+        label = f"{offer['seller']} · Quote date (UTC): {day} · Landed price: {price} {result['currency']}"
+        amount = f"{price} {result['currency']}"
+        circles.append(f'<g class="chart-point" tabindex="0" aria-label="{escape(label)}">'
+                       f'{point_details(x, y, label, amount, end=x > 400)}'
+                       f'<circle cx="{x:.2f}" cy="{y:.2f}" r="4"/></g>')
+    svg = (
+        '<svg viewBox="0 0 640 200" role="group" aria-label="Dated seller-day price dots" fill="#2355a0">'
+        f'<text x="64" y="19">Landed price ({currency})</text>'
+        '<path d="M 64 29 V 145 H 610" fill="none" stroke="#527190"/>'
+        f'<text x="58" y="149" text-anchor="end" font-size="12">{low}</text>'
+        + (f'<text x="58" y="43" text-anchor="end" font-size="12">{high}</text>' if high != low else "")
+        + f'<text x="64" y="170" font-size="12">{result["start"]}</text>'
+        f'<text x="610" y="170" text-anchor="end" font-size="12">{result["as_of"]}</text>'
+        '<text x="337" y="188" text-anchor="middle">Quote date (UTC)</text>'
+        f'{"".join(circles)}</svg>'
+    )
     return (
         "<figure><figcaption>Comparable observed quotes by UTC day. Exact values and gaps appear below.</figcaption>"
-        '<svg viewBox="0 0 640 180" role="img" aria-label="Dated seller-day price dots" fill="#2355a0">'
-        '<path d="M 30 24 V 145 H 610" fill="none" stroke="#527190"/>'
-        f'<text x="30" y="172">{result["start"]}</text>'
-        f'<text x="610" y="172" text-anchor="end">{result["as_of"]}</text>'
-        f'{"".join(circles)}</svg></figure>'
+        f"{chart_with_labels(svg)}</figure>"
     )
+
 
 
 def build_artifact(result, name):

@@ -410,7 +410,7 @@ function PricePage({ state, set, onEvidence }) {
         <p>{t("Illustrative US build quotes and Qwen2.5 7B decode results at 4K context.", "示例数据：美国整机报价与 Qwen2.5 7B 在 4K 上下文中的生成速度。")}</p></div></div>
       <div className="plot-shell"><CoordinatePlot title={t("Price and performance overview", "价格与性能概览")}
         xAxis={moneyAxis} yAxis={{ label: t("Decode throughput", "生成速度"), unit: "tok/s" }}
-        points={overview} selectedId={row.id} onSelect={id => set({ history: id })} /></div>
+        points={overview} labelsLabel={t("Show point labels", "显示数据点标签")} selectedId={row.id} onSelect={id => set({ history: id })} /></div>
       <div className="plot-foot">{t("Choose a point to see that setup’s price history below.", "选择数据点可在下方查看该配置的历史价格。")}</div>
     </article>
     <article className="panel price-panel">
@@ -422,7 +422,7 @@ function PricePage({ state, set, onEvidence }) {
       <div className="price-summary"><strong>{formatMoney(values.at(-1))}</strong><span><ArrowDownRight size={16} /> {t(change + "% over the period", "期间变化 " + change + "%")}</span></div>
       <div className="plot-shell"><CoordinatePlot title={t("Illustrative price history", "示例价格历史")}
         xAxis={{ label: t("Quote date", "报价日期"), unit: "UTC", zero: false, formatTick: value => shortDay.format(value) }}
-        yAxis={{ ...moneyAxis, zero: false }} points={history} kind="line" selectedId={history.at(-1)?.id} /></div>
+        yAxis={{ ...moneyAxis, zero: false }} points={history} labelsLabel={t("Show point labels", "显示数据点标签")} kind="line" selectedId={history.at(-1)?.id} /></div>
       <div className="plot-foot"><span>{t("8 sample observations, tax and shipping excluded", "8 个示例报价，不含税费和运费")}</span><button className="text-button" onClick={() => onEvidence(row)}>{t("Open setup evidence", "查看报价证据")} <ArrowUpRight size={15} /></button></div>
     </article>
   </div>;

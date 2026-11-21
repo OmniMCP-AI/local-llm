@@ -19,7 +19,9 @@ test("a shareable GPU matchup names the exact rated deltas and keeps missing rat
   assert.match(markdown, /RTX 5090 vs\. NVIDIA GeForce RTX 4090/);
   assert.match(markdown, /8 GB more nominal VRAM/);
   assert.match(markdown, /125 W higher rated graphics power/);
-  assert.match(markdown, /Rated memory bandwidth \| 1792 GB\/sec \| Unavailable/);
+  assert.match(markdown, /784 GB\/s higher rated memory bandwidth/);
+  assert.match(markdown, /Rated memory bandwidth \| 1792 GB\/sec \| 1008 GB\/sec/);
+  assert.match(markdown, /Architecture \| Unavailable \| Ada Lovelace/);
   assert.match(markdown, new RegExp("/catalog/" + pin + "/cards/" + right + "\\.html"));
   assert.match(markdown, /Matched performance, price and measured energy data are unavailable/);
   assert.equal(battlePair(records, "cards", left, left), null);
