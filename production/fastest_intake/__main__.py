@@ -23,6 +23,8 @@ def table_counts(store):
             'price_candidates', (SELECT count(*) FROM fastest_intake.price_candidate),
             'model_evaluations', (SELECT count(*) FROM fastest_intake.model_evaluation),
             'tariff_candidates', (SELECT count(*) FROM fastest_intake.tariff_candidate),
+            'tariff_reference_reviews', (SELECT count(*) FROM fastest_intake.tariff_reference_review),
+            'tariff_reference_withdrawals', (SELECT count(*) FROM fastest_intake.tariff_reference_withdrawal),
             'inference_trials', (SELECT count(*) FROM fastest_intake.inference_trial),
             'serving_capture_runs', (SELECT count(*) FROM fastest_intake.serving_capture_run),
             'serving_capture_attempts', (SELECT count(*) FROM fastest_intake.serving_capture_attempt),
@@ -130,6 +132,7 @@ def main():
     try:
         if args.command == "migrate":
             store._query(Path(__file__).with_name("schema.sql").read_text(encoding="utf-8"))
+            store._query((Path(__file__).parents[1] / "fastest_cost" / "schema.sql").read_text(encoding="utf-8"))
         elif args.command == "ingest":
             print(json.dumps(ingest(store, json.loads(args.source.read_text(encoding="utf-8")))))
         elif args.command == "ingest-image-pilot":

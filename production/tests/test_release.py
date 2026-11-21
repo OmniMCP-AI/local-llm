@@ -98,7 +98,7 @@ class ReleaseTest(unittest.TestCase):
         assert postgres.returncode is not None
 
     @contextmanager
-    def deployed_origin(self):
+    def deployed_origin(self, *options):
         image = os.environ.get("FASTEST_ORIGIN_TEST_IMAGE")
         if image:
             name = "fastest-origin-" + uuid4().hex
@@ -109,7 +109,7 @@ class ReleaseTest(unittest.TestCase):
                      "-p", f"127.0.0.1::{port}", "-e", f"PORT={port}",
                      "-e", "FASTEST_DATABASE_URL=host=/reader dbname=postgres user=origin_reader",
                      "--mount", f"type=bind,src={self.socket_path},dst=/reader,readonly",
-                     image, "--trusted-host", "origin.example"],
+                     image, "--trusted-host", "origin.example", *options],
                     check=True, capture_output=True, text=True, timeout=30,
                 )
                 for _ in range(100):
@@ -140,7 +140,7 @@ class ReleaseTest(unittest.TestCase):
 
         env = {**os.environ, "FASTEST_DATABASE_URL": self.database_url + " user=origin_reader"}
         with subprocess.Popen(
-            [sys.executable, "-m", "fastest_release", "serve", "--port", "0"],
+            [sys.executable, "-B", "-m", "fastest_release", "serve", "--port", "0", *options],
             cwd=FIXTURE.parents[1], env=env, stderr=subprocess.PIPE, text=True,
         ) as server:
             try:
@@ -1110,6 +1110,148 @@ for index in range(len(visible)):
 
         with api_server(reader, agent_task_release=pin) as server:
             asyncio.run(check(server.server_port))
+
+    def test_deployed_origin_serves_only_pinned_reviewed_tariff_references(self):
+        def invoke(module, *args, check=True):
+            result = subprocess.run(
+                [sys.executable, "-B", "-m", module, "--database-url", self.database_url, *args],
+                cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
+            )
+            if check:
+                self.assertEqual(result.returncode, 0, result.stderr)
+            return result
+
+        checked = "2025-11-01T12:30:00+08:00"
+        source = "private-intake-source"
+        expected_citation = "https://utility.example/schedule#off-peak"
+        row = {
+            "id": "fixture-power", "source": source, "locator": "private-candidate-locator",
+            "kind": "electricity", "provider": "Fixture Energy", "offering": "Residential Schedule A",
+            "revision": "fixture-schedule@1", "market": "CA", "region": "Ontario", "currency": "CAD",
+            "amount": "0.123450", "unit": "kwh", "component": "Off peak",
+            "effective_from": "2020-01-01", "effective_until": None,
+            "qualification": "Eligible homes outside weekday peak hours.",
+        }
+        bundle = {
+            "checked_at": checked, "note": "private-batch-note", "prices": [], "evaluations": [],
+            "sources": [{"source": source, "url": expected_citation, "status": "captured", "note": "private-probe-note"}],
+            "tariffs": [
+                row,
+                {**row, "id": "fixture-held", "amount": "8.00", "component": "Unreviewed rate"},
+                {**row, "id": "fixture-past", "effective_until": "2022-01-01"},
+                {**row, "id": "fixture-future", "effective_from": "2099-10-01"},
+            ],
+        }
+        path = self.socket_path.parent / "tariffs.json"
+        path.write_text(json.dumps(bundle), encoding="utf-8")
+        invoke("fastest_intake", "migrate")
+        batch = json.loads(invoke("fastest_intake", "ingest", path).stdout)["batch_id"]
+
+        selection = {"batch_id": batch, "source": source, "id": row["id"], "source_label": "Utility rate schedule"}
+        selected = [selection, {**selection, "id": "fixture-past"}, {**selection, "id": "fixture-future"}]
+        approval = {"schema_version": 1, "decision_id": str(uuid4()), "expires_at": "2099-11-30T00:00:00Z"}
+        review_path = self.socket_path.parent / "review.json"
+
+        def approve(candidates, *, check=True, **changes):
+            review_path.write_text(json.dumps({**approval, **changes, "candidates": candidates}), encoding="utf-8")
+            return invoke("fastest_cost", "approve", review_path, check=check)
+
+        rejected = approve([{**selection, "source": "wrong-source"}], check=False)
+        self.assertEqual(rejected.returncode, 1, rejected.stderr)
+        self.assertIn("captured tariff candidate", rejected.stderr)
+        expired = approve(selected, expires_at="2020-01-01T00:00:00Z", check=False)
+        self.assertEqual(expired.returncode, 1, expired.stderr)
+        self.assertIn("future UTC expiry", expired.stderr)
+        pin = approve(selected).stdout.strip()
+        self.assertRegex(pin, r"^[a-f0-9]{64}$")
+        self.assertEqual(approve(list(reversed(selected))).stdout.strip(), pin)
+        conflict = approve([{**selection, "source_label": "A different public label"}], check=False)
+        self.assertEqual(conflict.returncode, 1, conflict.stderr)
+        self.assertIn("decision ID already identifies a different tariff approval", conflict.stderr)
+        path.write_text(json.dumps({**bundle, "tariffs": [{**row, "amount": "0.29"}]}), encoding="utf-8")
+        later_batch = json.loads(invoke("fastest_intake", "ingest", path).stdout)["batch_id"]
+        next_pin = approve([{**selection, "batch_id": later_batch}],
+                           decision_id=str(uuid4())).stdout.strip()
+        self.assertNotEqual(next_pin, pin)
+
+        PriceStore(self.database_url).migrate()
+        self.store._query("""
+            CREATE ROLE origin_reader LOGIN;
+            CREATE ROLE ungranted_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_release, fastest_prices, fastest_cost_public TO origin_reader;
+            GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid), fastest_release.read_evidence(uuid),
+                fastest_prices.read_release(uuid), fastest_cost_public.read_tariff_references(text) TO origin_reader;
+            GRANT USAGE ON SCHEMA fastest_cost_public TO ungranted_reader;
+        """)
+        for role, query in (
+            ("origin_reader", "SELECT * FROM fastest_intake.tariff_candidate"),
+            ("origin_reader", "SELECT * FROM fastest_intake.tariff_reference_review"),
+            ("ungranted_reader", "SELECT fastest_cost_public.read_tariff_references(NULL)"),
+        ):
+            with self.subTest(role=role, query=query), self.assertRaisesRegex(ReleaseError, "permission denied"):
+                ReleaseStore(f"{self.database_url} user={role}")._query(query)
+
+        def get(origin, host, route, status=200):
+            def open_route():
+                return urlopen(Request(origin + route, headers={"Host": host} if host else {}), timeout=5)
+
+            if status == 200:
+                response = open_route()
+            else:
+                with self.assertRaises(HTTPError) as error:
+                    open_route()
+                response = error.exception
+            with response:
+                self.assertEqual(response.code, status)
+                self.assertEqual(response.headers["Cache-Control"], "no-store")
+                return response.read().decode()
+
+        with self.deployed_origin() as (origin, host):
+            base = json.loads(get(origin, host, "/costs.json"))
+            self.assertNotIn("tariff_references", base)
+        with self.deployed_origin("--cost-tariff-references-pin", pin) as (origin, host):
+            result = json.loads(get(origin, host, "/costs.json"))
+            block = result["tariff_references"]
+            self.assertEqual(block["revision"], pin)
+            self.assertEqual(block["authorization"], {"status": "approved", "decision_id": approval["decision_id"],
+                                                       "expires_at": approval["expires_at"]})
+            expected = {key: value for key, value in row.items() if key != "locator"}
+            expected.update(source="Utility rate schedule", checked_at="2025-11-01T04:30:00Z",
+                            citation={"locator": expected_citation, "revision": row["revision"]})
+            self.assertEqual(block["references"], [expected])
+            calculator = json.loads(get(origin, host, "/api/v1/calculator"))
+            self.assertEqual(calculator["tariff_references"], block)
+            routes = ("/costs", "/costs.md", "/costs.json", "/api/v1/calculator")
+            for route in routes:
+                content = get(origin, host, route + "?revision=" + result["revision"])
+                self.assertIn("0.123450", content)
+                self.assertIn(expected_citation, content)
+                for private in (batch, source, "private-probe-note", "private-batch-note", row["locator"], "fixture-held"):
+                    self.assertNotIn(private, content)
+            self.assertEqual({key: value for key, value in result.items() if key not in {"revision", "tariff_references"}},
+                             {key: value for key, value in base.items() if key != "revision"})
+            advisor_route = "/api/v1/advisor?decision=cost&monthly_accepted=1800&months=24&privacy=allow-external"
+            advisor = json.loads(get(origin, host, advisor_route))
+            self.assertEqual(advisor["costs"]["revision"], result["revision"])
+            self.assertEqual(advisor["status"], "abstain")
+
+            invoke("fastest_cost", "withdraw", pin)
+            invoke("fastest_cost", "withdraw", pin)
+            invoke("fastest_intake", "migrate")
+            self.assertEqual(approve(selected).stdout.strip(), pin)
+            stats = json.loads(invoke("fastest_intake", "stats").stdout)
+            self.assertEqual((stats["tariff_reference_reviews"], stats["tariff_reference_withdrawals"]), (2, 1))
+            self.assertEqual(json.loads(get(origin, host, "/costs.json")), base)
+            self.assertEqual(json.loads(get(origin, host, advisor_route))["costs"]["revision"], base["revision"])
+            for route in routes + (advisor_route,):
+                separator = "&" if "?" in route else "?"
+                response = get(origin, host, route + separator + "revision=" + result["revision"], status=404)
+                self.assertNotIn(expected_citation, response)
+
+        with self.deployed_origin("--cost-tariff-references-pin", next_pin) as (origin, host):
+            alternate = json.loads(get(origin, host, "/costs.json"))["tariff_references"]
+            self.assertEqual(alternate["revision"], next_pin)
+            self.assertEqual(alternate["references"][0]["amount"], "0.29")
 
     def test_deployed_origin_replays_published_values_after_restart(self):
         self.observation["kind"] = "measured"

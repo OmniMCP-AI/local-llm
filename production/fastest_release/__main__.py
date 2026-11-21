@@ -47,8 +47,11 @@ def main(argv=None):
     serve.add_argument("--goal-cohort", type=Path, action="append", default=[],
                        help="Keep a reviewed goals cohort available. The last manifest becomes current.")
     serve.add_argument("--cost-scenario", type=Path, help="Read a reviewed cost scenario for the public evidence view.")
-    serve.add_argument("--cost-tariff-references", type=Path,
-                       help="Show reviewed tariff references in Costs without using them as calculation inputs.")
+    tariffs = serve.add_mutually_exclusive_group()
+    tariffs.add_argument("--cost-tariff-references", type=Path,
+                         help="Show reviewed tariff references from a file in Costs.")
+    tariffs.add_argument("--cost-tariff-references-pin",
+                         help="Show the active tariff references for this exact PostgreSQL approval SHA-256.")
     serve.add_argument("--contributor-receipts", action="store_true",
                        help="Serve private contributor receipt links using the configured release reader.")
     serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
@@ -121,7 +124,8 @@ def main(argv=None):
                              price_reader=price_reader, scaling_pair=args.scaling_pair, cost_scenario=args.cost_scenario,
                              contributor_receipts=args.contributor_receipts,
                              agent_task_release=args.agent_task_release,
-                             cost_tariff_references=args.cost_tariff_references, runtime_watch=runtime_watch,
+                             cost_tariff_references=args.cost_tariff_references,
+                             cost_tariff_references_pin=args.cost_tariff_references_pin, runtime_watch=runtime_watch,
                              runtime_watch_notes=args.runtime_release_watch_notes,
                              runtime_watch_notes_revision=args.runtime_release_watch_notes_revision,
                              pilot_engagement=pilot_engagement) as server:

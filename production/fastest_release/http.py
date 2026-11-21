@@ -11,6 +11,7 @@ from urllib.parse import parse_qs
 from fastest_agent_task import AGENT_TASK_PIN_PATTERN, AGENT_TASK_ROUTE
 from fastest_agent_task.publication import report_artifacts as agent_task_report_artifacts
 from fastest_cost import CostInputError, PUBLIC_FIELDS as COST_FIELDS, calculate
+from fastest_cost.postgres import TARIFF_PIN, read_pin as read_tariff_pin
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
 from fastest_delivery.engagement_link import ROUTE as PILOT_EVIDENCE_ROUTE
 from fastest_delivery.engagement_routes import PilotEngagement
@@ -94,9 +95,13 @@ def render_contributor_receipt(revisions):
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
                 scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None,
-                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None,
+                cost_tariff_references=None, cost_tariff_references_pin=None, runtime_watch=None, runtime_watch_notes=None,
                 runtime_watch_notes_revision=None, pilot_engagement=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
+    if cost_tariff_references_pin is not None and (
+        store is None or cost_tariff_references is not None or not TARIFF_PIN.fullmatch(cost_tariff_references_pin)
+    ):
+        raise ValueError("A pinned tariff approval requires a PostgreSQL reader and an exact SHA-256 pin as its only reference source.")
     if runtime_watch_notes_revision is not None and (
         runtime_watch is None or runtime_watch_notes is not None
         or not NOTES_REVISION.fullmatch(runtime_watch_notes_revision)
@@ -154,10 +159,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
         for base, files in ((image_base, image_files), (text_base, text_files), (agent_task_base, agent_task_files))
         for name, content in files.items()
     }
+    tariff_reader = partial(read_tariff_pin, store, cost_tariff_references_pin) if cost_tariff_references_pin else None
     cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader,
-                          tariff_references_path=cost_tariff_references)
+                          tariff_references_path=cost_tariff_references, tariff_references_reader=tariff_reader)
     api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader,
-                    cost_reader=cost_reader, tariff_references_enabled=cost_tariff_references is not None,
+                    cost_reader=cost_reader,
+                    tariff_references_enabled=cost_tariff_references is not None or tariff_reader is not None,
                     agent_task_enabled=agent_task_release is not None)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
