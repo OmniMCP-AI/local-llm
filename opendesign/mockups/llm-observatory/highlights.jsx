@@ -1,6 +1,5 @@
 import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, BookOpen, ChevronLeft, ChevronRight, CircuitBoard, MessageSquare, Pause, Play } from "lucide-react";
-import { useLocale } from "./locale";
 
 const observed = document.querySelector(".release-fallback [data-observed-home-highlight]");
 const observedLink = observed?.querySelector("a");
@@ -17,8 +16,7 @@ const icons = { news: BookOpen, configuration: CircuitBoard, "research-request":
 
 const reducedMotion = "(prefers-reduced-motion: reduce)";
 
-export function Highlights({ go }) {
-  const { t } = useLocale();
+export function Highlights({ go, t = (english) => english }) {
   const contentId = useId();
   const [index, setIndex] = useState(0);
   const [automatic, setAutomatic] = useState(() => !window.matchMedia(reducedMotion).matches);

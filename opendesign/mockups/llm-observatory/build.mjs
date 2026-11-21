@@ -24,6 +24,8 @@ const { build } = require("esbuild");
 const openccRoot = resolve(dirname(require.resolve("opencc-js")), "../..");
 const pages = process.argv.includes("--pages");
 const catalogPostgres = process.argv.includes("--catalog-postgres");
+const review = process.argv.includes("--review");
+if (review && !catalogPostgres) throw new Error("--review requires the PostgreSQL Pages build");
 const catalogDatabase = process.env.FASTEST_CATALOG_DATABASE_URL;
 const catalogSnapshot = process.env.FASTEST_CATALOG_SNAPSHOT_ID;
 if (catalogPostgres) {
@@ -34,6 +36,7 @@ if (catalogPostgres) {
   }
 }
 const outputArgument = process.argv.indexOf("--output");
+if (review && outputArgument === -1) throw new Error("--review requires an output directory");
 if (outputArgument !== -1 && (!pages || !process.argv[outputArgument + 1])) throw new Error("--output requires a Pages directory");
 const output = outputArgument === -1 ? fileURLToPath(here("dist/")) : resolve(process.argv[outputArgument + 1]);
 const releaseDate = (pages ? process.env.FASTEST_RELEASE_DATE : undefined) ??
@@ -42,7 +45,7 @@ if (pages && (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate) || Number.isNaN(Date.pars
     new Date(releaseDate).toISOString().slice(0, 10) !== releaseDate)) {
   throw new Error("FASTEST_RELEASE_DATE must be a valid YYYY-MM-DD date");
 }
-const openccNotices = await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
+const openccNotices = review ? [] : await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
 const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
 const [stylesheets, image, wikiNames, graph, fullGraph] = await Promise.all([
@@ -135,7 +138,7 @@ const runtimes = published?.runtimes ?? JSON.parse(await readFile(here("catalog-
 }));
 let catalogRelease = "";
 if (pages) {
-  catalogRelease = projection ? await writeCatalogProjection(output, projection)
+  catalogRelease = projection ? await writeCatalogProjection(output, projection, { catalogApi: !review })
     : await writeCatalogRelease(catalogDirectory, output, hardware, runtimes, modelFiles);
 }
 let localCatalogRelease = "";
@@ -153,14 +156,15 @@ if (!pages) {
 topologyReports ??= (await import("./catalog-topology.json", { with: { type: "json" } })).default;
 const publicTopologies = topologyReports.filter(({ source, id, links = [] }) =>
   ![source, id, ...links.map(link => link.source)].some(isWithdrawn));
-const origin = pages ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
+const origin = pages && !review ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
 const wikiRelease = pages ? await writeWikiRelease({
   output,
   origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
   researchRelease: researchIndex.release,
   catalogRelease,
-  catalogApi: catalogPostgres,
+  catalogApi: catalogPostgres && !review,
+  review,
   documents: publicDocuments,
   topologies: publicTopologies,
   scalingUrl,
@@ -171,18 +175,19 @@ const wikiRelease = pages ? await writeWikiRelease({
   withdrawn,
 }) : null;
 const wikiDocuments = wikiRelease
-  ? { ...wikiRelease.publicPages, ...Object.fromEntries(Object.entries(publicDocuments).filter(([, doc]) => doc.status === "preview")) }
+  ? { ...wikiRelease.publicPages, ...Object.fromEntries(Object.entries(publicDocuments).filter(([, doc]) => !review && doc.status === "preview")) }
   : documents;
 const releaseHighlights = wikiRelease?.highlights ?? activeHighlights(highlights, documents, releaseDate);
 const result = await build({
-  entryPoints: ["app", ...(pages ? ["price-entry"] : [])].map((name) => fileURLToPath(here(name + ".jsx"))),
+  entryPoints: (review ? ["pages-review"] : ["app", ...(pages ? ["price-entry"] : [])])
+    .map((name) => fileURLToPath(here(name + ".jsx"))),
   outdir: output,
   nodePaths: [dirname(dirname(require.resolve("esbuild/package.json")))],
   bundle: true,
   minify: true,
   write: false,
   charset: "utf8",
-  banner: { js: "/*! opencc-js and OpenCC dictionaries\n" + openccNotices.join("\n").replaceAll("*/", "* /") + "\n*/" },
+  ...(review ? {} : { banner: { js: "/*! opencc-js and OpenCC dictionaries\n" + openccNotices.join("\n").replaceAll("*/", "* /") + "\n*/" } }),
   target: ["es2022"],
   define: {
     "process.env.NODE_ENV": '"production"',
@@ -221,18 +226,22 @@ const scriptFor = (name) => result.outputFiles.find(({ path }) => path.endsWith(
   .text.replace(/<\/script/gi, "<\\/script");
 const previewHead = '<meta name="description" content="Interactive prototype for comparing local AI hardware, performance, and cost.">\n'
   + "<title>fastest.ai | Local AI benchmark explorer</title>";
+const pageStyles = review ? `${stylesheets[stylesheetNames.indexOf("highlights")]}
+.research-highlights{--color-paper-2:#f4f7fa;--color-hover:#e7eff6;--color-rule:#ccd7e2;--color-ink:#17212b;--color-accent:#174e82;--color-accent-2:#174e82;--color-muted:#4b5864;--ease-out:ease-out}
+.research-highlights-controls button{cursor:pointer;color:inherit}
+.pages-review-highlights:not(:empty)+[data-home-highlights]{display:none}
+` : stylesheets.join("\n") + profileStyles;
 const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 ${wikiRelease?.homeHead ?? previewHead}
-<style>${stylesheets.join("\n")}${profileStyles}</style>
+<style>${pageStyles}</style>
 </head>
 <body>
-<div id="root"></div>
-${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open this file in a browser with JavaScript enabled.</noscript>"}
-<script>${scriptFor("app")}</script>
+${review ? "" : '<div id="root"></div>\n'}${wikiRelease?.homeBody ?? "<noscript>This prototype requires JavaScript. Open this file in a browser with JavaScript enabled.</noscript>"}
+<script>${scriptFor(review ? "pages-review" : "app")}</script>
 </body>
 </html>
 `;
@@ -251,8 +260,9 @@ if (pages) {
     retained[release] = expected;
   }
   await writeEvidenceState(output, { ...evidenceState, researchPins: retained }, isWithdrawn);
-  const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
-  await writeFile(join(output, "prices.html"), `<!doctype html>
+  if (!review) {
+    const priceStyles = await Promise.all(["styles", "locale", "price-comparison"].map((name) => readFile(here(name + ".css"), "utf8")));
+    await writeFile(join(output, "prices.html"), `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -268,6 +278,7 @@ if (pages) {
 </body>
 </html>
 `);
+  }
   for (const name of await readdir(join(output, "research"))) {
     if (name !== researchIndex.release && !Object.hasOwn(retained, name) && researchReleaseId.test(name)) {
       await rm(join(output, "research", name), { recursive: true, force: true });
