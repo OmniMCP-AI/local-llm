@@ -11,6 +11,7 @@ from subprocess import TimeoutExpired
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
 from .core19 import read_core19
+from .hardware_matrix import read_hardware_matrix
 from .image_pilot import ingest_image_pilot
 from .scaling_capture import ingest_scaling_capture
 from .serving_capture import ingest_serving_capture
@@ -126,18 +127,19 @@ def ingest(store, bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("FASTEST_DATABASE_URL"))
-    imports = ("ingest", "ingest-core19", "ingest-image-pilot", "ingest-serving-capture", "ingest-scaling-capture",
+    pinned_readers = {"ingest-core19": read_core19, "ingest-hardware-matrix": read_hardware_matrix}
+    imports = ("ingest", *pinned_readers, "ingest-image-pilot", "ingest-serving-capture", "ingest-scaling-capture",
                "ingest-text-capture", "ingest-text-ambient-m4", "ingest-text-latency")
     parser.add_argument("command", choices=("migrate", *imports, "stats"))
     parser.add_argument("source", type=Path, nargs="?", help="Capture bundle JSON or private packet directory.")
-    parser.add_argument("--checked-at", help="Core-19 source check time with time zone.")
+    parser.add_argument("--checked-at", help="Pinned source check time with time zone.")
     args = parser.parse_args()
     if args.database_url is None:
         parser.error("Set FASTEST_DATABASE_URL or pass --database-url.")
     if (args.command in imports) != (args.source is not None):
         parser.error("Supply a source path only for an ingest command.")
-    if (args.command == "ingest-core19") != (args.checked_at is not None):
-        parser.error("Supply --checked-at only for ingest-core19.")
+    if (args.command in pinned_readers) != (args.checked_at is not None):
+        parser.error("Supply --checked-at for a pinned source ingest.")
     store = ReleaseStore(args.database_url)
     try:
         if args.command == "migrate":
@@ -145,8 +147,8 @@ def main():
             store._query((Path(__file__).parents[1] / "fastest_cost" / "schema.sql").read_text(encoding="utf-8"))
         elif args.command == "ingest":
             print(json.dumps(ingest(store, json.loads(args.source.read_text(encoding="utf-8")))))
-        elif args.command == "ingest-core19":
-            print(json.dumps(ingest(store, read_core19(args.source, args.checked_at))))
+        elif args.command in pinned_readers:
+            print(json.dumps(ingest(store, pinned_readers[args.command](args.source, args.checked_at))))
         elif args.command == "ingest-image-pilot":
             print(json.dumps(ingest_image_pilot(store, args.source)))
         elif args.command == "ingest-serving-capture":

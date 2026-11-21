@@ -4,7 +4,7 @@ PostgreSQL stores reviewed observation revisions and the current release pointer
 
 The [shared CI CPU baseline](fastest_release/CPU-BASELINE.md) describes the measured decode capture and local publication procedure.
 
-The runtime release watch tracks upstream releases and authored card applicability for llama.cpp, SGLang, vLLM and Ollama. It links matched retests to approved benchmark releases. [Operate the runtime release watch](fastest_release_watch/README.md)
+The runtime release watch tracks upstream releases and authored card applicability for llama.cpp, SGLang, vLLM, Ollama, MLX LM, OpenVINO GenAI and AMD AITER. It links matched retests to approved benchmark releases. [Operate the runtime release watch](fastest_release_watch/README.md)
 
 [Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
 
