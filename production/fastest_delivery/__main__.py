@@ -15,7 +15,7 @@ def main(argv=None):
     draft = commands.add_parser("prepare", help="Build an upload-ready review package.")
     draft.add_argument("--draft", required=True, type=Path)
     draft.add_argument("--output-dir", required=True, type=Path)
-    draft.add_argument("--font-file", type=Path, help="Font for a YouTube Shorts render.")
+    draft.add_argument("--font-file", type=Path, help="Font for a Shorts render or a Chinese shared CI CPU X chart.")
     approval = commands.add_parser("approve", help="Approve an exact package for one account and time window.")
     approval.add_argument("--package", required=True, type=Path)
     approval.add_argument("--approval-dir", required=True, type=Path)
@@ -41,8 +41,6 @@ def main(argv=None):
         parser.error("set FASTEST_EDITORIAL_DATABASE_URL or pass --database-url")
     if args.command == "corrections" and not video:
         parser.error("corrections requires --channel youtube-shorts")
-    if args.command == "prepare" and args.font_file and not video:
-        parser.error("--font-file requires --channel youtube-shorts")
     if args.command == "receipt" and video and not args.account:
         parser.error("--account is required for a YouTube Shorts receipt")
     if args.command == "receipt" and args.account and not video:
@@ -51,8 +49,7 @@ def main(argv=None):
     delivery = shorts if video else x_post
     try:
         if args.command == "prepare":
-            options = {"font_file": args.font_file} if video else {}
-            path = delivery.prepare(ReleaseStore(args.database_url), args.draft, args.output_dir, **options)
+            path = delivery.prepare(ReleaseStore(args.database_url), args.draft, args.output_dir, font_file=args.font_file)
         elif args.command == "approve":
             path = delivery.approve(
                 args.package, args.approval_dir, account=args.account, payload_sha256=args.payload_sha256,
