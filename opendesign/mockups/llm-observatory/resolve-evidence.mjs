@@ -52,10 +52,8 @@ function intakeRecord(intake, evidenceId, release) {
 
 function receiptUpdate(intake, resolution) {
   if (!intake.id) return null;
-  const sql = (text) => "'" + text.replaceAll("'", "''") + "'";
-  return `INSERT INTO feedback_resolution (receipt_id, public_path) SELECT id, ${sql(resolution)} FROM feedback_submission
-WHERE id = ${sql(intake.id)} AND category = 'correction' AND context_json = ${sql(intake.shared)}
-ON CONFLICT(receipt_id) DO UPDATE SET public_path = excluded.public_path;\n`;
+  const sql = (text) => "E'" + text.replaceAll("\\", "\\\\").replaceAll("'", "''") + "'";
+  return `SELECT fastest_feedback.link_feedback_resolution(${sql(intake.id)}, ${sql(intake.shared)}, ${sql(resolution)}) AS linked;\n`;
 }
 
 function containsSource(index, source) {

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 
-export async function withLocalPages(output, signal, verify) {
+export async function withLocalPages(output, signal, verify, { feedbackDatabaseUrl } = {}) {
   const scratch = await mkdtemp(join(tmpdir(), "fastest-pages-worker-"));
   let worker;
   let closed;
@@ -21,13 +21,25 @@ export async function withLocalPages(output, signal, verify) {
   process.once("SIGTERM", stopWorker);
   try {
     await symlink(join(here, "functions"), join(scratch, "functions"), "dir");
+    if (feedbackDatabaseUrl) {
+      await writeFile(join(scratch, "wrangler.json"), JSON.stringify({
+        name: "fastest-pages-test",
+        pages_build_output_dir: output,
+        hyperdrive: [{ binding: "FEEDBACK_PG", id: "00000000000000000000000000000000" }],
+      }));
+    }
     worker = spawn(process.execPath, [
       join(here, "node_modules/wrangler/bin/wrangler.js"), "pages", "dev", output, "--ip", "127.0.0.1",
       "--port", "0", "--inspector-port", "0", "--persist-to", join(scratch, "persist"), "--compatibility-date", "2026-11-20",
       "--show-interactive-dev-session=false",
     ], {
       cwd: scratch, stdio: ["ignore", "pipe", "pipe"], detached: true,
-      env: { ...process.env, WRANGLER_SEND_METRICS: "false", WRANGLER_LOG_PATH: join(scratch, "wrangler.log") },
+      env: {
+        ...process.env,
+        WRANGLER_SEND_METRICS: "false",
+        WRANGLER_LOG_PATH: join(scratch, "wrangler.log"),
+        ...(feedbackDatabaseUrl && { CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_FEEDBACK_PG: feedbackDatabaseUrl }),
+      },
     });
     closed = once(worker, "close");
     closed.catch(() => {});
