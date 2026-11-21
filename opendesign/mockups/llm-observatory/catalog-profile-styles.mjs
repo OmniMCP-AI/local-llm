@@ -22,6 +22,9 @@ export const profileStyles = `
 .profile-nav a { color: var(--profile-muted); text-decoration: none; min-height: 2rem; display: inline-flex; align-items: center; }
 .profile-brand { display: inline-block; padding-top: 1rem; color: var(--profile-ink) !important; font-weight: 750; text-decoration: none; }
 .profile-nav a[aria-current] { color: var(--profile-accent); }
+.profile-locale { padding: .5rem 0; }
+.profile-locale label { display: inline-flex; gap: .4rem; margin: .4rem .8rem .4rem 0; }
+.profile-locale select { max-width: 100%; font: inherit; }
 .profile-actions a[aria-current] { color: var(--profile-ink); font-weight: 750; }
 .profile-lookup { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 .profile-lookup label { flex-basis: 100%; }

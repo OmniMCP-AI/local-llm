@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { dirname } from "node:path";
 import { test } from "node:test";
+import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { hardwareCard, renderCard } from "./catalog-card.mjs";
@@ -15,6 +16,9 @@ test("GPU profile main navigation matches the home page and links back from deep
     const html = renderCard(card, { release, pathname: `catalog/${release}/cards/${card.id}.html`, local });
     const nav = html.match(/<nav[^>]*aria-label="Main navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     assert.ok(nav, "main navigation is present in the initial HTML");
+    assert.match(html, /<select[^>]*id="profile-language"/);
+    assert.match(html, /<select[^>]*id="profile-currency"/);
+    assert.match(html, /繁體中文/);
     const labels = [...nav.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(match => match[1]);
     assert.deepEqual(labels, ["Explorer", local ? "Compare demo" : "Compare", "Battles", "Methods", local ? "Costs demo" : "Costs", "Catalog", "Machines", "Models", "Wiki", "Price watch", "For agents"]);
     const home = local ? "../../../../fastest-ai.html" : "/";
@@ -25,6 +29,34 @@ test("GPU profile main navigation matches the home page and links back from deep
   assert.match(hosted, /href="https:\/\/evidence\.example\/profiles">Explorer/);
   assert.match(hosted, /href="https:\/\/evidence\.example\/advisor">Guided advisor/);
   assert.match(hosted, /href="\/wiki\/catalog\/" aria-current="page">Catalog/);
+});
+
+test("GPU profile locale controls retain the shared language and currency choices", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const release = "v1-1234567890abcdef";
+  const card = hardwareCard(catalog.cards[0], release, "cards");
+  const html = renderCard(card, { release, pathname: `catalog/${release}/cards/${card.id}.html`, local: true });
+  const script = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
+  const handlers = {};
+  const language = { value: "", addEventListener: (name, handler) => { handlers.language = handler; } };
+  const currency = { value: "auto", options: [{ value: "auto" }], add: option => currency.options.push(option), addEventListener: (name, handler) => { handlers.currency = handler; } };
+  const links = [{ textContent: "Explorer" }, { textContent: "Compare demo" }];
+  let saved;
+  const document = {
+    documentElement: {},
+    getElementById: id => id === "profile-language" ? language : currency,
+    querySelectorAll: () => links,
+  };
+  const localStorage = { getItem: () => JSON.stringify({ language: "zh-Hant", currency: "USD", manual: { ABC: 1 } }), setItem: (_key, value) => { saved = JSON.parse(value); } };
+  runInNewContext(script, { document, localStorage, navigator: { languages: ["en-US"] }, Intl, Option: function(_text, value) { this.value = value; } });
+  assert.equal(document.documentElement.lang, "zh-Hant");
+  assert.equal(links[0].textContent, "探索");
+  assert.equal(currency.value, "USD");
+  language.value = "es";
+  currency.value = "EUR";
+  handlers.language();
+  assert.equal(links[0].textContent, "Explorar");
+  assert.deepEqual(saved, { language: "es", currency: "EUR", manual: { ABC: 1 } });
 });
 
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {

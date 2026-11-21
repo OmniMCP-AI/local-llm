@@ -3,6 +3,8 @@ import { bandwidthAxis, cardPosition, cardRatings, memoryAxis, speedAxis } from 
 import { axisTitle, renderCoordinatePlot } from "./coordinate-plot.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 import { navigationHref, navigationRoutes } from "./release-origin.mjs";
+import { languages } from "./locale-settings.mjs";
+import { siteTranslations, eastAsianGermanSiteTranslations } from "./site-translations.js";
 
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[char]);
@@ -459,6 +461,16 @@ function cardIllustration(title, capacity) {
 
 export function catalogDocument({ title, home = "/", mdLink, release, review, canonical, main, root = `/catalog/${release}`, local = false, releaseOrigin = null }) {
   const directory = hardwareDirectoryPath(release);
+  const translations = {};
+  const chinese = { Explorer: "探索", Compare: "目标对比", Battles: "对决", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
+  const traditional = { Explorer: "探索", Compare: "目標比較", Battles: "對決", "Guided advisor": "配置顧問", Methods: "評測方法", Costs: "成本", Catalog: "目錄", Machines: "整機", Models: "模型", Wiki: "知識庫", "Price watch": "價格趨勢", "For agents": "智慧體" };
+  for (const label of Object.keys(navigationRoutes(releaseOrigin))) {
+    const source = local && (label === "Compare" || label === "Costs") ? label + " demo" : label;
+    const regional = siteTranslations[source] ?? [];
+    const east = eastAsianGermanSiteTranslations[source] ?? [];
+    translations[source] = { "zh-Hans": chinese[label], "zh-Hant": traditional[label], hi: regional[0], es: regional[1], ar: regional[2], fr: regional[3], ja: east[0], ko: east[1], de: east[2] };
+  }
+  const localeData = JSON.stringify({ languages, translations }).replace(/</g, "\\u003c");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -475,7 +487,7 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<l
     const destination = href.startsWith("#") ? home + href : href;
     const displayLabel = local && (label === "Compare" || label === "Costs") ? label + " demo" : label;
     return `<a href="${escapeHtml(destination)}"${route === "catalog" ? ' aria-current="page"' : ""}>${escapeHtml(displayLabel)}</a>`;
-  }).join("")}</nav><nav class="profile-actions" aria-label="Catalog">${review
+  }).join("")}</nav><details class="profile-locale"><summary>Language and currency</summary><label>Language <select id="profile-language">${Object.entries(languages).map(([tag, value]) => `<option value="${tag}" lang="${tag}">${value.label}</option>`).join("")}</select></label><label>Display currency <select id="profile-currency"><option value="auto">Follow language</option></select></label></details><nav class="profile-actions" aria-label="Catalog">${review
     ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a><a href="${modelCollectionPath(release)}">Model catalog</a><a href="${runtimeDirectoryPath(release)}">Runtime catalog</a>`
     : `<a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a>`}</nav></header>
 <main>
@@ -483,6 +495,39 @@ ${main}
 </main>
 <footer class="profile-footer">Release <code>${release}</code>${review ? ` · PostgreSQL snapshot <code>${review.snapshotId}</code>` : ""
     } · <a href="${root}/manifest.json">Coverage and sources</a> · <a href="${root}/LICENSE.txt">llmfit MIT notice</a></footer></div>
+<script>
+(() => {
+  const data = ${localeData};
+  const key = "fastest-locale-v1";
+  let choices = {};
+  try { choices = JSON.parse(localStorage.getItem(key)) || {}; } catch {}
+  const language = document.getElementById("profile-language");
+  const currency = document.getElementById("profile-currency");
+  const links = [...document.querySelectorAll('nav[aria-label="Main navigation"] a')];
+  const original = links.map(link => link.textContent);
+  const codes = Intl.supportedValuesOf ? Intl.supportedValuesOf("currency") : ["USD", "CNY", "TWD", "EUR", "JPY", "KRW", "INR", "MXN", "SAR"];
+  for (const code of codes) currency.add(new Option(code, code));
+  const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
+  const browserLanguage = preferred.map(tag => { try { const locale = new Intl.Locale(tag); return locale.language === "zh" ? (locale.maximize().script === "Hant" ? "zh-Hant" : "zh-Hans") : locale.language; } catch { return "en"; } }).find(tag => data.languages[tag]);
+  language.value = data.languages[choices.language] ? choices.language : browserLanguage || "en";
+  currency.value = choices.currency && [...currency.options].some(option => option.value === choices.currency) ? choices.currency : "auto";
+  function update() {
+    const selected = language.value;
+    document.documentElement.lang = selected;
+    document.documentElement.dir = data.languages[selected].direction || "ltr";
+    links.forEach((link, index) => { link.textContent = data.translations[original[index]]?.[selected] || original[index]; });
+  }
+  function save() {
+    choices.language = language.value;
+    choices.currency = currency.value;
+    try { localStorage.setItem(key, JSON.stringify(choices)); } catch {}
+    update();
+  }
+  language.addEventListener("change", save);
+  currency.addEventListener("change", save);
+  update();
+})();
+</script>
 </body>
 </html>
 `;
