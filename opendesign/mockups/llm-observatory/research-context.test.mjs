@@ -19,7 +19,9 @@ const repostId = "youtube/kQKCp7PlVxY";
 const chineseId = "youtube/dnk_lPZ0Y-E";
 const hongKongId = "youtube/ao6B7GR8tQY";
 const taiwanId = "youtube/DEPF8rAprS4";
+const wallPowerSourceId = "youtube/MhZABCEOUWY";
 const blogId = "together-evaluation-methods";
+const frozenRulesFile = join(directory, "wiki/context-suggestion-rules-v1.json");
 const plan = { heldOut: [blogId], crossPosts: [] };
 const examples = [
   { source: "comparison-methods", subject: "comparison-methods", facet: "topic", tag: "retrieval", expected: true },
@@ -65,6 +67,41 @@ test("suggestions preserve the locator and scope of the annotated note, forecast
   assert.ok(tags(blog[0]).includes("coding"));
 });
 
+test("phase-qualified wall power is an energy dimension at the source record", async (t) => {
+  const { createContextReview } = await import("./research-context.mjs");
+  const { index } = await released(t, [wallPowerSourceId]);
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const slots = createContextReview(index, rules).suggest(wallPowerSourceId);
+  const dimension = (id) => slots.find(({ subject, facet }) => subject === id && facet === "dimension");
+
+  const cachedPrefillPower = dimension("V045-P010");
+  assert.deepEqual(cachedPrefillPower.matches, [{ tag: "energy", field: "metric", term: "wall power" }]);
+  assert.match(cachedPrefillPower.locator, /MhZABCEOUWY&t=479s$/);
+  assert.deepEqual(dimension("V045-P009").matches.map(({ tag }) => tag), ["energy"]);
+  assert.deepEqual(dimension("V045-P005").matches.map(({ tag }) => tag), ["prefill"]);
+  assert.deepEqual(dimension("V045-P011").matches, []);
+});
+
+test("regional video suggestions use scoped phrases from the annotated metadata", async (t) => {
+  const { createContextReview } = await import("./research-context.mjs");
+  const { index } = await released(t, [hongKongId, taiwanId]);
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const context = createContextReview(index, rules);
+  const hongKong = context.suggest(hongKongId);
+  const task = (id) => hongKong.find(({ subject, facet }) => subject === id && facet === "task");
+
+  assert.deepEqual(hongKong[0].matches, [{ tag: "image-generation", field: "context", term: "image generation" }]);
+  assert.deepEqual(task("V014-P002").matches, [{ tag: "fine-tuning", field: "metric", term: "fine-tuning" }]);
+  assert.match(task("V014-P002").locator, /ao6B7GR8tQY&t=35s$/);
+  assert.deepEqual(task("V014-P003").matches, []);
+  assert.deepEqual(hongKong.find(({ subject, facet }) => subject === "V014-P003" && facet === "dimension").matches, []);
+
+  const taiwan = context.suggest(taiwanId);
+  assert.deepEqual(taiwan[0].matches, [{ tag: "runtime-tuning", field: "context", term: "draft-assisted generation" }]);
+  assert.ok(taiwan.filter(({ facet }) => facet === "task").every(({ matches }) => matches.length === 0));
+  assert.deepEqual(taiwan.find(({ subject, facet }) => subject === "V042-P003" && facet === "dimension").matches, []);
+});
+
 test("calibration holds out whole sources and cross-post families and reports gaps and false transfers", async (t) => {
   const { createContextReview } = await import("./research-context.mjs");
   const { index } = await released(t, [noteId]);
@@ -106,7 +143,7 @@ test("only explicit source-bound decisions enter a reviewed release and rollback
   assert.deepEqual(release1.assignments[0].tags, ["coding", "model-evaluation"]);
   assert.equal(release1.assignments[0].locator, slot.locator);
 
-  const next = createContextReview(index, { ...rules, version: 2 });
+  const next = createContextReview(index, { ...rules, version: rules.version + 1 });
   const nextSlot = next.suggest(blogId)[0];
   assert.throws(() => next.promote({ review: "editor/review-2", plan, examples,
     prior: release1, decisions: [{ proposal: slot.id, action: "accept", review: "stale" }] }), /proposal/i);
@@ -124,7 +161,7 @@ test("only explicit source-bound decisions enter a reviewed release and rollback
   assert.deepEqual(release3.assignments[0].tags, []);
   assert.throws(() => next.rollback(release3, release1), /predecessor/i);
   assert.equal(next.rollback(release2, release1).id, release1.id);
-  assert.equal(next.rollback(release2, release1).rules.version, 1);
+  assert.equal(next.rollback(release2, release1).rules.version, rules.version);
 
   const changed = createContextReview({ ...index, sources: index.sources.filter(({ id }) => id !== blogId) }, rules);
   assert.throws(() => changed.rollback(release2, release1), /unavailable|revision/);
@@ -192,8 +229,8 @@ test("the operator replay scores local annotations without adding them to the re
   assert.equal(report.facets.task.subjects, 108);
   assert.equal(report.facets.task.wrongScope.articleToCase, 0);
   assert.equal(report.facets.dimension.wrongScope.forecastAsMeasurement, 0);
-  assert.equal(report.facetsByLanguage.zh.topic.recall, 0);
-  assert.equal(report.facetsByLanguage.zh.task.abstentions, 29);
+  assert.equal(report.facetsByLanguage.zh.topic.recall, 1 / 9);
+  assert.equal(report.facetsByLanguage.zh.task.abstentions, 28);
   assert.equal(report.facetsByLanguage.zh.dimension.subjects, 29);
   const hongKong = report.facetsByLanguageTag["zh-HK"];
   assert.deepEqual(
@@ -201,10 +238,10 @@ test("the operator replay scores local annotations without adding them to the re
       const { tp, fp, fn, abstentions } = hongKong[facet];
       return [tp, fp, fn, abstentions];
     }),
-    [[0, 0, 3, 1], [0, 0, 1, 5], [1, 0, 4, 4]],
+    [[1, 0, 2, 0], [1, 0, 0, 4], [1, 0, 4, 4]],
   );
-  assert.equal(hongKong.topic.precision, null);
-  assert.equal(hongKong.task.precision, null);
+  assert.equal(hongKong.topic.precision, 1);
+  assert.equal(hongKong.task.precision, 1);
   assert.equal(hongKong.dimension.recall, 1 / 5);
   assert.equal(hongKong.task.wrongScope.articleToCase, 0);
   assert.equal(report.facetsByFormat.blog.topic.tp, 2);
@@ -225,8 +262,10 @@ test("the frozen-rules Taiwan replay has its own denominator", async (t) => {
   const { root } = await released(t);
   const report = JSON.parse((await run(process.execPath, [
     "research-context-cli.mjs", root, "evaluate-local", "wiki/context-calibration-zh-tw-regression-split.json",
-  ], { cwd: directory })).stdout);
+  ], { cwd: directory, env: { ...process.env, FASTEST_CONTEXT_RULES: frozenRulesFile } })).stdout);
   assert.deepEqual(report.heldOut, [taiwanId]);
+  assert.equal(report.rulesVersion, 1);
+  assert.equal(report.ruleDigest, "2940be1a7b631482da34a22f35044f7f6a88a99afe43258a17c628cf9471e037");
   assert.equal(report.heldOutFamilies, 1);
   const { topic, task, dimension } = report.facetsByLanguageTag["zh-TW"];
   assert.deepEqual([topic.subjects, topic.fn, topic.abstentions], [1, 2, 1]);
@@ -236,28 +275,37 @@ test("the frozen-rules Taiwan replay has its own denominator", async (t) => {
 });
 
 test("a reviewed vocabulary rollback restores the prior suggestions through the CLI", async (t) => {
-  const { root, index } = await released(t);
+  const { root, index } = await released(t, [wallPowerSourceId]);
   const file = (name) => join(root, name + ".json");
   const put = (name, data) => writeFile(file(name), JSON.stringify(data));
   const execute = async (active, ...args) => JSON.parse((await run(process.execPath,
     ["research-context-cli.mjs", root, ...args],
     { cwd: directory, env: { ...process.env, FASTEST_CONTEXT_RELEASE: active ? file(active) : "" } },
   )).stdout);
-  const current = (await execute(null, "suggest", blogId)).proposals[0];
-  await put("first-request", { plan, examples, review: "editor/release-1",
-    decisions: [{ proposal: current.id, action: "accept", review: "editor/decision-1" }] });
+  const { createContextReview } = await import("./research-context.mjs");
+  const oldRules = await json(frozenRulesFile);
+  const frozen = createContextReview(index, oldRules);
+  const wallPower = (proposals) => proposals.find(({ subject, facet }) => subject === "V045-P010" && facet === "dimension");
+  const original = wallPower(frozen.suggest(wallPowerSourceId));
+  assert.deepEqual(original.matches.map(({ tag }) => tag), ["prefill"]);
+  await put("first-request", { plan, examples, rules: oldRules, review: "editor/release-1",
+    decisions: [{ proposal: original.id, action: "unclassified", review: "editor/decision-1" }] });
   const first = await execute(null, "promote", file("first-request"));
   await put("first", first);
-  const rules = { ...first.rules, version: 2, topic: { ...first.rules.topic, "model-fit": ["language model"] } };
-  const { createContextReview } = await import("./research-context.mjs");
-  const candidate = createContextReview(index, rules).suggest(blogId)[0];
+  assert.deepEqual(wallPower((await execute("first", "suggest", wallPowerSourceId)).proposals), original);
+
+  const rules = await json(join(directory, "wiki/context-suggestion-rules.json"));
+  const candidate = wallPower((await execute(null, "suggest", wallPowerSourceId)).proposals);
   await put("next-request", { plan, examples, rules, review: "editor/release-2",
     decisions: [{ proposal: candidate.id, action: "accept", review: "editor/decision-2" }] });
   const second = await execute("first", "promote", file("next-request"));
   await put("second", second);
-  const active = (await execute("second", "suggest", blogId)).proposals[0];
-  assert.ok(active.matches.some(({ tag }) => tag === "model-fit"));
+  assert.deepEqual(second.assignments[0].tags, ["energy"]);
+  const active = wallPower((await execute("second", "suggest", wallPowerSourceId)).proposals);
+  assert.deepEqual(active, candidate);
+
   const prior = await execute("second", "rollback", file("second"), file("first"));
   await put("rolled-back", prior);
-  assert.deepEqual((await execute("rolled-back", "suggest", blogId)).proposals[0], current);
+  assert.deepEqual(prior.assignments[0].tags, []);
+  assert.deepEqual(wallPower((await execute("rolled-back", "suggest", wallPowerSourceId)).proposals), original);
 });

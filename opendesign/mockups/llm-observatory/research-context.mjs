@@ -1,10 +1,12 @@
 import { digest } from "./research-released-snapshot.mjs";
 
-const engineVersion = 1;
 const facets = ["topic", "task", "dimension"];
 const hash = (value) => digest(JSON.stringify(value));
 const normalized = (text) => text.normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]+/gu)?.join(" ") ?? "";
 const compact = (text) => normalized(text).replaceAll(" ", "");
+const containsPhrase = (text, phrase) => /\p{Script=Han}/u.test(phrase)
+  ? normalized(text).includes(normalized(phrase))
+  : (" " + normalized(text) + " ").includes(" " + normalized(phrase) + " ");
 const languageTag = (source) => source.language ?? "unknown";
 const language = (source) => languageTag(source).toLowerCase().split("-")[0];
 const nonempty = (text) => typeof text === "string" && text.trim().length > 0;
@@ -72,10 +74,16 @@ function reportFacets(samples) {
 export function createContextReview(index, rules, knownCrossPosts = []) {
   const { taxonomyVersion, vocabulary, sources } = index;
   const validTags = { topic: vocabulary.topics, task: vocabulary.topics, dimension: vocabulary.dimensions };
+  const engineVersion = rules.engineVersion ?? 1;
   if (!Number.isSafeInteger(rules.version) || rules.version < 1 || rules.taxonomyVersion !== taxonomyVersion ||
       !Array.isArray(rules.languages) || !rules.languages.every(nonempty) ||
       !Array.isArray(rules.projectionMarkers) || !rules.projectionMarkers.every(compact)) {
     throw new Error("Rules must use a positive version and the released taxonomy");
+  }
+  if (![1, 2].includes(engineVersion) || (engineVersion === 2 && (rules.version < 2 ||
+      !Array.isArray(rules.energyMeasurementAliases) ||
+      !rules.energyMeasurementAliases.every((term) => nonempty(term) && compact(term))))) {
+    throw new Error("Rules must use a supported extraction engine and valid measurement aliases");
   }
   const ruleDigest = hash({ engineVersion, rules, vocabulary });
   const aliases = Object.fromEntries(facets.map((facet) => {
@@ -94,8 +102,7 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
         const term = terms.find((alias) => {
           // Raw observation labels are often compact. Overview prose uses word boundaries.
           if (facet !== "topic") return compact(text).includes(compact(alias));
-          if (/\p{Script=Han}/u.test(alias)) return normalized(text).includes(normalized(alias));
-          return (" " + normalized(text) + " ").includes(" " + normalized(alias) + " ");
+          return containsPhrase(text, alias);
         });
         if (term) return [{ tag, field, term }];
       }
@@ -130,8 +137,16 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
       if (projection) {
         const [field, term] = projection;
         dimensions = [{ tag: "projection", field, term }];
-      } else if (dimensions.length !== 1) {
-        dimensions = [];
+      } else {
+        const energy = engineVersion === 2 &&
+          rules.energyMeasurementAliases.find((term) => containsPhrase(record.metric, term));
+        if (energy) {
+          // Prefill and decode can describe when electrical power was measured.
+          dimensions = dimensions.every(({ tag }) => ["energy", "prefill", "generation"].includes(tag))
+            ? [{ tag: "energy", field: "metric", term: energy }] : [];
+        } else if (dimensions.length !== 1) {
+          dimensions = [];
+        }
       }
       slot(record.id, "task", record.url, supported ? matches("task", fields) : [], record.topics, record.evidence);
       slot(record.id, "dimension", record.url, dimensions, [record.dimension], record.evidence);
