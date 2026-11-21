@@ -10,6 +10,8 @@ from subprocess import TimeoutExpired
 
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
+from .image_pilot import ingest_image_pilot
+
 
 def table_counts(store):
     return json.loads(store._query("""
@@ -84,19 +86,21 @@ def ingest(store, bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("FASTEST_DATABASE_URL"))
-    parser.add_argument("command", choices=("migrate", "ingest", "stats"))
-    parser.add_argument("bundle", type=Path, nargs="?")
+    parser.add_argument("command", choices=("migrate", "ingest", "ingest-image-pilot", "stats"))
+    parser.add_argument("source", type=Path, nargs="?", help="Capture bundle JSON or private image packet directory.")
     args = parser.parse_args()
     if args.database_url is None:
         parser.error("Set FASTEST_DATABASE_URL or pass --database-url.")
-    if (args.command == "ingest") != (args.bundle is not None):
-        parser.error("Supply a bundle only for ingest.")
+    if (args.command in ("ingest", "ingest-image-pilot")) != (args.source is not None):
+        parser.error("Supply a source path for ingest or ingest-image-pilot.")
     store = ReleaseStore(args.database_url)
     try:
         if args.command == "migrate":
             store._query(Path(__file__).with_name("schema.sql").read_text(encoding="utf-8"))
         elif args.command == "ingest":
-            print(json.dumps(ingest(store, json.loads(args.bundle.read_text(encoding="utf-8")))))
+            print(json.dumps(ingest(store, json.loads(args.source.read_text(encoding="utf-8")))))
+        elif args.command == "ingest-image-pilot":
+            print(json.dumps(ingest_image_pilot(store, args.source)))
         else:
             print(json.dumps(table_counts(store)))
     except (OSError, ReleaseError, TimeoutExpired, TypeError, ValueError) as error:
