@@ -299,7 +299,7 @@ export function hardwareCard(row, release, kind, {
     kind: row.kind,
     source: row.source,
     photos: row.photos,
-    video: row.video,
+    video: row.video && { credit: creator?.author, ...row.video },
     fields: [
       ...(factory ? [
         ["Catalog ID", row.id],
@@ -518,7 +518,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       ...(photos.length || video ? ["## Build and product media", ""] : []),
       ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
         `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
-      ...(video ? [`- [${escapeMarkdown(video.title)}](<${card.source}>) · [YouTube thumbnail](<${videoThumbnail(video)}>)`] : []),
+      ...(video ? [`- [${escapeMarkdown(video.title)}](<${video.source ?? card.source}>) · [YouTube thumbnail](<${videoThumbnail(video)}>) · ${escapeMarkdown(videoAttribution(video))}`] : []),
       ...(mediaNotices.length ? ["", "### Image license notices", "", ...mediaNotices.flatMap(notice => ["```text", notice, "```", ""])] : []),
       ...(photos.length || video ? [""] : []),
       ...(gallery ? [`## ${imageSourceTitle}`, "", ...markdownFields(imageSourceFields(gallery)), ""] : []),
@@ -543,7 +543,10 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   });
 }
 
-const videoThumbnail = ({ id }) => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+const videoThumbnail = ({ id, thumbnail }) => thumbnail ?? "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+const videoPlayer = ({ id, player, start }) => player ??
+  ("https://www.youtube-nocookie.com/embed/" + id + (start ? "?start=" + start : ""));
+const videoAttribution = ({ credit }) => `Publisher thumbnail${credit ? " by " + credit : ""}. It may depict the video topic.`;
 
 const photoNotices = photos => [...new Set(photos.map(({ licenseNotice }) => licenseNotice).filter(Boolean))];
 
@@ -559,11 +562,11 @@ ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, g
   `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? cardIllustration(card.title, position.capacityPoints.find(point => point.id === position.id)?.y) : ""}
 ${video ? `<figure class="profile-video">
-  <a href="${escapeHtml(card.source)}"><img loading="lazy" width="480" height="360"
+  <a href="${escapeHtml(video.source ?? card.source)}"><img width="480" height="360"
     referrerpolicy="no-referrer" src="${escapeHtml(videoThumbnail(video))}" alt="${escapeHtml(video.title)} thumbnail"></a>
-  <figcaption><a href="${escapeHtml(card.source)}">${escapeHtml(video.title)} on YouTube</a> · Creator thumbnail</figcaption>
-  <details><summary>Watch build video</summary><iframe loading="lazy" title="${escapeHtml(video.title)}"
-    src="https://www.youtube-nocookie.com/embed/${escapeHtml(video.id)}${video.start ? "?start=" + video.start : ""}"
+  <figcaption><a href="${escapeHtml(video.source ?? card.source)}">${escapeHtml(video.title)} on YouTube</a> · ${escapeHtml(videoAttribution(video))}</figcaption>
+  <details><summary>Watch source video</summary><iframe loading="lazy" title="${escapeHtml(video.title)}"
+    src="${escapeHtml(videoPlayer(video))}"
     referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></details></figure>` : ""}
 ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>

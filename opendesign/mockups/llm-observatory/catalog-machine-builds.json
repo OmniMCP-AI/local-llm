@@ -234,7 +234,11 @@
           "quantity": 1
         }
       ],
-      "interconnect": "PCIe 5.0 x8 for RTX 5090; PCIe 3.0 x4 over OCuLink and PCIe 4.0 x8 for the RTX 3090s"
+      "interconnect": "PCIe 5.0 x8 for RTX 5090; PCIe 3.0 x4 over OCuLink and PCIe 4.0 x8 for the RTX 3090s",
+      "gallery": {
+        "label": "See sanasol’s photo of the assembled rig",
+        "source": "https://github.com/sanasol/home-llm/blob/018d6389f17e90cdf0ec752fefae5a4a472588c4/assets/rig-irl.jpg"
+      }
     },
     {
       "id": "nalthis-epyc-9575f-quad-rtx-3090",
@@ -427,7 +431,7 @@
       ],
       "video": {
         "id": "TRpr_qKydSo",
-        "title": "2GuysTek’s homelab AI server build",
+        "title": "Three RTX 3090s in One Server - Homelab AI Server Build!",
         "start": 279
       }
     },
@@ -490,7 +494,7 @@
       "interconnect": "Two pairs bridged by NVLink; two GPUs at PCIe x8 and two at x4",
       "video": {
         "id": "hLge7d8og9Q",
-        "title": "Tech2WiLD’s 4× RTX 3090 rig tour"
+        "title": "4 RTX 3090s + Dual NVLink: My Ultimate Local AI Setup"
       }
     },
     {
@@ -550,7 +554,7 @@
       "interconnect": "2.5 GbE switch",
       "video": {
         "id": "8SiB-bNyP5E",
-        "title": "Jeff Geerling assembles the Compute Blade cluster",
+        "title": "I regret building a $3000 Pi AI Cluster",
         "start": 186
       },
       "gallery": {
@@ -722,6 +726,80 @@
         "label": "See the builder’s workstation photo",
         "source": "https://jonready.com/blog/posts/local-llm-rig.html"
       }
+    }
+  ],
+  "researchVideos": [
+    {
+      "id": "8dhcnt-G19M",
+      "title": "Splash 1.6.1 is INSANELY FAST! Local AI on M6 Mac Mini",
+      "credit": "Execute Automation",
+      "profiles": ["V009-HP-TEST"]
+    },
+    {
+      "id": "YcosZPh-kcI",
+      "title": "Reddit Says This Small Qwen Is 98% as Good. I Tested It on My Mac Studio",
+      "credit": "The Dark Factory",
+      "profiles": ["V013-HP-C002"]
+    },
+    {
+      "id": "cFdoXn6yvE4",
+      "title": "local AI's biggest problem... they solved it?",
+      "credit": "NetworkChuck",
+      "profiles": ["V017-HP-C001"]
+    },
+    {
+      "id": "mjR-LJmHg_I",
+      "title": "垃圾佬狂喜！不到¥3000自建128G本地AI服务器，本地跑Qwen3.8-Flash-Next（无审查）模型40t/s真香",
+      "credit": "阿雷科技",
+      "profiles": ["V019-HP-TEST"]
+    },
+    {
+      "id": "09GB4LtXUok",
+      "title": "Strata Coder tested - Local LLM setup",
+      "credit": "Luke's Dev Lab",
+      "profiles": ["V024-HP-C001", "V024-HP-C002"]
+    },
+    {
+      "id": "GLXGqbNBq9s",
+      "title": "Project Maya Deepseek V4.1 Flash 1017 + GLM 5.3 Local Ai Review",
+      "credit": "Digital Spaceport",
+      "profiles": ["V026-HP-TEST"]
+    },
+    {
+      "id": "WOlXMUKJeuI",
+      "title": "Testing Strata Local AI on $769 Budget AI Rig",
+      "credit": "Digital Spaceport",
+      "profiles": ["V027-HP-TEST"]
+    },
+    {
+      "id": "1xmOTSUpBL0",
+      "title": "听劝买了两张2080Ti 22G！双卡+NVLink跑AI，这性价比真的无解了",
+      "credit": "司波图",
+      "profiles": ["V029-HP-C001"]
+    },
+    {
+      "id": "MhZABCEOUWY",
+      "title": "NInfer + 千问3.8 27b = 1.5倍速@256K上下文(单张4090 24GB)",
+      "credit": "云八云",
+      "profiles": ["V045-HP-TEST"]
+    },
+    {
+      "id": "VKEXWXMlVS0",
+      "title": "实测很强，用Mac的ANE芯片加速推理80%",
+      "credit": "小天fotos",
+      "profiles": ["V049-HP-TEST"]
+    },
+    {
+      "id": "RkzCAaIV_cQ",
+      "title": "This Shouldn’t Be Able to Run 120B Locally",
+      "credit": "Alex Ziskind",
+      "profiles": ["V053-HP-C001", "V053-HP-C002"]
+    },
+    {
+      "id": "4l4UWZGxvoc",
+      "title": "Apple did what NVIDIA wouldn't - Mac Studio Clustering with Exo",
+      "credit": "jakkuh",
+      "profiles": ["V059-HP-TEST"]
     }
   ],
   "photoIds": {

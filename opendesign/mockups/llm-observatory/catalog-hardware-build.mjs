@@ -54,6 +54,35 @@ function reviewedMachineRows(builds, cards, withdrawnCards, isWithdrawn) {
   }));
 }
 
+function reviewedResearchVideos(reviews, profiles) {
+  const videos = new Map();
+  for (const { id, title, credit, profiles: profileIds } of reviews) {
+    if (!/^[\w-]{11}$/.test(id) || !title?.trim() || !credit?.trim() || !profileIds?.length) {
+      throw new Error("Invalid research video: " + id);
+    }
+    for (const profileId of profileIds) {
+      const profile = profiles.get(profileId);
+      const capture = /^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})&t=(\d+)s$/.exec(profile?.source_url);
+      if (!capture || capture[1] !== id || !Number.isSafeInteger(Number(capture[2])) ||
+          profileKind(profile) !== "Partial configuration" || videos.has(profileId)) {
+        throw new Error("Invalid machine profile for research video: " + profileId);
+      }
+      videos.set(profileId, { id, title, credit, start: Number(capture[2]) });
+    }
+  }
+  return videos;
+}
+
+function publicMachineVideo({ video, buildSource }, isWithdrawn) {
+  const watch = "https://www.youtube.com/watch?v=" + video.id;
+  const source = watch + (video.start === undefined ? "" : "&t=" + video.start + "s");
+  const thumbnail = "https://i.ytimg.com/vi/" + video.id + "/hqdefault.jpg";
+  const embed = "https://www.youtube-nocookie.com/embed/" + video.id;
+  const player = embed + (video.start ? "?start=" + video.start : "");
+  if ([watch, source, thumbnail, embed, player].some(isWithdrawn)) return undefined;
+  return { ...video, source, thumbnail, player, credit: video.credit ?? buildSource.author };
+}
+
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
   const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes,
     referenceBytes, buildBytes, gpuPhotoIds, photos, gpuPhotos] = await Promise.all([
@@ -75,7 +104,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const vendor = JSON.parse(specBytes);
   const additions = JSON.parse(additionsBytes);
   const modified = JSON.parse(modifiedBytes);
-  const { reviewedAt, builds, photoIds } = JSON.parse(buildBytes);
+  const { reviewedAt, builds, photoIds, researchVideos = [] } = JSON.parse(buildBytes);
   const references = JSON.parse(referenceBytes);
   const vendorSpec = (id) => {
     const source = [additions.specs[id], vendor.cards[id]].find(spec => spec && !isWithdrawn(spec.source));
@@ -122,6 +151,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   }));
   if (profiles.size !== inventoryProfiles.size || profiles.size !== mappedProfiles.size) throw new Error("Hardware research inventory counts disagree");
 
+  const researchVideoByProfile = reviewedResearchVideos(researchVideos, profiles);
   const withdrawnProfiles = new Set([...profiles.values()].filter(({ id, source_url, source }) =>
     [id, source_url, source].some(isWithdrawn)).map(({ id }) => id));
   const withdrawnCards = new Set();
@@ -241,10 +271,12 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     if (!withdrawnProfiles.size && cardIds.some(id => !cards.has(id) && !withdrawnCards.has(id))) {
       throw new Error(`Unknown card in machine: ${id}`);
     }
+    const video = researchVideoByProfile.get(id);
     return {
       id, name, source, kind, cardIds: cardIds.filter((id) => cards.has(id)),
       detail: kind === "Component reference" ? kind : `${kind} / ${profile.core_fields_reported} of ${profile.core_fields_total} build fields reported`,
       capture: source_url,
+      ...(video && { video }),
       coreFieldsReported: profile.core_fields_reported,
       coreFieldsTotal: profile.core_fields_total,
       missingCoreFields: profile.missing_core_fields,
@@ -295,10 +327,11 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       throw new Error("Invalid machine photos: " + id);
     }
   }
-  const machineRows = [...creatorBuilds, ...machines, ...presets, ...manufacturerMachines].map(row => {
+  const machineRows = [...creatorBuilds, ...machines, ...presets, ...manufacturerMachines].map(({ video, ...row }) => {
     const gallery = (photoIds[row.id] ?? []).map(id => photos[id])
       .filter(photo => !isWithdrawn(photo.source));
-    return gallery.length ? { ...row, photos: gallery } : row;
+    const published = video && publicMachineVideo({ video, buildSource: row.buildSource }, isWithdrawn);
+    return { ...row, ...(gallery.length && { photos: gallery }), ...(published && { video: published }) };
   });
   const cardPhotos = new Map();
   const photoSources = new Set();
@@ -377,6 +410,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       researchProfiles: machines.length,
       researchComponentReferences: componentReferences,
       partialMachines: machines.length - componentReferences,
+      partialMachinesWithSourceVideo: machineRows.filter(row => row.kind === "Partial configuration" && row.video).length,
       upstreamPresets: presets.length,
       manufacturerMachines: manufacturerMachines.length,
       creatorBuilds: creatorBuilds.length,
