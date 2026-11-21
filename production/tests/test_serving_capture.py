@@ -63,6 +63,35 @@ async def server():
 
 
 class ServingCaptureTests(unittest.IsolatedAsyncioTestCase):
+    async def test_metered_capture_announces_the_exact_window_before_starting(self):
+        clock = {"source": "linux-clock-monotonic", "boot_id": "cebb3678-779c-4b1d-a0df-d83885982ed0",
+                 "time_namespace": 4026531834}
+        announced = []
+        with TemporaryDirectory(prefix="fastest-serving-capture-test-") as root:
+            output = Path(root) / "private"
+
+            async def post(_host, _port, path, _payload, started_ns, _timeout_ms):
+                ledger = json.loads((output / "capture.json").read_text())
+                if ledger["status"] == "armed":
+                    self.assertGreaterEqual(started_ns, ledger["meter_window"]["start_ns"])
+                    announced.append(ledger["meter_window"])
+                data = ({"stop": True, "tokens": [42] * 128} if path == "/completion" else
+                        {"id_slot": int(path.split("/")[-1].split("?")[0]), "n_erased": 1024})
+                return {"http_status": 200, "finished_ns": started_ns + 1}, json.dumps(data).encode()
+
+            with patch.multiple(capture, REQUESTS=1, WINDOW_MS=20, _post=post):
+                with patch.object(capture, "_meter_clock", return_value=clock):
+                    await capture.capture(output, "192.0.2.25", 8080, meter_lead_ms=30)
+            ledger = json.loads((output / "capture.json").read_text())
+        self.assertEqual(ledger["status"], "complete")
+        self.assertEqual(len(announced), 4)
+        self.assertTrue(all(window == ledger["meter_window"] for window in announced))
+        self.assertEqual(ledger["meter_window"]["clock"], clock)
+        self.assertEqual(ledger["window_ended_ns"] - ledger["window_started_ns"], 20_000_000)
+        self.assertEqual(ledger["meter_window"]["start_ns"], ledger["window_started_ns"])
+        self.assertEqual(ledger["meter_window"]["end_ns"], ledger["window_ended_ns"])
+        self.assertEqual(ledger["power"]["status"], "missing")
+
     async def test_scheduled_capture_retains_attempts_and_explicit_missing_meter(self):
         async with server() as (port, calls):
             with TemporaryDirectory(prefix="fastest-serving-capture-test-") as root:

@@ -8,9 +8,11 @@ from ipaddress import ip_address
 import json
 from pathlib import Path
 import platform
-from time import monotonic_ns
+import sys
+from time import get_clock_info, monotonic_ns
+from uuid import UUID, uuid4
 
-from fastest_serving import (INPUT_TOKENS, INTERVAL_MS, OUTPUT_TOKENS, PROTOCOL, REQUESTS,
+from fastest_serving import (INPUT_TOKENS, INTERVAL_MS, METER_CLOCK_SOURCE, OUTPUT_TOKENS, PROTOCOL, REQUESTS,
                              START_TOLERANCE_MS, TIMEOUT_MS, USERS, WINDOW_MS)
 
 
@@ -113,13 +115,31 @@ async def _sleep_until(target_ns):
         await asyncio.sleep(remaining / 1_000_000_000)
 
 
-async def capture(output, host, port, *, diagnostic_reason=None, notes=None):
+def _meter_clock():
+    if sys.platform != "linux" or get_clock_info("monotonic").implementation != "clock_gettime(CLOCK_MONOTONIC)":
+        raise ValueError("Meter window announcement requires a Linux CLOCK_MONOTONIC client.")
+    try:
+        boot_id = str(UUID(Path("/proc/sys/kernel/random/boot_id").read_text().strip()))
+        namespace = Path("/proc/self/ns/time").stat().st_ino
+    except (OSError, ValueError) as error:
+        raise ValueError("Could not identify the client clock boot and time namespace.") from error
+    return {"source": METER_CLOCK_SOURCE, "boot_id": boot_id, "time_namespace": namespace}
+
+
+async def capture(output, host, port, *, diagnostic_reason=None, notes=None, meter_lead_ms=None):
     address = ip_address(host)
     endpoint = address.ipv4_mapped if address.version == 6 and address.ipv4_mapped else address
     if endpoint.is_loopback and not diagnostic_reason:
         raise ValueError("Loopback requires an explicit diagnostic reason. Use a separate client for a serving run.")
     if not 1 <= port <= 65535:
         raise ValueError("Invalid llama-server port.")
+    meter_clock = None
+    if meter_lead_ms is not None:
+        if diagnostic_reason:
+            raise ValueError("Meter window announcement requires a non-diagnostic serving capture.")
+        if type(meter_lead_ms) is not int or meter_lead_ms <= 0:
+            raise ValueError("Meter lead time must be a positive integer in milliseconds.")
+        meter_clock = _meter_clock()
 
     output.mkdir(mode=0o700)
     payloads = {user: _payload(user) for user in USERS}
@@ -183,8 +203,15 @@ async def capture(output, host, port, *, diagnostic_reason=None, notes=None):
                         or type(data.get("n_erased")) is not int or data["n_erased"] < 0):
                     raise ValueError(f"Could not confirm KV erasure for slot {slot}. See the private trace.")
 
+            started_ns = monotonic_ns() + (meter_lead_ms or 0) * NS_PER_MS
+            end_ns = started_ns + WINDOW_MS * NS_PER_MS
+            if meter_clock is not None:
+                ledger["meter_window"] = {"capture_id": str(uuid4()), "clock": meter_clock,
+                                          "start_ns": started_ns, "end_ns": end_ns}
+                ledger["status"] = "armed"
+                _save_ledger(output, ledger)
+                await _sleep_until(started_ns)
             ledger["window_started_utc"] = datetime.now(timezone.utc).isoformat()
-            started_ns = monotonic_ns()
             ledger["window_started_ns"] = started_ns
             ledger["status"] = "capturing"
             for request in range(1, REQUESTS + 1):
@@ -193,7 +220,8 @@ async def capture(output, host, port, *, diagnostic_reason=None, notes=None):
                 ledger["duration_ms"] = min(WINDOW_MS, (monotonic_ns() - started_ns) // NS_PER_MS)
                 attempts.sort(key=lambda attempt: (attempt["request"], attempt["user"]))
                 _save_ledger(output, ledger)
-            await _sleep_until(started_ns + WINDOW_MS * NS_PER_MS)
+            await _sleep_until(end_ns)
+            ledger["window_ended_ns"] = end_ns
             ledger["status"] = "complete" if len(attempts) == len(USERS) * REQUESTS else "partial"
         except BaseException as error:
             ledger.update(status="interrupted" if isinstance(error, asyncio.CancelledError) else "failed",
@@ -201,7 +229,7 @@ async def capture(output, host, port, *, diagnostic_reason=None, notes=None):
             raise
         finally:
             if started_ns is not None:
-                ledger["duration_ms"] = min(WINDOW_MS, (monotonic_ns() - started_ns) // NS_PER_MS)
+                ledger["duration_ms"] = max(0, min(WINDOW_MS, (monotonic_ns() - started_ns) // NS_PER_MS))
                 ledger["capture_finished_utc"] = datetime.now(timezone.utc).isoformat()
             attempts.sort(key=lambda attempt: (attempt["request"], attempt["user"]))
             _save_ledger(output, ledger)
@@ -215,10 +243,13 @@ def main():
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--diagnostic-reason", help="Record a protocol deviation, including use of loopback.")
     parser.add_argument("--notes", help="Private notes identifying the client and its network boundary.")
+    parser.add_argument("--meter-lead-ms", type=int,
+                        help="Announce a Linux monotonic measurement window this many milliseconds before it starts.")
     args = parser.parse_args()
     try:
         ledger = asyncio.run(capture(args.output, args.host, args.port,
-                                     diagnostic_reason=args.diagnostic_reason, notes=args.notes))
+                                     diagnostic_reason=args.diagnostic_reason, notes=args.notes,
+                                     meter_lead_ms=args.meter_lead_ms))
     except (OSError, ValueError) as error:
         parser.exit(1, f"{error}\n")
     if ledger["status"] != "complete":
