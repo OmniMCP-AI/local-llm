@@ -32,6 +32,8 @@ assert.ok(pages.some(({ html }) => html === "/wiki/benchmark-method/"));
 const home = (await read("/", "text/html", "/index.md")).replace(/<script[s\S]*?<\/script>/gi, "");
 const homeMarkdown = await read("/index.md", "text/markdown", "/");
 assert.match(home, /<main\b[^>]*>[\s\S]*<h1>fastest\.ai<\/h1>/i);
+assert.ok(home.includes("Also known as localdecode.com."));
+assert.ok(homeMarkdown.includes("Also known as localdecode.com."));
 assert.ok(home.includes('href="/wiki/"'));
 assert.ok(home.includes('rel="canonical" href="' + origin + '/"'));
 assert.ok(homeMarkdown.includes(release));

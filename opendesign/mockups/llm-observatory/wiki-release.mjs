@@ -220,8 +220,8 @@ ${backlinksHtml}
       : "Compare local AI hardware, models, and costs. Read the methods and evidence behind each comparison." };
   const catalogManifest = `/catalog/${catalogRelease}/manifest.json`;
   const homeBody = `<main class="wiki-release release-fallback">
-<h1>fastest.ai</h1>${review ? '<p><strong>Non-production review</strong> · <a href="/review-manifest.json">Review manifest</a></p>'
-    : `<p>Also known as ${alternateName}.</p>`}<p>${home.summary}</p>
+<h1>fastest.ai</h1><p>Also known as ${alternateName}.</p>${review
+    ? '<p><strong>Non-production review</strong> · <a href="/review-manifest.json">Review manifest</a></p>' : ""}<p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
 <a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${review ? `<a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
 <section data-home-highlights${availableHighlights.length ? "" : " hidden"}><h2>Research highlights</h2><ul>
@@ -230,7 +230,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",
-  }) + `\n# fastest.ai\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)" : `Also known as ${alternateName}.`}\n\n${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${review ? ` · [Catalog manifest](${catalogManifest})` : ""}\n`
+  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)\n\n" : ""}${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${review ? ` · [Catalog manifest](${catalogManifest})` : ""}\n`
     + (availableHighlights.length ? "\n## Research highlights\n\n" + availableHighlights.map((entry) =>
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);
