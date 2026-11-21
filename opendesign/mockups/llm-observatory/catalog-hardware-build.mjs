@@ -85,7 +85,7 @@ function publicMachineVideo({ video, buildSource }, isWithdrawn) {
 
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
   const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes,
-    referenceBytes, buildBytes, photos] = await Promise.all([
+    referenceBytes, buildBytes, gpuPhotoIds, photos, gpuPhotos] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
     readFile(join(directory, "../../..", seedPath, "hardware-profiles.json")),
@@ -95,7 +95,9 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     readFile(join(directory, "catalog-modified-gpus.json")),
     readFile(join(directory, "catalog-gpu-reference-evidence.json")),
     readFile(join(directory, machineBuildRegistry)),
+    readFile(join(directory, "catalog-gpu-photo-ids.json"), "utf8").then(JSON.parse),
     readCatalogPhotos(pathToFileURL(join(directory, "catalog-hardware-build.mjs")), "machine"),
+    readCatalogPhotos(pathToFileURL(join(directory, "catalog-hardware-build.mjs")), ["component", "gpu"]),
   ]);
   const inventory = JSON.parse(inventoryBytes);
   const { asOf: inventoryAsOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
@@ -331,9 +333,26 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     const published = video && publicMachineVideo({ video, buildSource: row.buildSource }, isWithdrawn);
     return { ...row, ...(gallery.length && { photos: gallery }), ...(published && { video: published }) };
   });
+  const cardPhotos = new Map();
+  const photoSources = new Set();
+  const photoDigests = new Set();
+  for (const [cardId, { topology, photos: ids = [] }] of Object.entries(gpuPhotoIds)) {
+    if (!cards.has(cardId) && !withdrawnCards.has(cardId)) throw new Error("Unknown GPU for photo gallery: " + cardId);
+    const gallery = [...(topology ? [topology] : []), ...ids].map(id => {
+      const photo = gpuPhotos[id];
+      if (!photo || photoSources.has(photo.source) || photoDigests.has(photo.sha256)) {
+        throw new Error("Missing or duplicate GPU photo: " + cardId + " · " + id);
+      }
+      photoSources.add(photo.source);
+      photoDigests.add(photo.sha256);
+      return photo;
+    }).filter(photo => !isWithdrawn(photo.source));
+    if (gallery.length) cardPhotos.set(cardId, gallery);
+  }
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({
       ...card,
+      ...(cardPhotos.has(card.id) && { photos: cardPhotos.get(card.id) }),
       variants: [...cards.values()].filter((entry) => entry.parent === card.id).map(({ id, name }) => ({ id, name })),
       relatedMachines: machineRows.filter(machine => machine.kind !== "Component reference" && machine.cardIds.includes(card.id))
         .map(({ id, name }) => ({ id, name })),
@@ -379,6 +398,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       cardsWithVendorSpecs: catalog.cards.filter(card => card.vendorSpec).length,
       cardsWithSpecificVendorSpecs: catalog.cards.filter(card => card.vendorSpec &&
         card.vendorSpec.scope !== "Multiple manufacturer configurations").length,
+      cardsWithPhotos: catalog.cards.filter(card => card.photos?.length).length,
       cardsWithProductImageLinks: catalog.cards.filter(card => card.vendorSpec?.gallery).length,
       boardPartnerCards: catalog.cards.filter(card => card.vendorSpec?.scope === "Board-partner SKU").length,
       llmfitDiscreteMatchers: matchers.size,
