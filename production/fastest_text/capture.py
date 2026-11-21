@@ -49,7 +49,11 @@ def verify_runtime(output, bench, revision, env):
     record_process(path, process, "stdout.md", 30, env)
     if process["exit_code"] != 0:
         raise ValueError("Runner build probe failed. See runtime/attempt.json.")
-    builds = BUILD_FOOTER.findall((path / "stdout.md").read_text(encoding="utf-8"))
+    return parse_runtime_build((path / "stdout.md").read_text(encoding="utf-8"), revision)
+
+
+def parse_runtime_build(stdout, revision):
+    builds = BUILD_FOOTER.findall(stdout)
     if len(builds) != 1 or not pinned_commit(builds[0][0], revision):
         raise ValueError("Runner build probe does not match the pinned b5163 revision.")
     commit, number = builds[0]
@@ -120,16 +124,15 @@ def phase_progress(stderr, phase, total):
     return started, errors
 
 
-def finish_phase(directory, record, cell, phase, model, protocol, runtime):
-    stderr_file = directory / "stderr.log"
-    stderr = stderr_file.read_text(encoding="utf-8", errors="replace") if stderr_file.is_file() else ""
+def parse_bench_row(stdout):
     try:
-        row = json.loads((directory / "stdout.jsonl").read_text(encoding="utf-8"))
-    except (FileNotFoundError, ValueError, RecursionError):
-        row = None
-    if not isinstance(row, dict):
-        row = {}
+        row = json.loads(stdout.decode("utf-8"))
+    except (ValueError, RecursionError):
+        return {}
+    return row if isinstance(row, dict) else {}
 
+
+def classify_phase(record, cell, phase, model, protocol, runtime, stderr, row):
     backends = row.get("backends")
     placement = effective_placement(stderr, backends.split(",") if isinstance(backends, str) else [])
     total = protocol["warm_samples_per_phase"]
@@ -176,20 +179,36 @@ def finish_phase(directory, record, cell, phase, model, protocol, runtime):
         else:
             attempt.update(outcome="unmeasured", reason=reason)
         attempts.append(attempt)
-    record.update(
-        outcome=outcome, reason=reason, placement=placement, observed_progress=started, attempts=attempts,
-        samples_ns=[attempt["elapsed_ns"] for attempt in attempts if attempt["outcome"] == "success"],
-    )
+    return {
+        "outcome": outcome, "reason": reason, "placement": placement, "observed_progress": started,
+        "attempts": attempts,
+        "samples_ns": [attempt["elapsed_ns"] for attempt in attempts if attempt["outcome"] == "success"],
+    }
+
+
+def finish_phase(directory, record, cell, phase, model, protocol, runtime):
+    stderr_file = directory / "stderr.log"
+    stderr = stderr_file.read_text(encoding="utf-8", errors="replace") if stderr_file.is_file() else ""
+    try:
+        row = parse_bench_row((directory / "stdout.jsonl").read_bytes())
+    except FileNotFoundError:
+        row = {}
+    record.update(classify_phase(record, cell, phase, model, protocol, runtime, stderr, row))
     save_json(directory / "attempt.json", record)
 
 
-def capture_phase(output, key, cell, model, bench, protocol, runtime, env, timeout):
-    phase = protocol["phases"][key]
+def phase_argv(bench, model, phase, protocol):
     argv = [str(bench), "-m", str(model), "-p", str(phase["input_tokens"]), "-n", str(phase["output_tokens"])]
     for setting, flag in BENCH_SETTING_FLAGS.items():
         value = protocol["settings"][setting]
         argv.extend((flag, str(int(value) if type(value) is bool else value)))
     argv.extend(("-r", str(protocol["warm_samples_per_phase"]), "--progress", "-v", "-o", "jsonl"))
+    return argv
+
+
+def capture_phase(output, key, cell, model, bench, protocol, runtime, env, timeout):
+    phase = protocol["phases"][key]
+    argv = phase_argv(bench, model, phase, protocol)
     directory = output / key
     record = {"phase": key, "argv": argv, "requested_context_tokens": phase["requested_context_tokens"]}
     try:
