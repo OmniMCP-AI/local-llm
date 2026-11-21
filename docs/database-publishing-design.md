@@ -152,13 +152,17 @@ Machine pages can use a topology widget to show installed devices, physical and 
 
 ## Runtime release watch
 
-A separate refresh reads the official llama.cpp feed and records deduplicated
-revisions and refresh health in the PostgreSQL `fastest_release_watch` schema.
+A separate refresh reads the official llama.cpp, SGLang, vLLM and Ollama feeds
+and records deduplicated revisions and refresh health in the PostgreSQL
+`fastest_release_watch` schema.
 The opt-in release origin reads that retained history for `/runtime-releases`,
 `/runtime-releases.md` and `/runtime-releases.json`. The CLI and origin share the
 projection of source links, release status and last successful refresh. Failed
 upstream refreshes preserve the prior success and its history. All three
 origin responses bypass caches and reflect the current database read.
+The Pages runtime directory and matching catalog profiles read the official
+watch summary at request time. The catalog keeps the pinned documentation
+and version references from its released snapshot.
 
 A reviewed applicability file attaches a technique to a retained release
 revision and exact card, driver, runtime build and workload. For a verified
