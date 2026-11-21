@@ -9,6 +9,7 @@ from .validation import PriceError
 
 METHOD = "seller-day-landed-asking-v1"
 REFRESH_METHOD = "seller-day-landed-asking-v2"
+CITATION_METHOD = "source-reported-price-citation-v1"
 
 DAY_LABELS = {
     "observed": "Observed",
@@ -86,9 +87,39 @@ def _sampling(values, seller_count, minimums, allowed):
     }
 
 
+def _citation_result(identity, snapshot):
+    cohort = snapshot["cohort"]
+    references = [
+        {
+            **{field: row[field] for field in ("observed_on", "marketplace", "price")},
+            "currency": cohort["currency"],
+            "kind": "historical_report",
+            "confirmation": "source_reported",
+            **dict.fromkeys(("seller", "checkout_url", "stock", "discount", "tax", "shipping", "landed_price")),
+        }
+        for row in snapshot["references"]
+    ]
+    return {
+        **identity,
+        **{field: cohort[field] for field in (
+            "source_id", "source_revision", "source_type", "market", "scope", "currency",
+            "data_class", "source_name", "source_locator", "price_basis",
+        )},
+        "authorization_decision_id": snapshot["decision_id"],
+        **({"authorization_expires_at": snapshot["expires_at"]} if snapshot.get("expires_at") else {}),
+        "start": snapshot["start"],
+        "as_of": snapshot["as_of"],
+        "destination": None,
+        "condition": None,
+        "sampling": _sampling([], 0, {}, False),
+        "offers": [],
+        "references": references,
+    }
+
+
 def build_result(snapshot):
     recurring = snapshot["method"] == REFRESH_METHOD
-    if snapshot["method"] not in (METHOD, REFRESH_METHOD):
+    if snapshot["method"] not in (METHOD, REFRESH_METHOD, CITATION_METHOD):
         raise PriceError(f"Unsupported price cohort method: {snapshot['method']}")
     identity = {
         "result_type": "regional-price-cohort",
@@ -97,6 +128,8 @@ def build_result(snapshot):
     }
     if snapshot["status"] == "withdrawn":
         return identity
+    if snapshot["method"] == CITATION_METHOD:
+        return _citation_result(identity, snapshot)
 
     cohort = snapshot["cohort"]
     start, as_of = (date.fromisoformat(snapshot[field]) for field in ("start", "as_of"))

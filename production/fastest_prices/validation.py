@@ -1,7 +1,8 @@
 """Validate reviewed feed snapshots at the publisher boundary."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import re
+from urllib.parse import urlsplit
 
 from fastest_release.validation import valid_expiry
 
@@ -75,17 +76,47 @@ def _condition(value):
 
 
 def cohort(value):
-    _fields(
-        value, "cohort",
-        "id source_id source_revision source_type market destination scope condition currency "
-        "seller_aliases data_class stale_after_days minimum_samples minimum_sellers authorization",
-    )
-    for field in ("id", "source_id", "source_revision", "market", "destination"):
+    citation = isinstance(value, dict) and value.get("source_type") == "citation"
+    common = "id source_id source_revision source_type market scope currency data_class authorization"
+    if citation:
+        _fields(value, "citation cohort", common + " source_name source_locator price_basis")
+    else:
+        _fields(value, "cohort", common + (
+            " destination condition seller_aliases stale_after_days minimum_samples minimum_sellers"
+        ))
+    for field in ("id", "source_id", "source_revision", "market"):
         _text(value[field], field)
-    _choice(value["source_type"], "source type", ("seller", "feed"))
     _scope(value["scope"])
-    _condition(value["condition"])
     _currency(value["currency"])
+    if citation:
+        _citation_policy(value)
+    else:
+        _offer_policy(value)
+    _authorization(value["authorization"], citation)
+
+
+def _citation_policy(value):
+    _choice(value["scope"]["kind"], "citation scope kind", ("sku",))
+    _choice(value["data_class"], "data class", ("reviewed_citations",))
+    _choice(value["price_basis"], "citation price basis", ("post_coupon",))
+    _text(value["source_name"], "citation source name")
+    locator = value["source_locator"]
+    _text(locator, "citation source URL")
+    try:
+        url = urlsplit(locator)
+    except ValueError as error:
+        raise PriceError("Use an exact HTTPS product page URL for the citation") from error
+    if (
+        url.scheme != "https" or not url.hostname or url.netloc != url.hostname
+        or not url.path.startswith("/") or url.path == "/" or url.fragment or re.search(r"[\s<>\\]", locator)
+    ):
+        raise PriceError("Use an exact HTTPS product page URL for the citation")
+
+
+def _offer_policy(value):
+    _choice(value["source_type"], "source type", ("seller", "feed"))
+    _text(value["destination"], "destination")
+    _condition(value["condition"])
     _choice(value["data_class"], "data class", ("illustrative", "authorized_observations"))
     _integer(value["stale_after_days"], "stale_after_days", 0, 365)
     _integer(value["minimum_samples"], "minimum_samples", 3, 3660)
@@ -99,7 +130,7 @@ def cohort(value):
     if value["source_type"] == "seller" and len(set(aliases.values())) != 1:
         raise PriceError("a direct seller cohort must identify one canonical seller")
 
-    rights = value["authorization"]
+def _authorization(rights, citation):
     expires = isinstance(rights, dict) and "expires_at" in rights
     fields = "decision_id record status collect retain display export aggregate"
     _fields(rights, "authorization", fields + (" expires_at" if expires else ""))
@@ -110,7 +141,7 @@ def cohort(value):
     _choice(rights["status"], "authorization status", ("approved",))
     for permission in ("collect", "retain", "display", "export"):
         _choice(rights[permission], permission, ("allow",))
-    _choice(rights["aggregate"], "aggregate", ("allow", "deny"))
+    _choice(rights["aggregate"], "aggregate", ("deny",) if citation else ("allow", "deny"))
 
 
 def bundle(value):
@@ -123,17 +154,37 @@ def bundle(value):
 
 
 def capture(value):
-    _fields(value, "capture", "id source_id source_revision checked_at status observations")
+    citation = isinstance(value, dict) and "references" in value
+    field = "references" if citation else "observations"
+    _fields(value, "capture", "id source_id source_revision checked_at status " + field)
     _text(value["id"], "capture ID")
     _text(value["source_id"], "source ID")
     _text(value["source_revision"], "source revision")
     checked_at = _timestamp(value["checked_at"], "checked_at")
+    if citation:
+        _choice(value["status"], "citation capture status", ("success",))
+        _references(value["references"], checked_at)
+        return
     _choice(value["status"], "capture status", ("success", "failed"))
     observations = value["observations"]
     if not isinstance(observations, list) or (value["status"] == "failed" and observations):
         raise PriceError("a failed capture must have an empty observation list")
     for observation in observations:
         _observation(observation, checked_at)
+
+
+def _references(references, checked_at):
+    if not isinstance(references, list) or not 1 <= len(references) <= 3:
+        raise PriceError("A citation capture needs one to three price references")
+    # A source date can be a calendar day ahead of the UTC review timestamp.
+    latest_day = (checked_at + timedelta(hours=14)).date().isoformat()
+    for item in references:
+        _fields(item, "reference", "observed_on marketplace price")
+        period(item["observed_on"], item["observed_on"])
+        if item["observed_on"] > latest_day:
+            raise PriceError("Citation date cannot follow its review")
+        _text(item["marketplace"], "citation marketplace")
+        _money(item["price"], "citation price")
 
 
 def _observation(value, checked_at):

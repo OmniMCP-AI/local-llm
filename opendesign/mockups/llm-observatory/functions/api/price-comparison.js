@@ -60,6 +60,10 @@ export async function onRequestGet({ request, env }) {
       || price.release_id !== releaseId || price.status !== "published" || !Array.isArray(price.offers)) {
     return json({ status: "unavailable", releaseId }, 503);
   }
+  if (price.data_class === "reviewed_citations") {
+    if (price.offers.length || !Array.isArray(price.references)) return json({ status: "unavailable", releaseId }, 503);
+    return json({ status: "published", releaseId, price, decision: null, economics: null });
+  }
   costPath?.searchParams.delete("revision");
   const [goal, cost] = await Promise.all([
     goalId && readJSON(goalPath).then(({ value }) => value),
