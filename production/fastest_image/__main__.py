@@ -11,7 +11,7 @@ from .render import render
 PACKAGE = Path(__file__).resolve().parent
 
 
-def build(target, records, demo):
+def report_artifacts(records=(), demo=False):
     dataset = json.loads((PACKAGE / "plan.json").read_text(encoding="utf-8"))
     local_artifacts = [dataset["workflow"], *(cell["lock"] for cell in dataset["cells"])]
     files = {}
@@ -36,7 +36,12 @@ def build(target, records, demo):
     payload = json_text(dataset)
     markdown, html = render(dataset, digest(payload))
     files.update({"image-pilot.json": payload, "image-pilot.md": markdown, "image-pilot.html": html})
-    write_bundle(target, dataset["id"], files)
+    return dataset["id"], files
+
+
+def build(target, records, demo):
+    report_id, files = report_artifacts(records, demo)
+    write_bundle(target, report_id, files)
 
 
 def main():
