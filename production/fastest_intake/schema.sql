@@ -82,4 +82,39 @@ CREATE TABLE IF NOT EXISTS fastest_intake.tariff_candidate (
     FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.image_pilot_run (
+    manifest_sha256 text PRIMARY KEY CHECK (manifest_sha256 ~ '^[0-9a-f]{64}$'),
+    provenance_sha256 text NOT NULL CHECK (provenance_sha256 ~ '^[0-9a-f]{64}$'),
+    ledger_sha256 text NOT NULL CHECK (ledger_sha256 ~ '^[0-9a-f]{64}$'),
+    packet_locator text NOT NULL CHECK (packet_locator <> ''),
+    started_at timestamptz NOT NULL,
+    cell_id text NOT NULL CHECK (cell_id <> ''),
+    plan_sha256 text NOT NULL CHECK (plan_sha256 ~ '^[0-9a-f]{64}$'),
+    protocol_id text NOT NULL CHECK (protocol_id <> ''),
+    workflow_sha256 text NOT NULL CHECK (workflow_sha256 ~ '^[0-9a-f]{64}$'),
+    artifact_sha256 text NOT NULL CHECK (artifact_sha256 ~ '^[0-9a-f]{64}$'),
+    artifact_repository text NOT NULL CHECK (artifact_repository <> ''),
+    artifact_revision text NOT NULL CHECK (artifact_revision <> ''),
+    runtime_revision text NOT NULL CHECK (runtime_revision <> ''),
+    lock_sha256 text NOT NULL CHECK (lock_sha256 ~ '^[0-9a-f]{64}$'),
+    eligibility text NOT NULL CHECK (eligibility = 'exploratory'),
+    quality_status text NOT NULL CHECK (quality_status = 'pending')
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.image_pilot_attempt (
+    manifest_sha256 text REFERENCES fastest_intake.image_pilot_run(manifest_sha256),
+    attempt_index smallint CHECK (attempt_index >= 0),
+    phase text NOT NULL CHECK (phase IN ('warmup', 'repeat')),
+    seed bigint NOT NULL,
+    outcome text NOT NULL CHECK (outcome IN ('success', 'oom', 'timeout', 'interrupted', 'failed')),
+    elapsed_ns bigint NOT NULL CHECK (elapsed_ns > 0),
+    phase_end_ns jsonb NOT NULL CHECK (jsonb_typeof(phase_end_ns) = 'object'),
+    output_sha256 text CHECK (output_sha256 ~ '^[0-9a-f]{64}$'),
+    failure_reason text CHECK (failure_reason <> ''),
+    PRIMARY KEY (manifest_sha256, attempt_index),
+    CHECK ((attempt_index = 0) = (phase = 'warmup')),
+    CHECK ((outcome = 'success' AND output_sha256 IS NOT NULL AND failure_reason IS NULL)
+        OR (outcome <> 'success' AND output_sha256 IS NULL AND failure_reason IS NOT NULL))
+);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;

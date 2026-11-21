@@ -200,6 +200,93 @@ class ReleaseTest(unittest.TestCase):
                 "SELECT amount FROM fastest_intake.tariff_candidate"
             )
 
+    def test_private_image_pilot_intake_pins_timing_rows_and_keeps_release_unchanged(self):
+        production = FIXTURE.parents[1]
+        plan_path = production / "fastest_image" / "plan.json"
+        plan = json.loads(plan_path.read_bytes())
+        packet = self.socket_path.parent / "private-image-packet"
+        (packet / "run").mkdir(parents=True, mode=0o700)
+        provenance = {
+            "start_utc": "2026-11-21T00:00:00Z", "hardware": "Fixture Apple M4",
+            "checkpoint": plan["artifact"], "workflow_sha256": plan["workflow"]["sha256"],
+            "lock_sha256": plan["cells"][0]["lock"]["sha256"],
+            "runtime": plan["runtime"], "protocol": plan["protocol"],
+            "client_command": ["private environment sentinel"],
+        }
+        output = "f" * 64
+        attempts = [
+            {"phase": "warmup", "seed": 731000, "outcome": "success", "elapsed_ns": 9_000,
+             "phase_end_ns": {"sampler": 10, "decode": 20, "save": 30, "complete": 40},
+             "output_sha256": output},
+            {"phase": "repeat", "seed": 731001, "outcome": "oom", "elapsed_ns": 2_000,
+             "phase_end_ns": {"sampler": 10}, "reason": "ComfyUI reported OutOfMemoryError."},
+        ]
+        members = {"provenance.json": provenance, "run/attempts.json": attempts}
+
+        def packet_manifest():
+            checksums = {"run/sample-00.png": output}
+            for name, document in members.items():
+                content = json.dumps(document).encode()
+                (packet / name).write_bytes(content)
+                checksums[name] = sha256(content).hexdigest()
+            manifest = "".join(f"{value}  {name}\n" for name, value in checksums.items()).encode()
+            (packet / "SHA256SUMS").write_bytes(manifest)
+            return sha256(manifest).hexdigest(), checksums
+
+        def intake(command, *args, check=True):
+            return subprocess.run(
+                [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url,
+                 command, *args], cwd=production, text=True, capture_output=True, check=check, timeout=30,
+            )
+
+        manifest, checksums = packet_manifest()
+        self.observation["kind"] = "measured"
+        release_id = self.store.publish(self.observation)
+        before = self.store.read(release_id)
+        intake("migrate")
+        imported = json.loads(intake("ingest-image-pilot", str(packet)).stdout)
+        self.assertEqual(imported, {"manifest_sha256": manifest, "attempts": 2, "successful": 1, "failed": 1})
+        self.assertEqual(json.loads(intake("ingest-image-pilot", str(packet)).stdout), imported)
+        self.assertEqual(self.store.read(release_id), before)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_release.observation_revision"), "1")
+        [run] = json.loads(self.store._query("SELECT json_agg(run) FROM fastest_intake.image_pilot_run AS run"))
+        for key, expected in {
+            "manifest_sha256": manifest, "ledger_sha256": checksums["run/attempts.json"],
+            "provenance_sha256": checksums["provenance.json"], "packet_locator": str(packet.resolve()),
+            "plan_sha256": sha256(plan_path.read_bytes()).hexdigest(), "cell_id": "apple-m4",
+            "protocol_id": plan["protocol"]["id"], "workflow_sha256": plan["workflow"]["sha256"],
+            "artifact_sha256": plan["artifact"]["sha256"], "artifact_revision": plan["artifact"]["revision"],
+            "runtime_revision": plan["runtime"]["revision"], "lock_sha256": plan["cells"][0]["lock"]["sha256"],
+            "eligibility": "exploratory", "quality_status": "pending",
+        }.items():
+            self.assertEqual(run[key], expected, key)
+        self.assertNotIn("private environment sentinel", json.dumps(run))
+        rows = json.loads(self.store._query("""
+            SELECT json_agg(attempt ORDER BY attempt_index) FROM fastest_intake.image_pilot_attempt AS attempt
+        """))
+        self.assertEqual([(row["phase"], row["seed"], row["elapsed_ns"], row["outcome"]) for row in rows], [
+            ("warmup", 731000, 9_000, "success"), ("repeat", 731001, 2_000, "oom"),
+        ])
+        self.assertEqual(rows[0]["output_sha256"], output)
+        self.assertEqual(rows[1]["phase_end_ns"], {"sampler": 10})
+        self.assertEqual(rows[1]["failure_reason"], "ComfyUI reported OutOfMemoryError.")
+        self.store._query("CREATE ROLE intake_public_reader LOGIN;")
+        reader = ReleaseStore(self.database_url + " user=intake_public_reader")
+        for table in ("image_pilot_run", "image_pilot_attempt"):
+            with self.assertRaisesRegex(ReleaseError, "permission denied"):
+                reader._query(f"SELECT * FROM fastest_intake.{table}")
+        (packet / "run/attempts.json").write_text("[]")
+        invalid = intake("ingest-image-pilot", str(packet), check=False)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn("run/attempts.json does not match SHA256SUMS", invalid.stderr)
+        provenance["workflow_sha256"] = "0" * 64
+        packet_manifest()
+        invalid = intake("ingest-image-pilot", str(packet), check=False)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn("workflow", invalid.stderr)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_run"), "1")
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_attempt"), "2")
+
     def test_deployed_origin_replays_published_values_after_restart(self):
         self.observation["kind"] = "measured"
         release = self.store.publish(self.observation)
