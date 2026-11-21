@@ -170,16 +170,19 @@ def event(directory, data):
 
 
 @contextmanager
-def local_server(directory, binary, model, device, settings, env):
+def local_server(directory, binary, model, device, settings, env, check_server=None):
     listener = directory / "run.sock"
     command = [
         str(binary), "--model", str(model), "--host", str(listener), "--device", device,
-        "--split-mode", "none", "--no-webui", "--jinja", "--no-warmup",
+        "--split-mode", settings.get("split_mode", "none"), "--no-webui", "--jinja", "--no-warmup",
         "--alias", "pinned-qwen", "--cache-reuse", "0", "--reasoning-format", "none",
         "--ctx-size", str(settings["context_tokens"]), "--threads", str(settings["threads"]),
         "--gpu-layers", str(settings["gpu_layers"]), "--batch-size", str(settings["batch_tokens"]),
         "--parallel", str(settings["parallel_requests"]),
     ]
+
+    if "split_mode" in settings:
+        command += ["--threads-batch", str(settings["threads"]), "--no-kv-offload"]
 
     with TemporaryDirectory(dir=directory, prefix="slot-cache-") as cache_dir, (directory / "server.log").open("wb") as output:
         # b5163 requires a slot storage path even for the in-memory erase operation.
@@ -198,6 +201,8 @@ def local_server(directory, binary, model, device, settings, env):
                 time.sleep(0.5)
             else:
                 raise RuntimeError("llama.cpp never became ready")
+            if check_server is not None:
+                check_server(child.pid, directory / "server.log")
             event(directory, {"event": "server_ready", "pid": child.pid})
             yield listener
         finally:
@@ -234,8 +239,10 @@ def capture_host(path):
             output.write(b"\n".join(utilization) + b"\n")
 
 
-def run(directory, binary, model, hardware, os_build, backend, device):
-    protocol = plan()
+def run(directory, binary, model, hardware, os_build, backend, device, *,
+        protocol=None, check_server=None, runtime_environment=None):
+    if protocol is None:
+        protocol = plan()
     directory.mkdir(mode=0o700)
     write_json(directory / "plan.json", protocol)
     (directory / "task.json").write_bytes(TASK_BYTES)
@@ -243,11 +250,14 @@ def run(directory, binary, model, hardware, os_build, backend, device):
     (directory / "measure.py").write_bytes(adapter)
 
     env = {key: value for key, value in os.environ.items() if not key.startswith(("LLAMA_", "GGML_", "DYLD_", "LD_"))}
+    if runtime_environment is not None:
+        env = runtime_environment
     version = subprocess.check_output([binary, "--version"], stderr=subprocess.STDOUT, text=True, timeout=10, env=env)
     (directory / "runtime-version.txt").write_text(version, encoding="utf-8")
     revision = protocol["runtime"]["revision"]
-    version_commit = re.search(r"^version: [0-9]+ \(([0-9a-f]{7,40})\)", version, re.MULTILINE)
-    if not version_commit or not revision.startswith(version_commit[1]):
+    version_match = re.search(r"^version: ([0-9]+) \(([0-9a-f]{7,40})\)", version, re.MULTILINE)
+    if (not version_match or not revision.startswith(version_match[2])
+            or ("build" in protocol["runtime"] and int(version_match[1]) != protocol["runtime"]["build"])):
         raise ValueError("llama-server revision does not match the plan")
 
     shards = protocol["artifact"]["shards"]
@@ -277,7 +287,7 @@ def run(directory, binary, model, hardware, os_build, backend, device):
 
     capture_host(directory / "host-before.txt")
     try:
-        with local_server(directory, binary, model, device, protocol["settings"], env) as listener:
+        with local_server(directory, binary, model, device, protocol["settings"], env, check_server) as listener:
             def complete(body, timeout):
                 return exchange(listener, "/v1/chat/completions", timeout, body)
 

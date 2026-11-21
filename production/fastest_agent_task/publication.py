@@ -3,10 +3,17 @@
 from .__main__ import json_text, page
 from .evidence import comparison
 from .harness import TASK_BYTES, fingerprint, plan
+from .hosted import reviewed_hosted_comparison
 
 
 def report_artifacts(records=()):
-    dataset = comparison(plan(), records, demo=False)
+    records = tuple(records)
+    hosted = any(
+        isinstance(record, dict) and isinstance(record.get("environment"), dict)
+        and record["environment"].get("backend") == "CPU"
+        for record in records
+    )
+    dataset = reviewed_hosted_comparison(records) if hosted else comparison(plan(), records, demo=False)
     files = {
         "agent-task.json": json_text(dataset),
         "agent-task.md": page(dataset, html=False),

@@ -89,3 +89,48 @@ GRANT EXECUTE ON FUNCTION fastest_release.read_agent_task_artifact(text, text) T
 ```
 
 The report URL pins the SHA-256 of its artifact manifest. PostgreSQL stores the rendered public artifact bytes with the associated evidence IDs and an optional `--expires-at` UTC timestamp. Replays with the same approval return the same pin. Expiry or `python3 -B -m fastest_release withdraw EVIDENCE_UUID "Editorial reason"` retires the report on its next read, including old links and the manifest. The database read returns only the requested public artifact. Keep the capture directory and raw transcripts private.
+
+## Shared CI CPU comparison
+
+The [hosted capture workflow](../../.github/workflows/agent-task-cpu.yml) runs
+both policies on one GitHub-hosted Ubuntu 24.04 x64 guest. The shared CI CPU
+plan has its own context fingerprints. It uses four guest vCPUs and no GPU
+offload. It preserves the fixture, rubric, exact Qwen2.5 7B GGUF shards, b5163
+runtime revision, warmups, trial order, budgets and timing boundary.
+
+```sh
+python3 -B -m fastest_agent_task.capture_hosted plan
+```
+
+The job checks the official runtime archive and executable, both model
+shards, effective context and batch sizes, CPU-only buffer placement, guest
+affinity and cgroup quotas. It uses one Unix socket and confirms an empty KV
+slot before each warmup and timed attempt. It samples guest idle and steal
+time before and after the session. Physical host load is unknown, and shared
+infrastructure can affect timing. The results describe this run attempt.
+
+The job verifies the attempt sequence and monotonic elapsed times with its
+private data before removing that data. It uploads the verifier receipt and
+two unsigned candidates. The receipt records the source revision, run attempt,
+guest checks, policy order, candidate digests and evidence IDs. Candidate
+records contain reviewed-field inputs, including successful allowlisted tool
+IDs and the rubric-approved fictional answer when accepted. Raw turns,
+unaccepted answers, host logs and server logs stay within the job.
+
+Choose a successful same-repository run. Verify its checkout and run attempt
+using the Actions run view. Match the receipt SHA-256 with the digest printed
+by the acquisition step, and replay the packet from that checkout.
+
+```sh
+gh run download "$run_id" --repo OmniMCP-AI/local-llm \
+  --name "agent-task-cpu-$run_id-$run_attempt" --dir "$packet"
+python3 -B -m fastest_agent_task.capture_hosted verify "$packet"
+```
+
+An authorized reviewer records the release decision separately. Copy each
+candidate and add the existing `review` fields. Use its context's evidence ID
+from the receipt, the verified receipt digest for `retained_sha256`, and a
+canonical UUID for the actual decision. Publish those reviewed records with
+`publish-agent-task` and keep the returned pin with the review. The publisher
+renders the CPU cohort from those reviewed fields. The quiet-host plan keeps
+its own default report and existing release pins.
