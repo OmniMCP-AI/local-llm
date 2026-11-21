@@ -29,9 +29,12 @@ def hosted_plan():
         protocol_id="inventory-agent-comparison-shared-ci-cpu@1",
         harness={"id": "fastest_agent_task-shared-ci-cpu@1", "sha256": identity(files), "files": files},
         runtime={**shared["runtime"], "build": 5163, "binary_sha256": BINARY_SHA256},
-        settings={**shared["settings"], "threads": THREADS, "gpu_layers": 0, "device": "none", "split_mode": "layer"},
+        settings={**shared["settings"], "threads": THREADS, "gpu_layers": 0, "device": "none",
+                  "split_mode": "layer", "kv_reset_timeout_seconds": 90},
         controls={
             **shared["controls"],
+            "reset": "Allow up to 90 seconds for the prior generation to drain and the slot to confirm KV erase. "
+                     "The reset completes before the next attempt clock starts.",
             "session": "Use one GitHub-hosted Ubuntu 24.04 x86_64 guest with four available vCPUs, "
                        "one CPU-only loaded model, one request at a time, and one unmeasured warmup per context. "
                        "Start each attempt with empty KV and a new session. " + LIMITATION,

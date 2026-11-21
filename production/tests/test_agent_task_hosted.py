@@ -152,3 +152,112 @@ class HostedAgentTaskTest(unittest.TestCase):
                 "devices": [], "offloaded_layers": [], "context_tokens": [2048], "batch_tokens": [512],
                 "slots": [1], "threads": [4, 4, 4], "unix_socket": True,
             })
+
+
+class HostedSlotRecoveryTest(unittest.TestCase):
+    def test_pre_attempt_reset_drains_a_timed_out_slot_without_extending_the_attempt(self):
+        self.exercise_reset()
+
+    def test_stuck_slot_fails_closed_at_the_reset_stage(self):
+        self.exercise_reset(reset_error=TimeoutError)
+
+    def test_rejected_reset_redacts_the_untrusted_response(self):
+        self.exercise_reset(reset_error=ValueError)
+
+    def exercise_reset(self, reset_error=None):
+        from pathlib import Path
+        import sys
+        from tempfile import TemporaryDirectory
+        from unittest.mock import patch
+
+        from fastest_agent_task.harness import BUDGET
+        from fastest_agent_task.hosted import hosted_plan
+        from fastest_agent_task.measure import run
+
+        stage_log = []
+        started_attempts = 0
+        slot_busy = False
+        clock_ns = 0
+
+        def monotonic_ns():
+            nonlocal clock_ns
+            clock_ns += 1_000
+            return clock_ns
+
+        def exchange(_listener, endpoint, timeout, body=None):
+            nonlocal started_attempts, slot_busy, clock_ns
+            if endpoint == "/health":
+                return {"status": "ok"}
+            if endpoint == "/slots/0?action=erase":
+                if slot_busy:
+                    if reset_error is not None:
+                        raise reset_error("private socket information")
+                    if timeout < 90:
+                        raise TimeoutError("private socket information")
+                    slot_busy = False
+                return {"id_slot": 0, "n_erased": 0}
+            self.assertFalse(slot_busy)
+            messages = body["messages"]
+            phase, requests = messages[0]["content"].split("\nAllowed tool requests: ")
+            self.assertTrue(phase)
+            reads = json.loads(requests)
+            turn = (len(messages) - 1) // 2
+            if turn == 0:
+                started_attempts += 1
+                if started_attempts == 3:
+                    self.assertGreater(timeout, 29.99)
+                    self.assertLessEqual(timeout, 30)
+                    clock_ns += int(timeout * 1_000_000_000)
+                    slot_busy = True
+                    raise TimeoutError("private socket information")
+            answer = reads[turn] if turn < len(reads) else {"open_units": 17}
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
+                "usage": {"completion_tokens": 9},
+            }
+
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "test-llama-server"
+            binary.write_text(f"#!{sys.executable}\nimport sys, time\n"
+                              'if "--version" in sys.argv:\n    print("version: 5163 (84a9bf2f)")\n'
+                              "else:\n    time.sleep(300)\n")
+            binary.chmod(0o700)
+            model = root / "test-model.gguf"
+            model.write_bytes(b"tiny test model")
+            protocol = hosted_plan()
+            protocol["artifact"]["shards"] = [{
+                "path": model.name, "bytes": model.stat().st_size, "sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+            }]
+            with (
+                patch("fastest_agent_task.measure.exchange", exchange),
+                patch("fastest_agent_task.measure.platform.system", return_value="Linux"),
+                patch("fastest_agent_task.measure.time.monotonic_ns", monotonic_ns),
+            ):
+                def capture():
+                    run(root / "capture", binary, model, "host", "os", "CPU", "none",
+                        protocol=protocol, report_progress=stage_log.append)
+
+                if reset_error is None:
+                    capture()
+                else:
+                    with self.assertRaisesRegex(RuntimeError, f"kv_reset.*{reset_error.__name__}") as failure:
+                        capture()
+                    self.assertNotIn("private socket information", str(failure.exception))
+
+            bundle = json.loads((root / "capture" / "bundle-draft.json").read_text())
+            first = bundle["attempts"][0]
+            self.assertEqual(first["termination"], "timeout")
+            self.assertLess(first["wall_ns"], BUDGET["wall_ns_per_attempt"] + 100_000)
+            self.assertIn({"stage": "measured_attempt", "status": "finished", "context_id": "bundle",
+                           "trial": 1, "attempt": 1, "outcome": "timeout", "wall_ns": first["wall_ns"]}, stage_log)
+            outcomes = [attempt["termination"] for attempt in bundle["attempts"]]
+            if reset_error is not None:
+                self.assertEqual(outcomes, ["timeout"])
+                self.assertEqual(started_attempts, 3)
+                self.assertTrue(any(row.get("stage") == "kv_reset" and row.get("status") == "failed"
+                                    and row.get("error_type") == reset_error.__name__ for row in stage_log))
+            else:
+                self.assertEqual(outcomes, ["timeout", "answered", "answered"])
+                self.assertEqual(started_attempts, 7)
+            self.assertNotIn("private socket information", repr(stage_log))
