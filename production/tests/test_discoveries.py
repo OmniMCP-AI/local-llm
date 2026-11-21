@@ -14,6 +14,7 @@ from uuid import uuid4
 
 PRODUCTION = Path(__file__).resolve().parents[1]
 FIXTURES = PRODUCTION / "fixtures" / "discoveries"
+VIDEO_SAMPLE = Path("opendesign/mockups/llm-observatory/battle-title-sample.json")
 ORIGINAL = "https://forum.example/topics/local-models/18"
 SOURCE_DATE = "2026-11-19T12:30:00Z"
 CROSS_POST = "https://video.example/watch/local-models-repost"
@@ -211,6 +212,113 @@ class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
         self.connection = f"host={self.socket} dbname={database_name}"
         self.run_cli("migrate")
 
+    def test_reviewed_youtube_sample_stays_private_across_replay_and_withdrawal(self):
+        sample = PRODUCTION.parent / VIDEO_SAMPLE
+        excluded_from_single_gpu_ranking = "gvl3mo_LqFo"
+        url = f"https://www.youtube.com/watch?v={excluded_from_single_gpu_ranking}"
+
+        receipt = self.run_cli("intake-youtube-metadata", sample)
+        self.assertEqual(receipt, {"discoveries": 12})
+        first_queue = self.run_cli("queue")["entries"]
+        self.assertEqual(len(first_queue), 12)
+        for item in first_queue:
+            self.assertRegex(item["source_url"], r"^https://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]{11}$")
+            self.assertEqual(item["original_url"], item["source_url"])
+            self.assertEqual(item["source_format"], "video")
+            self.assertIsNone(item["published_at"])
+            self.assertIsNone(item["consent"])
+            self.assertEqual(item["reason"], "discovery_only")
+            self.assertEqual(set(item), {
+                "source_url", "original_url", "source_format", "published_at", "submitted_at",
+                "consent", "metadata", "status", "reason", "review", "withdrawal",
+            })
+        comparison = next(item for item in first_queue if item["source_url"] == url)
+        self.assertEqual(comparison["metadata"], {
+            "policy": "youtube_metadata_discovery_only_v1",
+            "source_reference": f"{VIDEO_SAMPLE}@sha256:"
+                "e0de59de5686414466374d3a68c0e05d957c085ee2a935e01e4c46574eb01842"
+                f"#video={excluded_from_single_gpu_ranking}",
+        })
+        self.assertIn("discovery_only", self.review(url, "approve", succeeds=False))
+        self.assertEqual(self.run_cli("intake-youtube-metadata", sample), receipt)
+        self.assertEqual(self.run_cli("queue")["entries"], first_queue)
+
+        self.run_cli("withdraw", url, "--reason", "source_deleted")
+        self.assertEqual(self.run_cli("intake-youtube-metadata", sample), receipt)
+        comparison = next(item for item in self.run_cli("queue")["entries"] if item["source_url"] == url)
+        self.assertEqual(comparison["withdrawal"]["reason"], "source_deleted")
+        self.assertEqual(comparison["reason"], "source_deleted")
+        public = self.run_cli("public")["entries"]
+        self.assertEqual(public.count({"status": "withheld", "reason": "source_deleted"}), 1)
+        self.assertEqual(public.count({"status": "withheld", "reason": "discovery_only"}), 11)
+        self.assertEqual(len(public), 12)
+
+    def test_youtube_intake_requires_postgres_and_the_approved_snapshot(self):
+        sample = PRODUCTION.parent / VIDEO_SAMPLE
+        modified_sample = self.directory / sample.name
+        modified_sample.write_bytes(sample.read_bytes() + b"\n")
+
+        self.assertIn(
+            "approved YouTube metadata snapshot",
+            self.run_cli("intake-youtube-metadata", modified_sample, succeeds=False),
+        )
+        self.assertIn(
+            "requires a PostgreSQL connection",
+            self.run_cli("intake-youtube-metadata", sample, legacy=True, succeeds=False),
+        )
+        self.assertEqual(self.run_cli("queue")["entries"], [])
+        self.assertFalse(self.database.exists())
+
+    def test_verified_opt_in_can_be_reviewed_after_metadata_intake(self):
+        sample = PRODUCTION.parent / VIDEO_SAMPLE
+        video = "https://www.youtube.com/watch?v=xzwb94eJ-EE"
+        deleted_video = "https://www.youtube.com/watch?v=H7Wa-WxPiAY"
+        self.run_cli("intake-youtube-metadata", sample)
+        metadata = next(item["metadata"] for item in self.run_cli("queue")["entries"] if item["source_url"] == video)
+        self.assertIn("discovery_only", self.review(video, "withhold", succeeds=False))
+        self.run_cli("withdraw", deleted_video, "--reason", "source_deleted")
+
+        for source_url in (video, deleted_video):
+            submission = json.loads((FIXTURES / "original.json").read_text(encoding="utf-8"))
+            submission.update(source_url=source_url, original_url=source_url, source_format="video", published_at=None)
+            opt_in = self.directory / "opt-in.json"
+            opt_in.write_text(json.dumps(submission), encoding="utf-8")
+            receipt = self.run_cli("submit", opt_in)
+            self.assertEqual(self.run_cli("submit", opt_in), receipt)
+
+        queue = {item["source_url"]: item for item in self.run_cli("queue")["entries"]}
+        self.assertEqual(queue[video]["status"], "pending")
+        self.assertEqual(queue[video]["metadata"], metadata)
+        self.assertEqual(queue[video]["consent"]["reference"], "fixture-original-grant")
+        self.assertFalse(any("source_url" in item for item in self.run_cli("public")["entries"]))
+        self.assertIn("source_deleted", self.review(deleted_video, "approve", succeeds=False))
+        self.review(video, "approve")
+        prior_public = self.run_cli("public")
+
+        self.assertEqual(self.run_cli("intake-youtube-metadata", sample), {"discoveries": 12})
+        self.assertEqual(self.run_cli("public"), prior_public)
+        self.assertIn({
+            "status": "approved", "reason": "source_link_approved", "source_url": video, "published_at": None,
+        }, prior_public["entries"])
+        self.assertIn({"status": "withheld", "reason": "source_deleted"}, prior_public["entries"])
+
+    def test_metadata_intake_preserves_prior_opt_in_review(self):
+        url = "https://www.youtube.com/watch?v=xzwb94eJ-EE"
+        submission = json.loads((FIXTURES / "original.json").read_text(encoding="utf-8"))
+        submission.update(source_url=url, original_url=url, source_format="video")
+        opt_in = self.directory / "opt-in.json"
+        opt_in.write_text(json.dumps(submission), encoding="utf-8")
+        self.run_cli("submit", opt_in)
+        decision = self.review(url, "approve")
+        approved, = self.run_cli("public")["entries"]
+
+        self.assertEqual(self.run_cli("intake-youtube-metadata", PRODUCTION.parent / VIDEO_SAMPLE), {"discoveries": 12})
+        entry = next(item for item in self.run_cli("queue")["entries"] if item["source_url"] == url)
+        self.assertEqual(entry["review"]["reviewed_at"], decision["reviewed_at"])
+        self.assertEqual(entry["consent"]["reference"], "fixture-original-grant")
+        self.assertEqual(entry["metadata"]["policy"], "youtube_metadata_discovery_only_v1")
+        self.assertIn(approved, self.run_cli("public")["entries"])
+
     def test_postgres_public_export_after_later_cross_post_and_withdrawal(self):
         receipt = self.run_cli("submit", FIXTURES / "original.json")
         self.assertEqual(self.run_cli("submit", FIXTURES / "original.json"), receipt)
@@ -311,6 +419,7 @@ class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
             CREATE ROLE {reader} LOGIN;
             GRANT USAGE ON SCHEMA fastest_discoveries TO {editor}, {reader};
             GRANT EXECUTE ON FUNCTION fastest_discoveries.submit(jsonb),
+                fastest_discoveries.intake_youtube_metadata(text, jsonb),
                 fastest_discoveries.review(text, text, text, text),
                 fastest_discoveries.withdraw(text, text),
                 fastest_discoveries.queue_entries() TO {editor};
@@ -333,7 +442,9 @@ class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
             "status": "approved", "reason": "source_link_approved",
             "source_url": ORIGINAL, "published_at": SOURCE_DATE,
         }])
+        sample = PRODUCTION.parent / VIDEO_SAMPLE
         self.run_cli("queue", connection=reader_url, succeeds=False)
+        self.run_cli("intake-youtube-metadata", sample, connection=reader_url, succeeds=False)
         self.run_cli("submit", FIXTURES / "deleted.json", connection=reader_url, succeeds=False)
         private_read = subprocess.run(
             [*psql, reader_url], input="SELECT consent_reference FROM fastest_discoveries.discovery;",
@@ -341,9 +452,17 @@ class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
         )
         self.assertNotEqual(private_read.returncode, 0)
         self.assertIn("permission denied", private_read.stderr)
+        for restricted_url in (editor_url, reader_url):
+            metadata_read = subprocess.run(
+                [*psql, restricted_url], input="SELECT source_reference FROM fastest_discoveries.youtube_metadata;",
+                capture_output=True, text=True, timeout=10, env=LOCAL_ENV,
+            )
+            self.assertNotEqual(metadata_read.returncode, 0)
+            self.assertIn("permission denied", metadata_read.stderr)
         operator_access = subprocess.run(
             [*psql, reader_url], input="""
                 SELECT has_function_privilege('fastest_discoveries.submit(jsonb)', 'EXECUTE')
+                    OR has_function_privilege('fastest_discoveries.intake_youtube_metadata(text,jsonb)', 'EXECUTE')
                     OR has_function_privilege('fastest_discoveries.review(text,text,text,text)', 'EXECUTE')
                     OR has_function_privilege('fastest_discoveries.withdraw(text,text)', 'EXECUTE')
                     OR has_function_privilege('fastest_discoveries.queue_entries()', 'EXECUTE')
@@ -378,6 +497,11 @@ class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
         self.run_cli("submit", path, connection=editor_url)
         self.review(video, "approve", connection=editor_url)
         self.assertEqual(self.run_cli("public", connection=reader_url)["entries"][-1]["source_url"], video)
+        self.assertEqual(self.run_cli("intake-youtube-metadata", sample, connection=editor_url),
+                         {"discoveries": 12})
+        self.assertEqual(self.run_cli("public", connection=reader_url)["entries"].count(
+            {"status": "withheld", "reason": "discovery_only"},
+        ), 12)
 
 
 if __name__ == "__main__":

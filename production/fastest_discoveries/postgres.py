@@ -1,3 +1,4 @@
+from hashlib import sha256
 import json
 from pathlib import Path
 from subprocess import TimeoutExpired
@@ -5,6 +6,10 @@ from subprocess import TimeoutExpired
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
 from . import store
+
+
+YOUTUBE_SAMPLE_LOCATOR = "opendesign/mockups/llm-observatory/battle-title-sample.json"
+YOUTUBE_SAMPLE_DIGEST = "e0de59de5686414466374d3a68c0e05d957c085ee2a935e01e4c46574eb01842"
 
 
 class DiscoveryStorageError(RuntimeError):
@@ -43,6 +48,20 @@ def import_sqlite(database, source):
 def submit(database, body):
     submission = dict(zip(store.SUBMISSION_FIELDS, store.validate_submission(body), strict=True))
     return _call(database, "submit", f"{_sql_text(json.dumps(submission, ensure_ascii=False))}::jsonb", write=True)
+
+
+def intake_youtube_metadata(database, sample):
+    with sample.open("rb") as source:
+        body = source.read(store.MAX_SUBMISSION_BYTES + 1)
+    if sha256(body).hexdigest() != YOUTUBE_SAMPLE_DIGEST:
+        raise ValueError("Expected the approved YouTube metadata snapshot")
+    # An exclusion from title-based matchup ranking does not restrict discovery.
+    video_ids = [video["id"] for video in json.loads(body)["videos"]]
+    reference = f"{YOUTUBE_SAMPLE_LOCATOR}@sha256:{YOUTUBE_SAMPLE_DIGEST}"
+    return _call(
+        database, "intake_youtube_metadata",
+        _sql_text(reference), f"{_sql_text(json.dumps(video_ids))}::jsonb", write=True,
+    )
 
 
 def review(database, source_url, choice, reviewer, reason):
