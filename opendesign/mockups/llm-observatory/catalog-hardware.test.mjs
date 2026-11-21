@@ -234,6 +234,10 @@ test("reviewed machines expose creator build facts, attributed media and withdra
   const cluster = builds.find(({ id }) => id === "geerling-compute-blade-cluster");
   assert.match(createCard(cluster), /<iframe[^>]+youtube-nocookie.com\/embed\/8SiB-bNyP5E/);
   assert.match(createCard(cluster, true), /youtube.com\/watch\?v=8SiB-bNyP5E/);
+  assert.match(createCard(cluster), /Publisher thumbnail by Jeff Geerling/);
+
+  const mixed = builds.find(({ id }) => id === "sanasol-home-llm-rtx-5090-dual-rtx-3090");
+  assert.match(createCard(mixed, true), /github\.com\/sanasol\/home-llm\/blob\/[a-f0-9]{40}\/assets\/rig-irl\.jpg/);
 
   const wrx90 = builds.find(({ id }) => id === "cangemi-wrx90-dual-rtx-3090");
   assert.equal(wrx90.bom.find(({ category }) => category === "GPU").quantity, 2);
@@ -247,4 +251,34 @@ test("reviewed machines expose creator build facts, attributed media and withdra
     value === cluster.source || value?.includes("File:Nvidia_DGX_front_view_dllu.jpg"));
   assert.ok(!filtered.machines.some(({ id }) => id === cluster.id));
   assert.equal(filtered.machines.find(({ id }) => id === spark.id).photos.length, 2);
+});
+
+test("a partial cluster profile links to its source video at the disclosure, with creator credit", async () => {
+  const { catalog, manifest } = await readHardwareCatalog(here);
+  assert.equal(manifest.coverage.partialMachinesWithSourceVideo, 14);
+  const release = "v1-1234567890abcdef";
+  const profile = (id, markdown = false) => renderCard(hardwareCard(
+    catalog.machines.find(row => row.id === id), release, "machines",
+  ), { release, pathname: `/catalog/${release}/machines/${id}.${markdown ? "md" : "html"}`, markdown });
+
+  const html = profile("V059-HP-TEST");
+  assert.match(html, /i\.ytimg\.com\/vi\/4l4UWZGxvoc\/hqdefault\.jpg/);
+  assert.match(html, /www\.youtube\.com\/watch\?v=4l4UWZGxvoc&amp;t=44s/);
+  assert.match(html, /youtube-nocookie\.com\/embed\/4l4UWZGxvoc\?start=44/);
+  assert.match(html, /Publisher thumbnail by jakkuh/);
+  assert.match(html, /may depict the video topic/);
+  assert.match(profile("V059-HP-TEST", true), /Publisher thumbnail by jakkuh/);
+  assert.match(profile("V053-HP-C001"), /youtube-nocookie\.com\/embed\/RkzCAaIV_cQ\?start=80/);
+  assert.match(profile("V053-HP-C002"), /youtube-nocookie\.com\/embed\/RkzCAaIV_cQ\?start=140/);
+  assert.doesNotMatch(profile("V019-HP-E02"), /<figure class="profile-video"/);
+  assert.doesNotMatch(profile("V001-HP-G001", true), /YouTube thumbnail/);
+});
+
+test("withdrawing a publisher thumbnail hides its media without removing the machine disclosure", async () => {
+  const { catalog, manifest } = await readHardwareCatalog(here,
+    value => value === "https://i.ytimg.com/vi/4l4UWZGxvoc/hqdefault.jpg");
+  const cluster = catalog.machines.find(({ id }) => id === "V059-HP-TEST");
+  assert.equal(cluster.video, undefined);
+  assert.equal(cluster.capture, "https://www.youtube.com/watch?v=4l4UWZGxvoc&t=44s");
+  assert.equal(manifest.coverage.partialMachinesWithSourceVideo, 13);
 });
