@@ -75,6 +75,8 @@
 .catalog-table th[scope="row"] { width: 35%; }
 .catalog-table th[scope="col"]:last-child { width: 114px; }
 .catalog-table small { display: block; color: var(--color-muted); font: 11px/1.45 var(--font-numeric); }
+.catalog-runtime-release { margin-top: 6px; }
+.catalog-runtime-release a { position: relative; z-index: 1; text-decoration: underline; }
 .catalog-model-id > span { color: var(--color-muted); font-weight: 500; }
 .catalog-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .catalog-tags > span { padding: 2px 6px; border: 1px solid var(--color-rule); background: var(--color-paper-2); font-size: 11px; }

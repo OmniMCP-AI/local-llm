@@ -239,6 +239,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   const [active, setActive] = useState(() => validKind(initialKind));
   const [filters, setFilters] = useState(modelFiltersFromLocation);
   const [picks, setPicks] = useState([]);
+  const [runtimeWatch, setRuntimeWatch] = useState(null);
   const { query, tag, license, page, view } = filters;
   const tableTop = useRef(null);
   useEffect(() => {
@@ -250,6 +251,15 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
       window.removeEventListener("popstate", restore);
       window.removeEventListener("hashchange", restore);
     };
+  }, [active]);
+  useEffect(() => {
+    if (!__FASTEST_PAGES__ || active !== "runtimes") return;
+    const controller = new AbortController();
+    fetch("/api/runtime-releases", { cache: "no-store", signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(watch => { if (watch?.runtimes?.length) setRuntimeWatch(watch); })
+      .catch(() => {});
+    return () => controller.abort();
   }, [active]);
 
   const tab = tabs.find((entry) => entry.key === active);
@@ -278,6 +288,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
 
   function selectTab(key) {
     if (key === active) return;
+    setRuntimeWatch(null);
     setActive(key);
     setFilters(emptyFilters);
     setPicks([]);
@@ -325,6 +336,9 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         </div>
         {active === "models" && <SourceLink href={modelCatalog.upstream} label={t("Open the pinned llmfit source catalog", "打开固定版本的 llmfit 源目录")}>
           {t("llmfit snapshot", "llmfit 快照")} <code>{modelCatalog.commit.slice(0, 8)}</code>
+        </SourceLink>}
+        {active === "runtimes" && runtimeWatch && <SourceLink href={runtimeWatch.html}>
+          {t("Runtime release watch", "推理框架版本追踪")}
         </SourceLink>}
       </div>
       {hardwareTab && <p className="catalog-muted">
@@ -413,6 +427,8 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
                 : "local-catalog/" + catalogPath(localCatalogRelease, active, row.id);
             const sourceUrl = safeSource(row.vendorSpec?.source ?? row.source);
             const picked = picks.some(entry => entry.id === row.id);
+            const observed = active === "runtimes" && runtimeWatch?.runtimes.find(entry =>
+              entry.id === row.id && entry.repositoryUrl === row.source);
             return <tr key={row.id}>
               {comparable && <td className="catalog-compare-column"><label>
                 <input type="checkbox" aria-label={t("Compare {name}", "对比 {name}", { name: row.name })}
@@ -423,7 +439,8 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
               </label></td>}
               <th scope="row">{modelId ? <a className="catalog-model-id catalog-row-link" href={card}><span>{row.id.slice(0, separator + 1)}</span>{row.id.slice(separator + 1)}</a> : <>
                 <strong><a className="catalog-model-id catalog-row-link" href={card}>{row.name}</a></strong>
-                {row.tag ? <small>{row.tag}</small> : row.id !== row.name && <small>{row.id}</small>}
+                {row.tag ? <small>{observed ? t("Pinned {tag}", "固定版本 {tag}", { tag: row.tag }) : row.tag}</small>
+                  : row.id !== row.name && <small>{row.id}</small>}
               </>}</th>
               <td>{active === "models" ? <div className="catalog-tags">
                 {row.discovery && <><span>#{number.format(row.discovery.rank)}</span>
@@ -434,10 +451,25 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
                 {row.supplemental && <span>{t("Revision {date}", "版本日期 {date}", { date: row.supplemental.revisionDate })}</span>}
                 {modelTags(row, modelIdentities[row.id]).map((value) => <span key={value}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
                 {row.license && <span title={t("Model license metadata from the source catalog", "源目录中的模型许可证元数据")}>{row.license}</span>}
-              </div> : <>{row.category && <small>{row.category}</small>}{formatSourceDetail(row, t)}</>}</td>
+              </div> : <>{row.category && <small>{row.category}</small>}{formatSourceDetail(row, t)}
+                {observed && <div className="catalog-runtime-release">
+                  <small>{observed.release ? <>
+                    {t("Last observed stable release", "最近观测到的稳定版")}{" "}
+                    <a href={observed.release.url}><bdi>{observed.release.tag}</bdi></a>
+                  </> : t("No stable release observed", "暂未观测到稳定版")}</small>
+                  <small>{t("Last successful refresh", "上次成功刷新")}{" "}
+                    <time dateTime={observed.refreshedAt}>{observed.refreshedAt}</time></small>
+                  {observed.stale && <small>{t("Release feed is stale", "发布源数据已过时")}</small>}
+                  {observed.failed && <small>{t("Latest refresh failed", "最近一次刷新失败")}</small>}
+                </div>}
+              </>}</td>
               <td className="catalog-row-source">
                 <SourceLink href={sourceUrl} label={t("Open source for {name}", "查看 {name} 的来源", { name: row.name })}>{t("Open source", "查看来源")}</SourceLink>
                 {sourceUrl && <small title={sourceUrl}><bdi>{sourceUrl.replace("https://", "")}</bdi></small>}
+                {observed && <SourceLink href={observed.watchUrl}
+                  label={t("Open release watch for {name}", "查看 {name} 的版本追踪", { name: row.name })}>
+                  {t("Release watch", "版本追踪")}
+                </SourceLink>}
               </td>
             </tr>;
           })}</tbody>

@@ -100,6 +100,15 @@ class ReleaseWatchScenarios:
             ],
         )
 
+    def test_html_report_has_exact_target_for_each_runtime(self):
+        self.prepare_history()
+        rendered = self.invoke("report", "--as-of", DAY_TWO, "--format", "html")
+        self.assertEqual(rendered.returncode, 0, rendered.stderr)
+        for identifier, title in (
+            ("llama.cpp", "llama.cpp"), ("sglang", "SGLang"), ("vllm", "vLLM"), ("ollama", "Ollama"),
+        ):
+            self.assertIn(f'<h2 id="runtime-{identifier}">{title}</h2>', rendered.stdout)
+
     def test_repeat_and_older_replay_preserve_revision_identity_and_last_success(self):
         self.prepare_history()
         older = github_release(100, "fixture-b1", "2026-11-19T01:00:00Z")

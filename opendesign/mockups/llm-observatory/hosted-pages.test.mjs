@@ -93,6 +93,10 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
       cwd: here, signal: t.signal,
     });
     t.diagnostic(stdout.trim());
+    const directory = await fetch(origin + "/api/runtime-releases", { signal: t.signal });
+    assert.equal(directory.status, 200);
+    assert.equal(directory.headers.get("Cache-Control"), "no-store");
+    assert.ok(Array.isArray((await directory.json()).runtimes));
   });
 });
 
@@ -193,6 +197,162 @@ test("the official Qwen model profile links the observed GGUF inventory benchmar
     getReport = () => Response.json(invalid);
     assert.doesNotMatch(await profile("md"), /agent-task|tool-policy benchmark/);
   }
+});
+
+test("runtime profile pairs link the official observed release and exact watch section", async (t) => {
+  const releaseOrigin = "https://release.example.test";
+  const repository = "ggml-org/llama.cpp";
+  const tag = "test-observed-release";
+  const refreshedAt = "2026-11-21T01:00:00Z";
+  const catalog = JSON.parse(await readFile(new URL("catalog-runtimes.json", import.meta.url)));
+  const report = {
+    schema: "fastest.ai/runtime-release-watch/v1",
+    sources: {
+      "llama.cpp": {
+        repository, mode: "live", last_successful_refresh: refreshedAt,
+        stale: false, last_error: null,
+      },
+    },
+    releases: [
+      { runtime_id: "llama.cpp", status: "prerelease", tag: "ignore-prerelease", prerelease: true },
+      { runtime_id: "llama.cpp", status: "current", tag, prerelease: false, published_at: refreshedAt,
+        source_url: `https://github.com/${repository}/releases/tag/${tag}` },
+    ],
+  };
+  let upstream = () => Response.json(report);
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(String(url), releaseOrigin + "/runtime-releases.json");
+    assert.equal(options.redirect, "manual");
+    assert.equal(options.cache, "no-store");
+    return upstream();
+  });
+  async function profile(id, extension, origin = releaseOrigin) {
+    const release = "v1-" + "a".repeat(16);
+    const path = `runtimes/${id}.${extension}`;
+    const response = await readCatalogProfile({
+      request: new Request(`https://fastest.ai/catalog/${release}/${path}`),
+      params: { release, path: path.split("/") },
+      env: { FASTEST_RELEASE_ORIGIN: origin, ASSETS: { fetch: () => Response.json(catalog) } },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    return response.text();
+  }
+  const watchUrl = releaseOrigin + "/runtime-releases#runtime-llama.cpp";
+  const upstreamUrl = `https://github.com/${repository}/releases/tag/${tag}`;
+  const pinnedUrl = `https://github.com/${repository}/releases/tag/v1.0.0`;
+  const html = await profile("llama.cpp", "html");
+  const markdown = await profile("llama.cpp", "md");
+  assert.ok(html.includes(`href="${watchUrl}"`));
+  assert.ok(html.includes(`href="${upstreamUrl}"`));
+  assert.ok(markdown.includes(`(<${watchUrl}>)`));
+  assert.ok(markdown.includes(`(<${upstreamUrl}>)`));
+  for (const page of [html, markdown]) {
+    assert.ok(page.includes(pinnedUrl));
+    assert.ok(page.includes(refreshedAt));
+    assert.doesNotMatch(page, /ignore-prerelease/);
+  }
+  assert.doesNotMatch(await profile("mlx-lm", "html"), /runtime-releases/);
+  assert.doesNotMatch(await profile("llama.cpp", "md", null), /runtime-releases/);
+  report.sources["llama.cpp"].stale = true;
+  report.sources["llama.cpp"].last_error = "Upstream service unavailable";
+  const retained = await profile("llama.cpp", "md");
+  assert.ok(retained.includes(upstreamUrl));
+  assert.match(retained, /feed is stale/i);
+  assert.match(retained, /refresh failed/i);
+  for (const status of [302, 404, 410, 503]) {
+    upstream = () => new Response(null, { status });
+    const unavailable = await profile("llama.cpp", "md");
+    assert.doesNotMatch(unavailable, /runtime-releases|test-observed-release/);
+    assert.ok(unavailable.includes(pinnedUrl));
+  }
+});
+
+test("the Runtimes directory data exposes official captures without implying freshness", async (t) => {
+  const { onRequestGet } = await import("./functions/api/runtime-releases.js");
+  const releaseOrigin = "https://release.example.test";
+  const refreshedAt = "2026-11-21T01:00:00Z";
+  const official = {
+    "llama.cpp": "ggml-org/llama.cpp", sglang: "sgl-project/sglang",
+    vllm: "vllm-project/vllm", ollama: "ollama/ollama",
+  };
+  const sources = Object.fromEntries(Object.entries(official).map(([id, repository]) => [id, {
+    repository, mode: "live", last_successful_refresh: refreshedAt,
+    stale: id === "vllm", last_error: id === "vllm" ? "Source unavailable" : null,
+  }]));
+  const report = {
+    schema: "fastest.ai/runtime-release-watch/v1",
+    sources: {
+      ...sources,
+      "mlx-lm": { ...sources.vllm, repository: "third-party/mlx-lm" },
+    },
+    releases: [{
+      runtime_id: "vllm", status: "current", prerelease: false, tag: "v-test",
+      published_at: refreshedAt, source_url: "https://github.com/vllm-project/vllm/releases/tag/v-test",
+    }],
+  };
+  let upstream = () => Response.json(report);
+  const mock = t.mock.method(globalThis, "fetch", async (url) => {
+    assert.equal(String(url), releaseOrigin + "/runtime-releases.json");
+    return upstream();
+  });
+  async function directory(origin) {
+    const response = await onRequestGet({ env: { FASTEST_RELEASE_ORIGIN: origin } });
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    return response.json();
+  }
+  const data = await directory(releaseOrigin);
+  assert.equal(data.html, releaseOrigin + "/runtime-releases");
+  assert.deepEqual(data.runtimes.map(({ id }) => id), ["llama.cpp", "sglang", "vllm", "ollama"]);
+  const vllm = data.runtimes.find(({ id }) => id === "vllm");
+  assert.equal(vllm.refreshedAt, refreshedAt);
+  assert.equal(vllm.stale, true);
+  assert.equal(vllm.failed, true);
+  assert.equal(vllm.release.tag, "v-test");
+  assert.equal(vllm.watchUrl, releaseOrigin + "/runtime-releases#runtime-vllm");
+  assert.equal(vllm.feedUrl, "https://github.com/vllm-project/vllm/releases");
+  assert.deepEqual(await directory("http://release.example.test"), { runtimes: [] });
+  assert.equal(mock.mock.callCount(), 1);
+
+  upstream = () => Response.json({ ...report, sources: { ...sources, ollama: { mode: "fixture" } } });
+  assert.deepEqual(await directory(releaseOrigin), { runtimes: [] });
+  upstream = () => Response.json({ ...report, sources: { ollama: { ...sources.ollama, last_successful_refresh: null } } });
+  assert.deepEqual(await directory(releaseOrigin), { runtimes: [] });
+  upstream = () => new Response(null, { status: 410 });
+  assert.deepEqual(await directory(releaseOrigin), { runtimes: [] });
+});
+
+test("the published runtime wiki Markdown discovers the watch while the origin is available", async (t) => {
+  const releaseOrigin = "https://release.example.test";
+  const report = {
+    schema: "fastest.ai/runtime-release-watch/v1",
+    sources: {
+      ollama: {
+        repository: "ollama/ollama", mode: "live", last_successful_refresh: "2026-11-21T01:00:00Z",
+        stale: false, last_error: null,
+      },
+    },
+    releases: [],
+  };
+  let upstream = () => Response.json(report);
+  t.mock.method(globalThis, "fetch", async () => upstream());
+  const article = "# Inference runtimes and tuning\n";
+  async function wiki(path) {
+    const response = await readPage({
+      request: new Request(origin + path),
+      env: { FASTEST_RELEASE_ORIGIN: releaseOrigin, ASSETS: { fetch: () => Response.json({ paths: [] }) } },
+      next: () => new Response(article, { headers: { "Content-Type": "text/markdown", "Content-Length": article.length } }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    return response.text();
+  }
+  const linked = await wiki("/wiki/runtimes.md");
+  assert.ok(linked.startsWith(article));
+  assert.ok(linked.includes(`[Runtime release watch](<${releaseOrigin}/runtime-releases.md>)`));
+  assert.equal(await wiki("/wiki/catalog.md"), article);
+  upstream = () => new Response(null, { status: 503 });
+  assert.equal(await wiki("/wiki/runtimes.md"), article);
 });
 
 test("homepage discovery links the pinned inventory report while its public review is live", async (t) => {

@@ -1,6 +1,7 @@
 import { hardwareCard, modelCard, renderCard, runtimeCard } from "../../../catalog-card.mjs";
 import { observedAgentTask } from "../../../catalog-agent-task.mjs";
 import { catalogPath, catalogReleasePattern, hardwareIdPattern, modelIdPattern, modelShard, runtimeIdPattern } from "../../../catalog-paths.mjs";
+import { runtimeReleaseWatch } from "../../../runtime-release-watch.mjs";
 
 const notFound = () => new Response("Catalog card unavailable", {
   status: 404,
@@ -31,8 +32,11 @@ export async function onRequestGet(context) {
   if (!row) return notFound();
 
   const agentTask = isModel && await observedAgentTask(id, context.env);
+  const isRuntime = kind === "runtimes";
+  const watch = isRuntime ? await runtimeReleaseWatch(context.env) : null;
+  const observation = watch?.runtimes.find(entry => entry.id === row.id && entry.repositoryUrl === row.source);
   const card = isModel ? modelCard(row, release, { discoveryCapture: row.discoveryCapture, agentTask })
-    : kind === "runtimes" ? runtimeCard(row) : hardwareCard(row, release, kind, { peers: kind === "cards" ? entries : [] });
+    : isRuntime ? runtimeCard(row, { observation }) : hardwareCard(row, release, kind, { peers: kind === "cards" ? entries : [] });
   const markdown = extension === "md";
   return new Response(renderCard(card, {
     release, pathname: "/" + catalogPath(release, kind, id, extension), markdown,
@@ -40,7 +44,7 @@ export async function onRequestGet(context) {
     headers: {
       "Content-Type": `text/${markdown ? "markdown" : "html"}; charset=utf-8`,
       "X-Content-Type-Options": "nosniff",
-      ...(agentTask && { "Cache-Control": "no-store" }),
+      ...((agentTask || isRuntime) && { "Cache-Control": "no-store" }),
     },
   });
 }

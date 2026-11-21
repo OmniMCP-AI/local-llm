@@ -257,7 +257,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
   }, null, 2) + "\n";
   files["/_routes.json"] = JSON.stringify({
     version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
-      "/prices", "/prices/", "/prices.html", "/api/price-comparison",
+      "/prices", "/prices/", "/prices.html", "/api/price-comparison", "/api/runtime-releases",
       ...(catalogOpenApi ? [catalogApiPath] : []),
       "/research/*", "/wiki/*", "/catalog/*", "/catalog-data/*", "/downloads/*",
       "/robots.txt", "/sitemap.xml", "/llms.txt", "/evidence-quarantine.json"], exclude: [],
