@@ -25,15 +25,19 @@ PROVENANCE = {
 }
 RUNNER = '''
 import json
+from pathlib import Path
 import sys
 
 expected = [
     "-m", "qwen2.5-0.5b-instruct-q4_k_m.gguf", "-p", "0", "-n", "128",
     "-t", "1", "-b", "128", "-ub", "128", "-ngl", "0",
     "-ctk", "f16", "-ctv", "f16", "-nkvo", "1", "-fa", "0",
-    "-mmp", "1", "-sm", "none", "-mg", "0",
+    "-mmp", "1", "-sm", "layer", "-mg", "0",
     "-r", "7", "--progress", "-v", "-o", "jsonl",
 ]
+if sys.argv[sys.argv.index("-sm") + 1] == "none":
+    print("llama_model_load_from_file_impl: invalid value for main_gpu: 0 (available devices: 0)", file=sys.stderr)
+    sys.exit(1)
 assert sys.argv[1:] == expected, sys.argv
 print("load_tensors: CPU_Mapped model buffer size = 468.00 MiB", file=sys.stderr)
 print("llama_context: n_ctx = 128", file=sys.stderr)
@@ -48,7 +52,7 @@ print(json.dumps({
     "model_filename": expected[1], "n_prompt": 0, "n_gen": 128,
     "n_threads": 1, "n_batch": 128, "n_ubatch": 128, "n_gpu_layers": 0,
     "type_k": "f16", "type_v": "f16", "no_kv_offload": True, "flash_attn": False,
-    "use_mmap": True, "split_mode": "none", "main_gpu": 0, "tensor_split": "0.00",
+    "use_mmap": True, "split_mode": "layer", "main_gpu": 0, "tensor_split": "0.00",
     "cpu_mask": "0x0", "cpu_strict": False, "poll": 50, "embeddings": False,
     "samples_ns": [4000000000, 1000000000, 8000000000, 2000000000, 6000000000, 5000000000, 3000000000],
 }))
@@ -143,6 +147,24 @@ class CPUBaselineTests(unittest.TestCase):
                 self.assertIn(message, result[1])
                 self.assertIsNone(replay)
                 self.assertFalse(self.output.exists())
+
+
+    def test_failed_run_reports_bounded_stderr_with_work_path_redacted(self):
+        aborted = (
+            RUNNER + '\nprint("early log entry", file=sys.stderr)\n'
+            'print("x" * 5000, file=sys.stderr)\n'
+            'print(f"runtime could not load {Path.cwd()}/runtime/llama-bench", file=sys.stderr)\n'
+            'sys.exit(1)\n'
+        )
+        result, replay = self.capture(aborted)
+        self.assertEqual(result[0], 1)
+        self.assertIn("Runner failed (exited, exit 1).", result[1])
+        self.assertIn("runtime could not load <capture>/runtime/llama-bench", result[1])
+        self.assertNotIn("early log entry", result[1])
+        self.assertNotIn("fastest-cpu-", result[1])
+        self.assertLess(len(result[1]), 4400)
+        self.assertIsNone(replay)
+        self.assertFalse(self.output.exists())
 
     def test_replay_detects_changes_to_timing_or_candidate(self):
         self.assertEqual(self.capture(), ((0, ""), (0, "")))
