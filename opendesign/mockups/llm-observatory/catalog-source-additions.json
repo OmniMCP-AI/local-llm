@@ -69,6 +69,14 @@
       "variant": "China-market D v2",
       "source": "https://www.nvidia.cn/geforce/graphics-cards/50-series/rtx-5090-d-v2/",
       "parent": "nvidia-geforce-rtx-5090-d"
+    },
+    {
+      "id": "asus-rog-astral-rtx5090d-o32g-gaming",
+      "name": "ASUS ROG Astral GeForce RTX 5090 D 32 GB OC",
+      "manufacturer": "ASUS",
+      "variant": "ROG-ASTRAL-RTX5090D-O32G-GAMING",
+      "source": "https://rog.asus.com/hk-en/graphics-cards/graphics-cards/rog-astral/rog-astral-rtx5090d-o32g-gaming/spec/?config=90YV0MK2-M0NA00",
+      "parent": "nvidia-geforce-rtx-5090-d-32gb"
     }
   ],
   "specs": {
@@ -140,6 +148,21 @@
         "Board power (rated)": "500 W typical / 560 W peak"
       }
     },
+    "amd-instinct-mi300": {
+      "designation": "AMD Instinct MI300 Series",
+      "source": "https://www.amd.com/en/products/accelerators/instinct/mi300.html",
+      "locator": "Under the Hood and Meet the Series",
+      "scope": "Multiple manufacturer configurations",
+      "facts": {
+        "Architecture": "CDNA 3",
+        "Product coverage": "AMD lists multiple accelerators and an APU. The broad lookup does not identify a specific SKU."
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/accelerators/instinct/mi300.html",
+        "label": "MI300 Series product images on AMD",
+        "scope": "Illustrations of various AMD Instinct MI300 Series products"
+      }
+    },
     "amd-instinct-mi300x": {
       "designation": "AMD Instinct MI300X",
       "source": "https://www.amd.com/en/products/specifications/accelerators.html",
@@ -155,6 +178,11 @@
         "Host interface": "PCIe 5.0 x16",
         "Form factor and cooling": "Passive OAM module",
         "Board power (rated)": "750 W peak"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html",
+        "label": "MI300X product images on AMD",
+        "scope": "AMD Instinct MI300X accelerator product illustration"
       }
     },
     "amd-radeon-ai-pro-r9700": {
@@ -240,6 +268,11 @@
         "Host interface": "PCIe 4.0 x16",
         "Rated graphics power (W)": "260",
         "Recommended system power (W)": "700"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/design-and-manufacturing.html",
+        "label": "Recommended Hardware images on AMD",
+        "scope": "AMD Radeon PRO W7800 product illustration"
       }
     },
     "amd-radeon-pro-w7900": {
@@ -255,6 +288,11 @@
         "Host interface": "PCIe 4.0 x16",
         "Rated graphics power (W)": "295",
         "Recommended system power (W)": "750"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/workstations/radeon-pro/design-and-manufacturing.html",
+        "label": "Recommended Hardware images on AMD",
+        "scope": "AMD Radeon PRO W7900 product illustration"
       }
     },
     "amd-radeon-rx-6600": {
@@ -859,6 +897,11 @@
         "Memory configuration": "11 GB GDDR6",
         "Memory bus": "352-bit",
         "CUDA cores": "4352"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/nvidiaGDC/zz/en_ZZ/geforce/graphics-cards/rtx-2080-ti.html",
+        "label": "Founders Edition gallery on NVIDIA",
+        "scope": "NVIDIA GeForce RTX 2080 Ti Founders Edition illustration · third-party and modified boards vary"
       }
     },
     "nvidia-geforce-rtx-3050": {
@@ -917,25 +960,68 @@
     "nvidia-geforce-rtx-5090-d-32gb": {
       "designation": "NVIDIA GeForce RTX 5090 D 32 GB",
       "source": "https://www.nvidia.cn/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/",
-      "locator": "GeForce RTX 5090 D launch specifications",
+      "locator": "GeForce RTX 50 Series Graphics Cards · GeForce RTX 5090 D launch specifications",
       "scope": "Exact memory variant",
       "facts": {
         "Architecture": "Blackwell",
         "Memory configuration": "32 GB GDDR7",
         "Memory bandwidth": "1792 GB/s",
-        "CUDA cores": "21760"
+        "CUDA cores": "21760",
+        "Tensor cores": "680 (5th generation)",
+        "Ray tracing cores": "170 (4th generation)"
+      },
+      "gallery": {
+        "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-32G-VANGUARD-OC.pdf",
+        "label": "Product images in the MSI datasheet",
+        "scope": "Original RTX 5090 D 32 GB · MSI VANGUARD OC board · angled, front, and back views"
       }
     },
     "nvidia-geforce-rtx-5090-d-v2": {
       "designation": "NVIDIA GeForce RTX 5090 D v2",
       "source": "https://www.nvidia.cn/geforce/graphics-cards/50-series/rtx-5090-d-v2/",
-      "locator": "规格 (Specifications) · RTX 5090 D v2",
+      "locator": "规格 and 查看完整规格 (Specifications and Full Specifications) · RTX 5090 D v2",
       "scope": "Exact memory variant",
       "facts": {
         "Architecture": "Blackwell",
         "Memory configuration": "24 GB GDDR7",
+        "Memory bus": "384-bit",
         "Memory bandwidth": "1344 GB/s",
-        "CUDA cores": "21760"
+        "CUDA cores": "21760",
+        "Base clock (GHz)": "2.01",
+        "Boost clock (GHz)": "2.41",
+        "Host interface": "PCIe 5.0",
+        "Rated graphics power (W)": "575",
+        "Recommended system power (W)": "1000"
+      },
+      "gallery": {
+        "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-v2-24G-VENTUS-3X-OC.pdf",
+        "label": "Product images in the MSI datasheet",
+        "scope": "RTX 5090 D v2 24 GB · MSI VENTUS 3X OC board · angled, front, and back views"
+      }
+    },
+    "asus-rog-astral-rtx5090d-o32g-gaming": {
+      "designation": "ROG-ASTRAL-RTX5090D-O32G-GAMING",
+      "source": "https://rog.asus.com/hk-en/graphics-cards/graphics-cards/rog-astral/rog-astral-rtx5090d-o32g-gaming/spec/?config=90YV0MK2-M0NA00",
+      "locator": "Tech Specs · Graphic Engine through Slot · configuration 90YV0MK2-M0NA00",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "GPU": "GeForce RTX 5090 D",
+        "Host interface": "PCIe 5.0",
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bus": "512-bit",
+        "Memory speed": "28 Gbps",
+        "CUDA cores": "21760",
+        "Boost clock": "2580 MHz (default) / 2610 MHz (OC mode)",
+        "Display outputs": "3 × DisplayPort 2.1b, 2 × HDMI 2.1b",
+        "Dimensions": "357.6 × 149.3 × 76 mm",
+        "Slot width": "3.8 slots",
+        "Recommended system power (W)": "1000",
+        "Power connectors": "1 × 16-pin"
+      },
+      "gallery": {
+        "source": "https://rog.asus.com/hk-en/graphics-cards/graphics-cards/rog-astral/rog-astral-rtx5090d-o32g-gaming/",
+        "label": "Front, rear, and exploded product views on ASUS",
+        "scope": "ASUS ROG Astral GeForce RTX 5090 D 32 GB OC board illustration"
       }
     },
     "nvidia-h100": {
