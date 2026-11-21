@@ -56,7 +56,7 @@ function reviewedMachineRows(builds, cards, withdrawnCards, isWithdrawn) {
 
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
   const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes,
-    buildBytes, photos] = await Promise.all([
+    referenceBytes, buildBytes, photos] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
     readFile(join(directory, "../../..", seedPath, "hardware-profiles.json")),
@@ -64,6 +64,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     readFile(join(directory, "gpu-vendor-specs.json")),
     readFile(join(directory, "catalog-source-additions.json")),
     readFile(join(directory, "catalog-modified-gpus.json")),
+    readFile(join(directory, "catalog-gpu-reference-evidence.json")),
     readFile(join(directory, machineBuildRegistry)),
     readCatalogPhotos(pathToFileURL(join(directory, "catalog-hardware-build.mjs")), "machine"),
   ]);
@@ -73,16 +74,24 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const additions = JSON.parse(additionsBytes);
   const modified = JSON.parse(modifiedBytes);
   const { reviewedAt, builds, photoIds } = JSON.parse(buildBytes);
+  const references = JSON.parse(referenceBytes);
   const vendorSpec = (id) => {
     const source = [additions.specs[id], vendor.cards[id]].find(spec => spec && !isWithdrawn(spec.source));
     if (!source) return null;
-    const { gallery, ...spec } = source;
+    const { gallery: retainedGallery, ...spec } = source;
+    const reference = references.cards[id];
+    const gallery = retainedGallery ?? reference?.gallery;
+    const supplement = reference?.bandwidth && !spec.facts["Memory bandwidth"] && !isWithdrawn(reference.bandwidthSource);
     const scope = spec.scope ?? (/\/|\bor\b/.test(spec.facts["Memory configuration"] ?? "")
       ? "Multiple manufacturer configurations" : "Manufacturer product reference");
     return {
       capturedAt: source === additions.specs[id] ? additions.capturedAt : vendor.capturedAt,
       locator: `Manufacturer comparison table · ${spec.designation}`,
       ...spec, scope,
+      ...(supplement ? {
+        facts: { ...spec.facts, "Memory bandwidth": reference.bandwidth },
+        bandwidthSource: reference.bandwidthSource,
+      } : {}),
       ...(gallery && !isWithdrawn(gallery.source) ? { gallery } : {}),
     };
   };
@@ -320,6 +329,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     vendorSpecs: {
       capturedAt: vendor.capturedAt, sha256: sha256(specBytes),
       additionsCapturedAt: additions.capturedAt, additionsSha256: sha256(additionsBytes),
+      referenceCheckedOn: references.checkedOn, referenceSha256: sha256(referenceBytes),
     },
     modifiedGpus: { reviewedAt: modified.reviewedAt, sha256: sha256(modifiedBytes) },
     creatorBuilds: {

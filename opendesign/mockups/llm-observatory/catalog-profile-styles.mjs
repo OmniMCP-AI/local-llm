@@ -1,3 +1,5 @@
+import { coordinatePlotStyles } from "./coordinate-plot-styles.mjs";
+
 export const profileStyles = `
 .profile-document {
   margin: 0; background: #10100f; color: #f3eee5; color-scheme: dark;
@@ -55,27 +57,16 @@ export const profileStyles = `
 .profile-photo-notices { color: var(--profile-muted); font-size: .84rem; margin-top: .75rem; }
 .profile-photo-notices pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .profile-footer { color: var(--profile-muted); margin-top: 1.2rem; overflow-wrap: anywhere; font-size: .85rem; }
-.profile-chart { margin: 1rem 0; }
-.profile-chart-y { display: block; color: var(--profile-muted); font-size: .8rem; }
-.profile-chart-grid { position: relative; height: clamp(12rem, 32vw, 21rem); margin: .8rem 1rem 0;
-  border-left: 1px solid var(--profile-edge); border-bottom: 1px solid var(--profile-edge);
-  background-image: linear-gradient(to right,#ffffff13 1px,transparent 1px),linear-gradient(to top,#ffffff13 1px,transparent 1px);
-  background-size: 25% 25%; }
-.profile-chart-dot { position: absolute; display: grid; place-items: center; width: 1.4rem; height: 1.4rem; transform: translate(-50%, 50%); }
-.profile-chart-dot::after { content: ""; width: .55rem; height: .55rem; background: #a5bcc5; border-radius: 50%; }
-.profile-chart-dot:is(:hover,:focus-visible){ z-index: 2; }
-.profile-chart-dot:is(:hover,:focus-visible)::after{ background: #fff; }
-.profile-chart-dot[aria-current]{ z-index: 1; }
-.profile-chart-dot[aria-current]::after { width: .7rem; height: .7rem; background: var(--profile-accent); transform: rotate(45deg); border-radius: .07rem; box-shadow: 0 0 0 3px #ff985833; }
-.profile-chart-max { position: absolute; top: -.55rem; right: 0; color: var(--profile-muted); font: .74rem ui-monospace,monospace; }
-.profile-chart-x { display: flex; justify-content: space-between; gap: .4rem; margin: .35rem 1rem 0; color: var(--profile-muted); font-size: .8rem; }
-.profile-chart-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; font-size: .84rem; }
-.profile-chart-legend strong { color: var(--profile-accent); }
+.profile-chart-note { color: var(--profile-ink) !important; font-weight: 650; }
+.profile-card-schematic { margin: 1.25rem 0; padding: .65rem 1rem; border: 1px solid var(--profile-edge); background: var(--profile-panel); }
+.profile-card-schematic svg { display: block; width: min(100%, 34rem); margin-inline: auto; }
+.profile-card-schematic figcaption { color: var(--profile-muted); text-align: center; font-size: .84rem; }
 .profile-chart-table { width: 100%; margin-top: .65rem; text-align: start; border-collapse: collapse; font-size: .85rem; }
 .profile-chart-table :is(th,td) { text-align: start; padding: .45rem; border-bottom: 1px solid var(--profile-edge); }
 .profile-chart-table tr[aria-current] { background: #302016; }
 .profile-directory-table { table-layout: fixed; overflow-wrap: anywhere; }
 .profile-directory-table :is(th,td) { vertical-align: top; }
 .profile-directory-table code { color: var(--profile-muted); font-weight: 400; }
-@media (max-width: 520px) { .profile-shell { padding-inline: .9rem; } .profile-chart-grid { margin-inline: .5rem; } }
+@media (max-width: 520px) { .profile-shell { padding-inline: .9rem; } }
+${coordinatePlotStyles}
 `;
