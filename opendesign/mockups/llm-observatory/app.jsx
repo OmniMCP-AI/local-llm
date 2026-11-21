@@ -14,7 +14,7 @@ import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
 import { CatalogModelProfile, CatalogTopics, SourceCatalog } from "./catalog";
 import { CostPage } from "./costs";
-import { catalogHome, explorerDemo, navigationHref } from "./release-origin.mjs";
+import { catalogHome, explorerDemo, navigationHref, navigationRoutes } from "./release-origin.mjs";
 import { Highlights } from "./highlights";
 import { MethodsPage } from "./methods";
 import { LocaleControls, LocaleProvider, LocaleStatus, quoteCurrency, useLocale } from "./locale";
@@ -26,11 +26,7 @@ const states = {
   measured: "Lab example", community: "Community example", estimate: "Fit estimate",
   untested: "Untested", cloud: "Cloud baseline",
 };
-const routes = {
-  Explorer: "explorer", Compare: "goals", Battles: "battle",
-  ...(__FASTEST_RELEASE_ORIGIN__ ? { "Guided advisor": "advisor" } : {}),
-  Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
-};
+const routes = navigationRoutes(__FASTEST_RELEASE_ORIGIN__);
 const hrefFor = (route) => navigationHref(route, __FASTEST_PAGES__, __FASTEST_RELEASE_ORIGIN__, __FASTEST_CATALOG_POSTGRES__);
 const chineseRoutes = { Explorer: "探索", Compare: "目标对比", Battles: "对决", "Guided advisor": "配置顾问", Methods: "评测方法", Costs: "成本", Catalog: "目录", Machines: "整机", Models: "模型", Wiki: "知识库", "Price watch": "价格趋势", "For agents": "智能体" };
 const chineseWorkload = { text: "文本生成", image: "图像生成", agent: "智能体任务" };
