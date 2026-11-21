@@ -14,6 +14,8 @@ Set `DRAFT` to the path printed by the editorial generator. This renders a short
 PACKAGE=$(python3 -m fastest_delivery prepare --draft "$DRAFT" --output-dir ./x-review)
 ```
 
+For a Simplified or Traditional Chinese draft of the shared CI CPU benchmark, add `--font-file "$FONT_FILE"` with a licensed font that covers the selected script. The post, chart and alt text identify the shared CI runner and single CPU thread. Review and approve a regenerated package if an earlier candidate omitted that context.
+
 Review `post.txt`, `chart.png`, `chart-alt.txt`, and the evidence in `package.json` before approving. Confirm the destination account is authorized and that the evidence can be used in the post and its chart. Supply the separate channel-use rights decision with `--rights-reference`. Use an explicit start and end with UTC offsets for the publishing window, for example `2026-11-21T09:00:00+08:00` and `2026-11-21T10:00:00+08:00`.
 
 ```sh

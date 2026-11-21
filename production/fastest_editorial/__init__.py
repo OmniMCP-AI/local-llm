@@ -40,6 +40,17 @@ SHARED_CPU_DECODE_BODY = {
 }
 
 
+def _metric_key(metric):
+    return (metric["id"], metric["version"], metric["statistic"], metric["unit"])
+
+
+def is_shared_cpu_decode(metric, workload):
+    return (
+        _metric_key(metric) == LLAMA_BENCH_DECODE_METRIC
+        and (workload["id"], workload["version"]) == ("llama-bench-shared-ci-cpu-decode", 1)
+    )
+
+
 def _public_origin(value):
     parts = urlsplit(value)
     if (
@@ -112,8 +123,7 @@ def _select_story(store, release_id, origin, locale):
         return {"outcome": "no_story", "reason": "contributor_release", "release": release}
 
     metric = row["metric"]
-    metric_key = (metric["id"], metric["version"], metric["statistic"], metric["unit"])
-    if metric_key not in SUPPORTED_METRICS:
+    if _metric_key(metric) not in SUPPORTED_METRICS:
         return {"outcome": "no_story", "reason": "unsupported_metric", "release": release}
 
     hashes = _verified_release(store, snapshot)
@@ -127,8 +137,7 @@ def _select_story(store, release_id, origin, locale):
     # pointer might previously have pointed to a different observation.
     kind = "correction" if release["revision"] > 1 else "evergreen"
     workload = row["workload"]
-    workload_key = (workload["id"], workload["version"])
-    if metric_key == LLAMA_BENCH_DECODE_METRIC and workload_key == ("llama-bench-shared-ci-cpu-decode", 1):
+    if is_shared_cpu_decode(metric, workload):
         body = SHARED_CPU_DECODE_BODY[locale]
     return {
         "outcome": "story",

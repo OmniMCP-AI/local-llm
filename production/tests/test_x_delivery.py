@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 import json
 from pathlib import Path
 import signal
@@ -10,7 +11,9 @@ import time
 import unittest
 from zipfile import ZipFile
 
+from fastest_delivery.approval import json_bytes, seal
 from fastest_release import ReleaseStore
+from fastest_release.capture_cpu import candidate
 
 
 PRODUCTION = Path(__file__).resolve().parents[1]
@@ -78,16 +81,21 @@ class XDeliveryTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return Path(result.stdout.strip())
 
-    def prepare(self, locale="zh-CN"):
-        draft = self.output_path(self.invoke(
+    def draft(self, locale):
+        return self.output_path(self.invoke(
             "--database-url", self.database_url, "--public-origin", "https://benchmark.example",
             "--output-dir", self.directory / "editorial", "--date", "2026-11-21", "--locale", locale,
             module="fastest_editorial",
         ))
-        return self.output_path(self.invoke(
-            "prepare", "--draft", draft, "--database-url", self.database_url,
-            "--output-dir", self.directory / "review",
-        ))
+
+    def prepare_result(self, locale="zh-CN", *options):
+        return self.invoke(
+            "prepare", "--draft", self.draft(locale), "--database-url", self.database_url,
+            "--output-dir", self.directory / "review", *options,
+        )
+
+    def prepare(self, locale="zh-CN"):
+        return self.output_path(self.prepare_result(locale))
 
     @staticmethod
     def metadata(package):
@@ -119,6 +127,92 @@ class XDeliveryTest(unittest.TestCase):
             "receipt", "--approval", approval, "--delivery-dir", self.directory / "deliveries",
             "--operator", "operator@example.test", "--url", url, "--published-at", self.now.isoformat(),
         )
+
+    def publish_shared_cpu(self, *, source_label=None):
+        observation = candidate({
+            "runner": {"cpu_model": "Test CPU", "architecture": "x86_64", "image_version": "test"},
+            "run_url": "https://benchmark.example/test-cpu-attempt",
+            "median_tokens_per_second": "37.624926513815",
+            "samples_ns": [3_402_000_000] * 7,
+        }, "a" * 64)
+        observation["rights"] = self.observation["rights"]
+        if source_label is not None:
+            observation["source"]["label"] = source_label
+        for field in observation["fields"].values():
+            field["rights"] = "allow"
+        return observation, self.store.publish(observation)
+
+    def test_shared_cpu_x_package_keeps_scope_and_exact_pinned_claim(self):
+        observation, release_id = self.publish_shared_cpu()
+        package = self.prepare(locale="en")
+        metadata = self.metadata(package)
+        story = metadata["draft"]["story"]
+        claim_id = f"{release_id}:{observation['evidence_id']}:llama-bench-decode@1"
+        self.assertEqual(story["claims"], [{
+            **observation["metric"], "claim_id": claim_id, "evidence_id": observation["evidence_id"],
+        }])
+        self.assertEqual(story["copy"]["claim_refs"], [claim_id])
+        evidence_url = f"https://benchmark.example/releases/{release_id}/benchmark.html#citation"
+        self.assertEqual(story["evidence_destination"], evidence_url)
+        self.assertEqual(
+            (package / "post.txt").read_text(encoding="utf-8"),
+            "Median decode throughput: 37.624926513815 tok/s (7 measurements)\n"
+            "Shared CI runner, 1 CPU thread\n"
+            f"Source: GitHub Actions CPU baseline capture\n{evidence_url}\n",
+        )
+        alt = (package / "chart-alt.txt").read_text(encoding="utf-8")
+        for phrase in ("37.624926513815 tok/s (7 measurements)", "Shared CI runner, 1 CPU thread",
+                       "Source: GitHub Actions CPU baseline capture"):
+            self.assertIn(phrase, alt)
+        from PIL import Image
+
+        with Image.open(package / "chart.png") as chart:
+            qualifier = chart.crop((56, 244, 944, 284))
+            self.assertGreater(len(qualifier.getcolors()), 1)
+        self.assertEqual(metadata["draft"]["release"]["release_id"], release_id)
+        for name, expected in metadata["files"].items():
+            self.assertEqual(sha256((package / name).read_bytes()).hexdigest(), expected)
+        self.assertEqual(package.name, metadata["payload_sha256"])
+        self.assertEqual(self.prepare(locale="en"), package)
+        approval = self.output_path(self.approve(package))
+        with ZipFile(self.output_path(self.export(package, approval))) as archive:
+            for name in metadata["files"]:
+                self.assertEqual(archive.read(name), (package / name).read_bytes())
+
+    def test_shared_cpu_x_length_counts_scope_and_full_weighted_attribution(self):
+        # The ASCII scope and the fixed X URL weight leave 152 units for the label.
+        self.publish_shared_cpu(source_label="A" * 151 + "一")
+        result = self.prepare_result("en")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("280-character limit", result.stderr)
+        self.assertFalse((self.directory / "review").exists())
+
+    def test_shared_cpu_x_chinese_chart_requires_a_font(self):
+        self.publish_shared_cpu()
+        for locale in ("zh-CN", "zh-TW"):
+            with self.subTest(locale=locale):
+                result = self.prepare_result(locale)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("--font-file", result.stderr)
+                self.assertFalse((self.directory / "review").exists())
+
+    def test_approval_cannot_export_shared_cpu_copy_without_scope(self):
+        self.publish_shared_cpu()
+        package = self.prepare(locale="en")
+        metadata = self.metadata(package)
+        metadata.pop("payload_sha256")
+        for name, phrase in (("post.txt", b"Shared CI runner, 1 CPU thread\n"),
+                             ("chart-alt.txt", b"Shared CI runner, 1 CPU thread. ")):
+            path = package / name
+            body = path.read_bytes().replace(phrase, b"")
+            path.write_bytes(body)
+            metadata["files"][name] = sha256(body).hexdigest()
+        (package / "package.json").write_bytes(json_bytes(seal(metadata, "payload_sha256")))
+        approval = self.output_path(self.approve(package))
+        result = self.export(package, approval)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("approved text differs from the pinned public evidence", result.stderr)
+        self.assertFalse((self.directory / "deliveries").exists())
 
     def test_prepares_x_copy_chart_and_attribution_from_the_pinned_release(self):
         package = self.prepare()
@@ -184,11 +278,12 @@ class XDeliveryTest(unittest.TestCase):
         self.assertEqual(self.output_path(self.export(package, approval)), receipts[0])
 
     def test_queued_and_previously_exported_packages_stop_on_withdrawal(self):
-        package = self.prepare()
+        observation, _ = self.publish_shared_cpu()
+        package = self.prepare(locale="en")
         pending = self.output_path(self.approve(package))
         prior = self.output_path(self.approve(package, account="@second_lab"))
         prior_archive = self.output_path(self.export(package, prior))
-        self.store.withdraw(self.observation["evidence_id"], "private withdrawal reason")
+        self.store.withdraw(observation["evidence_id"], "private withdrawal reason")
 
         for approval in (pending, prior):
             result = self.export(package, approval)

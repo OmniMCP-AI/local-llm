@@ -8,6 +8,7 @@ import re
 from unicodedata import normalize
 from zipfile import ZipFile, ZipInfo
 
+from fastest_editorial import is_shared_cpu_decode
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
@@ -33,9 +34,27 @@ COPY = {
         "單柱圖，刻度範圍為 0 至 {maximum} {unit}。",
     ),
 }
+SHARED_CPU_SCOPE = {
+    "en": "Shared CI runner, 1 CPU thread",
+    "zh-CN": "共享 CI 运行器，单个 CPU 线程",
+    "zh-TW": "共用 CI 執行器，單一 CPU 執行緒",
+}
+CHART_COPY = {
+    "en": ("Median decode throughput", "Measurements: {samples}", "fastest.ai  |  Evidence and attribution in the post"),
+    "zh-CN": ("解码吞吐量中位数", "测量次数：{samples}", "fastest.ai  |  证据与来源见帖子"),
+    "zh-TW": ("解碼吞吐量中位數", "測量次數：{samples}", "fastest.ai  |  證據與來源見貼文"),
+}
 
 
-def _copy(draft, maximum):
+def _shared_cpu_scope(draft):
+    story = draft["story"]
+    claim, = story["claims"]
+    if is_shared_cpu_decode(claim, story["benchmark_conditions"]["workload"]):
+        return SHARED_CPU_SCOPE[draft["locale"]]
+    return ""
+
+
+def _copy(draft, maximum, scope):
     headline, correction, source_prefix, chart_description = COPY[draft["locale"]]
     story = draft["story"]
     claim, = story["claims"]
@@ -43,18 +62,21 @@ def _copy(draft, maximum):
     if story["kind"] == "correction":
         result = correction + result
     credit = source_prefix + story["attribution"]["label"]
-    copy = normalize("NFC", f"{result}\n{credit}\n")
+    scope_line = f"{scope}\n" if scope else ""
+    copy = normalize("NFC", f"{result}\n{scope_line}{credit}\n")
     link = story["evidence_destination"]
     # X v3 weights, conservatively counting emoji sequences per code point.
     single_weight = ((0, 4351), (8192, 8205), (8208, 8223), (8242, 8247))
     weight = sum(1 if any(low <= ord(char) <= high for low, high in single_weight) else 2 for char in copy)
     if weight + 23 > 280:
         raise ValueError("claim and full source attribution exceed X's 280-character limit")
-    alt = f"{chart_description.format(maximum=maximum, unit=claim['unit'])} {result}. {credit}."
+    punctuation = "." if draft["locale"] == "en" else "。"
+    scope_sentence = f"{scope}{punctuation} " if scope else ""
+    alt = f"{chart_description.format(maximum=maximum, unit=claim['unit'])} {result}. {scope_sentence}{credit}."
     return f"{copy}{link}\n".encode("utf-8"), f"{normalize('NFC', alt)}\n".encode("utf-8")
 
 
-def _card(draft, maximum):
+def _card(draft, maximum, scope, font_file):
     try:
         from PIL import Image, ImageDraw, ImageFont
     except ImportError as error:
@@ -64,32 +86,51 @@ def _card(draft, maximum):
     value, unit = claim["value"], claim["unit"]
     image = Image.new("RGB", (1000, 500), "#f5f6f2")
     draw = ImageDraw.Draw(image)
-    medium = ImageFont.load_default(size=30)
-    small = ImageFont.load_default(size=24)
+    title, count, footer = CHART_COPY[draft["locale"] if font_file else "en"]
+    measurements = count.format(samples=claim["sample_count"])
+    if font_file is None:
+        medium = ImageFont.load_default(size=30)
+        small = ImageFont.load_default(size=24)
+    else:
+        medium = ImageFont.truetype(str(font_file), 30)
+        small = ImageFont.truetype(str(font_file), 24)
+        missing = bytes(small.getmask("\uffff"))
+        visible_characters = set(title + measurements + scope + footer) - {" "}
+        if any(bytes(small.getmask(char)) == missing for char in visible_characters):
+            raise ValueError("--font-file must cover the X chart labels for the draft locale")
     label = f"{value} {unit}"
     large = ImageFont.load_default(size=64)
     if large.getlength(label) > 888:
         large = ImageFont.load_default(size=int(64 * 888 / large.getlength(label)))
-    draw.text((56, 46), "Median decode throughput", font=medium, fill="#132927")
+    draw.text((56, 46), title, font=medium, fill="#132927")
     draw.text((56, 113), label, font=large, fill="#132927")
-    draw.text((56, 214), f"Measurements: {claim['sample_count']}", font=small, fill="#45615c")
+    draw.text((56, 214), measurements, font=small, fill="#45615c")
+    if scope:
+        draw.text((56, 246), scope, font=small, fill="#45615c")
     draw.rectangle((56, 284, 944, 337), fill="#dbe3dd")
     filled = round(888 * Decimal(value) / Decimal(maximum))
     if filled:
         draw.rectangle((56, 284, 56 + filled - 1, 337), fill="#087360")
-    draw.text((56, 358), "0", font=small, fill="#132927")
-    draw.text((944, 358), f"{maximum} {unit}", font=small, anchor="ra", fill="#132927")
-    draw.text((56, 438), "fastest.ai  |  Evidence and attribution in the post", font=small, fill="#45615c")
+    scale_font = ImageFont.load_default(size=24) if font_file else small
+    draw.text((56, 358), "0", font=scale_font, fill="#132927")
+    draw.text((944, 358), f"{maximum} {unit}", font=scale_font, anchor="ra", fill="#132927")
+    draw.text((56, 438), footer, font=small, fill="#45615c")
     output = BytesIO()
     image.save(output, format="PNG")
     return output.getvalue()
 
 
-def prepare(store, draft_path, output_dir):
+def prepare(store, draft_path, output_dir, *, font_file=None):
     draft = read_sealed(draft_path, "draft_revision")
     maximum = verify_story(store, draft)
-    post, alt = _copy(draft, maximum)
-    files = {"post.txt": post, "chart.png": _card(draft, maximum), "chart-alt.txt": alt}
+    scope = _shared_cpu_scope(draft)
+    localized_chart = bool(scope) and draft["locale"] != "en"
+    if localized_chart and font_file is None:
+        raise ValueError("provide a font with glyphs for the X chart using --font-file")
+    if font_file is not None and not localized_chart:
+        raise ValueError("--font-file for X requires a Chinese shared CI CPU draft")
+    post, alt = _copy(draft, maximum, scope)
+    files = {"post.txt": post, "chart.png": _card(draft, maximum, scope, font_file), "chart-alt.txt": alt}
     package = seal({
         "schema_version": 1,
         "channel": "x",
@@ -154,9 +195,10 @@ def _receipt_path(directory, approval):
 def export(store, package_path, approval_path, delivery_dir):
     approval = _read_approval(approval_path)
     package, files = _load_package(lambda name: (package_path / name).read_bytes())
+    draft = package["draft"]
     if (
         package["payload_sha256"] != approval["payload_sha256"]
-        or package["draft"]["draft_revision"] != approval["story_revision"]
+        or draft["draft_revision"] != approval["story_revision"]
     ):
         raise ValueError("approval does not cover this package")
     directory = delivery_dir / approval["delivery_id"]
@@ -164,8 +206,8 @@ def export(store, package_path, approval_path, delivery_dir):
     if confirmed:
         return confirmed
     require_window(approval, datetime.now(timezone.utc))
-    maximum = verify_story(store, package["draft"])
-    if _copy(package["draft"], maximum) != (files["post.txt"], files["chart-alt.txt"]):
+    maximum = verify_story(store, draft)
+    if _copy(draft, maximum, _shared_cpu_scope(draft)) != (files["post.txt"], files["chart-alt.txt"]):
         raise ValueError("approved text differs from the pinned public evidence")
 
     output = BytesIO()
@@ -173,7 +215,7 @@ def export(store, package_path, approval_path, delivery_dir):
     with ZipFile(output, "w") as archive:
         for name, body in files.items():
             archive.writestr(ZipInfo(name), body)
-    require_current_story(store, package["draft"])
+    require_current_story(store, draft)
     require_window(approval, datetime.now(timezone.utc))
     handoff = retain(directory / ARCHIVE, output.getvalue())
     return _receipt_path(directory, approval) or handoff
