@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 from fastest_release.validation import plain_text
 
-from .feed import REPOSITORY
+from .feed import SOURCES
 from .retest import approved_links
 
 
@@ -50,11 +50,14 @@ def apply_notes(report, notes_path, read_release=None, origin=""):
     seen = set()
     for note in authored["notes"]:
         applicability = validate(note, cards, revisions, seen)
+        release = revisions[note["revision_id"]]
         if note["status"] == "fastest_ai_verified":
             if read_release is None or "retest" not in note:
                 raise ValueError("A verified note requires an approved matched retest")
-            applicability["retest"] = approved_links(read_release, note, note["retest"], origin)
-        revisions[note["revision_id"]]["applicability"].append(applicability)
+            applicability["retest"] = approved_links(
+                read_release, note, note["retest"], origin, runtime_id=release["runtime_id"],
+            )
+        release["applicability"].append(applicability)
     for row in revisions.values():
         row["applicability"].sort(key=lambda note: note["id"])
     return report
@@ -90,8 +93,9 @@ def validate(note, cards, revisions, seen):
     if not isinstance(flags, list) or not all(plain_text(flag) for flag in flags):
         raise ValueError("Configuration flags must be a list of arguments")
     card = cards[note["card_id"]]
+    source = SOURCES[revisions[note["revision_id"]]["runtime_id"]]
     return {
         **note,
         "card": {"id": card["id"], "name": card["name"], "source_url": https_url(card["source"])},
-        "build_url": f"https://github.com/{REPOSITORY}/commit/{config['build_sha']}",
+        "build_url": f"https://github.com/{source.repository}/commit/{config['build_sha']}",
     }
