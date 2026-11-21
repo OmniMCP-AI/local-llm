@@ -1,7 +1,8 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing, contextmanager
+from contextlib import closing, contextmanager, redirect_stderr
 from hashlib import sha256
+from io import StringIO
 import http.client
 import json
 from pathlib import Path
@@ -20,7 +21,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
+from fastest_release import InvalidObservation, ReleaseError, ReleaseStore, capture_scaling
 from fastest_release.capture_cpu import candidate as cpu_baseline_candidate
 from fastest_prices import PriceStore
 from fastest_release.research import SEED_ROOT
@@ -28,7 +29,8 @@ from test_mcp import HAS_SDK, get as get_public, mcp_client
 from test_mcp_http import mcp_http_client, mcp_http_server
 from test_public_api import api_client, api_server
 from test_scaling import BASELINE, COMPARISON, fixture_releases
-from fastest_release.scaling import scaling_report
+from fastest_release.scaling import PLAN, scaling_report
+from test_scaling_capture import BENCH, FIRST, SECOND
 from fastest_serving import capture
 
 
@@ -562,6 +564,214 @@ class ReleaseTest(unittest.TestCase):
             [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url,
              command, *args], cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
         )
+
+    def scaling_capture_packet(self, bench=BENCH):
+        root = Path(self.socket_path.parent, f"fixture-{uuid4().hex}")
+        root.mkdir()
+        packet = root / "capture"
+        runtime, inventory = root / "llama-bench", root / "nvidia-smi"
+        for path, body in ((runtime, bench), (inventory, f'''
+print({FIRST!r} + ", 00000000:01:00.0, Fixture A, 570.10")
+print({SECOND!r} + ", 00000000:02:00.0, Fixture B, 570.10")
+''')):
+            path.write_text(f"#!{sys.executable}\n" + body)
+            path.chmod(0o700)
+        devices, build = root / "devices.json", root / "build.txt"
+        devices.write_text(json.dumps([{"uuid": FIRST, "slot": "first"}, {"uuid": SECOND, "slot": "second"}]))
+        build.write_text("Private synthetic build fixture.")
+        shards = []
+        for index, shard in enumerate(PLAN["artifact"]["shards"]):
+            payload = f"Fixture shard {index}".encode()
+            (root / shard["path"]).write_bytes(payload)
+            shards.append({**shard, "bytes": len(payload), "sha256": sha256(payload).hexdigest()})
+        with redirect_stderr(StringIO()), patch.dict(PLAN["artifact"], {"shards": shards}), patch.dict(os.environ, {
+            "PATH": f"{root}{os.pathsep}{os.environ['PATH']}", "CUDA_VISIBLE_DEVICES": f"{FIRST},{SECOND}",
+        }):
+            capture_scaling.main([
+                "capture", str(packet), "--bench", str(runtime), "--model-dir", str(root),
+                "--devices", str(devices), "--host-revision", "fixture-r1", "--build-evidence", str(build),
+            ])
+        # The ingest process has the usual production pins. Only the synthetic collector needed stand-in shards.
+        manifest_file = packet / "capture.json"
+        manifest = json.loads(manifest_file.read_bytes())
+        manifest["artifact"] = PLAN["artifact"]
+        manifest_file.write_text(json.dumps(manifest))
+        return packet
+
+    def test_private_scaling_intake_preserves_ordered_integer_samples_with_idempotent_replay(self):
+        self.serving_intake("migrate").check_returncode()
+        bench = BENCH.replace("list(range(100, 120))", "[9007199254740993] + list(range(101, 120))")
+        packet = self.scaling_capture_packet(bench)
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_sha256"], sha256((packet / "capture.json").read_bytes()).hexdigest())
+        self.assertEqual(receipt["capture_status"], "complete")
+        self.assertEqual(receipt["transport_status"], "unknown")
+        self.assertEqual(receipt["review_status"], "held")
+        self.assertEqual(json.loads(self.serving_intake("ingest-scaling-capture", packet).stdout), receipt)
+        self.assertEqual(self.store._query("""
+            SELECT role, outcome, array_to_string(samples_ns, ',')
+            FROM fastest_intake.scaling_capture_attempt ORDER BY role;
+        """).splitlines(), [
+            "baseline|complete|9007199254740993,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119",
+            "comparison|complete|9007199254740993,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119",
+        ])
+        stats = json.loads(self.serving_intake("stats").stdout)
+        self.assertEqual((stats["scaling_capture_runs"], stats["scaling_capture_attempts"]), (1, 2))
+
+        log = packet / "baseline/stderr.log"
+        log.write_bytes(log.read_bytes() + b"\nResealed after edit.\n")
+        attempt = packet / "baseline/attempt.json"
+        revised = json.loads(attempt.read_bytes())
+        revised["files"]["stderr.log"] = sha256(log.read_bytes()).hexdigest()
+        attempt.write_text(json.dumps(revised))
+        conflict = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(conflict.returncode, 1, conflict.stderr)
+        self.assertIn("conflicting evidence", conflict.stderr)
+
+    def test_private_scaling_intake_adds_transport_only_after_verifying_the_attachment(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.scaling_capture_packet()
+        first = json.loads(self.serving_intake("ingest-scaling-capture", packet).stdout)
+        self.assertEqual(first["transport_status"], "unknown")
+        run = json.loads((packet / "comparison/attempt.json").read_bytes())
+        trace, links = packet.parent / "trace.bin", packet.parent / "links.json"
+        trace.write_bytes(b"Private synthetic trace content\x00")
+        link = {"from": "0000:01:00.0", "to": "0000:02:00.0", "path": "host-staged",
+                "interconnect": "PCIe", "direction": "one-way", "payload_bytes": 8192,
+                "scope": "Synthetic timed decode", "method": "Fixture trace",
+                "rated": None, "negotiated": None, "bandwidth_gb_s": None}
+        links.write_text(json.dumps({"run_id": run["run_id"], "links": [link]}))
+        self.assertEqual(capture_scaling.main(["attach-transport", str(packet), "--trace", str(trace),
+                                               "--links", str(links)]), 0)
+        trace_copy = packet / "transport/trace"
+        trace_copy.write_bytes(b"Tampered trace")
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("SHA-256 mismatch", result.stderr)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.scaling_capture_transport"), "0")
+        trace_copy.write_bytes(trace.read_bytes())
+        checked = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        receipt = json.loads(checked.stdout)
+        self.assertEqual(receipt["transport_status"], "supplied")
+        self.assertEqual(receipt["capture_sha256"], first["capture_sha256"])
+        self.assertEqual(receipt["transport_receipt_sha256"],
+                         sha256((packet / "transport/receipt.json").read_bytes()).hexdigest())
+        self.assertEqual(json.loads(self.serving_intake("ingest-scaling-capture", packet).stdout), receipt)
+        self.assertEqual(self.store._query("""
+            SELECT comparison_run_id, trace_sha256, links->0->>'path' FROM fastest_intake.scaling_capture_transport
+        """), f"{run['run_id']}|{sha256(trace.read_bytes()).hexdigest()}|host-staged")
+
+        trace_copy.write_bytes(b"Another trace with a fresh seal")
+        receipt_file = packet / "transport/receipt.json"
+        alternate = json.loads(receipt_file.read_bytes())
+        alternate["files"]["trace"] = sha256(trace_copy.read_bytes()).hexdigest()
+        receipt_file.write_text(json.dumps(alternate))
+        conflict = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(conflict.returncode, 1, conflict.stderr)
+        self.assertIn("conflicting evidence", conflict.stderr)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_release.observation_revision"), "0")
+        self.store._query("CREATE ROLE scaling_public_reader LOGIN;")
+        reader = ReleaseStore(self.database_url + " user=scaling_public_reader")
+        for table in ("scaling_capture_run", "scaling_capture_attempt", "scaling_capture_transport"):
+            with self.assertRaisesRegex(ReleaseError, "permission denied"):
+                reader._query(f"SELECT * FROM fastest_intake.{table}")
+
+    def test_private_scaling_intake_refuses_missing_tampered_or_unmatched_evidence(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.scaling_capture_packet()
+        stdout = packet / "comparison/stdout.jsonl"
+        raw = stdout.read_bytes()
+        attempt = packet / "comparison/attempt.json"
+        record = json.loads(attempt.read_bytes())
+        attempt_raw = attempt.read_bytes()
+        for path, original, changed, error in (
+            (stdout, raw, None, "Missing or invalid evidence file"),
+            (stdout, raw, b'{"samples_ns":[100]}', "SHA-256 mismatch"),
+            (attempt, attempt_raw, json.dumps({**record, "samples_ns": [1] * 20}).encode(), "timings disagree"),
+            (attempt, attempt_raw, json.dumps({**record, "timeout_seconds": 10}).encode(), "same runtime controls"),
+        ):
+            with self.subTest(error=error):
+                if changed is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(changed)
+                result = self.serving_intake("ingest-scaling-capture", packet)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(error, result.stderr)
+                path.write_bytes(original)
+
+        manifest = packet / "capture.json"
+        claims = json.loads(manifest.read_bytes())
+        claims["status"] = "incomplete"
+        manifest.write_text(json.dumps(claims))
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status disagrees", result.stderr)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.scaling_capture_run"), "0")
+
+    def test_private_scaling_intake_preserves_failed_attempts_and_unavailable_comparisons(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.scaling_capture_packet(BENCH.replace("for index in range(len(visible)):", """
+if len(visible) == 1:
+    print("CUDA_ERROR_OUT_OF_MEMORY", file=sys.stderr)
+    sys.exit(1)
+print("llama_decode: failed to decode", file=sys.stderr)
+for index in range(len(visible)):
+"""))
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["capture_status"], "incomplete")
+        self.assertEqual(self.store._query("""
+            SELECT outcome, cardinality(samples_ns) FROM fastest_intake.scaling_capture_attempt ORDER BY role;
+        """).splitlines(), ["oom|0", "failed|20"])
+
+        packet = self.scaling_capture_packet()
+        manifest = packet / "capture.json"
+        capture = json.loads(manifest.read_bytes())
+        capture["status"] = "interrupted"
+        capture["reason"] = "Fixture interruption"
+        del capture["attempts"]["comparison"]
+        manifest.write_text(json.dumps(capture))
+        # Interruption after the disk receipt is finalized and before it is registered in capture.json.
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_status"], "interrupted")
+        self.assertEqual(receipt["transport_status"], "unknown")
+        self.assertEqual(self.store._query(f"""
+            SELECT outcome, cardinality(samples_ns)
+            FROM fastest_intake.scaling_capture_attempt WHERE capture_sha256 = '{receipt["capture_sha256"]}'
+            ORDER BY role;
+        """).splitlines(), ["complete|20", "unavailable|20"])
+
+    def test_private_scaling_intake_retains_interruption_during_log_creation(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.scaling_capture_packet()
+        manifest = packet / "capture.json"
+        capture = json.loads(manifest.read_bytes())
+        capture.update(status="interrupted", reason="Fixture interruption opening the runner logs")
+        del capture["attempts"]["comparison"]
+        manifest.write_text(json.dumps(capture))
+        comparison = packet / "comparison"
+        receipt_file = comparison / "attempt.json"
+        receipt = json.loads(receipt_file.read_bytes())
+        receipt.update(outcome="interrupted", exit_code=None, reason="Operator interrupted the subprocess.")
+        del receipt["placement_mib"], receipt["samples_ns"], receipt["files"]["stderr.log"]
+        stdout = comparison / "stdout.jsonl"
+        stdout.write_bytes(b"")
+        receipt["files"]["stdout.jsonl"] = sha256(b"").hexdigest()
+        (comparison / "stderr.log").unlink()
+        receipt_file.write_text(json.dumps(receipt))
+
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.store._query("""
+            SELECT outcome || '|' || cardinality(samples_ns)
+            FROM fastest_intake.scaling_capture_attempt WHERE role = 'comparison';
+        """), "interrupted|0")
 
     def test_private_serving_capture_intake_preserves_actual_timing_and_raw_digests(self):
         self.serving_intake("migrate").check_returncode()

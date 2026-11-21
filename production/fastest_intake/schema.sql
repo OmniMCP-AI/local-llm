@@ -231,6 +231,44 @@ CREATE TABLE IF NOT EXISTS fastest_intake.serving_capture_attempt (
     CHECK (outcome <> 'timeout' OR elapsed_ms = 5000)
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.scaling_capture_run (
+    capture_sha256 text PRIMARY KEY CHECK (capture_sha256 ~ '^[0-9a-f]{64}$'),
+    evidence_sha256 text NOT NULL CHECK (evidence_sha256 ~ '^[0-9a-f]{64}$'),
+    capture_status text NOT NULL CHECK (capture_status IN ('complete', 'incomplete', 'failed', 'interrupted')),
+    review_status text NOT NULL CHECK (review_status = 'held'),
+    metadata jsonb NOT NULL CHECK (jsonb_typeof(metadata) = 'object')
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.scaling_capture_attempt (
+    capture_sha256 text REFERENCES fastest_intake.scaling_capture_run(capture_sha256),
+    role text CHECK (role IN ('baseline', 'comparison')),
+    run_id uuid NOT NULL UNIQUE,
+    receipt_sha256 text NOT NULL CHECK (receipt_sha256 ~ '^[0-9a-f]{64}$'),
+    outcome text NOT NULL CHECK (outcome IN ('complete', 'invalid-output', 'oom', 'failed',
+                                             'timeout', 'interrupted', 'unavailable')),
+    started_at timestamptz NOT NULL,
+    finished_at timestamptz CHECK (finished_at >= started_at),
+    exit_code integer,
+    timeout_seconds numeric NOT NULL CHECK (timeout_seconds > 0),
+    samples_ns bigint[] NOT NULL CHECK (
+        cardinality(samples_ns) IN (0, 20) AND (array_ndims(samples_ns) = 1 OR cardinality(samples_ns) = 0)
+        AND array_position(samples_ns, NULL) IS NULL AND 0 < ALL(samples_ns)
+    ),
+    metadata jsonb NOT NULL CHECK (jsonb_typeof(metadata) = 'object'),
+    PRIMARY KEY (capture_sha256, role),
+    CHECK (outcome <> 'complete' OR
+           (exit_code IS NOT DISTINCT FROM 0 AND finished_at IS NOT NULL AND cardinality(samples_ns) = 20))
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.scaling_capture_transport (
+    comparison_run_id uuid PRIMARY KEY REFERENCES fastest_intake.scaling_capture_attempt(run_id),
+    receipt_sha256 text NOT NULL CHECK (receipt_sha256 ~ '^[0-9a-f]{64}$'),
+    trace_sha256 text NOT NULL CHECK (trace_sha256 ~ '^[0-9a-f]{64}$'),
+    links_sha256 text NOT NULL CHECK (links_sha256 ~ '^[0-9a-f]{64}$'),
+    links jsonb NOT NULL CHECK (jsonb_typeof(links) = 'array' AND jsonb_array_length(links) > 0),
+    attached_at timestamptz NOT NULL
+);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;
 
 COMMIT;

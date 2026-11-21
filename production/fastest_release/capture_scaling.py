@@ -3,6 +3,7 @@
 import argparse
 import csv
 from decimal import Decimal
+from io import StringIO
 import json
 import os
 from pathlib import Path
@@ -33,16 +34,22 @@ def _read(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _devices(path):
-    devices = _read(path)
+def validate_selected_devices(devices):
     if not isinstance(devices, list) or not 2 <= len(devices) <= 16:
         raise ValueError("Select 2 to 16 full physical CUDA GPU UUIDs in baseline-first order.")
     for device in devices:
         keys(device, "uuid slot", "each selected GPU")
         if not (plain_text(device["uuid"]) and GPU_UUID.fullmatch(device["uuid"]) and plain_text(device["slot"])):
             raise ValueError("Each GPU needs a full GPU UUID and a physical slot label.")
-    if any(len({device[field] for device in devices}) != len(devices) for field in ("uuid", "slot")):
+    uuids = {device["uuid"].lower() for device in devices}
+    slots = {device["slot"] for device in devices}
+    if not len(uuids) == len(slots) == len(devices):
         raise ValueError("GPU UUIDs and physical slot labels must be distinct.")
+    return devices
+
+
+def _devices(path):
+    devices = validate_selected_devices(_read(path))
     mask = os.environ.get("CUDA_VISIBLE_DEVICES")
     if mask is not None and not {device["uuid"] for device in devices} <= set(mask.split(",")):
         raise ValueError("Selected UUIDs must be permitted by the existing CUDA_VISIBLE_DEVICES allocation.")
@@ -53,14 +60,19 @@ def _inventory(output, selected):
     record = record_process(output / "inventory", {"argv": INVENTORY}, "stdout.csv", 30, dict(os.environ))
     if record["exit_code"] != 0:
         raise ValueError("nvidia-smi inventory failed. See inventory/attempt.json.")
+    return inventory_devices((output / "inventory" / "stdout.csv").read_text(encoding="utf-8"), selected)
+
+
+def inventory_devices(raw, selected):
     by_uuid = {}
-    with (output / "inventory" / "stdout.csv").open(encoding="utf-8", newline="") as raw:
-        for row in csv.reader(raw, skipinitialspace=True):
-            if len(row) != 4:
-                raise ValueError("Unexpected nvidia-smi CSV row.")
-            uuid, pci, card, driver = (value.strip() for value in row)
-            pci = pci[4:] if len(pci) == 16 and pci.startswith("0000") else pci
-            by_uuid[uuid] = {"id": pci.lower(), "card": card, "driver": driver}
+    for row in csv.reader(StringIO(raw, newline=""), skipinitialspace=True):
+        if len(row) != 4:
+            raise ValueError("Unexpected nvidia-smi CSV row.")
+        uuid, pci, card, driver = (value.strip() for value in row)
+        pci = pci[4:] if len(pci) == 16 and pci.startswith("0000") else pci
+        if uuid in by_uuid:
+            raise ValueError("Repeated GPU UUID in nvidia-smi inventory.")
+        by_uuid[uuid] = {"id": pci.lower(), "card": card, "driver": driver}
     devices = [{**gpu, **by_uuid.get(gpu["uuid"], {})} for gpu in selected]
     if not all(DEVICE_ID.fullmatch(gpu.get("id", "")) and plain_text(gpu["card"])
                and plain_text(gpu["driver"]) for gpu in devices):
@@ -70,7 +82,7 @@ def _inventory(output, selected):
     return devices
 
 
-def _placement(stderr):
+def placement(stderr):
     placement = {}
     for device, kind, mib in BUFFER.findall(stderr):
         if Decimal(mib) > 0:
@@ -78,16 +90,21 @@ def _placement(stderr):
     return placement
 
 
-def _decode_attempt(output, *, role, devices, bench, model, protocol, timeout):
+def decode_argv(bench, model, protocol, tensor_split):
     phase = protocol["phases"]["decode"]
     settings = protocol["settings"]
     reps = protocol["warm_samples_per_phase"]
-    tensor_split = "/".join(["1"] * len(devices))
     argv = [str(bench), "-m", str(model), "-p", str(phase["input_tokens"]), "-n", str(phase["output_tokens"])]
     for setting, flag in BENCH_SETTING_FLAGS.items():
         value = settings[setting]
         argv.extend((flag, str(int(value) if type(value) is bool else value)))
     argv.extend(("-ts", tensor_split, "-r", str(reps), "--progress", "-v", "-o", "jsonl"))
+    return argv
+
+
+def _decode_attempt(output, *, role, devices, bench, model, protocol, timeout):
+    tensor_split = "/".join(["1"] * len(devices))
+    argv = decode_argv(bench, model, protocol, tensor_split)
     env = {**os.environ, "CUDA_VISIBLE_DEVICES": ",".join(gpu["uuid"] for gpu in devices),
            "CUDA_DEVICE_ORDER": "PCI_BUS_ID"}
     directory = output / role
@@ -101,25 +118,22 @@ def _decode_attempt(output, *, role, devices, bench, model, protocol, timeout):
     }
     record_process(directory, record, "stdout.jsonl", timeout, env)
     stderr = (directory / "stderr.log").read_text(encoding="utf-8", errors="replace")
-    record["placement_mib"] = _placement(stderr)
+    record["placement_mib"] = placement(stderr)
     if record["outcome"] == "exited":
-        outcome, reason, samples = _decode_result(directory, record, stderr, protocol, model)
+        try:
+            row = _read(directory / "stdout.jsonl")
+        except (ValueError, RecursionError):
+            row = None
+        sample_error, durations = decode_samples(row, record, protocol, model)
+        outcome, reason, samples = decode_result(record, stderr, sample_error, durations)
         record.update(outcome=outcome, reason=reason, samples_ns=samples)
     save_json(directory / "attempt.json", record)
     return record
 
 
-def _decode_result(directory, record, stderr, protocol, model):
-    if re.search(r"\bout of memory\b|\bCUDA_ERROR_OUT_OF_MEMORY\b", stderr, re.IGNORECASE):
-        return "oom", "Runner reported out of memory. See stderr.log.", []
-    if record["exit_code"] != 0 or DECODE_ERROR.search(stderr):
-        return "failed", "Runner exited unsuccessfully or logged a decode error. See original output.", []
-    try:
-        row = _read(directory / "stdout.jsonl")
-    except (ValueError, RecursionError):
-        return "invalid-output", "Expected exactly one readable runner JSONL row.", []
+def decode_samples(row, record, protocol, model):
     if not isinstance(row, dict):
-        return "invalid-output", "Expected a runner object.", []
+        return "Expected exactly one readable runner JSONL object.", []
     phase = protocol["phases"]["decode"]
     expected = {
         **protocol["settings"], "backends": "CUDA", "model_filename": str(model),
@@ -128,13 +142,23 @@ def _decode_result(directory, record, stderr, protocol, model):
     }
     commit = row.get("build_commit")
     if not (isinstance(commit, str) and len(commit) >= 7 and PLAN["runtime"]["revision"].startswith(commit)):
-        return "invalid-output", "Runner build commit does not match the pinned revision.", []
+        return "Runner build commit does not match the pinned revision.", []
     if not json_settings_match({field: row.get(field) for field in expected}, expected):
-        return "invalid-output", "Runner row does not match the pinned CUDA decode invocation.", []
+        return "Runner row does not match the pinned CUDA decode invocation.", []
     samples = row.get("samples_ns")
     if not (isinstance(samples, list) and len(samples) == protocol["warm_samples_per_phase"]
             and all(type(value) is int and 0 < value < 2**63 for value in samples)):
-        return "invalid-output", "Runner row lacks the pinned 20 valid timed durations.", []
+        return "Runner row lacks the pinned 20 valid timed durations.", []
+    return None, samples
+
+
+def decode_result(record, stderr, sample_error, samples):
+    if re.search(r"\bout of memory\b|\bCUDA_ERROR_OUT_OF_MEMORY\b", stderr, re.IGNORECASE):
+        return "oom", "Runner reported out of memory. See stderr.log.", []
+    if record["exit_code"] != 0 or DECODE_ERROR.search(stderr):
+        return "failed", "Runner exited unsuccessfully or logged a decode error. See original output.", []
+    if sample_error is not None:
+        return "invalid-output", sample_error, []
     placement = record["placement_mib"]
     if placement.keys() != {f"CUDA{index}" for index in range(len(record["devices"]))} or any(
         buffers.keys() != {"model", "KV"} for buffers in placement.values()

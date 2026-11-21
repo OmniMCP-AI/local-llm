@@ -182,6 +182,15 @@ the trace and summary with hashes in `transport/`. The original capture
 manifest records transport as unknown at collection. If no attachment exists,
 the evidence still has an unknown path.
 
+## Store the private capture
+
+Use the [private PostgreSQL intake](../fastest_intake/README.md#import-a-private-gpu-scaling-capture)
+after the capture finalizes. Import the original directory, including any
+sealed transport attachment. Keep the complete packet in private operator
+storage for review. The database retains the verified run metadata, the
+ordered timing integers, the attempt outcomes, and the attachment summary
+with its file digests.
+
 ## Review and release
 
 Use the [pinned quality task](../fastest_text/README.md#review-and-ingest-runner-evidence)

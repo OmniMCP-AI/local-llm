@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 124);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
-  assert.equal(manifest.coverage.cards, 150);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 143);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 121);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 65);
-  assert.equal(manifest.coverage.boardPartnerCards, 11);
+  assert.equal(manifest.coverage.cards, 156);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 149);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 127);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 71);
+  assert.equal(manifest.coverage.boardPartnerCards, 17);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -192,6 +192,24 @@ test("withdrawing the Colorful launch announcement removes just its sourced RTX 
     "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb", "nvidia-geforce-rtx-5060-ti-8gb",
     "pny-vcg5060t8dfxpb1-o",
   ]);
-  assert.equal(manifest.coverage.boardPartnerCards, 10);
+  assert.equal(manifest.coverage.boardPartnerCards, 16);
   assert.ok(!JSON.stringify(catalog).includes(source));
+});
+
+test("5090 partner variants keep memory, operating modes and radiator dimensions scoped to the exact board", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const cards = new Map(catalog.cards.map(card => [card.id, card]));
+  const soc = cards.get("msi-geforce-rtx-5090-32g-suprim-soc");
+  const oc = cards.get("msi-geforce-rtx-5090-32g-suprim-oc");
+  const liquid = cards.get("msi-geforce-rtx-5090-32g-suprim-liquid-soc");
+  const original = cards.get("msi-geforce-rtx-5090-d-32g-vanguard-oc");
+  const v2 = cards.get("msi-geforce-rtx-5090-d-v2-24g-ventus-3x-oc");
+  assert.deepEqual([soc, oc, liquid].map(card => card.vendorSpec.designation), ["G5090-32SPS", "G5090-32SPC", "G5090-32SLS"]);
+  assert.equal(soc.vendorSpec.facts["Power mode ratings"], "600 W gaming mode; 575 W silent mode");
+  assert.equal(oc.vendorSpec.facts["Rated graphics power (W)"], "575");
+  assert.equal(soc.vendorSpec.facts["Radiator dimensions"], undefined);
+  assert.equal(liquid.vendorSpec.facts["Radiator dimensions"], "394 × 121 × 55 mm");
+  assert.equal(original.parent, "nvidia-geforce-rtx-5090-d-32gb");
+  assert.equal(v2.parent, "nvidia-geforce-rtx-5090-d-v2");
+  assert.deepEqual([original, v2].map(card => card.vendorSpec.facts["Memory configuration"]), ["32 GB GDDR7", "24 GB GDDR7"]);
 });
