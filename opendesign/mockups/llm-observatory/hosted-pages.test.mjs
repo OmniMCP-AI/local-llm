@@ -453,6 +453,17 @@ test("the static Pages review links to exact hardware profiles from its pinned P
     const home = await (await get("/")).text();
     assert.ok(home.includes(`href="${root}/hardware"`));
     assert.ok(home.includes(`href="${root}/models">Model catalog</a>`));
+    assert.ok(home.includes('href="/battles/">Hardware battles</a>'));
+    const battle = await get("/battles/");
+    const battleHtml = await battle.text();
+    assert.equal(battle.status, 200);
+    assert.match(battleHtml, /More pairs mentioned in titles/);
+    assert.match(battleHtml, /href="#pair-cards-[^"]+"/);
+    assert.match(battleHtml, /<article id="pair-cards-[^"]+"><h4>/);
+    assert.doesNotMatch(battleHtml, /\/#battle/);
+    const battleMd = await get("/battles.md");
+    assert.match(battleMd.headers.get("content-type"), /^text\/markdown/);
+    assert.match(await battleMd.text(), /\]\(#pair-cards-[^)]+\)/);
     const models = await (await get(root + "/models")).text();
     assert.match(models, /<h1>Popular models<\/h1>/);
     assert.ok(models.includes(`href="${root}/models/openai-community/gpt2"`));

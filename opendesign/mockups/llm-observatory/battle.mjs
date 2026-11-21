@@ -240,14 +240,14 @@ export function battleHref(kind, pair, release) {
 
 export const battleScopeNote = ["Different specification scopes", "规格口径不同"];
 
-export function battleSources(pair, product, { release, prefix }) {
+export function battleSources(pair, product, { release, prefix, interactive = true }) {
   return [
     ...(release ? [{ label: ["Exact catalog profile", "目录中的具体配置"], href: prefix + catalogPath(release, pair.kind, product.id) }] : []),
     ...[...new Set([https(product.vendorSpec?.source ?? product.source), https(product.capture ?? product.source)].filter(Boolean))]
       .map((href, index) => ({
         label: index === 0 ? ["Specification source", "规格来源"] : ["Source record", "原始记录"], href,
       })),
-    ...(topologyRevisionHref(product.topologyRevision) ? [{ label: ["Topology revision", "拓扑版本"], href: topologyRevisionHref(product.topologyRevision, prefix === "/" ? "/" : "") }] : []),
+    ...(interactive && topologyRevisionHref(product.topologyRevision) ? [{ label: ["Topology revision", "拓扑版本"], href: topologyRevisionHref(product.topologyRevision, prefix === "/" ? "/" : "") }] : []),
   ];
 }
 
@@ -267,7 +267,7 @@ export function battleMarkdown(pair, urls, level = "#") {
   const compareHref = urls.share ?? link("/" + battleHref(pair.kind, pair, urls.release));
   return [
     level + " " + md(left.name) + " vs. " + md(right.name),
-    "[Open comparison](" + compareHref + ")" + (urls.release ? " · Catalog " + urls.release : ""),
+    ...(urls.showShareLink === false ? [] : ["[Open comparison](" + compareHref + ")" + (urls.release ? " · Catalog " + urls.release : "")]),
     ...(pair.reason ? [md(pair.reason[0])] : []),
     ...factors,
     md(pair.decision[0]),

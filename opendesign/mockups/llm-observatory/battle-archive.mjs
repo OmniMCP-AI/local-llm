@@ -19,15 +19,36 @@ export function renderBattleArchive(records, urls, titleSignals, styles = "") {
   const sections = Object.entries(battleKinds).map(([kind, [label]]) => {
     const ranked = battleRankings(records, kind, titleSignals?.pairs?.[kind]);
     const pairs = battleSuggestions(records, kind);
-    return { label, pairs, ranked };
+    const existing = new Set(pairs.map(pairAnchor));
+    return { label, pairs, ranked, additional: ranked.filter(pair => !existing.has(pairAnchor(pair))) };
   });
-  const link = (href) => urls.origin + href;
-  const pairLink = (pair) => "/" + battleHref(pair.kind, pair, urls.release);
+  const link = (href) => href.startsWith("#") ? href : urls.origin + href;
+  const interactive = urls.interactive !== false;
+  const pairLink = (pair) => interactive ? "/" + battleHref(pair.kind, pair, urls.release) : "#" + pairAnchor(pair);
   const pairName = ({ left, right }) => left.name + " vs. " + right.name;
   const archiveLink = htmlLink("Markdown", battleArchiveMarkdown);
   const catalogLink = "/catalog/" + urls.release + "/manifest.json";
   const formatSize = (pair) => number.format(pair.count) + (pair.count === 1 ? " video title" : " video titles");
   const renderValue = (value) => value ? value.source ? htmlLink(value.text, value.source) : escapeHtml(value.text) : "Unavailable";
+  const renderPair = (pair) => '<article id="' + pairAnchor(pair) + '"><h4>' + escapeHtml(pairName(pair)) + "</h4>"
+    + (interactive || pair.reason ? "<p>" + [
+      ...(interactive ? [htmlLink("Open comparison", pairLink(pair))] : []),
+      ...(pair.reason ? [escapeHtml(pair.reason[0])] : []),
+    ].join(" · ") + "</p>" : "")
+    + "<ul>"
+    + pair.rows.filter(({ factor }) => factor).map(({ factor }) => "<li>" + escapeHtml(battleFactor(factor, en, number)) + "</li>").join("")
+    + "<li>" + escapeHtml(pair.decision[0]) + "</li></ul>"
+    + '<table><thead><tr><th scope="col">Specification</th><th scope="col">' + escapeHtml(pair.left.name)
+    + '</th><th scope="col">' + escapeHtml(pair.right.name) + "</th></tr></thead><tbody>"
+    + pair.rows.map(row => '<tr><th scope="row">' + escapeHtml(row.label[0])
+      + (row.differentScope ? "<br><small>" + battleScopeNote[0] + "</small>" : "") + "</th><td>"
+      + renderValue(row.left) + "</td><td>" + renderValue(row.right) + "</td></tr>").join("")
+    + "</tbody></table>"
+    + [pair.left, pair.right].map(product => "<p><strong>" + escapeHtml(product.name) + "</strong> · "
+      + battleSources(pair, product, urls).map(({ label, href }) => htmlLink(label[0], href)).join(" · ") + "</p>").join("")
+    + "<p>" + battleEvidence[0] + "</p></article>";
+  const markdownPair = (pair) => '<a id="' + pairAnchor(pair) + '"></a>\n\n'
+    + battleMarkdown(pair, { ...urls, share: link(pairLink(pair)), showShareLink: interactive }, "####");
 
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -38,34 +59,31 @@ export function renderBattleArchive(records, urls, titleSignals, styles = "") {
     + ".battle-archive :is(th,td){padding:.55rem;text-align:start;vertical-align:top;border-bottom:1px solid #ccd7e2;overflow-wrap:anywhere}"
     + ".battle-archive th{background:#f4f7fa}.battle-archive td small{display:block;color:#4b5864}</style>"
     + '</head><body><main class="wiki-release battle-archive"><nav aria-label="Battle resources">'
-    + htmlLink("Interactive battles", "/#battle") + archiveLink + htmlLink("Catalog manifest", catalogLink)
+    + htmlLink(interactive ? "Interactive battles" : "Home", interactive ? "/#battle" : "/") + archiveLink + htmlLink("Catalog manifest", catalogLink)
     + "</nav><h1>" + title + "</h1><p>" + summary + "</p><p>Catalog " + escapeHtml(urls.release) + "</p>"
-    + sections.map(({ label, pairs, ranked }) => "<section><h2>" + label + "</h2>"
+    + sections.map(({ label, pairs, ranked, additional }) => "<section><h2>" + label + "</h2>"
       + (ranked.length ? "<h3>" + mentionTitle + "</h3><p>" + escapeHtml(sample) + "</p><ul>"
         + ranked.map(pair => "<li>" + htmlLink(pairName(pair), pairLink(pair)) + " · " + formatSize(pair)
           + pair.sources.map((source, i) => " · " + htmlLink("Video " + (i + 1), source)).join("") + "</li>").join("") + "</ul>" : "")
       + "<h3>Suggested matchups</h3>"
-      + pairs.map(pair => "<article><h4>" + escapeHtml(pairName(pair)) + "</h4><p>" + htmlLink("Open comparison", pairLink(pair))
-        + " · " + escapeHtml(pair.reason[0]) + "</p><ul>"
-        + pair.rows.filter(({ factor }) => factor).map(({ factor }) => "<li>" + escapeHtml(battleFactor(factor, en, number)) + "</li>").join("")
-        + "<li>" + escapeHtml(pair.decision[0]) + "</li></ul>"
-        + '<table><thead><tr><th scope="col">Specification</th><th scope="col">' + escapeHtml(pair.left.name)
-        + '</th><th scope="col">' + escapeHtml(pair.right.name) + "</th></tr></thead><tbody>"
-        + pair.rows.map(row => '<tr><th scope="row">' + escapeHtml(row.label[0])
-          + (row.differentScope ? "<br><small>" + battleScopeNote[0] + "</small>" : "") + "</th><td>"
-          + renderValue(row.left) + "</td><td>" + renderValue(row.right) + "</td></tr>").join("")
-        + "</tbody></table>"
-        + [pair.left, pair.right].map(product => "<p><strong>" + escapeHtml(product.name) + "</strong> · "
-          + battleSources(pair, product, urls).map(({ label, href }) => htmlLink(label[0], href)).join(" · ") + "</p>").join("")
-        + "<p>" + battleEvidence[0] + "</p></article>").join("")
+      + (interactive ? "" : "<ul>" + pairs.map(pair => "<li>" + htmlLink(pairName(pair), pairLink(pair)) + "</li>").join("") + "</ul>")
+      + pairs.map(renderPair).join("")
+      + (additional.length ? "<h3>More pairs mentioned in titles</h3>" + additional.map(renderPair).join("") : "")
       + "</section>").join("") + "</main></body></html>\n";
 
   const markdown = "# " + title + "\n\n" + summary + "\n\nCatalog " + urls.release + " · [Catalog manifest]("
     + link(catalogLink) + ") · [HTML](" + link(battleArchivePath) + ")\n\n"
-    + sections.map(({ label, pairs, ranked }) => "## " + label + "\n\n"
+    + sections.map(({ label, pairs, ranked, additional }) => "## " + label + "\n\n"
       + (ranked.length ? "### " + mentionTitle + "\n\n" + escapeMarkdown(sample) + "\n\n"
         + ranked.map(pair => "- [" + escapeMarkdown(pairName(pair)) + "](" + link(pairLink(pair)) + ") · " + formatSize(pair)
           + pair.sources.map((source, i) => " · [Video " + (i + 1) + "](" + source + ")").join("")).join("\n") + "\n\n" : "")
-      + "### Suggested matchups\n\n" + pairs.map(pair => battleMarkdown(pair, urls, "####")).join("\n")).join("\n");
+      + "### Suggested matchups\n\n"
+      + (interactive ? "" : pairs.map(pair => "- [" + escapeMarkdown(pairName(pair)) + "](" + pairLink(pair) + ")").join("\n") + "\n\n")
+      + pairs.map(markdownPair).join("\n")
+      + (additional.length ? "\n### More pairs mentioned in titles\n\n" + additional.map(markdownPair).join("\n") : "")).join("\n");
   return { html, markdown };
+}
+
+function pairAnchor({ kind, left, right }) {
+  return "pair-" + kind + "-" + [left.id, right.id].sort().join("-vs-");
 }

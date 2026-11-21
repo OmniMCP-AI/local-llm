@@ -199,7 +199,8 @@ export async function writeWikiRelease({
       + '<p><a href="/wiki/">Browse the current wiki</a></p></main></body></html>\n',
   };
   if (battle) {
-    const archive = renderBattleArchive(battle.records, { origin, release: catalogRelease, prefix: "/" }, battle.titleSignals, styles);
+    const archive = renderBattleArchive(battle.records,
+      { origin, release: catalogRelease, prefix: "/", interactive: !review }, battle.titleSignals, styles);
     files[battleArchivePath + "index.html"] = archive.html;
     files[battleArchiveMarkdown] = archive.markdown;
     headers.push(

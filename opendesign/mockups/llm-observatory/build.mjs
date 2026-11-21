@@ -180,7 +180,7 @@ const wikiRelease = pages ? await writeWikiRelease({
   researchRelease: researchIndex.release,
   catalogRelease,
   catalogApi: catalogPostgres && !review,
-  battle: review ? null : { records: battle, titleSignals: battleTitleSignals },
+  battle: { records: battle, titleSignals: battleTitleSignals },
   review,
   documents: publicDocuments,
   topologies: publicTopologies,
