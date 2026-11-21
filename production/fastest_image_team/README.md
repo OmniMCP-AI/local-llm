@@ -2,15 +2,35 @@
 
 Compare local, cloud and hybrid plans for one ten-person e-commerce team. Each plan must serve the same monthly volume and deliver the same peak cohort by the same deadline under one workflow and acceptance rubric. No reviewed aggregate team scenario or equivalent commercial service rates are checked in. The default report records that evidence gap. The [two-machine image pilot](../fastest_image/README.md) is a solo protocol reference.
 
-From `production/`, build a report into a new directory.
+From `production/`, build an offline preview into a new directory.
 
 ```sh
 python3 -B -m fastest_image_team build /path/to/image-team
 python3 -B -m fastest_image_team build /path/to/image-team-example --illustrative
-python3 -B -m fastest_image_team build /path/to/image-team-reviewed --scenario /path/to/consented.json
+python3 -B -m fastest_image_team build /path/to/image-team-preview --scenario /path/to/consented.json
 ```
 
 Each bundle contains matched HTML, Markdown and versioned typed JSON, plus a SHA-256 manifest. `fastest_image_team.calculate(data)` returns the same JSON-compatible result. Counts are integers. Money, rates and durations use decimal strings, with up to six decimal places on calculated quantities. An unavailable estimate carries a reason or null value. The revision digest identifies the scenario and method assumptions.
+
+## Publish from an approved PostgreSQL scenario
+
+Use the private operator database and run the commands from `production/`. Use the `fastest_intake` schema owner to apply the migration. If the schema is new, use the private database owner. Use `FASTEST_DATABASE_URL` for the operator connection or pass `--database-url` before the command. The migration grants no public access.
+
+```sh
+python3 -B -m fastest_image_team migrate
+scenario_pin=$(python3 -B -m fastest_image_team ingest-approved /path/to/consented.json)
+python3 -B -m fastest_image_team build /path/to/image-team-reviewed --scenario-pin "$scenario_pin"
+```
+
+Run `ingest-approved` after confirming that consent and reviewed evidence cover the complete aggregate scenario. Store only the publishable fields described below. The command prints the SHA-256 of the scenario's canonical JSON. Importing the same values again returns the same pin and preserves the first import's field order. Changed assumptions get a new pin. Build with the exact pin and retain the renderer's code revision for byte-for-byte replay. The bundle manifest identifies the generated comparison revision, which also covers the calculation method.
+
+Withdraw each affected pin before taking down a published bundle.
+
+```sh
+python3 -B -m fastest_image_team withdraw "$scenario_pin"
+```
+
+Withdrawal blocks subsequent pinned builds, including after a retry of the approved import. The private database retains the scenario and its withdrawal record. Remove any independently exported bundles, in-progress output, and hosted or cached copies separately. Use pinned builds for publication so the command checks active approval on every build.
 
 ## Prepare an aggregate scenario
 
@@ -32,4 +52,4 @@ Payback compares local and hybrid against the cloud plan using incremental upfro
 
 Sensitivity changes demand, peak queue delay, yield and per-attempt tariff by 25% in either direction, one driver at a time. Both demand counts change together, yield is capped at 100%, and fixed charges and billed storage and transfer amounts stay fixed.
 
-Run `python3 -B -m unittest discover -s tests -p 'test_image_team.py'` from `production/`.
+From `production/`, run `python3 -B -m unittest discover -s tests -p 'test_image_team*.py'`. The PostgreSQL tests use `initdb`, `postgres`, `pg_isready`, and `psql` to start and clean up a disposable local database.
