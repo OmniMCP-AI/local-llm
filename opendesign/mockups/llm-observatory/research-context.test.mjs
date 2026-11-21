@@ -17,6 +17,8 @@ const noteId = "youtube/09GB4LtXUok";
 const forecastId = "youtube/6YMHMU_x4Rc";
 const repostId = "youtube/kQKCp7PlVxY";
 const chineseId = "youtube/dnk_lPZ0Y-E";
+const hongKongId = "youtube/ao6B7GR8tQY";
+const taiwanId = "youtube/DEPF8rAprS4";
 const blogId = "together-evaluation-methods";
 const plan = { heldOut: [blogId], crossPosts: [] };
 const examples = [
@@ -52,9 +54,12 @@ test("suggestions preserve the locator and scope of the annotated note, forecast
   assert.deepEqual(tags(slot("V024-P001", "task")), []);
   assert.deepEqual(tags(slot("V024-P001", "dimension")), ["prefill"]);
   assert.match(slot("V024-P009", "task").locator, /09GB4LtXUok&t=327s$/);
-  const forecast = context.suggest(forecastId).find(({ subject, facet }) => subject === "V021-P012" && facet === "dimension");
-  assert.deepEqual(tags(forecast), ["projection"]);
-  assert.equal(forecast.evidence, "explicit forecast,notmeasured");
+  const projections = ["V021-P001", "V021-P011", "V021-P012", "V021-P015", "V021-P017", "V021-P035"];
+  const forecast = context.suggest(forecastId).filter(({ subject, facet }) =>
+    facet === "dimension" && projections.includes(subject));
+  assert.deepEqual(forecast.map(({ subject }) => subject), projections);
+  for (const proposal of forecast) assert.deepEqual(tags(proposal), proposal.subject === "V021-P011" ? [] : ["projection"]);
+  assert.equal(forecast.find(({ subject }) => subject === "V021-P012").evidence, "explicit forecast,notmeasured");
   const blog = context.suggest(blogId);
   assert.deepEqual(blog.map(({ facet }) => facet), ["topic"]);
   assert.ok(tags(blog[0]).includes("coding"));
@@ -165,34 +170,69 @@ test("the operator replay scores local annotations without adding them to the re
   const publicReport = await execute("evaluate");
   assert.equal(publicReport.facets.task.subjects, 0);
   await assert.rejects(execute("suggest", noteId), /not eligible/);
+  await assert.rejects(execute("suggest", hongKongId), /not eligible/);
+  await assert.rejects(execute("suggest", taiwanId), /not eligible/);
 
   const report = await execute("evaluate-local");
   assert.equal(report.scope, "operator-local-annotations");
   assert.equal(report.researchRelease, index.release);
   assert.match(report.annotationIndexSha256, /^[a-f0-9]{64}$/);
-  assert.equal(report.heldOutFamilies, 8);
+  assert.ok(report.heldOut.includes(hongKongId));
+  assert.ok(!report.heldOut.includes(taiwanId));
+  assert.equal(report.heldOutFamilies, 9);
   assert.equal(report.unavailableHeldOut, 0);
   assert.equal(report.development, 3);
   assert.deepEqual(report.missingCoverage.formats, []);
   assert.deepEqual(report.coverage.languages.en, { heldOut: 14, development: 2 });
-  assert.deepEqual(report.coverage.languages.zh, { heldOut: 2, development: 1 });
-  assert.deepEqual(report.coverage.formats.video, { heldOut: 5, development: 3 });
-  assert.equal(report.facets.task.subjects, 103);
+  assert.deepEqual(report.coverage.languages.zh, { heldOut: 3, development: 1 });
+  assert.deepEqual(report.coverage.languageTags["zh-HK"], { heldOut: 1, development: 0 });
+  assert.deepEqual(report.coverage.languageTags["zh-Hant"], { heldOut: 1, development: 0 });
+  assert.deepEqual(report.coverage.languageTags["zh-TW"], { heldOut: 0, development: 1 });
+  assert.deepEqual(report.coverage.formats.video, { heldOut: 6, development: 3 });
+  assert.equal(report.facets.task.subjects, 108);
   assert.equal(report.facets.task.wrongScope.articleToCase, 0);
   assert.equal(report.facets.dimension.wrongScope.forecastAsMeasurement, 0);
   assert.equal(report.facetsByLanguage.zh.topic.recall, 0);
-  assert.equal(report.facetsByLanguage.zh.task.abstentions, 24);
-  assert.equal(report.facetsByLanguage.zh.dimension.subjects, 24);
+  assert.equal(report.facetsByLanguage.zh.task.abstentions, 29);
+  assert.equal(report.facetsByLanguage.zh.dimension.subjects, 29);
+  const hongKong = report.facetsByLanguageTag["zh-HK"];
+  assert.deepEqual(
+    ["topic", "task", "dimension"].map((facet) => {
+      const { tp, fp, fn, abstentions } = hongKong[facet];
+      return [tp, fp, fn, abstentions];
+    }),
+    [[0, 0, 3, 1], [0, 0, 1, 5], [1, 0, 4, 4]],
+  );
+  assert.equal(hongKong.topic.precision, null);
+  assert.equal(hongKong.task.precision, null);
+  assert.equal(hongKong.dimension.recall, 1 / 5);
+  assert.equal(hongKong.task.wrongScope.articleToCase, 0);
   assert.equal(report.facetsByFormat.blog.topic.tp, 2);
   assert.equal(report.facetsByFormat.blog.task.subjects, 0);
-  assert.equal(report.facetsByFormat.video.dimension.subjects, 103);
+  assert.equal(report.facetsByFormat.video.dimension.subjects, 108);
   assert.equal(report.automaticPromotion, false);
 
-  await writeFile(liveState, JSON.stringify({ withdrawnSources: [digest(chineseId)] }));
+  await writeFile(liveState, JSON.stringify({ withdrawnSources: [digest(chineseId), digest(hongKongId)] }));
   const afterWithdrawal = await execute("evaluate-local");
-  assert.equal(afterWithdrawal.unavailableHeldOut, 1);
+  assert.equal(afterWithdrawal.unavailableHeldOut, 2);
+  assert.ok(!afterWithdrawal.heldOut.includes(hongKongId));
   assert.equal(afterWithdrawal.coverage.languages.zh.heldOut, 1);
   assert.equal(afterWithdrawal.facetsByLanguage.zh.dimension.subjects, 13);
+  assert.ok(!Object.hasOwn(afterWithdrawal.facetsByLanguageTag, "zh-HK"));
+});
+
+test("the frozen-rules Taiwan replay has its own denominator", async (t) => {
+  const { root } = await released(t);
+  const report = JSON.parse((await run(process.execPath, [
+    "research-context-cli.mjs", root, "evaluate-local", "wiki/context-calibration-zh-tw-regression-split.json",
+  ], { cwd: directory })).stdout);
+  assert.deepEqual(report.heldOut, [taiwanId]);
+  assert.equal(report.heldOutFamilies, 1);
+  const { topic, task, dimension } = report.facetsByLanguageTag["zh-TW"];
+  assert.deepEqual([topic.subjects, topic.fn, topic.abstentions], [1, 2, 1]);
+  assert.deepEqual([task.subjects, task.recall, task.abstentions], [3, null, 3]);
+  assert.deepEqual([dimension.subjects, dimension.tp, dimension.fp, dimension.fn, dimension.abstentions], [3, 2, 0, 1, 1]);
+  assert.equal(report.automaticPromotion, false);
 });
 
 test("a reviewed vocabulary rollback restores the prior suggestions through the CLI", async (t) => {

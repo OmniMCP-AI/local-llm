@@ -5,7 +5,8 @@ const facets = ["topic", "task", "dimension"];
 const hash = (value) => digest(JSON.stringify(value));
 const normalized = (text) => text.normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]+/gu)?.join(" ") ?? "";
 const compact = (text) => normalized(text).replaceAll(" ", "");
-const language = (source) => source.language?.toLowerCase().split("-")[0] ?? "unknown";
+const languageTag = (source) => source.language ?? "unknown";
+const language = (source) => languageTag(source).toLowerCase().split("-")[0];
 const nonempty = (text) => typeof text === "string" && text.trim().length > 0;
 const ratio = (numerator, denominator) => denominator ? numerator / denominator : null;
 const slotKey = ({ source, subject, facet }) => JSON.stringify([source, subject, facet]);
@@ -149,6 +150,7 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
     const coverage = {
       languages: counts([...rules.languages, "en", "zh", "es", "ja", "ko", "de", "hi", "fr", "ar"], language),
       formats: counts(Object.keys(vocabulary.formats), ({ format }) => format),
+      ...(includeBreakdowns && { languageTags: counts([], languageTag) }),
     };
     const missingCoverage = Object.fromEntries(Object.entries(coverage).map(([kind, values]) =>
       [kind, Object.keys(values).filter((key) => values[key].heldOut === 0)]));
@@ -162,6 +164,7 @@ export function createContextReview(index, rules, knownCrossPosts = []) {
       facets: metrics, untestedFacets: facets.filter((facet) => metrics[facet].recall === null),
       ...(includeBreakdowns && {
         facetsByLanguage: groupedFacets(language),
+        facetsByLanguageTag: groupedFacets(languageTag),
         facetsByFormat: groupedFacets(({ format }) => format),
       }),
       automaticPromotion: false, modelTraining: false,
