@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { verifyReviewCatalog } from "./verify-review-catalog.mjs";
 
 const args = process.argv.slice(2);
 const review = args.includes("--review");
@@ -13,13 +14,15 @@ async function read(path, contentType, alternate) {
   const response = await get(path);
   assert.equal(response.status, 200, path);
   assert.equal(response.headers.get("content-type")?.split(";")[0], contentType, path);
+  if (review) assert.equal(response.headers.get("x-robots-tag"), "noindex", path);
   if (alternate) {
     assert.ok(response.headers.get("link")?.includes("<" + origin + alternate + ">; rel=\"alternate\""), path);
   }
   return response.text();
 }
 
-async function verifyHardwareDirectory(catalog, { html: directory, markdown: directoryMarkdown }) {
+async function verifyHardwareDirectory(catalog, reviewCatalog) {
+  const { html: directory, markdown: directoryMarkdown } = reviewCatalog.directory;
   const { release, snapshotId, hardware: { asOf, coverage } } = catalog;
   const root = `/catalog/${release}`;
   const [html, markdown] = await Promise.all([
@@ -60,7 +63,8 @@ async function verifyHardwareDirectory(catalog, { html: directory, markdown: dir
   assert.deepEqual(markdownLinks(markdown).filter(isProfile).sort(), routes.map(path => path + ".md").sort());
 
   const commonLinks = [directory, directoryMarkdown, root + "/manifest.json", root + "/LICENSE.txt"];
-  const htmlRoutes = new Set(["/", directory + "#cards", directory + "#machines", ...commonLinks, ...routes]);
+  const htmlRoutes = new Set(["/", directory + "#cards", directory + "#machines",
+    reviewCatalog.models.popular.html, reviewCatalog.runtimes.html, ...commonLinks, ...routes]);
   const markdownRoutes = new Set([...commonLinks, ...routes.map(path => path + ".md")]);
   const htmlText = (value) => value.replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -177,6 +181,7 @@ for (const path of ["/wiki/agents/", "/wiki/agents.md", "/.well-known/api-catalo
 }
 
 let hardwareCount = 0;
+let catalogCounts;
 if (review) {
   assert.ok(home.includes("Non-production review"), "Review homepage labels the preview");
   assert.match(homeMarkdown, /Non-production review/);
@@ -200,7 +205,14 @@ if (review) {
   assert.ok(home.includes(`href="${directory}"`));
   assert.ok(homeMarkdown.includes(`[Hardware catalog](${directoryMarkdown})`));
   assert.ok(!sitemap.includes(directory) && !llms.includes(directory));
-  hardwareCount = await verifyHardwareDirectory(catalog, manifest.catalog.directory);
+  for (const [label, { html, markdown }] of [
+    ["Model catalog", manifest.catalog.models.popular], ["Runtime catalog", manifest.catalog.runtimes],
+  ]) {
+    assert.ok(home.includes(`href="${html}"`) && homeMarkdown.includes(`[${label}](${markdown})`), label);
+    assert.ok(!sitemap.includes(html) && !llms.includes(html), label);
+  }
+  hardwareCount = await verifyHardwareDirectory(catalog, manifest.catalog);
+  catalogCounts = await verifyReviewCatalog(catalog, manifest.catalog, { read, origin });
   const machines = JSON.parse(await read(`/catalog-data/${catalogRelease}/machines.json`, "application/json"));
   assert.ok(machines.some(({ topologyRevision }) => topologyRevision));
   const researchManifest = JSON.parse(await read(manifest.research.manifest, "application/json"));
@@ -212,4 +224,7 @@ if (review) {
 }
 
 console.log("Verified " + release + ", " + pages.length + " wiki pairs and " + highlights.length + " active highlights at " + base);
-if (review) console.log("Verified the hardware directory and " + hardwareCount + " PostgreSQL-pinned profile pairs");
+if (review) {
+  console.log(`Verified PostgreSQL-pinned catalogs with ${hardwareCount} hardware, ${catalogCounts.modelProfiles} model and ${catalogCounts.runtimes} runtime profile pairs`);
+  console.log(`Verified ${catalogCounts.inventory} distinct model repositories in the exact lookup shards`);
+}

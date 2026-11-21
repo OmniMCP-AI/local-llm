@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
 import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyLinkEndpoints, topologyView } from "./topology.mjs";
 import { catalogApiPath } from "./catalog-api.mjs";
-import { hardwareDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
+import { hardwareDirectoryPath, modelCollectionPath, modelLookupPath, runtimeDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -134,7 +134,11 @@ export async function writeWikiRelease({
     throw new Error("FASTEST_PUBLIC_ORIGIN must be an origin without a trailing slash");
   }
   const catalogOpenApi = catalogApi ? `/catalog/${catalogRelease}/openapi.json` : null;
-  const hardwareDirectory = review ? hardwareDirectoryPath(catalogRelease) : null;
+  const directories = review ? [
+    ["Hardware catalog", hardwareDirectoryPath(catalogRelease)],
+    ["Model catalog", modelCollectionPath(catalogRelease)],
+    ["Runtime catalog", runtimeDirectoryPath(catalogRelease)],
+  ] : [];
   const excluded = new Set(withdrawn);
   const pages = Object.fromEntries(Object.entries(documents).filter(([, doc]) =>
     doc.status === "published" && !excluded.has(doc.evidence)));
@@ -169,15 +173,17 @@ export async function writeWikiRelease({
   const alternateName = "localdecode.com";
   const release = "wiki-" + createHash("sha256")
     .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName, catalogOpenApi,
-      ...(hardwareDirectory ? [hardwareDirectory] : [])]))
+      ...directories.map(([, path]) => path)]))
     .digest("hex").slice(0, 16);
   const headers = [
     ...(review ? [
       "/*\n  X-Robots-Tag: noindex\n  Cache-Control: no-store",
-      `${hardwareDirectory}\n  Link: <${origin + hardwareDirectory}.md>; rel="alternate"; type="text/markdown"`,
-      `${hardwareDirectory}.md\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin + hardwareDirectory}>; rel="alternate"; type="text/html"`,
-      `/catalog/${catalogRelease}/cards/:id.md\n  Content-Type: text/markdown; charset=utf-8`,
-      `/catalog/${catalogRelease}/machines/:id.md\n  Content-Type: text/markdown; charset=utf-8`,
+      ...[...directories.map(([, path]) => path), modelLookupPath(catalogRelease)].flatMap(path => [
+        `${path}\n  Link: <${origin + path}.md>; rel="alternate"; type="text/markdown"`,
+        `${path}.md\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${origin + path}>; rel="alternate"; type="text/html"`,
+      ]),
+      ...["cards/:id", "machines/:id", "models/:owner/:id", "runtimes/:id", "model-collections/:page"].map(route =>
+        `/catalog/${catalogRelease}/${route}.md\n  Content-Type: text/markdown; charset=utf-8`),
     ] : []),
     "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
     "/wiki/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
@@ -224,21 +230,21 @@ ${backlinksHtml}
 
   const home = { origin, route: "/", alternate: "/index.md", release,
     title: "fastest.ai | Local AI benchmark explorer",
-    summary: review ? "Browse the public wiki, research library, and pinned hardware catalog."
+    summary: review ? "Browse the public wiki, research library, and pinned hardware, model and runtime catalogs."
       : "Compare local AI hardware, models, and costs. Read the methods and evidence behind each comparison." };
   const catalogManifest = `/catalog/${catalogRelease}/manifest.json`;
   const homeBody = `<main class="wiki-release release-fallback">
 <h1>fastest.ai</h1><p>Also known as ${alternateName}.</p>${review
     ? '<p><strong>Non-production review</strong> · <a href="/review-manifest.json">Review manifest</a></p>' : ""}<p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
-<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${review ? `<a href="${hardwareDirectory}">Hardware catalog</a><a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
+<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${directories.map(([title, path]) => `<a href="${path}">${title}</a>`).join("")}${review ? `<a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
 <section data-home-highlights${availableHighlights.length ? "" : " hidden"}><h2>Research highlights</h2><ul>
 ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">${escape(title)}</a> · ${escape(summary)}</li>`).join("\n")}
 </ul></section>
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",
-  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)\n\n" : ""}${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${review ? ` · [Hardware catalog](${hardwareDirectory}.md) · [Catalog manifest](${catalogManifest})` : ""}\n`
+  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)\n\n" : ""}${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${directories.map(([title, path]) => ` · [${title}](${path}.md)`).join("")}${review ? ` · [Catalog manifest](${catalogManifest})` : ""}\n`
     + (availableHighlights.length ? "\n## Research highlights\n\n" + availableHighlights.map((entry) =>
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);

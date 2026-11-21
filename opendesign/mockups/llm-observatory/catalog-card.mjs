@@ -1,4 +1,4 @@
-import { catalogPath, hardwareDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
+import { catalogPath, hardwareDirectoryPath, modelCollectionPath, runtimeDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
 import { cardPosition, cardRatings } from "./catalog-position.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 
@@ -20,7 +20,7 @@ function publisherEvaluationTable(evaluations) {
   };
 }
 
-export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture, agentTask } = {}) {
+export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, runtimeHref, discoveryCapture, agentTask } = {}) {
   const { supplemental } = row;
   const { family, familySource, artifacts = [] } = row.identity ?? {};
   const revision = row.identity?.revision ?? supplemental?.revision;
@@ -46,7 +46,8 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
     ["Safetensors", "SGLang", "sglang"],
     ["Safetensors", "vLLM", "vllm"],
   ].filter(([format]) => artifacts.some((artifact) => artifact.format === format))
-    .map(([format, name, id]) => [`Documented ${format} support`, name, `${runtimeRoot}/runtimes/${id}.html`]);
+    .map(([format, name, id]) => [`Documented ${format} support`, name,
+      runtimeHref ? runtimeHref(id) : `${runtimeRoot}/runtimes/${id}.html`]);
   const { popular, small } = row.discovery ?? {};
   const ranked = popular ?? small;
   return {
@@ -101,7 +102,7 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
   };
 }
 
-export function runtimeCard(row, { local = false, observation } = {}) {
+export function runtimeCard(row, { local = false, observation, review = false } = {}) {
   const releaseUrl = row.releaseUrl ?? row.source + "/releases/tag/" + row.tag;
   return {
     title: row.name,
@@ -109,6 +110,7 @@ export function runtimeCard(row, { local = false, observation } = {}) {
     source: row.source,
     fields: [
       ["Upstream project", row.name, row.source],
+      ...(review ? [["Runtime ID", row.id]] : []),
       [row.revisionKind === "commit" ? "Pinned upstream commit" : "Upstream release", row.tag, releaseUrl],
       ["Upstream date", row.published],
       ...(row.category ? [["Project category", row.category]] : []),
@@ -132,7 +134,7 @@ export function runtimeCard(row, { local = false, observation } = {}) {
         ["Workload", row.workload, row.docs],
         ["Artifact format examples", row.formats, row.formatSource],
         ["Backend and platform examples", row.backends, row.backendSource],
-        ...(["GGUF", "Safetensors"].includes(row.formats) ? [["Models with this artifact format", "Browse the model catalog",
+        ...(!review && ["GGUF", "Safetensors"].includes(row.formats) ? [["Models with this artifact format", "Browse the model catalog",
           (local ? "../../../../fastest-ai.html" : "/") + "#catalog/models?view=all&tag=" + encodeURIComponent(row.formats)]] : []),
       ],
     }, ...(row.references?.length ? [{ title: "Mentioned in video research", fields: row.references.map(
@@ -330,14 +332,14 @@ const positionTitle = "GPU position by rated specifications";
 const positionBasis = "Manufacturer-rated specifications. Each point is one GPU identity with a single reported capacity and a value on both axes.";
 const noPosition = "This GPU has no unambiguous pair of rated specifications for these axes.";
 
-function evaluationsHtml({ title, summary, headings, rows }) {
+function evaluationsHtml({ title, summary, headings, rows }, heading) {
   const rowHtml = rows.map((row) => {
     const [[label, link], ...other] = row;
     return `<tr><th scope="row"><a href="${escapeHtml(link)}">${escapeHtml(label)}</a></th>${
       other.map(([value, href]) => `<td>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(value)}</a>`
         : escapeHtml(value)}</td>`).join("")}</tr>`;
   }).join("\n");
-  return `<section class="profile-section"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(summary)}</p>
+  return `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}><p>${escapeHtml(summary)}</p>
 <table class="profile-chart-table"><thead><tr>${headings.map(heading => `<th scope="col">${escapeHtml(heading)}</th>`).join("")}</tr></thead>
 <tbody>${rowHtml}</tbody></table></section>`;
 }
@@ -381,12 +383,13 @@ export function catalogDocument({ title, home = "/", mdLink, release, review, ca
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} | fastest.ai catalog</title>
+${review ? '<meta name="robots" content="noindex">\n' : ""}\
 ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<link rel="alternate" type="text/markdown" href="${mdLink}">
 <style>${profileStyles}</style>
 </head>
 <body class="profile-document"><div class="profile-shell">
 <header><nav class="profile-nav" aria-label="Catalog"><a href="${home}">fastest.ai / localdecode.com</a>${review
-    ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a>`
+    ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a><a href="${modelCollectionPath(release)}">Model catalog</a><a href="${runtimeDirectoryPath(release)}">Runtime catalog</a>`
     : `<a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a>`}</nav></header>
 <main>
 ${main}
@@ -402,7 +405,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   const depth = pathname.startsWith("catalog/") ? pathname.split("/").length - 3 : 1;
   const root = local ? Array(depth).fill("..").join("/") : `/catalog/${release}`;
   const linksFrom = local ? pathname.split("/").at(-1) : pathname;
-  const htmlLink = linksFrom.replace(/\.(md|html)$/, review ? "" : ".html");
+  const htmlLink = review?.htmlPath ?? linksFrom.replace(/\.(md|html)$/, review ? "" : ".html");
   const mdLink = linksFrom.replace(/\.(md|html)$/, ".md");
   const licenseLink = root + "/LICENSE.txt";
   const manifestLink = root + "/manifest.json";
@@ -418,7 +421,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       "---",
       `title: ${JSON.stringify(card.title)}`,
       `kind: ${JSON.stringify(card.kind)}`,
-      `route: ${JSON.stringify(pathname.replace(/\.(md|html)$/, review ? "" : ".html"))}`,
+      `route: ${JSON.stringify(review ? htmlLink : pathname.replace(/\.(md|html)$/, ".html"))}`,
       `release: ${release}`,
       ...(review ? [`snapshot: ${review.snapshotId}`] : []),
       "locale: en",
@@ -446,7 +449,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       "",
       card.evidence,
       "",
-      `${review ? `[Hardware catalog](${hardwareDirectoryPath(release, true)}) · ` : ""
+      `${review ? `[${review.directory?.title ?? "Hardware catalog"}](${review.directory?.path ?? hardwareDirectoryPath(release, true)}) · ` : ""
         }[Coverage and source manifest](${manifestLink}) · [llmfit MIT notice](${licenseLink}) · [HTML card](${htmlLink})`,
       "",
     ].join("\n");
@@ -454,18 +457,25 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   return catalogDocument({
     title: card.title, home, mdLink, release, review, root,
     canonical: review && review.origin + htmlLink,
-    main: `<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
+    main: renderCardContent(card, { mdLink }),
+  });
+}
+
+export function renderCardContent(card, { mdLink, nested = false } = {}) {
+  const title = nested ? "h2" : "h1";
+  const heading = nested ? "h3" : "h2";
+  const { sections = [], visuals = [], photos = [], position, publisherEvaluations } = card;
+  return `<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><${title}>${escapeHtml(card.title)}</${title}>
 <p class="profile-evidence">${escapeHtml(card.evidence)}</p>
-<div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}<a href="${mdLink}">Markdown</a></div></div>
+<div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}${mdLink ? `<a href="${mdLink}">Markdown</a>` : ""}</div></div>
 ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
-  `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
+  `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? positionHtml(position) : ""}
 ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
   ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}
   </figcaption></figure>`).join("")}</div>` : ""}
-<section class="profile-section"><h2>Catalog details</h2>${htmlFields(card.fields)}</section>
-${sections.map(({ title, fields }) => `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("\n")}
-${evaluations ? evaluationsHtml(evaluations) : ""}`,
-  });
+<section class="profile-section"><${heading}>Catalog details</${heading}>${htmlFields(card.fields)}</section>
+${sections.map(({ title, fields }) => `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${htmlFields(fields)}</section>`).join("\n")}
+${publisherEvaluations ? evaluationsHtml(publisherEvaluations, heading) : ""}`;
 }
