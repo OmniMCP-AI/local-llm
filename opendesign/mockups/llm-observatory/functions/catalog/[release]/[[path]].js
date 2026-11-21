@@ -1,4 +1,5 @@
 import { hardwareCard, modelCard, renderCard, runtimeCard } from "../../../catalog-card.mjs";
+import { observedAgentTask } from "../../../catalog-agent-task.mjs";
 import { catalogPath, catalogReleasePattern, hardwareIdPattern, modelIdPattern, modelShard, runtimeIdPattern } from "../../../catalog-paths.mjs";
 
 const notFound = () => new Response("Catalog card unavailable", {
@@ -29,7 +30,8 @@ export async function onRequestGet(context) {
   const row = entries.find((entry) => entry.id === id);
   if (!row) return notFound();
 
-  const card = isModel ? modelCard(row, release, { discoveryCapture: row.discoveryCapture })
+  const agentTask = isModel && await observedAgentTask(id, context.env);
+  const card = isModel ? modelCard(row, release, { discoveryCapture: row.discoveryCapture, agentTask })
     : kind === "runtimes" ? runtimeCard(row) : hardwareCard(row, release, kind, { peers: kind === "cards" ? entries : [] });
   const markdown = extension === "md";
   return new Response(renderCard(card, {
@@ -38,6 +40,7 @@ export async function onRequestGet(context) {
     headers: {
       "Content-Type": `text/${markdown ? "markdown" : "html"}; charset=utf-8`,
       "X-Content-Type-Options": "nosniff",
+      ...(agentTask && { "Cache-Control": "no-store" }),
     },
   });
 }
