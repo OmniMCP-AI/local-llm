@@ -57,7 +57,7 @@ BEGIN
     ELSE
         IF (SELECT count(*) FROM fastest_catalog.machine
             WHERE snapshot_id = pinned_snapshot AND id IN (pair_left, pair_right)
-              AND document->>'kind' <> 'Component reference') <> 2 THEN
+              AND document->>'kind' NOT IN ('Component reference', 'Manufacturer system reference')) <> 2 THEN
             RETURN 'invalid_pair';
         END IF;
     END IF;

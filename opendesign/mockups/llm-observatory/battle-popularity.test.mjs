@@ -84,6 +84,7 @@ test("hosted Pages ranks opt-in comparisons from the exact published PostgreSQL 
       { ...comparison, identity: "person" },
       { ...comparison, left: "a".repeat(1024) },
       { ...machineComparison, left: "V001-HP-G001" },
+      { ...machineComparison, left: "nvidia-dgx-spark" },
     ]) {
       assert.equal((await post(origin, invalid)).status, 400);
     }
