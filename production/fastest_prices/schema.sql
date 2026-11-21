@@ -67,6 +67,14 @@ BEGIN
         PERFORM expiry::timestamptz;
     END IF;
 
+    IF input->>'source_type' = 'citation' AND (
+        input->>'data_class' IS DISTINCT FROM 'reviewed_citations'
+        OR input #>> '{authorization,aggregate}' IS DISTINCT FROM 'deny'
+        OR input #>> '{scope,kind}' IS DISTINCT FROM 'sku'
+    ) THEN
+        RAISE EXCEPTION 'Price citation requires an exact SKU and citation-only approval';
+    END IF;
+
     INSERT INTO fastest_prices.cohort (id, document)
     VALUES (cohort_key, input) ON CONFLICT DO NOTHING;
 
@@ -105,6 +113,10 @@ BEGIN
         RAISE EXCEPTION 'Capture source or revision does not match the approval';
     END IF;
 
+    IF (policy->>'source_type' = 'citation') IS DISTINCT FROM (input ? 'references') THEN
+        RAISE EXCEPTION 'Capture type does not match the cohort approval';
+    END IF;
+
     IF EXISTS (
         SELECT FROM jsonb_array_elements(input->'observations') AS offers(offer)
         WHERE policy->'seller_aliases'->>(offer->>'seller') IS NULL
@@ -127,6 +139,16 @@ BEGIN
         RAISE EXCEPTION 'Capture ID already exists with different input; append a new capture';
     END IF;
 
+    IF policy->>'source_type' = 'citation' THEN
+        IF EXISTS (SELECT FROM fastest_prices.capture WHERE cohort_id = cohort_key) THEN
+            RAISE EXCEPTION 'A citation cohort has one reviewed capture';
+        END IF;
+        IF input ? 'observations' OR input->>'status' IS DISTINCT FROM 'success'
+            OR jsonb_array_length(input->'references') NOT BETWEEN 1 AND 3 THEN
+            RAISE EXCEPTION 'A citation capture needs one to three price references';
+        END IF;
+    END IF;
+
     INSERT INTO fastest_prices.capture (cohort_id, id, checked_at, status, document)
     VALUES (cohort_key, input->>'id', (input->>'checked_at')::timestamptz, input->>'status', input)
     RETURNING sequence INTO capture_number;
@@ -142,13 +164,15 @@ $$;
 CREATE OR REPLACE FUNCTION fastest_prices.publish(cohort_key text, window_start date, window_end date, method_key text)
 RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE
+    policy jsonb := fastest_prices.active_cohort(cohort_key);
     cutoff bigint;
     pinned_method text;
     release_key uuid;
 BEGIN
-    PERFORM fastest_prices.active_cohort(cohort_key);
     SELECT coalesce(max(sequence), 0),
-        CASE WHEN bool_or(document ? 'source_adapter') THEN 'seller-day-landed-asking-v2' ELSE method_key END
+        CASE WHEN policy->>'source_type' = 'citation' THEN 'source-reported-price-citation-v1'
+             WHEN bool_or(document ? 'source_adapter') THEN 'seller-day-landed-asking-v2'
+             ELSE method_key END
     INTO cutoff, pinned_method
     FROM fastest_prices.capture
     WHERE cohort_id = cohort_key AND (checked_at AT TIME ZONE 'UTC')::date <= window_end;
@@ -211,6 +235,16 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
                 ORDER BY day, observation.seller, observation.listing_id, kind,
                     observation.observed_at DESC, observation.checked_at DESC, observation.capture_sequence DESC, observation.ordinal DESC
             ) AS dedup
+        ), '[]'::jsonb)
+    ) ELSE '{}'::jsonb END
+    || CASE WHEN rights.available AND cohort.document->>'source_type' = 'citation' THEN jsonb_build_object(
+        'references', coalesce((
+            SELECT jsonb_agg(ref.item ORDER BY ref.item->>'observed_on', ref.ordinal)
+            FROM fastest_prices.capture AS captured
+            CROSS JOIN LATERAL jsonb_array_elements(captured.document->'references')
+                WITH ORDINALITY AS ref(item, ordinal)
+            WHERE captured.cohort_id = requested.cohort_id AND captured.sequence <= requested.capture_cutoff
+                AND (ref.item->>'observed_on')::date BETWEEN requested.start_day AND requested.as_of
         ), '[]'::jsonb)
     ) ELSE '{}'::jsonb END
     FROM fastest_prices.release AS requested

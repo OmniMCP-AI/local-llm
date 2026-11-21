@@ -101,6 +101,71 @@ class PriceTest(unittest.TestCase):
         self.assertEqual(self.store.read(first), result)
         self.assertEqual(self.store.read(second)["offers"][0]["price"], "241.00")
 
+    def test_reviewed_price_citations_replay_without_entering_offers(self):
+        from fastest_prices.refresh import register
+
+        product_url = "https://reference.example.test/product/example-accelerator-16"
+        cohort = {
+            **{key: self.cohort[key] for key in ("id", "source_id", "source_revision", "scope")},
+            "source_type": "citation", "data_class": "reviewed_citations", "market": "CN", "currency": "CNY",
+            "source_name": "Fixture Price Monitor", "source_locator": product_url, "price_basis": "post_coupon",
+            "authorization": {**self.cohort["authorization"], "aggregate": "deny"},
+        }
+        capture = {
+            "id": "review-1", "source_id": cohort["source_id"], "source_revision": cohort["source_revision"],
+            "checked_at": "2026-11-03T13:00:00Z", "status": "success",
+            "references": [{"observed_on": "2026-11-01", "marketplace": "Fixture Marketplace", "price": "812.30"}],
+        }
+        with self.assertRaisesRegex(PriceError, "aggregate"):
+            self.store.approve({**cohort, "authorization": {**cohort["authorization"], "aggregate": "allow"}})
+        self.store.ingest({"cohort": cohort, "captures": [capture]})
+        self.assertEqual(self.store.capture(cohort["id"], capture), self.store.capture(cohort["id"], capture))
+        with self.assertRaisesRegex(PriceError, "Capture type"):
+            self.store.capture(cohort["id"], self.fixture["captures"][0])
+        with self.assertRaisesRegex(PriceError, "exactly these fields"):
+            reference = {**capture["references"][0], "seller": "invented seller"}
+            self.store.capture(cohort["id"], {**capture, "references": [reference]})
+        early = self.store.publish(cohort["id"], "2026-11-01", "2026-11-02")
+        self.assertEqual(self.store.read(early)["references"], [])
+        late = self.store.publish(cohort["id"], "2026-11-02", "2026-11-04")
+        self.assertEqual(self.store.read(late)["references"], [])
+        with self.assertRaisesRegex(PriceError, "one reviewed capture"):
+            self.store.capture(cohort["id"], {**capture, "id": "later-capture"})
+        with self.assertRaisesRegex(PriceError, "direct seller"):
+            register(self.store, cohort["id"], {
+                "url": "https://reference.example.test/feed", "minimum_interval_seconds": 120, "max_pages": 2,
+            })
+
+        release_id = self.store.publish(cohort["id"], "2026-11-01", "2026-11-04")
+        payload = json.loads(self.store.artifact(release_id, "prices.json"))
+        self.assertEqual(payload["offers"], [])
+        self.assertIsNone(payload["sampling"]["median"])
+        self.assertEqual(payload["sampling"]["range_status"], "rights_restricted")
+        self.assertEqual(payload["source_locator"], product_url)
+        self.assertEqual(payload["currency"], "CNY")
+        self.assertEqual(payload["price_basis"], "post_coupon")
+        reference, = payload["references"]
+        self.assertEqual({key: reference[key] for key in capture["references"][0]}, capture["references"][0])
+        for field in ("seller", "checkout_url", "landed_price", "tax", "shipping", "stock", "discount"):
+            self.assertIsNone(reference[field], field)
+        for field in ("destination", "condition"):
+            self.assertIsNone(payload[field], field)
+        for name in ("prices.html", "prices.md"):
+            artifact = self.store.artifact(release_id, name)
+            for expected in ("Historical price references", "Fixture Price Monitor", "2026-11-01", "812.30 CNY",
+                             product_url, "Unknown", "post-coupon"):
+                self.assertIn(expected, artifact)
+            self.assertNotIn("authorization-file", artifact)
+            self.assertNotIn("Comparable observed quotes", artifact)
+        with api_client(price_reader=self.store.read) as request:
+            status, _, served = request(f"/price-releases/{release_id}/prices.json")
+            self.assertEqual(status, 200)
+            self.assertEqual(served, payload)
+            self.assertEqual(request(f"/api/v1/historical-offers?release={release_id}")[0], 404)
+        self.store.withdraw(cohort["id"], "private citation withdrawal reason")
+        self.assertNotIn("references", self.store.read(release_id))
+        self.assertNotIn(product_url, self.store.artifact(release_id, "prices.html"))
+
     def test_dated_surfaces_preserve_gaps_freshness_and_quote_semantics(self):
         self.store.approve(self.cohort)
         for capture in self.fixture["captures"]:

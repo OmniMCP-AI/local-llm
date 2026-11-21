@@ -28,6 +28,31 @@ Tax and shipping each record their basis and a nullable amount. Included amounts
 
 A bundle appends atomically. Replays of the same approval and capture IDs return the stored values. An amended capture needs a new ID. A changed cohort policy needs a new cohort ID. A dated release pins the approved policy, calculation method and capture cutoff. An additional eligible capture can create a new release for the same window. Older release IDs keep their original cutoff.
 
+## Cite a dated source price
+
+Use a citation cohort for an editorially reviewed excerpt from one exact
+product page. Record the terms permitting attributed quotation in the private
+authorization record. Its approval covers the excerpt in this cohort. The
+source page is the attribution link, and each row carries the observation date
+shown by the source.
+
+Use the existing `ingest`, `publish`, `artifact`, and `withdraw` commands.
+The citation cohort shares `id`, `source_id`, `source_revision`, `market`,
+`currency`, `scope`, and `authorization` with an offer cohort. Use
+`source_type: "citation"`, `data_class: "reviewed_citations"`, a `sku` scope,
+and the cohort fields `source_name`, `source_locator` (the HTTPS product
+page), and `price_basis: "post_coupon"`. The authorization must deny
+aggregation. Each cohort accepts one successful capture with a `references`
+array of one to three rows. Use the normal capture ID, source identifiers and
+UTC review timestamp. Each reference has `observed_on` (the source's ISO
+calendar date), `marketplace`, and `price` (a decimal string).
+
+The pinned release shows only references whose observation dates fall
+within the publication window and whose capture was reviewed by its end.
+The release includes the original currency, source link, and unknown
+checkout details. A citation cohort is ineligible for seller refresh,
+historical offer export, landed price aggregates, and purchase advice.
+
 ## Refresh one authorized seller feed
 
 Register the reviewed cohort and bind it to an approved HTTPS endpoint and
