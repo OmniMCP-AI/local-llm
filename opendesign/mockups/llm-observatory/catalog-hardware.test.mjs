@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 123);
   assert.equal(manifest.coverage.manufacturerMachines, 4);
-  assert.equal(manifest.coverage.cards, 112);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 105);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 83);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 45);
-  assert.equal(manifest.coverage.boardPartnerCards, 4);
+  assert.equal(manifest.coverage.cards, 114);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 107);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 85);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 47);
+  assert.equal(manifest.coverage.boardPartnerCards, 6);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -112,4 +112,15 @@ test("a manufacturer source withdrawal removes independently sourced boards unde
   assert.ok(ids.includes("nvidia-geforce-rtx-5090-d-v2"));
   assert.ok(!ids.includes("nvidia-geforce-rtx-5090-d-32gb"));
   assert.ok(!ids.includes("asus-rog-astral-rtx5090d-o32g-gaming"));
+});
+
+test("withdrawing the Colorful launch announcement removes just its sourced RTX 5060 Ti board", async () => {
+  const source = "https://www.colorful.cn/home/new?id=09e8d6a3-f28d-419e-bc68-2b25cbe99968";
+  const { catalog, manifest } = await readHardwareCatalog(here, value => value === source);
+  const family = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5060-ti");
+  assert.deepEqual(family.variants.map(({ id }) => id).sort(), [
+    "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb",
+  ]);
+  assert.equal(manifest.coverage.boardPartnerCards, 5);
+  assert.ok(!JSON.stringify(catalog).includes(source));
 });
