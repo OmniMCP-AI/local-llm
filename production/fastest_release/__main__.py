@@ -1,9 +1,11 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import sys
 
+from fastest_delivery.engagement_store import EngagementStore
 from fastest_fit import FitEngineError
 from fastest_goals import GoalService
 from fastest_prices import PriceStore
@@ -56,6 +58,10 @@ def main(argv=None):
                        help="Serve retained runtime release histories from PostgreSQL.")
     serve.add_argument("--runtime-release-watch-notes", type=Path,
                        help="Read reviewed runtime applicability JSON on each release watch request.")
+    serve.add_argument("--pilot-engagement-origin",
+                       help="Enable private pilot engagement on this exact HTTPS origin.")
+    serve.add_argument("--pilot-engagement-mode", choices=("live", "rehearsal"), default="live",
+                       help="Use only engagement bindings in this mode.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -73,6 +79,11 @@ def main(argv=None):
             parser.error("--runtime-release-watch requires FASTEST_DATABASE_URL or --database-url")
         if args.runtime_release_watch_notes is not None and not args.runtime_release_watch:
             parser.error("--runtime-release-watch-notes requires --runtime-release-watch")
+    if args.command == "serve" and args.pilot_engagement_origin:
+        service = os.environ.get("FASTEST_PILOT_ENGAGEMENT_DBSERVICE")
+        key = os.environ.get("FASTEST_PILOT_ENGAGEMENT_SIGNING_KEY", "")
+        if store is None or not service or not re.fullmatch(r"[a-f0-9]{64}", key):
+            parser.error("pilot engagement requires a release reader, an engagement libpq service, and a 32-byte hex signing key")
     try:
         if args.command == "migrate":
             store.migrate()
@@ -93,6 +104,9 @@ def main(argv=None):
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
             runtime_watch = PostgresStore(args.database_url) if args.runtime_release_watch else None
+            pilot_engagement = (
+                EngagementStore(service), args.pilot_engagement_origin, args.pilot_engagement_mode, bytes.fromhex(key)
+            ) if args.pilot_engagement_origin else None
             price_reader = PriceStore(args.database_url).read if args.database_url else None
             goal_history = [GoalService(manifest, price_reader=price_reader, rights_path=args.goal_rights) for manifest in args.goal_cohort]
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
@@ -103,7 +117,8 @@ def main(argv=None):
                              contributor_receipts=args.contributor_receipts,
                              agent_task_release=args.agent_task_release,
                              cost_tariff_references=args.cost_tariff_references, runtime_watch=runtime_watch,
-                             runtime_watch_notes=args.runtime_release_watch_notes) as server:
+                             runtime_watch_notes=args.runtime_release_watch_notes,
+                             pilot_engagement=pilot_engagement) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

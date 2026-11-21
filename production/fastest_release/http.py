@@ -12,6 +12,9 @@ from fastest_agent_task import AGENT_TASK_PIN_PATTERN, AGENT_TASK_ROUTE
 from fastest_agent_task.publication import report_artifacts as agent_task_report_artifacts
 from fastest_cost import CostInputError, PUBLIC_FIELDS as COST_FIELDS, calculate
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
+from fastest_delivery.engagement_link import ROUTE as PILOT_EVIDENCE_ROUTE
+from fastest_delivery.engagement_routes import PilotEngagement
+from fastest_delivery.engagement_store import EngagementStorageError
 from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
 from fastest_goals import GoalEvidenceWithdrawn, GoalRightsUnavailable, GoalService, PUBLIC_FIELDS as GOAL_FIELDS
@@ -91,8 +94,10 @@ def render_contributor_receipt(revisions):
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
                 scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None,
-                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None):
+                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None, pilot_engagement=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
+    if pilot_engagement is not None and store is None:
+        raise ValueError("Pilot engagement requires a release reader.")
     if contributor_receipts and store is None:
         raise ValueError("Contributor receipts require a release reader.")
     if agent_task_release is not None and (store is None or not AGENT_TASK_PIN.fullmatch(agent_task_release)):
@@ -112,6 +117,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     profile_indexes = {profile.base + "/index.html": profile for profile in profile_versions.values()}
     default_goals = GoalService()
     goals = goals or default_goals
+    engagement = PilotEngagement(store, *pilot_engagement, goals) if pilot_engagement is not None else None
     goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
     image_report_id, image_files = image_report_artifacts()
     image_manifest = bundle_manifest(image_report_id, image_files)
@@ -150,6 +156,10 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            if not getattr(self, "path", "").startswith(PILOT_EVIDENCE_ROUTE + "/"):
+                super().log_message(format, *args)
+
         def log_request(self, code="-", size="-"):
             path = self.path.partition("?")[0]
             if path in {ADVISOR_ROUTE, ADVISOR_PATH, CONTRIBUTOR_RECEIPT_PATH}:
@@ -164,8 +174,9 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             self.send_header("Content-Length", str(len(encoded)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("Referrer-Policy", "no-referrer")
-            if self.path.partition("?")[0] == CONTRIBUTOR_RECEIPT_PATH:
+            pilot_path = self.path.startswith(PILOT_EVIDENCE_ROUTE + "/")
+            self.send_header("Referrer-Policy", "same-origin" if pilot_path else "no-referrer")
+            if self.path.partition("?")[0] == CONTRIBUTOR_RECEIPT_PATH or pilot_path:
                 self.send_header("X-Robots-Tag", "noindex")
             policy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
             self.send_header("Content-Security-Policy", policy + ("; script-src 'self'" if profile_script else ""))
@@ -180,6 +191,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
                 return self._respond(400, "Invalid Host header.\n")
             path, _, query = self.path.partition("?")
+            if engagement is not None and path.startswith(PILOT_EVIDENCE_ROUTE + "/"):
+                return self._pilot_evidence(path, query, request_hosts[0].lower())
             if path == CONTRIBUTOR_RECEIPT_PATH and contributor_receipts:
                 return self._contributor_receipt(query)
             price_match = PRICE_ROUTE.fullmatch(path)
@@ -269,6 +282,39 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def do_POST(self):
+            path, _, query = self.path.partition("?")
+            if engagement is None or not path.startswith(PILOT_EVIDENCE_ROUTE + "/"):
+                return self.send_error(501, f"Unsupported method ({self.command!r})")
+            request_hosts = self.headers.get_all("Host", [])
+            if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
+                return self._respond(400, "Invalid Host header.\n")
+            if self.headers.get("Origin", engagement.origin) != engagement.origin:
+                return self._respond(403, "Invalid form origin.\n")
+            if self.headers.get_content_type() != "application/x-www-form-urlencoded":
+                return self._respond(415, "Invalid pilot form content type.\n")
+            sizes = self.headers.get_all("Content-Length", [])
+            if (len(sizes) != 1 or re.fullmatch(r"[0-9]{1,4}", sizes[0]) is None
+                    or not 1 <= int(sizes[0]) <= 2048 or self.headers.get("Transfer-Encoding")):
+                return self._respond(400, "Invalid pilot form length.\n")
+            self.connection.settimeout(5)
+            try:
+                submitted = self.rfile.read(int(sizes[0])).decode("utf-8")
+            except (TimeoutError, UnicodeDecodeError):
+                return self._respond(400, "Invalid pilot form.\n")
+            return self._pilot_evidence(path, query, request_hosts[0].lower(), submitted)
+
+        def _pilot_evidence(self, path, query, host, submitted=None):
+            if query:
+                return self._respond(400, "Pilot evidence links do not accept query parameters.\n")
+            try:
+                status, body = engagement.handle(host, path, self.command, submitted)
+            except (EngagementStorageError, ReleaseError, TimeoutExpired, OSError, ValueError):
+                logging.warning("Pilot evidence service unavailable")
+                return self._respond(503, "Pilot evidence service unavailable.\n")
+            content_type = CONTENT_TYPES["benchmark.html"] if body.startswith("<!") else "text/plain; charset=utf-8"
+            return self._respond(status, body, content_type)
 
         def _runtime_watch(self, path):
             format_name, content_type = RUNTIME_WATCH_ROUTES[path]

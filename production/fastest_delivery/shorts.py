@@ -9,13 +9,15 @@ from zipfile import ZipFile, ZipInfo
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
+from .engagement_link import evidence_link, verified_link
 from .package import require_current_story, retain_package, story_lineage, verify_story
 from .shorts_render import SCENE_SECONDS, render
 
 
 CHANNEL = "youtube-shorts"
 CHANNEL_ID = re.compile(r"UC[A-Za-z0-9_-]{22}")
-PAYLOAD_FILES = ("title.txt", "description.txt", "captions.srt", "short.mp4")
+POST_COPY = "description.txt"
+PAYLOAD_FILES = ("title.txt", POST_COPY, "captions.srt", "short.mp4")
 ARCHIVE = "youtube-short.zip"
 MEDIA_RIGHTS = {
     "visuals": "Original chart, title cards and captions generated from the pinned release",
@@ -30,13 +32,14 @@ COPY = {
 }
 
 
-def _copy(draft):
+def _copy(draft, engagement_key=None):
     setup, source, citation = COPY[draft["locale"]]
     story = draft["story"]
     title = story["copy"]["headline"]
     result = story["copy"]["body"]
     cues = (setup, result, citation)
-    description = f"{result}\n\n{source}: {story['attribution']['label']}\n{story['evidence_destination']}\n"
+    link = evidence_link(draft, engagement_key)
+    description = f"{result}\n\n{source}: {story['attribution']['label']}\n{link}\n"
     if any(symbol in description for symbol in "<>"):
         raise ValueError("source attribution contains characters unsupported in a YouTube description")
     captions = []
@@ -47,20 +50,21 @@ def _copy(draft):
         start = end
     return cues, {
         "title.txt": (title + "\n").encode(),
-        "description.txt": description.encode(),
+        POST_COPY: description.encode(),
         "captions.srt": "\n".join(captions).encode(),
     }
 
 
-def prepare(store, draft_path, output_dir, *, font_file=None):
+def prepare(store, draft_path, output_dir, *, font_file=None, engagement_key=None):
     draft = read_sealed(draft_path, "draft_revision")
     maximum = verify_story(store, draft)
-    cues, files = _copy(draft)
+    cues, files = _copy(draft, engagement_key)
     files["short.mp4"] = render(draft, maximum, cues, font_file)
     package = seal({
         "schema_version": 1,
         "channel": CHANNEL,
         "draft": draft,
+        **({"engagement_key": engagement_key} if engagement_key is not None else {}),
         "media_rights": MEDIA_RIGHTS,
         "files": {name: sha256(body).hexdigest() for name, body in files.items()},
     }, "payload_sha256")
@@ -139,7 +143,7 @@ def export(store, package_path, approval_path, delivery_dir):
     if confirmed:
         return confirmed
     require_window(approval, datetime.now(timezone.utc))
-    _, copy = _copy(package["draft"])
+    _, copy = _copy(package["draft"], package.get("engagement_key"))
     if any(files[name] != body for name, body in copy.items()):
         raise ValueError("approved text differs from the pinned public evidence")
 
@@ -155,7 +159,7 @@ def export(store, package_path, approval_path, delivery_dir):
     return _receipt_path(directory, approval) or handoff
 
 
-def record_receipt(approval_path, delivery_dir, *, account, url, published_at, operator):
+def record_receipt(approval_path, delivery_dir, *, account, url, published_at, operator, observed_engagement_url=None):
     approval = _read_approval(approval_path)
     if account != approval["account"]:
         raise ValueError("observed publication must use the approved channel ID")
@@ -173,8 +177,9 @@ def record_receipt(approval_path, delivery_dir, *, account, url, published_at, o
     with ZipFile(directory / ARCHIVE) as archive:
         if archive.read("approval.json") != json_bytes(approval):
             raise ValueError("the recorded handoff used a different approval")
-        package, _ = _load_package(archive.read)
+        package, files = _load_package(archive.read)
     _check_coverage(approval, package)
+    link = verified_link(package, files[POST_COPY], observed_engagement_url)
     draft = package["draft"]
     receipt = seal({
         "schema_version": 1,
@@ -190,6 +195,7 @@ def record_receipt(approval_path, delivery_dir, *, account, url, published_at, o
         "operator": operator,
         "published_at": when.isoformat(),
         "post_id": post[1],
+        **link,
         "url": url,
     }, "receipt_id")
     return retain(directory / "receipt.json", json_bytes(receipt))

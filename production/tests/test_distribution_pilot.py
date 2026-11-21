@@ -1,17 +1,28 @@
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
+from threading import Thread
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
+from urllib.parse import urlencode, urlsplit
+from urllib.request import Request, urlopen
+from uuid import uuid4
+from zipfile import ZipFile
 
 from fastest_delivery import shorts, x_post
+from fastest_delivery.pilot import TIMEZONE, audit
 from fastest_editorial import generate_package
 from fastest_editorial.__main__ import _record
 from fastest_release import ReleaseNotFound
+from test_goals import fixture_service
+import test_release
 from test_shorts_delivery import CHANNEL_ID, POST_URL, RELEASE_ID, PublicRelease
 
 
@@ -49,25 +60,166 @@ class DistributionPilotTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
-    def publish_x(self):
-        now = datetime(2026, 11, 20, 16, 30, tzinfo=timezone.utc)
+    def publish_x(self, *, engagement_key=None, now=None):
+        now = now or datetime(2026, 11, 20, 16, 30, tzinfo=timezone.utc)
         store = PublicRelease()
-        draft, draft_path = self.draft(date(2026, 11, 21), store)
-        package = x_post.prepare(store, draft_path, self.root / "x-review")
+        draft, draft_path = self.draft(now.astimezone(TIMEZONE).date(), store)
+        options = {"engagement_key": engagement_key} if engagement_key else {}
+        package = x_post.prepare(store, draft_path, self.root / "x-review", **options)
         approval = x_post.approve(
             package, self.root / "x-approvals", account="@benchmarklab", payload_sha256=package.name,
-            window_start="2026-11-20T16:00:00Z", window_end="2026-11-20T17:00:00Z",
+            window_start=(now - timedelta(minutes=30)).isoformat(), window_end=(now + timedelta(minutes=30)).isoformat(),
             approved_by="Fixture editor", rights_reference="Fixture rights review",
         )
         with patch.object(x_post, "datetime", wraps=datetime) as clock:
             clock.now.return_value = now
             directory = self.root / "x-deliveries"
-            x_post.export(store, package, approval, directory)
+            handoff = x_post.export(store, package, approval, directory)
+            options = {}
+            if engagement_key:
+                engagement_url = f"https://benchmark.example/pilot/evidence/{RELEASE_ID}/{engagement_key}#citation"
+                with ZipFile(handoff) as archive:
+                    self.assertIn(engagement_url, archive.read("post.txt").decode().splitlines())
+                with self.assertRaisesRegex(ValueError, "engagement link"):
+                    x_post.record_receipt(
+                        approval, directory, url="https://x.com/benchmarklab/status/123",
+                        published_at=now.isoformat(), operator="Fixture operator",
+                    )
+                options["observed_engagement_url"] = engagement_url
             receipt_path = x_post.record_receipt(
                 approval, directory, url="https://x.com/benchmarklab/status/123",
-                published_at=now.isoformat(), operator="Fixture operator",
+                published_at=now.isoformat(), operator="Fixture operator", **options,
             )
         return draft, json.loads(receipt_path.read_bytes())
+
+    def test_tracked_post_requires_the_exact_approved_link_on_reconciliation(self):
+        key = "e1d2b415-ee2e-4b52-bea0-f49df47aff08"
+        draft, receipt = self.publish_x(engagement_key=key)
+        self.assertEqual(receipt["engagement_url"], f"https://benchmark.example/pilot/evidence/{RELEASE_ID}/{key}#citation")
+        self.assertTrue(draft["story"]["evidence_destination"].endswith("/benchmark.html#citation"))
+        self.assertEqual(self.audit()["channels"]["x"]["published_in_window"], 1)
+
+    def test_hosted_opt_in_evidence_and_comparison_export_to_audit(self):
+        from fastest_delivery.engagement_capture import main as capture_command
+        from fastest_delivery.engagement_store import EngagementStore
+        from fastest_release.http import make_server
+
+        postgres = test_release.ReleaseTest()
+        self.addCleanup(postgres.doCleanups)
+        postgres.setUp()
+        service_file = self.root / "pg-service.conf"
+        roles = {"pilot-fixture": None, "pilot-origin": "pilot_origin", "pilot-binder": "pilot_binder",
+                 "pilot-auditor": "pilot_auditor"}
+        service_file.write_text("".join(
+            f"[{service}]\nhost={postgres.socket_path}\ndbname=postgres\n"
+            + (f"user={role}\n" if role else "")
+            for service, role in roles.items()
+        ))
+        self.enterContext(patch.dict(os.environ, {
+            "PGSERVICEFILE": str(service_file), "FASTEST_PILOT_ENGAGEMENT_DBSERVICE": "pilot-fixture",
+        }))
+        now = datetime.now(timezone.utc)
+        start = now.astimezone(TIMEZONE).date().isoformat()
+        key = str(uuid4())
+        draft, receipt = self.publish_x(engagement_key=key, now=now)
+        export_path = self.root / "pg-engagement.json"
+        approval = receipt["approval_id"]
+        source_args = [start, "--mode", "rehearsal", "--draft-dir", str(self.drafts),
+                       "--x-approvals", str(self.root / "x-approvals"),
+                       "--x-deliveries", str(self.root / "x-deliveries")]
+        capture_command(["migrate"])
+        postgres.store._query("""
+            CREATE ROLE pilot_origin LOGIN;
+            CREATE ROLE pilot_binder LOGIN;
+            CREATE ROLE pilot_auditor LOGIN;
+            GRANT USAGE ON SCHEMA fastest_pilot_engagement TO pilot_origin, pilot_binder, pilot_auditor;
+            GRANT SELECT ON fastest_pilot_engagement.available TO pilot_origin;
+            GRANT EXECUTE ON FUNCTION fastest_pilot_engagement.arrive(uuid, text, uuid) TO pilot_origin;
+            GRANT EXECUTE ON FUNCTION fastest_pilot_engagement.complete(uuid, text, uuid, uuid) TO pilot_origin;
+            GRANT SELECT, INSERT, UPDATE (attribution_key) ON fastest_pilot_engagement.binding TO pilot_binder;
+            GRANT SELECT ON fastest_pilot_engagement.binding, fastest_pilot_engagement.journey TO pilot_auditor;
+        """)
+        hosted = EngagementStore("pilot-origin")
+        goals = self.enterContext(fixture_service())
+        releases = PublicRelease()
+        http = self.enterContext(make_server(
+            releases, port=0, trusted_hosts=["benchmark.example"], goals=goals,
+            pilot_engagement=(hosted, "https://benchmark.example", "rehearsal", bytes(32)),
+        ))
+        worker = Thread(target=http.serve_forever)
+        worker.start()
+        self.addCleanup(worker.join, 5)
+        self.addCleanup(http.shutdown)
+        path = urlsplit(receipt["engagement_url"]).path
+        base = f"http://127.0.0.1:{http.server_port}"
+
+        def request(path, values=None, *, origin="https://benchmark.example"):
+            body = urlencode(values).encode() if values is not None else None
+            headers = {"Host": "benchmark.example", "Origin": origin}
+            with urlopen(Request(base + path, data=body, headers=headers), timeout=5) as response:
+                self.assertIsNone(response.headers.get("Set-Cookie"))
+                return response.read().decode()
+
+        def export(*flags):
+            with patch.dict(os.environ, {"FASTEST_PILOT_ENGAGEMENT_DBSERVICE": "pilot-auditor"}):
+                capture_command(["export", "--start", *source_args, "--output", str(export_path), *flags])
+            self.assertEqual(export_path.stat().st_mode & 0o777, 0o600)
+            return json.loads(export_path.read_text())
+
+        self.assertIn('id="citation"', request(path))
+        self.assertNotIn("Share anonymous activity", request(path))
+        with patch.dict(os.environ, {"FASTEST_PILOT_ENGAGEMENT_DBSERVICE": "pilot-binder"}):
+            binding = ["bind", "--start", *source_args, "--receipt-id", receipt["receipt_id"]]
+            capture_command(binding)
+            capture_command(binding)
+        page = request(path)
+        self.assertIn('id="citation"', page)
+        self.assertEqual(export()["events"], [])
+        token = re.search(r'name="journey" value="([^"]+)"', page)[1]
+        with self.assertRaises(HTTPError) as error:
+            request(path, {"action": "compare", "journey": token, "decode": "20", "prefill": "10"})
+        with error.exception as response:
+            self.assertEqual(response.code, 409)
+        consent = {"action": "opt-in", "journey": token}
+        with self.assertRaises(HTTPError) as error:
+            request(path, consent, origin="https://other.example")
+        with error.exception as response:
+            self.assertEqual(response.code, 403)
+        self.assertIn("Compare setups", request(path, consent))
+        self.assertIn("Compare setups", request(path, consent))
+        self.assertEqual([event["kind"] for event in export()["events"]], ["evidence_arrival"])
+        with self.assertRaises(HTTPError) as error:
+            request(path, {"action": "compare", "journey": token, "decode": "invalid", "prefill": "10"})
+        with error.exception as response:
+            self.assertEqual(response.code, 400)
+        selection = {"action": "compare", "journey": token, "decode": "20", "prefill": "10"}
+        self.assertIn("Exact goal results", request(path, selection))
+        self.assertIn("Exact goal results", request(path, selection))
+        snapshot = export()
+        self.assertEqual(snapshot, export())
+        self.assertEqual(snapshot["coverage"], {"qualified_evidence_visits": [], "completed_comparisons": []})
+        visit, comparison = snapshot["events"]
+        self.assertEqual(visit["evidence_destination"], draft["story"]["evidence_destination"])
+        self.assertEqual(comparison["kind"], "comparison_result")
+        self.assertNotEqual(visit["visit_id"], comparison["comparison_id"])
+        self.assertTrue(all(event["receipt_id"] == receipt["receipt_id"] and event["post_url"] == receipt["url"]
+                            for event in snapshot["events"]))
+
+        releases.snapshot["status"] = "withdrawn"
+        del releases.snapshot["row"]
+        for values in (None, consent, selection):
+            with self.assertRaises(HTTPError) as error:
+                request(path, values)
+            with error.exception as response:
+                self.assertEqual(response.code, 410)
+        self.assertEqual(export(), snapshot)
+
+        report = audit(date.fromisoformat(start), self.drafts, {
+            "x": (self.root / "x-approvals", self.root / "x-deliveries"),
+            "youtube-shorts": (self.root / "shorts-approvals", self.root / "shorts-deliveries"),
+        }, engagement_export=export_path)
+        self.assertEqual(report["metrics"], {"qualified_evidence_visits": None, "completed_comparisons": None})
+        self.assertEqual([item["observed_count"] for item in report["engagement_evidence"]["coverage"].values()], [1, 1])
 
     def engagement_export(self):
         draft, receipt = self.publish_x()

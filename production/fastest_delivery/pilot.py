@@ -13,6 +13,7 @@ from fastest_release.validation import plain_text
 
 from . import engagement, shorts, x_post
 from .approval import decode_sealed, instant, json_bytes, read_sealed, require_window
+from .engagement_link import verified_link
 from .run_slot import scheduled_runs
 
 
@@ -53,7 +54,7 @@ def _load_handoff(path, adapter, entries, drafts, days):
 
     with ZipFile(path) as archive:
         embedded = decode_sealed(archive.read("approval.json"), "approval_id", str(path))
-        package, _ = adapter._load_package(archive.read)
+        package, files = adapter._load_package(archive.read)
     entry = entries.get(embedded["approval_id"])
     if entry is None or embedded != entry["approval"]:
         raise ValueError(f"handoff approval is absent from the approval ledger: {path}")
@@ -72,6 +73,7 @@ def _load_handoff(path, adapter, entries, drafts, days):
     matching_fields = ("schema_version", "channel", "account", "approval_id", "delivery_id", "payload_sha256")
     if receipt["status"] != "published" or any(receipt[key] != embedded[key] for key in matching_fields):
         raise ValueError(f"receipt differs from its approval: {receipt_path}")
+    verified_link(package, files[adapter.POST_COPY], receipt.get("engagement_url"))
     if adapter is shorts and (
         receipt["render_sha256"] != package["files"]["short.mp4"]
         or receipt["release_id"] != draft["release"]["release_id"]
@@ -251,15 +253,20 @@ def load_operator_log(path, start):
     return record
 
 
+def load_pilot_records(start, draft_dir, directories):
+    days = load_days(start, draft_dir)
+    drafts = {draft["draft_revision"]: {key: value for key, value in draft.items() if key != "record"}
+              for day in days.values() for draft in day["drafts"]}
+    deliveries = _load_deliveries(days, drafts, directories)
+    return days, drafts, deliveries
+
+
 def audit(start, draft_dir, directories, operator_log=None, run_dir=None, engagement_export=None):
     runs, mode = scheduled_runs(run_dir, ((start + timedelta(days=offset)).isoformat() for offset in range(7)))
     operator = load_operator_log(operator_log, start)
     if mode and operator_log is not None and mode != operator["mode"]:
         raise ValueError("pilot operator log and scheduler records use different modes")
-    days = load_days(start, draft_dir)
-    drafts = {draft["draft_revision"]: {key: value for key, value in draft.items() if key != "record"}
-              for day in days.values() for draft in day["drafts"]}
-    deliveries = _load_deliveries(days, drafts, directories)
+    days, drafts, deliveries = load_pilot_records(start, draft_dir, directories)
     _record_runs([*runs, *operator.get("runs", [])], days, drafts)
     exercises = operator.get("exercises", [])
     _record_exercises(exercises, deliveries, drafts, days)

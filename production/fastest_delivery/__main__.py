@@ -16,6 +16,7 @@ def main(argv=None):
     draft.add_argument("--draft", required=True, type=Path)
     draft.add_argument("--output-dir", required=True, type=Path)
     draft.add_argument("--font-file", type=Path, help="Font for a Shorts render or a Chinese shared CI CPU X chart.")
+    draft.add_argument("--engagement-key", help="Use the supplied unique UUIDv4 for approved first-party pilot attribution.")
     approval = commands.add_parser("approve", help="Approve an exact package for one account and time window.")
     approval.add_argument("--package", required=True, type=Path)
     approval.add_argument("--approval-dir", required=True, type=Path)
@@ -29,6 +30,7 @@ def main(argv=None):
     receipt.add_argument("--approval", required=True, type=Path)
     receipt.add_argument("--delivery-dir", required=True, type=Path)
     receipt.add_argument("--account", help="Observed YouTube channel ID for a Shorts receipt.")
+    receipt.add_argument("--observed-engagement-url", help="Exact approved engagement link verified on this live post.")
     for flag in ("operator", "published-at", "url"):
         receipt.add_argument(f"--{flag}", required=True)
     corrections = commands.add_parser("corrections", help="Route withdrawn evidence for live YouTube Shorts.")
@@ -49,7 +51,8 @@ def main(argv=None):
     delivery = shorts if video else x_post
     try:
         if args.command == "prepare":
-            path = delivery.prepare(ReleaseStore(args.database_url), args.draft, args.output_dir, font_file=args.font_file)
+            path = delivery.prepare(ReleaseStore(args.database_url), args.draft, args.output_dir,
+                                    font_file=args.font_file, engagement_key=args.engagement_key)
         elif args.command == "approve":
             path = delivery.approve(
                 args.package, args.approval_dir, account=args.account, payload_sha256=args.payload_sha256,
@@ -66,7 +69,7 @@ def main(argv=None):
             options = {"account": args.account} if video else {}
             path = delivery.record_receipt(
                 args.approval, args.delivery_dir, url=args.url, published_at=args.published_at, operator=args.operator,
-                **options,
+                observed_engagement_url=args.observed_engagement_url, **options,
             )
         print(path)
     except (OSError, ReleaseError, ReleaseNotFound, ValueError, KeyError, TypeError, BadZipFile) as error:

@@ -142,6 +142,9 @@ setup](fastest_contributor/README.md#serve-receipt-links).
 To publish retained runtime releases, grant read access to the watcher
 schema and enable the route. [Serve the watch](fastest_release_watch/README.md#serve-the-watch)
 
+The optional distribution pilot routes use a separate engagement service for
+consented events. [Configure first-party collection](fastest_delivery/PILOT.md#enable-collection)
+
 Terminate TLS in the reverse proxy and forward the canonical `Host` header
 through to the listener. Set `FASTEST_RELEASE_HOST` to that header value,
 including any explicit port. Preserve `Cache-Control: no-store` through

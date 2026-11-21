@@ -137,6 +137,21 @@ class ShortsDeliveryTest(unittest.TestCase):
         self.assertEqual(shorts.export(self.store, package, approval, self.delivery_dir), receipt_path)
         self.assertEqual(sorted(path.name for path in handoff.parent.iterdir()), ["receipt.json", "youtube-short.zip"])
 
+    def test_tracked_short_requires_exact_reconciled_link(self):
+        key = "7b52433e-e6b7-4cf1-967b-293c1c85bc81"
+        link = f"https://benchmark.example/pilot/evidence/{RELEASE_ID}/{key}#citation"
+        package = shorts.prepare(self.store, self.draft(), self.directory / "review", engagement_key=key)
+        approval = self.approve(package)
+        handoff = shorts.export(self.store, package, approval, self.delivery_dir)
+        with ZipFile(handoff) as archive:
+            self.assertIn(link, archive.read("description.txt").decode().splitlines())
+        options = {"url": POST_URL, "account": CHANNEL_ID, "published_at": self.now.isoformat(),
+                   "operator": "operator@example.test"}
+        with self.assertRaisesRegex(ValueError, "engagement link"):
+            shorts.record_receipt(approval, self.delivery_dir, **options, observed_engagement_url=link[:-1])
+        receipt = shorts.record_receipt(approval, self.delivery_dir, **options, observed_engagement_url=link)
+        self.assertEqual(json.loads(receipt.read_bytes())["engagement_url"], link)
+
     def test_withdrawal_holds_queued_exports_and_routes_the_recorded_short_once(self):
         package = shorts.prepare(self.store, self.draft(), self.directory / "review")
         queued = self.approve(package, account="UC" + "a" * 22)

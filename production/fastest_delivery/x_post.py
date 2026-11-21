@@ -12,11 +12,13 @@ from fastest_editorial import is_shared_cpu_decode
 from fastest_release.validation import plain_text
 
 from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
+from .engagement_link import evidence_link, verified_link
 from .package import require_current_story, retain_package, verify_story
 
 
 ARCHIVE = "x-post.zip"
-PAYLOAD_FILES = ("post.txt", "chart.png", "chart-alt.txt")
+POST_COPY = "post.txt"
+PAYLOAD_FILES = (POST_COPY, "chart.png", "chart-alt.txt")
 COPY = {
     "en": (
         "Median decode throughput: {value} {unit} ({samples} measurements)",
@@ -54,7 +56,7 @@ def _shared_cpu_scope(draft):
     return ""
 
 
-def _copy(draft, maximum, scope):
+def _copy(draft, maximum, scope, engagement_key=None):
     headline, correction, source_prefix, chart_description = COPY[draft["locale"]]
     story = draft["story"]
     claim, = story["claims"]
@@ -64,7 +66,7 @@ def _copy(draft, maximum, scope):
     credit = source_prefix + story["attribution"]["label"]
     scope_line = f"{scope}\n" if scope else ""
     copy = normalize("NFC", f"{result}\n{scope_line}{credit}\n")
-    link = story["evidence_destination"]
+    link = evidence_link(draft, engagement_key)
     # X v3 weights, conservatively counting emoji sequences per code point.
     single_weight = ((0, 4351), (8192, 8205), (8208, 8223), (8242, 8247))
     weight = sum(1 if any(low <= ord(char) <= high for low, high in single_weight) else 2 for char in copy)
@@ -120,7 +122,7 @@ def _card(draft, maximum, scope, font_file):
     return output.getvalue()
 
 
-def prepare(store, draft_path, output_dir, *, font_file=None):
+def prepare(store, draft_path, output_dir, *, font_file=None, engagement_key=None):
     draft = read_sealed(draft_path, "draft_revision")
     maximum = verify_story(store, draft)
     scope = _shared_cpu_scope(draft)
@@ -129,12 +131,13 @@ def prepare(store, draft_path, output_dir, *, font_file=None):
         raise ValueError("provide a font with glyphs for the X chart using --font-file")
     if font_file is not None and not localized_chart:
         raise ValueError("--font-file for X requires a Chinese shared CI CPU draft")
-    post, alt = _copy(draft, maximum, scope)
+    post, alt = _copy(draft, maximum, scope, engagement_key)
     files = {"post.txt": post, "chart.png": _card(draft, maximum, scope, font_file), "chart-alt.txt": alt}
     package = seal({
         "schema_version": 1,
         "channel": "x",
         "draft": draft,
+        **({"engagement_key": engagement_key} if engagement_key is not None else {}),
         "files": {name: sha256(body).hexdigest() for name, body in files.items()},
     }, "payload_sha256")
     files["package.json"] = json_bytes(package)
@@ -207,7 +210,7 @@ def export(store, package_path, approval_path, delivery_dir):
         return confirmed
     require_window(approval, datetime.now(timezone.utc))
     maximum = verify_story(store, draft)
-    if _copy(draft, maximum, _shared_cpu_scope(draft)) != (files["post.txt"], files["chart-alt.txt"]):
+    if _copy(draft, maximum, _shared_cpu_scope(draft), package.get("engagement_key")) != (files["post.txt"], files["chart-alt.txt"]):
         raise ValueError("approved text differs from the pinned public evidence")
 
     output = BytesIO()
@@ -221,7 +224,7 @@ def export(store, package_path, approval_path, delivery_dir):
     return _receipt_path(directory, approval) or handoff
 
 
-def record_receipt(approval_path, delivery_dir, *, url, published_at, operator):
+def record_receipt(approval_path, delivery_dir, *, url, published_at, operator, observed_engagement_url=None):
     approval = _read_approval(approval_path)
     account = approval["account"][1:]
     post = re.fullmatch(
@@ -240,6 +243,10 @@ def record_receipt(approval_path, delivery_dir, *, url, published_at, operator):
     with ZipFile(directory / ARCHIVE) as archive:
         if archive.read("approval.json") != json_bytes(approval):
             raise ValueError("the recorded handoff used a different approval")
+        package, files = _load_package(archive.read)
+    if package["payload_sha256"] != approval["payload_sha256"] or package["draft"]["draft_revision"] != approval["story_revision"]:
+        raise ValueError("approval does not cover this package")
+    link = verified_link(package, files[POST_COPY], observed_engagement_url)
     post_id = post[1]
     receipt = seal({
         "schema_version": 1,
@@ -252,6 +259,7 @@ def record_receipt(approval_path, delivery_dir, *, url, published_at, operator):
         "operator": operator,
         "published_at": when.isoformat(),
         "post_id": post_id,
+        **link,
         "url": f"https://x.com/{account}/status/{post_id}",
     }, "receipt_id")
     return retain(directory / "receipt.json", json_bytes(receipt))
