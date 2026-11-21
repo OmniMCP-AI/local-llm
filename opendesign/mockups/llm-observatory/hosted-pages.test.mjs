@@ -116,6 +116,7 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   assert.equal(manifest.discovery.popular, 300);
   assert.equal(manifest.discovery.small, 75);
   assert.equal(manifest.hardware.coverage.completeBuilds, 3);
+  assert.equal(manifest.coverage.topologyRevisions, 38);
 
   const releaseHash = await releaseDigest(output);
   env.FASTEST_CATALOG_SNAPSHOT_ID = "0".repeat(64);
@@ -128,6 +129,19 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   env.FASTEST_CATALOG_SNAPSHOT_ID = newer.snapshotId;
   await assert.rejects(build(), /PostgreSQL catalog snapshot content does not match its publication digest/);
   assert.equal(await releaseDigest(output), releaseHash);
+
+  await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
+    UPDATE fastest_catalog.topology_node SET document = document || '{"label":"Unexpected card"}'::jsonb
+    WHERE snapshot_id = '${snapshotId}' AND machine_id = 'V021-HP-C001' AND slot = 1`]);
+  env.FASTEST_CATALOG_SNAPSHOT_ID = snapshotId;
+  await assert.rejects(build(), /PostgreSQL catalog snapshot content does not match its publication digest/);
+  assert.equal(await releaseDigest(output), releaseHash);
+  await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
+    UPDATE fastest_catalog.topology_node SET document = original.document
+    FROM fastest_catalog.topology_node original
+    WHERE topology_node.snapshot_id = '${snapshotId}' AND original.snapshot_id = '${newer.snapshotId}'
+      AND topology_node.machine_id = 'V021-HP-C001' AND original.machine_id = topology_node.machine_id
+      AND topology_node.slot = 1 AND original.slot = topology_node.slot`]);
 
   env.FASTEST_CATALOG_SNAPSHOT_ID = snapshotId;
   const approvals = join(scratch, "approvals.json");
@@ -154,6 +168,12 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.doesNotMatch(home, /Mac mini M4 from the newer database snapshot/);
     const machines = await (await get(`/catalog-data/${release}/machines.json`)).json();
     assert.match(machines.find(({ id }) => id === machineId).name, /pinned database snapshot/);
+    assert.equal(machines.find(({ id }) => id === machineId).topologyRevision, undefined);
+    const { topologyRevision } = machines.find(({ id }) => id === "V021-HP-C001");
+    assert.match(topologyRevision, /^topology-[a-f0-9]{64}$/);
+    assert.ok(home.includes(topologyRevision));
+    const topologyWiki = await (await get("/wiki/gpu-topology/")).text();
+    assert.ok(topologyWiki.includes(`/#wiki/gpu-topology/${topologyRevision}`));
 
     const modelId = "Qwen/Qwen2.5-0.5B-Instruct";
     const models = await (await get(`/catalog-data/${release}/${modelShard(modelId)}.json`)).json();
@@ -171,6 +191,10 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
         assert.ok(response.headers.get("content-type").startsWith(type));
         assert.match(await response.text(), expected);
       }
+    }
+    for (const extension of ["html", "md"]) {
+      const response = await get(`/catalog/${release}/machines/V021-HP-C001.${extension}`);
+      assert.ok((await response.text()).includes(`/#wiki/gpu-topology/${topologyRevision}`));
     }
   });
 });

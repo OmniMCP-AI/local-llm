@@ -3,6 +3,11 @@ export const modelIdPattern = new RegExp(`^${part}/${part}$`);
 export const runtimeIdPattern = /^[a-z][a-z0-9.-]*$/;
 export const hardwareIdPattern = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
 export const catalogReleasePattern = /^v1-[a-f0-9]{16}$/;
+export const topologyRevisionPattern = /^topology-[a-f0-9]{64}$/;
+
+export function topologyRevisionHref(revision) {
+  return topologyRevisionPattern.test(revision ?? "") ? "/#wiki/gpu-topology/" + revision : null;
+}
 
 export function deniedCatalogPin(release, paths) {
   return ["catalog", "catalog-data"].some(kind => {

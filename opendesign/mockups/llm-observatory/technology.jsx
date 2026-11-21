@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, CircuitBoard, Cpu, Monitor, Pause, Play, StepForward, Terminal } from "lucide-react";
 import { catalogPath } from "./catalog-paths.mjs";
-import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, scalingReportUrl, scalingUnavailable, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, scalingReportUrl, scalingUnavailable, selectTopologyReport, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
 
 const hardware = __FASTEST_HARDWARE_DIRECTORY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
@@ -221,14 +221,15 @@ export function TechnologyDiagram({ images = {}, focus, options }) {
   const id = useId();
   const sourceChoices = options ?? [...reports, fitScenario];
   const matchesPhoto = ({ devices }) => devices.some(({ photo }) => photo && photo === focus);
-  const source = sourceChoices.find(({ id }) => id.toLowerCase() === focus?.toLowerCase())
+  const source = selectTopologyReport(sourceChoices, focus)
     ?? sourceChoices.find((row) => row.count === 1 && matchesPhoto(row))
     ?? sourceChoices.find(matchesPhoto);
   const example = !options && !source && cardPhotoExample(focus, hardware.cards);
   const choices = example ? [...sourceChoices, example] : sourceChoices;
   const initial = source || example || (options ? choices[0] : topologyPresets[0]?.report || fitScenario);
-  const [profile, setProfile] = useState(initial.id);
-  const report = choices.find((row) => row.id === profile) ?? initial;
+  const [profile, setProfile] = useState(initial?.revision ?? initial?.id);
+  const report = selectTopologyReport(choices, profile) ?? initial;
+  if (!report) return <p>No source-reported layouts are available for this group.</p>;
   return <section className="tech-lab" aria-labelledby={id + "-title"}>
     <header className="tech-header">
       <div>
@@ -238,14 +239,14 @@ export function TechnologyDiagram({ images = {}, focus, options }) {
       </div>
       {!options && <div className="tech-switch" role="group" aria-label="GPU layouts">
         {[...topologyPresets, { label: "Fit example", report: fitScenario }].map(({ label, report: item }) => <button
-          type="button" key={item.id} aria-pressed={report === item} onClick={() => setProfile(item.id)}>{label}</button>)}
+          type="button" key={item.id} aria-pressed={report === item} onClick={() => setProfile(item.revision ?? item.id)}>{label}</button>)}
       </div>}
       <label className="tech-profile"><span>Topology revision</span>
-        <select value={report.id} onChange={(event) => setProfile(event.target.value)}>
-          {choices.map(({ id, name }) => <option key={id} value={id}>{id} · {name}</option>)}
+        <select value={report.revision ?? report.id} onChange={(event) => setProfile(event.target.value)}>
+          {choices.map(({ id, name, revision }) => <option key={revision ?? id} value={revision ?? id}>{id} · {name}</option>)}
         </select>
       </label>
     </header>
-    <TopologySession key={report.id} report={report} images={images} />
+    <TopologySession key={report.revision ?? report.id} report={report} images={images} />
   </section>;
 }
