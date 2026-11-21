@@ -572,6 +572,15 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.doesNotMatch(home, /Mac mini M4 from the newer database snapshot/);
     assert.match(home, /Recent releases/);
     assert.match(home, /thinkingmachines\/Inkling-2-Mini/);
+    const battles = await (await get("/battles/")).text();
+    assert.match(battles, /Mac mini M4 from the pinned database snapshot/);
+    assert.doesNotMatch(battles, /Mac mini M4 from the newer database snapshot/);
+    assert.match(battles, /YouTube title mentions/);
+    assert.ok(battles.includes(`&amp;release=${release}`));
+    const battleMarkdown = await get("/battles.md");
+    assert.match(battleMarkdown.headers.get("content-type"), /^text\/markdown/);
+    assert.match(await battleMarkdown.text(), /104 GB more installed unified memory/);
+    assert.match(await (await get("/sitemap.xml")).text(), /<loc>https:\/\/fastest\.ai\/battles\/<\/loc>/);
     const machines = await (await get(`/catalog-data/${release}/machines.json`)).json();
     assert.match(machines.find(({ id }) => id === machineId).name, /pinned database snapshot/);
     const response = await get("/api/v1/catalog?kind=machines&q=pinned%20database%20snapshot");

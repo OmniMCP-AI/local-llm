@@ -6,7 +6,7 @@
     "build": "node build.mjs",
     "build:pages": "node build.mjs --pages",
     "build:pages:production": "node build.mjs --pages --catalog-postgres",
-    "test:pages": "node --test hosted-pages.test.mjs wiki-release.test.mjs evidence-resolution.test.mjs feedback.test.mjs"
+    "test:pages": "node --test hosted-pages.test.mjs wiki-release.test.mjs evidence-resolution.test.mjs feedback.test.mjs battle.test.mjs battle-title-signals.test.mjs"
   },
   "dependencies": {
     "esbuild": "0.25.5",

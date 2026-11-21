@@ -7,8 +7,8 @@ const noStore = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosnif
 const validators = ["ETag", "Last-Modified", "CDN-Cache-Control", "Cloudflare-CDN-Cache-Control"];
 const conditionals = ["If-Match", "If-None-Match", "If-Modified-Since", "If-Unmodified-Since", "If-Range", "Range"];
 const homeHtml = new Set(["/", "/index", "/index.html"]);
-const checkedFile = new Set([...homeHtml, "/index.md", "/sitemap.xml", "/robots.txt", "/llms.txt"]);
-const checkedFolder = /^\/(wiki|research|catalog|catalog-data|downloads)(?:\/|$)/;
+const checkedFile = new Set([...homeHtml, "/index.md", "/battles.md", "/sitemap.xml", "/robots.txt", "/llms.txt"]);
+const checkedFolder = /^\/(wiki|research|catalog|catalog-data|downloads|battles)(?:\/|$)/;
 
 function retirementNotice(request, status, message) {
   return new Response(request.method === "HEAD" ? null : message, {

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { battleArchiveMarkdown, battleArchivePath, renderBattleArchive } from "./battle-archive.mjs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
@@ -127,7 +128,7 @@ export function activeHighlights(highlights, pages, releaseDate) {
 
 export async function writeWikiRelease({
   output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
-  topologies = [], scalingUrl, advisorUrl, catalogApi = false, review = false,
+  topologies = [], scalingUrl, advisorUrl, catalogApi = false, review = false, battle = null,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
@@ -173,7 +174,7 @@ export async function writeWikiRelease({
   const alternateName = "localdecode.com";
   const release = "wiki-" + createHash("sha256")
     .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName, catalogOpenApi,
-      ...directories.map(([, path]) => path)]))
+      ...directories.map(([, path]) => path), ...(battle ? [battleArchivePath] : [])]))
     .digest("hex").slice(0, 16);
   const headers = [
     ...(review ? [
@@ -197,6 +198,15 @@ export async function writeWikiRelease({
       + '<title>Page unavailable | fastest.ai</title></head><body><main><h1>Page unavailable</h1>'
       + '<p><a href="/wiki/">Browse the current wiki</a></p></main></body></html>\n',
   };
+  if (battle) {
+    const archive = renderBattleArchive(battle.records, { origin, release: catalogRelease, prefix: "/" }, battle.titleSignals, styles);
+    files[battleArchivePath + "index.html"] = archive.html;
+    files[battleArchiveMarkdown] = archive.markdown;
+    headers.push(
+      battleArchivePath + "\n  Link: <" + origin + battleArchiveMarkdown + '>; rel="alternate"; type="text/markdown"',
+      battleArchiveMarkdown + "\n  Content-Type: text/markdown; charset=utf-8\n  Link: <" + origin + battleArchivePath + '>; rel="alternate"; type="text/html"',
+    );
+  }
   for (const entry of entries) {
     const { id, title, summary, md, html, neighbors, aliases, source, entity, evidence, methods, media, kind } = entry;
     const route = wikiHtmlRoute(id);
@@ -237,25 +247,26 @@ ${backlinksHtml}
 <h1>fastest.ai</h1><p>Also known as ${alternateName}.</p>${review
     ? '<p><strong>Non-production review</strong> · <a href="/review-manifest.json">Review manifest</a></p>' : ""}<p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
-<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${directories.map(([title, path]) => `<a href="${path}">${title}</a>`).join("")}${review ? `<a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
+<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${directories.map(([title, path]) => `<a href="${path}">${title}</a>`).join("")}${review ? `<a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}${battle ? `<a href="${battleArchivePath}">Hardware battles</a>` : ""}</nav>
 <section data-home-highlights${availableHighlights.length ? "" : " hidden"}><h2>Research highlights</h2><ul>
 ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">${escape(title)}</a> · ${escape(summary)}</li>`).join("\n")}
 </ul></section>
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",
-  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)\n\n" : ""}${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${directories.map(([title, path]) => ` · [${title}](${path}.md)`).join("")}${review ? ` · [Catalog manifest](${catalogManifest})` : ""}\n`
+  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)\n\n" : ""}${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${directories.map(([title, path]) => ` · [${title}](${path}.md)`).join("")}${review ? ` · [Catalog manifest](${catalogManifest})` : ""}${battle ? ` · [Hardware battles](${battleArchiveMarkdown})` : ""}\n`
     + (availableHighlights.length ? "\n## Research highlights\n\n" + availableHighlights.map((entry) =>
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);
 
-  const canonicalRoutes = ["/", ...(review ? [] : ["/prices"]), ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
+  const canonicalRoutes = ["/", ...(review ? [] : ["/prices"]), ...(battle ? [battleArchivePath] : []), ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
   const citationUrls = [
     `- [Evidence updates](${origin}/wiki/evidence-updates.md)`,
     `- [Current wiki release](${origin}/wiki/manifest.json)`,
     `- [Research library](${origin + research.md}): Approved research references and timestamped methods`,
     `- [Research release manifest](${origin + researchRoot}manifest.json)`,
     ...(catalogRelease ? [`- [Catalog release manifest](${origin + catalogManifest})`] : []),
+    ...(battle ? [`- [Hardware battles](${origin + battleArchiveMarkdown}): Configurations and decision factors for exact matchups`] : []),
     ...(catalogOpenApi ? [`- [Catalog search (OpenAPI)](${origin + catalogOpenApi}): Hardware, machines, model repositories, and runtimes from this snapshot`] : []),
   ];
   files["/robots.txt"] = `User-agent: *\n${review ? "Disallow" : "Allow"}: /\nSitemap: ${origin}/sitemap.xml\n`;
@@ -273,8 +284,9 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
   if (!review) files["/_routes.json"] = JSON.stringify({
     version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
       "/prices", "/prices/", "/prices.html", "/api/price-comparison", "/api/runtime-releases",
-      ...(catalogOpenApi ? [catalogApiPath] : []),
+      ...(catalogOpenApi ? [catalogApiPath, "/api/battle-popularity"] : []),
       "/research/*", "/wiki/*", "/catalog/*", "/catalog-data/*", "/downloads/*",
+      ...(battle ? ["/battles", "/battles/*", battleArchiveMarkdown] : []),
       "/robots.txt", "/sitemap.xml", "/llms.txt", "/evidence-quarantine.json"], exclude: [],
   }, null, 2) + "\n";
   files["/_redirects"] = [...redirects].flatMap(([old, id]) => [
@@ -283,7 +295,11 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
   ]).join("\n") + "\n";
   files["/_headers"] = headers.join("\n\n") + "\n";
   // A rebuilt Pages output must drop old routes, including formerly published pages.
-  await rm(join(output, "wiki"), { recursive: true, force: true });
+  await Promise.all([
+    rm(join(output, "wiki"), { recursive: true, force: true }),
+    rm(join(output, battleArchivePath), { recursive: true, force: true }),
+    rm(join(output, battleArchiveMarkdown), { force: true }),
+  ]);
   await Promise.all(Object.entries(files).map(async ([name, value]) => {
     const target = join(output, name);
     await mkdir(dirname(target), { recursive: true });

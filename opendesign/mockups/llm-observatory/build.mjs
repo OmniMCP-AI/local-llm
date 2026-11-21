@@ -11,6 +11,7 @@ import { prepareCatalogRelease, readCatalogModelFiles, writeCatalogProjection, w
 import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
+import { battleRecords } from "./battle.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { readEvidenceState, withdrawnPublisherSource, writeEvidenceState } from "./evidence-state.mjs";
@@ -48,7 +49,7 @@ if (pages && (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate) || Number.isNaN(Date.pars
 }
 const openccNotices = review ? [] : await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
-const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
+const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale", "battle"];
 const [stylesheets, image, wikiNames, graph, fullGraph] = await Promise.all([
   Promise.all(stylesheetNames.map((name) => readFile(here(name + ".css"), "utf8"))),
   readFile(here("hero-gpu.png")),
@@ -151,11 +152,18 @@ if (pages) {
 let localCatalogRelease = "";
 let localModelIds = [];
 let topologyReports = published?.topologies;
+let battleCatalog = projection?.hardware.catalog ?? hardware.catalog;
+let battleTitleSignals = published?.battleTitleSignals ?? null;
 if (!pages) {
   const localOutput = fileURLToPath(here("local-catalog/"));
   const { importLocalCatalog } = await import("./catalog-pg.mjs");
   const imported = await importLocalCatalog(hardware, undefined, isPublisherWithdrawn);
   topologyReports = imported.topologies;
+  const topologyByMachine = new Map(topologyReports.map(({ id, revision }) => [id, revision]));
+  battleCatalog = { ...imported.catalog, machines: imported.catalog.machines.map(row => ({
+    ...row, topologyRevision: topologyByMachine.get(row.id),
+  })) };
+  battleTitleSignals = imported.battleTitleSignals ?? null;
   console.log(`Imported local PostgreSQL catalog snapshot ${imported.snapshotId}`);
   localCatalogRelease = await writeLocalCatalogProfiles(localOutput, imported, imported.modelLicenseNotice);
   localModelIds = imported.catalog.models.map(({ id }) => id);
@@ -165,12 +173,14 @@ const publicTopologies = topologyReports.filter(({ source, id, links = [] }) =>
   ![source, id, ...links.map(link => link.source)].some(isWithdrawn));
 const origin = pages && !review ? releaseOrigin(process.env.FASTEST_RELEASE_ORIGIN) : null;
 const scalingUrl = origin && origin + "/topology/scaling";
+const battle = battleRecords(battleCatalog);
 const wikiRelease = pages ? await writeWikiRelease({
   output,
   origin: publicOrigin,
   researchRelease: researchIndex.release,
   catalogRelease,
   catalogApi: catalogPostgres && !review,
+  battle: review ? null : { records: battle, titleSignals: battleTitleSignals },
   review,
   documents: publicDocuments,
   topologies: publicTopologies,
@@ -211,6 +221,8 @@ const result = await build({
     __FASTEST_LOCAL_CATALOG_RELEASE__: JSON.stringify(localCatalogRelease),
     __FASTEST_LOCAL_MODEL_IDS__: JSON.stringify(localModelIds),
     __FASTEST_HARDWARE_DIRECTORY__: JSON.stringify(hardwareDirectory),
+    __FASTEST_BATTLE_RECORDS__: JSON.stringify(battle),
+    __FASTEST_BATTLE_TITLE_SIGNALS__: JSON.stringify(battleTitleSignals),
     __FASTEST_WIKI_DOCUMENTS__: JSON.stringify(wikiDocuments),
     __FASTEST_WIKI_PUBLIC_ROUTES__: JSON.stringify(Object.fromEntries(Object.keys(wikiRelease?.publicPages ?? {})
       .map((id) => [id, wikiHtmlRoute(id)]))),
