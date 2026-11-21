@@ -1,5 +1,6 @@
 import { languageForCountry } from "../locale-settings.mjs";
 import { homeHighlightHtml, homeHighlightMarkdown, observedHomeHighlight } from "../home-highlights.mjs";
+import { runtimeReleaseWatch } from "../runtime-release-watch.mjs";
 
 const policyPath = "/evidence-quarantine.json";
 const noStore = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
@@ -61,10 +62,15 @@ export async function onRequestGet(context) {
   const manifest = path === "/wiki/manifest.json" && contentType === "application/json";
   const highlight = request.method === "GET" && response.status === 200 &&
     (homeMarkdown || manifest || (html && homeHtml.has(path))) && await observedHomeHighlight(env);
+  const runtimeMarkdown = path === "/wiki/runtimes.md" && contentType === "text/markdown";
+  const runtimeHtml = html && /^\/wiki\/runtimes(?:\/(?:index\.html)?)?$/.test(path);
+  const watch = request.method === "GET" && response.status === 200 && (runtimeMarkdown || runtimeHtml)
+    ? await runtimeReleaseWatch(env) : null;
+  const showWatch = watch?.runtimes.length > 0;
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", html ? "private, no-store" : "no-store");
   for (const name of validators) headers.delete(name);
-  if (language || highlight) headers.delete("Content-Length");
+  if (language || highlight || showWatch) headers.delete("Content-Length");
   const page = new Response(request.method === "HEAD" ? null : response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -77,12 +83,21 @@ export async function onRequestGet(context) {
     content.highlights.unshift({ id, type, href, markdown, source, priority });
     return new Response(JSON.stringify(content, null, 2) + "\n", page);
   }
-  if (!language && !highlight) return page;
+  if (showWatch && runtimeMarkdown) {
+    return new Response(await page.text() + `\n[Runtime release watch](<${watch.markdown}>)\n`, page);
+  }
+  if (!language && !highlight && !showWatch) return page;
   const rewriter = new HTMLRewriter();
   if (language) rewriter.on("html", { element: (element) => element.setAttribute("data-visitor-language", language) });
   if (highlight) {
     rewriter.on("[data-home-highlights]", { element: (element) => element.removeAttribute("hidden") })
       .on("[data-home-highlights] > ul", { element: (element) => element.prepend(homeHighlightHtml(highlight), { html: true }) });
+  }
+  if (showWatch) {
+    const href = watch.html.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+    rewriter.on('main[data-page="runtimes"] > h1', {
+      element: element => element.after(`<p><a href="${href}">Runtime release watch</a></p>`, { html: true }),
+    });
   }
   return rewriter.transform(page);
 }

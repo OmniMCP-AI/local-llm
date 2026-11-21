@@ -105,6 +105,12 @@ FASTEST_DATABASE_URL='service=fastest-reader' \
 The origin index links to the watch and its Markdown and JSON companions at
 `/runtime-releases.md` and `/runtime-releases.json`. [Open the local watch](http://127.0.0.1:8000/runtime-releases)
 
+Set `FASTEST_RELEASE_ORIGIN` in the Pages Functions environment to the HTTPS
+origin serving the watch. **Catalog → Runtimes** and the matching HTML and
+Markdown profiles show the last observed stable release and refresh status
+for official feeds with a successful capture. Links on `/wiki/runtimes/`
+and `/wiki/runtimes.md` lead to the matching watch format.
+
 For an origin container, append `--runtime-release-watch` to the deployment
 command. To include reviewed mappings, mount the approval JSON read-only and
 pass `--runtime-release-watch-notes /path/to/reviewed-applicability.json`. The

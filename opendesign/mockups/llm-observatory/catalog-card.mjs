@@ -101,7 +101,7 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
   };
 }
 
-export function runtimeCard(row, { local = false } = {}) {
+export function runtimeCard(row, { local = false, observation } = {}) {
   const releaseUrl = row.releaseUrl ?? row.source + "/releases/tag/" + row.tag;
   return {
     title: row.name,
@@ -115,7 +115,18 @@ export function runtimeCard(row, { local = false } = {}) {
       ...(row.latestRelease ? [["Latest verified upstream release", row.latestRelease.tag, row.latestRelease.url]] : []),
       ["Release documentation", "Read the documentation", row.docs],
     ],
-    sections: [{
+    sections: [...(observation ? [{
+      title: "Runtime release watch",
+      fields: [
+        ["Last observed stable release", observation.release?.tag ?? "No stable release observed", observation.release?.url],
+        ...(observation.release ? [["Release published", observation.release.publishedAt]] : []),
+        ["Last successful refresh", observation.refreshedAt],
+        ...(observation.stale ? [["Feed status", "The retained release feed is stale."]] : []),
+        ...(observation.failed ? [["Latest refresh", "The refresh failed."]] : []),
+        ["Official releases", "Publisher release history", observation.feedUrl],
+        ["Watch history", "Open the runtime release watch", observation.watchUrl],
+      ],
+    }] : []), {
       title: "Upstream documented support",
       fields: [
         ["Workload", row.workload, row.docs],

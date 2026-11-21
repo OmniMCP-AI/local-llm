@@ -21,7 +21,7 @@ def lines(report):
         yield "p", report["error"], None
         return
     for runtime_id, source in report["sources"].items():
-        yield "h2", source["name"], None
+        yield "h2", source["name"], None, "runtime-" + runtime_id
         if source["mode"] == "fixture":
             yield "p", "Synthetic fixture replay", None
         yield "p", "Official GitHub release feed", source["feed_url"]
@@ -70,9 +70,10 @@ def render(report, format_name):
         return json.dumps(report, ensure_ascii=False, indent=2)
     if format_name == "html":
         body = []
-        for tag, text, href in lines(report):
+        for tag, text, href, *anchors in lines(report):
             content = f'<a href="{escape(href)}">{escape(text)}</a>' if href else escape(text)
-            body.append(f"<{tag}>{content}</{tag}>")
+            anchor = f' id="{escape(anchors[0])}"' if anchors else ""
+            body.append(f"<{tag}{anchor}>{content}</{tag}>")
         return (
             '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -81,7 +82,7 @@ def render(report, format_name):
         )
 
     body = []
-    for tag, text, href in lines(report):
+    for tag, text, href, *_ in lines(report):
         prefix = "#" * int(tag[1]) + " " if tag.startswith("h") else ""
         content = re.sub(r"([\\`*_{}\[\]<>#!&|])", r"\\\1", text)
         if href:
