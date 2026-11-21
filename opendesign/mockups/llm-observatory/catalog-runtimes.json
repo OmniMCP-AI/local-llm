@@ -483,5 +483,37 @@
     "backends": "Consult the runtime and operating-system requirements",
     "backendSource": "https://lmstudio.ai/changelog/lmstudio",
     "workload": "Local chat and API access"
+  },
+  {
+    "id": "executorch",
+    "name": "ExecuTorch",
+    "category": "Toolkit",
+    "detail": "On-device PyTorch inference in mobile and embedded applications",
+    "source": "https://github.com/pytorch/executorch",
+    "tag": "v1.6.0",
+    "published": "2026-11-12",
+    "releaseUrl": "https://github.com/pytorch/executorch/releases/tag/v1.6.0",
+    "docs": "https://github.com/pytorch/executorch/tree/4776f71b6f0daa5dfc7d758d5836fc1cc0d40154",
+    "formats": "Exported .pte program specialized for the selected backend",
+    "formatSource": "https://github.com/pytorch/executorch/blob/4776f71b6f0daa5dfc7d758d5836fc1cc0d40154/docs/source/backends-overview.md",
+    "backends": "XNNPACK CPU, CUDA, TensorRT, Apple Core ML and MLX, and other platform-specific delegates",
+    "backendSource": "https://github.com/pytorch/executorch/blob/4776f71b6f0daa5dfc7d758d5836fc1cc0d40154/docs/source/backends-overview.md",
+    "workload": "On-device inference for exported PyTorch models"
+  },
+  {
+    "id": "mlx-vlm",
+    "name": "MLX-VLM",
+    "category": "Toolkit",
+    "detail": "Local multimodal inference on Apple Silicon",
+    "source": "https://github.com/Neywa-Labs/mlx-vlm",
+    "tag": "v0.8.0",
+    "published": "2026-11-16",
+    "releaseUrl": "https://github.com/Neywa-Labs/mlx-vlm/releases/tag/v0.8.0",
+    "docs": "https://github.com/Neywa-Labs/mlx-vlm/blob/2d8095467a1a72f7bc3d145abfd9e3a1466d988c/README.md",
+    "formats": "Supported MLX multimodal model checkpoints, including Hub repositories",
+    "formatSource": "https://github.com/Neywa-Labs/mlx-vlm/blob/2d8095467a1a72f7bc3d145abfd9e3a1466d988c/README.md",
+    "backends": "MLX on Apple Silicon and macOS",
+    "backendSource": "https://github.com/Neywa-Labs/mlx-vlm/blob/2d8095467a1a72f7bc3d145abfd9e3a1466d988c/README.md",
+    "workload": "Text, image, video and audio workloads where supported by the selected model"
   }
 ]
