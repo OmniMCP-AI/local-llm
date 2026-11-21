@@ -19,6 +19,92 @@ async function read(path, contentType, alternate) {
   return response.text();
 }
 
+async function verifyHardwareDirectory(catalog, { html: directory, markdown: directoryMarkdown }) {
+  const { release, snapshotId, hardware: { asOf, coverage } } = catalog;
+  const root = `/catalog/${release}`;
+  const [html, markdown] = await Promise.all([
+    read(directory, "text/html", directoryMarkdown), read(directoryMarkdown, "text/markdown", directory),
+  ]);
+  assert.match(html, /<main>\s*<[^>]+><h1>Hardware catalog<\/h1>/);
+  assert.doesNotMatch(html, /<script\b/i);
+  assert.ok(html.includes(`href="${directoryMarkdown}"`) && markdown.includes(`[HTML directory](${directory})`));
+  assert.ok(html.includes(snapshotId) && markdown.includes(`snapshot: ${snapshotId}`));
+  for (const [label, value] of [
+    ["Hardware snapshot date", asOf],
+    ["GPU catalog identities", coverage.cards],
+    ["Unresolved GPU references", coverage.unresolvedCardReferences],
+    ["Machine profile records", coverage.untestedProfiles + coverage.reviewedMeasuredProfiles],
+    ["Reviewed measured profiles", coverage.reviewedMeasuredProfiles],
+    ["Untested machine profiles", coverage.untestedProfiles],
+  ]) {
+    assert.ok(html.includes(`<dt>${label}</dt><dd>${value}</dd>`), label);
+    assert.ok(markdown.includes(`**${label}** — ${value}`), label);
+  }
+  for (const [label, count] of [
+    ["Complete factory configurations", coverage.completeBuilds],
+    ["Partial configurations", coverage.partialMachines],
+    ["Research component references", coverage.researchComponentReferences],
+  ]) {
+    assert.ok(html.includes(`<h2>${label} (${count})</h2>`), label);
+    assert.ok(markdown.includes(`## ${label} (${count})`), label);
+  }
+  const kinds = ["cards", "machines"];
+  const sheets = await Promise.all(kinds.map(async (kind) =>
+    JSON.parse(await read(`/catalog-data/${release}/${kind}.json`, "application/json"))));
+  const rows = kinds.flatMap((kind, index) => sheets[index].map(row => ({ ...row, path: `${root}/${kind}/${row.id}` })));
+  const routes = rows.map(row => row.path).sort();
+  const htmlLinks = (body) => [...body.matchAll(/href="(\/[^"]*)"/g)].map(([, href]) => href);
+  const markdownLinks = (body) => [...body.matchAll(/\]\(<?(\/[^)>\s]+)>?\)/g)].map(([, href]) => href);
+  const isProfile = (href) => href.startsWith(root + "/cards/") || href.startsWith(root + "/machines/");
+  assert.deepEqual(htmlLinks(html).filter(isProfile).sort(), routes);
+  assert.deepEqual(markdownLinks(markdown).filter(isProfile).sort(), routes.map(path => path + ".md").sort());
+
+  const commonLinks = [directory, directoryMarkdown, root + "/manifest.json", root + "/LICENSE.txt"];
+  const htmlRoutes = new Set(["/", directory + "#cards", directory + "#machines", ...commonLinks, ...routes]);
+  const markdownRoutes = new Set([...commonLinks, ...routes.map(path => path + ".md")]);
+  const htmlText = (value) => value.replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[char]);
+  async function verifyProfile({ id, path, source, vendorSpec, topologyRevision, parent, cardIds, relatedMachines, variants, relatedProfiles }) {
+    const [page, companion] = await Promise.all([read(path, "text/html"), read(path + ".md", "text/markdown")]);
+    assert.ok(page.includes(`<dt>Catalog ID</dt><dd>${id}</dd>`) && companion.includes(`**Catalog ID** — ${id}`), path);
+    assert.ok(page.includes(snapshotId) && companion.includes(`snapshot: ${snapshotId}`), path);
+    assert.ok(page.includes(`rel="canonical" href="${origin + path}"`), path);
+    assert.ok(page.includes(`rel="alternate" type="text/markdown" href="${path}.md"`), path);
+    assert.ok(companion.includes(`[HTML card](${path})`), path);
+    const links = htmlLinks(page);
+    const companionLinks = markdownLinks(companion);
+    assert.ok(links.includes(directory) && companionLinks.includes(directoryMarkdown), path);
+    assert.ok(links.every(link => htmlRoutes.has(link) || link === path + ".md"), path);
+    assert.ok(companionLinks.every(link => markdownRoutes.has(link) || link === path), path);
+    for (const citation of [source, vendorSpec?.source].filter(Boolean)) {
+      assert.ok(page.includes(`href="${htmlText(citation)}"`) && companion.includes(`<${citation}>`), path);
+    }
+    for (const [kind, ids] of [
+      ["cards", [parent, ...(cardIds ?? []), ...(variants ?? []).map(row => row.id)].filter(Boolean)],
+      ["machines", [...(relatedMachines ?? []), ...(relatedProfiles ?? [])].map(row => row.id)],
+    ]) {
+      for (const id of ids) {
+        const linked = `${root}/${kind}/${id}`;
+        if (htmlRoutes.has(linked)) assert.ok(links.includes(linked) && companionLinks.includes(linked + ".md"), linked);
+      }
+    }
+    assert.doesNotMatch(page, /<script\b/i, path);
+    assert.match(page, /<dt>Runtime-usable (?:GPU )?memory<\/dt><dd>Unknown<\/dd>/, path);
+    assert.match(companion, /\*\*Runtime-usable (?:GPU )?memory\*\* — Unknown/, path);
+    if (topologyRevision) assert.ok(page.includes(topologyRevision) && companion.includes(topologyRevision), path);
+    if (id === "msi-geforce-rtx-5090-32g-suprim-liquid-soc") {
+      for (const fact of ["G5090-32SLS", "Board-partner SKU", "394 × 121 × 55 mm", "Multiple product views from MSI"]) {
+        assert.ok(page.includes(fact) && companion.includes(fact), fact);
+      }
+    }
+  }
+  for (let offset = 0; offset < rows.length; offset += 12) {
+    await Promise.all(rows.slice(offset, offset + 12).map(verifyProfile));
+  }
+  return rows.length;
+}
+
 const head = await get("/", { method: "HEAD" });
 assert.equal(head.status, 200, "HEAD /");
 assert.match(head.headers.get("cache-control"), /no-store/);
@@ -90,6 +176,7 @@ for (const path of ["/wiki/agents/", "/wiki/agents.md", "/.well-known/api-catalo
   assert.ok([404, 410].includes(response.status), path + " returned " + response.status);
 }
 
+let hardwareCount = 0;
 if (review) {
   assert.ok(home.includes("Non-production review"), "Review homepage labels the preview");
   assert.match(homeMarkdown, /Non-production review/);
@@ -108,6 +195,12 @@ if (review) {
   const catalog = JSON.parse(await read(manifest.catalog.manifest, "application/json"));
   assert.match(catalog.snapshotId, /^[a-f0-9]{64}$/);
   assert.equal(manifest.catalog.snapshotId, catalog.snapshotId);
+  assert.equal(catalog.release, catalogRelease);
+  const { html: directory, markdown: directoryMarkdown } = manifest.catalog.directory;
+  assert.ok(home.includes(`href="${directory}"`));
+  assert.ok(homeMarkdown.includes(`[Hardware catalog](${directoryMarkdown})`));
+  assert.ok(!sitemap.includes(directory) && !llms.includes(directory));
+  hardwareCount = await verifyHardwareDirectory(catalog, manifest.catalog.directory);
   const machines = JSON.parse(await read(`/catalog-data/${catalogRelease}/machines.json`, "application/json"));
   assert.ok(machines.some(({ topologyRevision }) => topologyRevision));
   const researchManifest = JSON.parse(await read(manifest.research.manifest, "application/json"));
@@ -119,3 +212,4 @@ if (review) {
 }
 
 console.log("Verified " + release + ", " + pages.length + " wiki pairs and " + highlights.length + " active highlights at " + base);
+if (review) console.log("Verified the hardware directory and " + hardwareCount + " PostgreSQL-pinned profile pairs");

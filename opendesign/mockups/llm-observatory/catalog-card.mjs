@@ -1,10 +1,10 @@
-import { catalogPath, topologyRevisionHref } from "./catalog-paths.mjs";
+import { catalogPath, hardwareDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
 import { cardPosition, cardRatings } from "./catalog-position.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[char]);
-const escapeMarkdown = (value) => value.replace(/[\n\r]/g, " ").replace(/[\\`*_{}\[\]<>|]/g, "\\$&");
+export const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[char]);
+export const escapeMarkdown = (value) => value.replace(/[\n\r]/g, " ").replace(/[\\`*_{}\[\]<>|]/g, "\\$&");
 const count = new Intl.NumberFormat("en");
 
 function publisherEvaluationTable(evaluations) {
@@ -142,8 +142,10 @@ export function runtimeCard(row, { local = false, observation } = {}) {
   };
 }
 
-export function hardwareCard(row, release, kind, { local = false, peers = [], topologyRevision = row.topologyRevision } = {}) {
-  const path = (type, id) => local ? `../${type}/${id}.html` : "/" + catalogPath(release, type, id);
+export function hardwareCard(row, release, kind, {
+  local = false, peers = [], topologyRevision = row.topologyRevision, reviewProfileHref,
+} = {}) {
+  const path = reviewProfileHref ?? ((type, id) => local ? `../${type}/${id}.html` : "/" + catalogPath(release, type, id));
   const common = [["Catalog ID", row.id], ["Pinned source", "Open source record", row.source]];
   const untested = "Untested in this release. No reviewed measurement is published for this identity.";
 
@@ -282,11 +284,12 @@ export function hardwareCard(row, release, kind, { local = false, peers = [], to
         ["Manufacturer configuration", row.configuration, row.source],
         ["Source locator", row.locator, row.source],
       ] : common),
-      ...(!local && factory && row.fit ? [
+      ...(!local && !reviewProfileHref && factory && row.fit ? [
         ["Model fit", "Estimate fit for this configuration", "/fit?machine=" + encodeURIComponent(row.id)],
       ] : []),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
-      ...(topology ? [["Topology revision", "Explore this configuration", topology]] : []),
+      ...(topology ? [["Topology revision", reviewProfileHref ? topologyRevision : "Explore this configuration",
+        reviewProfileHref ? null : topology]] : []),
       ...(row.gallery ? [["Manufacturer product gallery", row.gallery.label, row.gallery.source]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [
@@ -304,7 +307,7 @@ export function hardwareCard(row, release, kind, { local = false, peers = [], to
   };
 }
 
-function htmlFields(fields) {
+export function htmlFields(fields) {
   return `<dl class="profile-fields">${fields.map(([name, value, href]) =>
     `<div><dt>${escapeHtml(name)}</dt><dd>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(value)}</a>` : escapeHtml(value)}</dd></div>`).join("")}</dl>`;
 }
@@ -318,7 +321,7 @@ function htmlSpecGraphic(graphic) {
   return `<figure class="profile-spec-graphic"><meter min="0" max="${graphic.max}" value="${graphic.value}" aria-label="${text}"></meter><figcaption>${text}</figcaption></figure>`;
 }
 
-function markdownFields(fields) {
+export function markdownFields(fields) {
   return fields.map(([name, value, href]) =>
     `- **${name}** — ${href ? `[${escapeMarkdown(value)}](<${href}>)` : escapeMarkdown(value)}`);
 }
@@ -370,11 +373,36 @@ ${points.map(point => `<tr${current(point)}><th scope="row"><a href="${escapeHtm
 </tbody></table></details></section>`;
 }
 
-export function renderCard(card, { release, pathname, markdown, local = false }) {
+export function catalogDocument({ title, home = "/", mdLink, release, review, canonical, main, root = `/catalog/${release}` }) {
+  const directory = hardwareDirectoryPath(release);
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(title)} | fastest.ai catalog</title>
+${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<link rel="alternate" type="text/markdown" href="${mdLink}">
+<style>${profileStyles}</style>
+</head>
+<body class="profile-document"><div class="profile-shell">
+<header><nav class="profile-nav" aria-label="Catalog"><a href="${home}">fastest.ai / localdecode.com</a>${review
+    ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a>`
+    : `<a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a>`}</nav></header>
+<main>
+${main}
+</main>
+<footer class="profile-footer">Release <code>${release}</code>${review ? ` · PostgreSQL snapshot <code>${review.snapshotId}</code>` : ""
+    } · <a href="${root}/manifest.json">Coverage and sources</a> · <a href="${root}/LICENSE.txt">llmfit MIT notice</a></footer></div>
+</body>
+</html>
+`;
+}
+
+export function renderCard(card, { release, pathname, markdown, local = false, review }) {
   const depth = pathname.startsWith("catalog/") ? pathname.split("/").length - 3 : 1;
   const root = local ? Array(depth).fill("..").join("/") : `/catalog/${release}`;
   const linksFrom = local ? pathname.split("/").at(-1) : pathname;
-  const htmlLink = linksFrom.replace(/\.(md|html)$/, ".html");
+  const htmlLink = linksFrom.replace(/\.(md|html)$/, review ? "" : ".html");
   const mdLink = linksFrom.replace(/\.(md|html)$/, ".md");
   const licenseLink = root + "/LICENSE.txt";
   const manifestLink = root + "/manifest.json";
@@ -390,8 +418,9 @@ export function renderCard(card, { release, pathname, markdown, local = false })
       "---",
       `title: ${JSON.stringify(card.title)}`,
       `kind: ${JSON.stringify(card.kind)}`,
-      `route: ${JSON.stringify(pathname.replace(/\.(md|html)$/, ".html"))}`,
+      `route: ${JSON.stringify(pathname.replace(/\.(md|html)$/, review ? "" : ".html"))}`,
       `release: ${release}`,
+      ...(review ? [`snapshot: ${review.snapshotId}`] : []),
       "locale: en",
       "---",
       "",
@@ -417,23 +446,15 @@ export function renderCard(card, { release, pathname, markdown, local = false })
       "",
       card.evidence,
       "",
-      `[Coverage and source manifest](${manifestLink}) · [llmfit MIT notice](${licenseLink}) · [HTML card](${htmlLink})`,
+      `${review ? `[Hardware catalog](${hardwareDirectoryPath(release, true)}) · ` : ""
+        }[Coverage and source manifest](${manifestLink}) · [llmfit MIT notice](${licenseLink}) · [HTML card](${htmlLink})`,
       "",
     ].join("\n");
   }
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(card.title)} | fastest.ai catalog</title>
-<link rel="alternate" type="text/markdown" href="${mdLink}">
-<style>${profileStyles}</style>
-</head>
-<body class="profile-document"><div class="profile-shell">
-<header><nav class="profile-nav" aria-label="Catalog"><a href="${home}">fastest.ai / localdecode.com</a><a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a></nav></header>
-<main>
-<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
+  return catalogDocument({
+    title: card.title, home, mdLink, release, review, root,
+    canonical: review && review.origin + htmlLink,
+    main: `<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><h1>${escapeHtml(card.title)}</h1>
 <p class="profile-evidence">${escapeHtml(card.evidence)}</p>
 <div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}<a href="${mdLink}">Markdown</a></div></div>
 ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
@@ -445,10 +466,6 @@ ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, sourc
   </figcaption></figure>`).join("")}</div>` : ""}
 <section class="profile-section"><h2>Catalog details</h2>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><h2>${escapeHtml(title)}</h2>${htmlFields(fields)}</section>`).join("\n")}
-${evaluations ? evaluationsHtml(evaluations) : ""}
-</main>
-<footer class="profile-footer">Release <code>${release}</code> · <a href="${manifestLink}">Coverage and sources</a> · <a href="${licenseLink}">llmfit MIT notice</a></footer></div>
-</body>
-</html>
-`;
+${evaluations ? evaluationsHtml(evaluations) : ""}`,
+  });
 }
