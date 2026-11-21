@@ -127,10 +127,13 @@ class GoalTests(unittest.TestCase):
                     api = f"/api/v1/comparison?budget=1500&revision={service.release_id}"
                     with urlopen(base + api, timeout=5) as response:
                         self.assertEqual(json.load(response)["recommendation"], "apple-m4")
+                    with urlopen(base + "/text-pilot", timeout=5) as response:
+                        self.assertEqual(urlsplit(response.url).path, route + "/text-pilot.html")
+                        self.assertIn(b"Reviewed run records", response.read())
                     allowed[service.observation_digests["text"]["apple-m4"]] = "withdrawn"
                     rights.write_text(json.dumps({"schema_version": 1, "observations": allowed}))
                     for path in (route, route + ".json", route + "/text-pilot.html", route + "/text-pilot.md",
-                                 route + "/text-pilot.json", route + "/manifest.json", api):
+                                 route + "/text-pilot.json", route + "/manifest.json", "/text-pilot", api):
                         with self.subTest(path=path), self.assertRaises(HTTPError) as error:
                             urlopen(base + path, timeout=5)
                         with error.exception as response:
