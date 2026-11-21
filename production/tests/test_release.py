@@ -346,6 +346,12 @@ class ReleaseTest(unittest.TestCase):
                 fastest_release.read_release(uuid) TO task_reader;
         """)
         reader = ReleaseStore(self.database_url + " user=task_reader")
+        api_path = "/api/v1/comparison/agent-task"
+        api_query = f"{api_path}?release={pin}"
+        with api_client(reader) as request:
+            self.assertNotIn(api_path, request("/api/v1/openapi.json")[2]["paths"])
+            self.assertEqual(request(api_query)[0], 404)
+            preview = request("/agent-task")[1]["Location"].split("/")[2]
         with api_client(reader, agent_task_release=pin) as request:
             self.assertEqual(request("/releases/current/benchmark.html", decode=False)[0], 404)
             status, headers, _ = request("/agent-task")
@@ -371,17 +377,137 @@ class ReleaseTest(unittest.TestCase):
             self.assertEqual(bundle["attempts"][1]["accepted_output"], {"open_units": 17})
             self.assertEqual([bundle["counts"]["failed_attempts"], split["counts"]["attempts"]], [1, 0])
 
+            catalog = request("/.well-known/api-catalog")[2]
+            description = request(catalog["linkset"][0]["service-desc"][0]["href"])[2]
+            operation = description["paths"][api_path]["get"]
+            self.assertEqual([(p["name"], p["required"]) for p in operation["parameters"]], [("release", True)])
+            status, headers, result = request(api_query)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            self.assertEqual(result, {
+                "api_version": "1.0.0", "pin": pin, "report": measured,
+                "url": base + "agent-task.html",
+                "citations": [{"url": base + "agent-task.json"}, {"url": base + "manifest.json", "sha256": pin}],
+                "rights": {"export_scope": "public-release"}, "units": {"wall_time": "ns"},
+            })
+            self.assertEqual([(a["outcome"], a["wall_ns"]) for a in result["report"]["contexts"][0]["attempts"]],
+                             [("timeout", 30_000_000_000), ("accepted", 25_000)])
+            self.assertEqual(result["report"]["contexts"][0]["trials"][0]["recorded_attempt_wall_ns"], 30_000_025_000)
+            self.assertNotIn("answer", result["report"]["contexts"][0]["attempts"][0])
+            self.assertEqual(request(api_query, "POST", decode=False)[0], 501)
+            for bad_query in ("", "?release=current", "?release=invalid", "?release=" + pin.upper(),
+                              f"?release={pin}&release={pin}", f"?release={pin}&artifact=private"):
+                self.assertEqual(request(api_path + bad_query)[0], 400)
+            self.assertEqual(request(f"{api_path}?release={'0' * 64}")[0], 404)
+            self.assertEqual(request(f"{api_path}?release={preview}")[0], 404)
+
             record["review"]["evidence_id"] = str(uuid4())
             expired = publish("--expires-at", "2000-01-01T00:00:00Z").stdout.strip()
             self.assertEqual(request(f"/agent-task/{expired}/agent-task.json", decode=False)[0], 410)
+            self.assertEqual(request(f"{api_path}?release={expired}")[0], 410)
             self.assertEqual(request(f"/agent-task/{'0' * 64}/task.json", decode=False)[0], 404)
+            status, headers, _ = request("/agent-task")
+            self.assertEqual(status, 307)
+            self.assertEqual(headers["Location"], base + "agent-task.html")
             self.store.withdraw(bundle["review"]["evidence_id"], "Private review withdrawal")
             for name in (*json.loads(manifest)["sha256"], "manifest.json"):
                 status, _, body = request(base + name, decode=False)
                 self.assertEqual(status, 410)
                 self.assertNotIn(bundle["review"]["evidence_id"], body)
+            status, _, result = request(api_query)
+            self.assertEqual(status, 410)
+            self.assertEqual(result, {"api_version": "1.0.0", "error": "Public rights have ended", "status": "withdrawn"})
             record["review"]["evidence_id"] = bundle["review"]["evidence_id"]
             self.assertNotEqual(publish(check=False).returncode, 0)
+
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    def test_mcp_replays_hosted_agent_task_evidence_and_rechecks_withdrawal(self):
+        from mcp import McpError
+
+        from fastest_agent_task.hosted import evidence_id, hosted_plan
+        from test_agent_task_hosted import hosted_record
+
+        protocol = hosted_plan()
+        record = hosted_record(protocol, [
+            {"trial": 1, "attempt": 1, "wall_ns": 30_000_000_123, "generated_tokens": None,
+             "reasoning_tokens": 0, "termination": "timeout", "outcome": "timeout", "answer": None, "tool_reads": []},
+            {"trial": 1, "attempt": 2, "wall_ns": 3_427_008_101, "generated_tokens": 16,
+             "reasoning_tokens": 0, "termination": "answered", "outcome": "accepted",
+             "answer": {"open_units": 17}, "tool_reads": protocol["contexts"][0]["allowed_reads"]},
+        ])
+        source = record["environment"]["source"]
+        evidence = evidence_id(source["run_url"], "bundle")
+        record["review"] = {
+            "decision_id": str(uuid4()), "evidence_id": evidence, "retained_sha256": "3" * 64,
+            "ownership": "operator-owned", "destination": "public-release", "decision": "allow",
+        }
+        pin = self.store.publish_agent_task([record])
+        self.store._query("""
+            CREATE ROLE task_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_release TO task_reader;
+            GRANT EXECUTE ON FUNCTION fastest_release.read_agent_task_artifact(text, text) TO task_reader;
+        """)
+        reader = ReleaseStore(self.database_url + " user=task_reader")
+        api_path = "/api/v1/comparison/agent-task"
+        args = {"release": pin}
+        uri = f"fastest://v1/agent-task/{pin}"
+
+        async def check(port):
+            async with mcp_client(port) as client:
+                handshake = await client.initialize()
+                self.assertEqual(handshake.protocolVersion, "2025-11-25")
+                tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+                self.assertTrue(tools["v1_agent_task"].annotations.readOnlyHint)
+                templates = (await client.list_resource_templates()).resourceTemplates
+                self.assertIn("fastest://v1/agent-task/{pin}", [resource.uriTemplate for resource in templates])
+
+                result = await client.call_tool("v1_agent_task", args)
+                self.assertFalse(result.isError)
+                status, api = get_public(port, api_path, args)
+                self.assertEqual(status, 200)
+                payload = result.structuredContent
+                self.assertEqual(payload, json.loads(api))
+                resource = await client.read_resource(uri)
+                self.assertEqual(payload, json.loads(resource.contents[0].text))
+
+                status, site = get_public(port, payload["citations"][0]["url"])
+                self.assertEqual(status, 200)
+                self.assertEqual(payload["report"], json.loads(site))
+                self.assertEqual(payload["report"]["environment"]["source"], source)
+                bundle, split = payload["report"]["contexts"]
+                self.assertEqual(split["status"], "missing")
+                self.assertEqual(bundle["review"]["evidence_id"], evidence)
+                self.assertEqual([(a["outcome"], a["wall_ns"]) for a in bundle["attempts"]],
+                                 [("timeout", 30_000_000_123), ("accepted", 3_427_008_101)])
+                self.assertEqual(bundle["trials"][0]["recorded_attempt_wall_ns"], 33_427_008_224)
+                for route in (payload["url"], payload["url"].removesuffix(".html") + ".md"):
+                    status, text = get_public(port, route)
+                    self.assertEqual(status, 200)
+                    self.assertIn(evidence, text)
+                    self.assertIn("30000000123", text)
+                    self.assertIn("timeout", text)
+
+                for arguments in ({}, {"release": "current"}, {"release": "0" * 64}, {**args, "fields": ["raw_turns"]},
+                                  {**args, "sql": "SELECT *"}, {**args, "artifact": "private.json"}):
+                    with self.subTest(arguments=arguments):
+                        invalid = await client.call_tool("v1_agent_task", arguments)
+                        self.assertTrue(invalid.isError)
+                        self.assertIsNone(invalid.structuredContent)
+                for invalid_uri in (uri + "?artifact=private.json", uri + "/raw-turns", uri + "#data",
+                                    "fastest://v1/agent-task/current", "fastest://v1/agent-task/" + "0" * 64):
+                    with self.subTest(uri=invalid_uri), self.assertRaises(McpError):
+                        await client.read_resource(invalid_uri)
+
+                self.store.withdraw(evidence, "private withdrawal reason")
+                withdrawn = await client.call_tool("v1_agent_task", args)
+                self.assertTrue(withdrawn.isError)
+                self.assertIsNone(withdrawn.structuredContent)
+                self.assertEqual(withdrawn.content[0].text, "Public rights have ended for this release.")
+                with self.assertRaisesRegex(McpError, "Public rights have ended"):
+                    await client.read_resource(uri)
+
+        with api_server(reader, agent_task_release=pin) as server:
+            asyncio.run(check(server.server_port))
 
     def test_deployed_origin_replays_published_values_after_restart(self):
         self.observation["kind"] = "measured"

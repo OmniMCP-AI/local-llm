@@ -17,7 +17,6 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.stdio import stdio_server
 from referencing import Registry
 
-
 SDK_VERSION = "1.30.0"
 PROTOCOL_VERSION = "2025-11-25"
 API_VERSION = "1.0.0"
@@ -42,12 +41,16 @@ PAGES_CATALOG_INPUT = {
 }
 EVIDENCE_TEMPLATE = "fastest://v1/releases/{release_id}/evidence"
 EVIDENCE_URI = re.compile(r"fastest://v1/releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/evidence")
+AGENT_TASK_TOOL = "v1_agent_task"
+AGENT_TASK_TEMPLATE = "fastest://v1/agent-task/{pin}"
+AGENT_TASK_URI = re.compile(r"fastest://v1/agent-task/([a-f0-9]{64})")
 TOOL_PATHS = {
     "v1_search": "/api/v1/search",
     "v1_coverage": "/api/v1/coverage",
     "v1_evidence": "/api/v1/evidence",
     "v1_comparison": "/api/v1/comparison",
     "v1_profile_comparison": "/api/v1/comparison/profile",
+    AGENT_TASK_TOOL: "/api/v1/comparison/agent-task",
     "v1_historical_offers": "/api/v1/historical-offers",
     "v1_calculator": "/api/v1/calculator",
 }
@@ -185,19 +188,26 @@ def build_server(port, catalog_origin=None):
 
     @server.list_resource_templates()
     async def list_resource_templates():
-        if "v1_evidence" not in tools:
-            return []
-        return [types.ResourceTemplate(uriTemplate=EVIDENCE_TEMPLATE, name="Pinned public evidence",
-                                       mimeType="application/json")]
+        return [
+            types.ResourceTemplate(uriTemplate=template, name=label, mimeType="application/json")
+            for name, template, label in (
+                ("v1_evidence", EVIDENCE_TEMPLATE, "Pinned public evidence"),
+                (AGENT_TASK_TOOL, AGENT_TASK_TEMPLATE, "Pinned public agent-task comparison"),
+            )
+            if name in tools
+        ]
 
     @server.read_resource()
     async def read_resource(uri):
         address = str(uri)
         evidence = EVIDENCE_URI.fullmatch(address)
+        agent_task = AGENT_TASK_URI.fullmatch(address)
         if address == CATALOG_URI:
             name, arguments = "v1_search", None
         elif evidence and "v1_evidence" in tools:
             name, arguments = "v1_evidence", {"release": evidence[1]}
+        elif agent_task and AGENT_TASK_TOOL in tools:
+            name, arguments = AGENT_TASK_TOOL, {"release": agent_task[1]}
         else:
             raise McpError(types.ErrorData(code=-32002, message="Public resource unavailable."))
         try:

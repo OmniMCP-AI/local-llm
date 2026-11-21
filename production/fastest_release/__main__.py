@@ -50,7 +50,8 @@ def main(argv=None):
     serve.add_argument("--contributor-receipts", action="store_true",
                        help="Serve private contributor receipt links using the configured release reader.")
     serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
-    serve.add_argument("--agent-task-release", help="Use this pinned PostgreSQL agent-task report as the default.")
+    serve.add_argument("--agent-task-release",
+                       help="Use this pinned PostgreSQL agent-task report as the default and enable public API discovery.")
     serve.add_argument("--runtime-release-watch", action="store_true",
                        help="Serve the retained llama.cpp release history from PostgreSQL.")
     serve.add_argument("--runtime-release-watch-notes", type=Path,
