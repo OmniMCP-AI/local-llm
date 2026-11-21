@@ -8,6 +8,8 @@ The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream r
 
 [Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
 
+[Public GitHub issue intake](fastest_github_intake/README.md) verifies signed deliveries and records issue status for benchmark requests and result corrections.
+
 [Regional price cohorts](fastest_prices/README.md) publish dated reviewed offers and a historical range when the sample qualifies.
 
 [Discovery intake](fastest_discoveries/README.md) turns opt-in leads into attributed review candidates and protects withdrawn or restricted links.
