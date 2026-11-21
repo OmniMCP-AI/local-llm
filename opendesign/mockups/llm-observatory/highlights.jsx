@@ -2,7 +2,17 @@ import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, BookOpen, ChevronLeft, ChevronRight, CircuitBoard, MessageSquare, Pause, Play } from "lucide-react";
 import { useLocale } from "./locale";
 
-const highlights = __FASTEST_WIKI_HIGHLIGHTS__;
+const observed = document.querySelector(".release-fallback [data-observed-home-highlight]");
+const observedLink = observed?.querySelector("a");
+const highlights = observedLink ? [{
+  id: observed.dataset.observedHomeHighlight,
+  type: "news",
+  href: observedLink.getAttribute("href"),
+  title: observedLink.textContent,
+  titleZh: observed.dataset.titleZh,
+  summary: observed.querySelector("span").textContent,
+  detailZh: observed.dataset.detailZh,
+}, ...__FASTEST_WIKI_HIGHLIGHTS__] : __FASTEST_WIKI_HIGHLIGHTS__;
 const icons = { news: BookOpen, configuration: CircuitBoard, "research-request": MessageSquare };
 
 const reducedMotion = "(prefers-reduced-motion: reduce)";
