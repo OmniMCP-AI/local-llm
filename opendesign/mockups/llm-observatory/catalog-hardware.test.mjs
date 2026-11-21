@@ -81,8 +81,8 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.completeBuilds, 4);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 124 + manifest.coverage.creatorBuilds);
-  assert.equal(manifest.coverage.manufacturerMachines, 5);
+  assert.equal(catalog.machines.length, 125 + manifest.coverage.creatorBuilds);
+  assert.equal(manifest.coverage.manufacturerMachines, 6);
   assert.equal(manifest.coverage.cards, catalog.cards.length);
   assert.equal(catalog.cards.filter(card => !card.modification || card.relatedProfiles.length).length, 156);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 149);
@@ -390,4 +390,19 @@ test("a GPU photo stays on the exact board when the catalog also contains other 
   assert.equal(card("intel-arc-a770-8gb").photos, undefined);
   assert.equal(card("intel-arc-a770-16gb").photos.length, 3);
   assert.equal(card("nvidia-geforce-rtx-3080-12gb").photos, undefined);
+});
+
+test("HP ZBook AI PC retains its exact SKU, shared memory and source-linked parts", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const machine = catalog.machines.find(({ id }) => id === "hp-zbook-ultra-g1a-bn2v1ua");
+  assert.ok(machine);
+  assert.equal(machine.configuration, "BN2V1UA#ABA");
+  assert.equal(machine.memory.system, "128 GB LPDDR5x-8533 unified memory");
+  assert.match(machine.interconnect, /shares/i);
+  assert.ok(machine.bom.every(part => part.source && part.locator));
+  const html = renderCard(hardwareCard(machine, "v1-1234567890abcdef", "machines"), {
+    release: "v1-1234567890abcdef", pathname: "/catalog/v1-1234567890abcdef/machines/hp-zbook-ultra-g1a-bn2v1ua.html",
+  });
+  assert.match(html, /BN2V1UA#ABA/);
+  assert.match(html, /hp\.com\/us-en\/shop/);
 });

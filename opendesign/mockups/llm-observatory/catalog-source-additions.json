@@ -3041,6 +3041,57 @@
           "locator": "Power and Thermal Management · Thermal Management"
         }
       ]
+    },
+    {
+      "id": "hp-zbook-ultra-g1a-bn2v1ua",
+      "name": "HP ZBook Ultra G1a · Ryzen AI Max+ PRO 395 · 128 GB",
+      "kind": "Manufacturer system reference",
+      "detail": "BN2V1UA#ABA · 128 GB unified memory · 1 TB SSD",
+      "configuration": "BN2V1UA#ABA",
+      "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+      "locator": "HP product BN2V1UA#ABA · specifications · reviewed November 22, 2026",
+      "cardIds": [],
+      "memory": {
+        "system": "128 GB LPDDR5x-8533 unified memory",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "interconnect": "Integrated Radeon 8060S graphics shares system memory with the CPU; GPU memory allocation and effective bandwidth depend on configuration.",
+      "gallery": {
+        "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+        "label": "Open HP product photos"
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen AI Max+ PRO 395, 16-core",
+          "quantity": "1",
+          "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+          "locator": "HP product BN2V1UA#ABA · specifications · reviewed November 22, 2026"
+        },
+        {
+          "category": "GPU",
+          "part": "AMD Radeon 8060S integrated graphics",
+          "quantity": "1 integrated GPU",
+          "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+          "locator": "HP product BN2V1UA#ABA · specifications · reviewed November 22, 2026"
+        },
+        {
+          "category": "Memory",
+          "part": "128 GB LPDDR5x-8533 onboard system memory",
+          "quantity": "1 shared pool",
+          "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+          "locator": "HP product BN2V1UA#ABA · specifications · reviewed November 22, 2026"
+        },
+        {
+          "category": "Storage",
+          "part": "1 TB SSD",
+          "quantity": "1",
+          "source": "https://www.hp.com/us-en/shop/pdp/hp-zbook-ultra-14-inch-g1a-mobile-workstation-pc-wolf-pro-security-edition-p-bn2v1ua-aba-1",
+          "locator": "HP product BN2V1UA#ABA · specifications · reviewed November 22, 2026"
+        }
+      ]
     }
   ],
   "capturedAt": "2026-11-21"
