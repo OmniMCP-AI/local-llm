@@ -209,6 +209,122 @@ class ReleaseTest(unittest.TestCase):
                 "SELECT amount FROM fastest_intake.tariff_candidate"
             )
 
+    def inference_intake(self, command, bundle=None, *, check=True):
+        args = [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url, command]
+        if bundle is not None:
+            bundle_path = self.socket_path.parent / "inference-capture.json"
+            bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+            args.append(str(bundle_path))
+        result = subprocess.run(args, cwd=FIXTURE.parents[1], text=True, capture_output=True, timeout=30)
+        if check:
+            self.assertEqual(result.returncode, 0, result.stderr)
+        return result
+
+    def test_private_inference_intake_preserves_the_reported_measurement_on_replay(self):
+        trial = {
+            "id": "dual-decode", "source": "fixture-benchmark", "locator": "Decode table, dual Vulkan row",
+            "outcome": "measured", "gpu_count": 2, "gpu_ids": ["Fixture Radeon", "Fixture RTX"],
+            "model": "Fixture 27B", "model_revision": "published-model-revision",
+            "artifact": "Fixture-27B-Q6_K.gguf", "artifact_revision": "published-artifact-revision",
+            "runtime": "llama.cpp", "runtime_revision": "reported-runner-revision", "backend": "Vulkan",
+            "quantization": "Q6_K", "context_tokens": 4096, "observed_on": "2026-11-19",
+            "metric": "tg128", "amount": "42.60", "unit": "tok/s", "statistic": "arithmetic_mean",
+            "sample_count": 3, "reported_uncertainty": "0.10", "uncertainty_kind": "standard_deviation",
+            "placement": "Proportional layer split.", "transport": "Direct device transfer was observed.",
+            "context": {"prompt_tokens": 512, "generated_tokens": 128},
+            "qualification": "Only summary statistics are available.",
+        }
+        bundle = {
+            "checked_at": "2026-11-20T00:00:00Z", "note": "Synthetic inference benchmark capture.",
+            "sources": [{"source": "fixture-benchmark", "url": "https://benchmark.example/results#decode",
+                         "status": "captured", "note": "Fixture benchmark report."}],
+            "prices": [], "evaluations": [], "inference_trials": [trial],
+        }
+
+        self.inference_intake("migrate")
+        receipt = json.loads(self.inference_intake("ingest", bundle).stdout)
+        self.assertEqual((receipt["batches"], receipt["source_probes"], receipt["inference_trials"]), (1, 1, 1))
+        self.assertEqual(json.loads(self.inference_intake("ingest", bundle).stdout), receipt)
+
+        [row] = json.loads(self.store._query("""
+            SELECT json_agg(to_jsonb(trial) || jsonb_build_object(
+                'amount', trial.amount::text, 'reported_uncertainty', trial.reported_uncertainty::text,
+                'url', probe.url
+            ))
+            FROM fastest_intake.inference_trial AS trial
+            JOIN fastest_intake.source_probe AS probe USING (batch_id, source)
+        """))
+        self.assertEqual(row, {**trial, "batch_id": receipt["batch_id"], "url": bundle["sources"][0]["url"]})
+
+        self.store._query("CREATE ROLE inference_public_reader LOGIN;")
+        reader = ReleaseStore(self.database_url + " user=inference_public_reader")
+        with self.assertRaisesRegex(ReleaseError, "permission denied"):
+            reader._query("SELECT amount FROM fastest_intake.inference_trial")
+
+    def test_private_inference_intake_preserves_partial_and_missing_evidence(self):
+        trial = {
+            "source": "fixture-benchmark", "locator": "Excerpt",
+            "qualification": "The excerpt omits run details.",
+        }
+        bundle = {
+            "checked_at": "2026-11-20T00:00:00Z", "note": "Synthetic partial benchmark.",
+            "sources": [{"source": "fixture-benchmark", "url": "https://benchmark.example/summary",
+                         "status": "captured", "note": "Fixture benchmark excerpt."}],
+            "prices": [], "evaluations": [],
+            "inference_trials": [
+                {**trial, "id": "partial", "outcome": "measured", "gpu_count": 2, "gpu_ids": ["Fixture RTX"],
+                 "metric": "decode", "amount": "12", "unit": "tokens/s", "transport": None,
+                 "context": {"topology": "NVLink present", "probe_scope": "Separate link test."}},
+                {**trial, "id": "oom", "outcome": "oom", "gpu_count": 1, "model": "Fixture model"},
+                {**trial, "id": "failed", "outcome": "failed", "placement": "One device."},
+                {**trial, "id": "unknown", "outcome": "unknown"},
+            ],
+        }
+        self.inference_intake("migrate")
+        receipt = json.loads(self.inference_intake("ingest", bundle).stdout)
+        self.assertEqual(receipt["inference_trials"], 4)
+        self.assertEqual(self.store._query("""
+            SELECT id, outcome, gpu_count, gpu_ids, metric, amount, unit, transport, context->>'probe_scope'
+            FROM fastest_intake.inference_trial ORDER BY id
+        """).splitlines(), [
+            "failed|failed|||||||",
+            "oom|oom|1||||||",
+            'partial|measured|2|{"Fixture RTX"}|decode|12|tokens/s||Separate link test.',
+            "unknown|unknown|||||||",
+        ])
+
+    def test_private_inference_intake_rejects_invalid_evidence_without_partial_writes(self):
+        trial = {
+            "id": "decode", "source": "fixture-benchmark", "locator": "Benchmark row",
+            "outcome": "measured", "metric": "decode", "amount": "12", "unit": "tokens/s",
+            "qualification": "Fixture report.",
+        }
+        source = {
+            "source": "fixture-benchmark", "url": "https://benchmark.example/summary",
+            "status": "captured", "note": "Fixture benchmark report.",
+        }
+        bundle = {
+            "checked_at": "2026-11-20T00:00:00Z", "note": "Synthetic benchmark.",
+            "sources": [source], "prices": [], "evaluations": [],
+        }
+        self.inference_intake("migrate")
+        initial = json.loads(self.inference_intake("stats").stdout)
+        for changes in ({"metric": None}, {"amount": None}, {"unit": None}, {"outcome": "oom"}):
+            with self.subTest(changes=changes):
+                result = self.inference_intake("ingest", {
+                    **bundle, "inference_trials": [trial, {**trial, **changes, "id": "invalid"}],
+                }, check=False)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("inference_trial_outcome_measurement_check", result.stderr)
+                self.assertEqual(json.loads(self.inference_intake("stats").stdout), initial)
+
+        result = self.inference_intake("ingest", {
+            **bundle, "sources": [{**source, "status": "no_verified_result"}], "inference_trials": [trial],
+        }, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("captured source probe", result.stderr)
+        self.assertEqual(json.loads(self.inference_intake("stats").stdout), initial)
+
     def test_private_retail_intake_upgrades_legacy_rows_and_preserves_batch_replay(self):
         production = FIXTURE.parents[1]
         bundle_path = self.socket_path.parent / "retail-capture.json"

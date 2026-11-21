@@ -117,6 +117,49 @@ CREATE TABLE IF NOT EXISTS fastest_intake.tariff_candidate (
     FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.inference_trial (
+    batch_id text,
+    id text CHECK (id ~ '[^[:space:]]'),
+    source text NOT NULL,
+    locator text NOT NULL CHECK (locator ~ '[^[:space:]]'),
+    outcome text NOT NULL CHECK (outcome IN ('measured', 'failed', 'oom', 'unknown')),
+    gpu_count integer CHECK (gpu_count > 0),
+    gpu_ids text[] CHECK (
+        array_ndims(gpu_ids) = 1 AND cardinality(gpu_ids) > 0
+        AND array_position(gpu_ids, NULL) IS NULL AND array_position(gpu_ids, '') IS NULL
+        AND (gpu_count IS NULL OR cardinality(gpu_ids) <= gpu_count)
+    ),
+    model text,
+    model_revision text,
+    artifact text,
+    artifact_revision text,
+    runtime text,
+    runtime_revision text,
+    backend text,
+    quantization text,
+    context_tokens integer CHECK (context_tokens > 0),
+    observed_on date,
+    metric text CHECK (metric ~ '[^[:space:]]'),
+    amount numeric CHECK (amount >= 0 AND amount < 'Infinity'::numeric),
+    unit text CHECK (unit ~ '[^[:space:]]'),
+    statistic text CHECK (statistic ~ '[^[:space:]]'),
+    sample_count integer CHECK (sample_count > 0),
+    reported_uncertainty numeric CHECK (reported_uncertainty >= 0 AND reported_uncertainty < 'Infinity'::numeric),
+    uncertainty_kind text CHECK (uncertainty_kind ~ '[^[:space:]]'),
+    placement text CHECK (placement ~ '[^[:space:]]'),
+    transport text CHECK (transport ~ '[^[:space:]]'),
+    context jsonb CHECK (jsonb_typeof(context) = 'object'),
+    qualification text NOT NULL CHECK (qualification ~ '[^[:space:]]'),
+    CONSTRAINT inference_trial_outcome_measurement_check CHECK (
+        (outcome = 'measured' AND metric IS NOT NULL AND amount IS NOT NULL AND unit IS NOT NULL)
+        OR (outcome <> 'measured' AND metric IS NULL AND amount IS NULL AND unit IS NULL
+            AND statistic IS NULL AND reported_uncertainty IS NULL)
+    ),
+    CHECK (uncertainty_kind IS NULL OR reported_uncertainty IS NOT NULL),
+    PRIMARY KEY (batch_id, id),
+    FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
+);
+
 CREATE TABLE IF NOT EXISTS fastest_intake.image_pilot_run (
     manifest_sha256 text PRIMARY KEY CHECK (manifest_sha256 ~ '^[0-9a-f]{64}$'),
     provenance_sha256 text NOT NULL CHECK (provenance_sha256 ~ '^[0-9a-f]{64}$'),
