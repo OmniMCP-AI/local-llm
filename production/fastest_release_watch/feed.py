@@ -36,6 +36,9 @@ SOURCES = {
     "sglang": Source("SGLang", "sgl-project/sglang"),
     "vllm": Source("vLLM", "vllm-project/vllm"),
     "ollama": Source("Ollama", "ollama/ollama"),
+    "mlx-lm": Source("MLX LM", "ml-explore/mlx-lm"),
+    "openvino": Source("OpenVINO GenAI", "openvinotoolkit/openvino.genai"),
+    "aiter": Source("AMD AITER", "ROCm/aiter"),
 }
 
 
