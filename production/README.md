@@ -116,7 +116,9 @@ the password file and database CA. Make the password file readable by UID
 different container port, set `PORT` and update the port mapping. For reviewed
 goals, cost scenarios and live rights files, mount the corresponding files
 read-only and pass the existing `serve` flags. A deployment with fit enabled
-also mounts the pinned fit executable and passes `--fit-engine`.
+also mounts the pinned fit executable and passes `--fit-engine`. To let
+benchmark contributors check their review status, apply the [receipt route
+setup](fastest_contributor/README.md#serve-receipt-links).
 
 Terminate TLS in the reverse proxy and forward the canonical `Host` header
 through to the listener. Set `FASTEST_RELEASE_HOST` to that header value,

@@ -1,6 +1,7 @@
 from functools import partial
 import json
 import logging
+from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from subprocess import TimeoutExpired
@@ -15,7 +16,7 @@ from fastest_goals import GoalEvidenceWithdrawn, GoalRightsUnavailable, GoalServ
 from fastest_goals.page import render_goals
 from fastest_prices import PriceError, PriceReleaseNotFound
 
-from . import ReleaseError, ReleaseNotFound
+from . import CONTRIBUTOR_RECEIPT_PATH, ReleaseError, ReleaseNotFound
 from .advisor_page import ROUTE as ADVISOR_ROUTE, render as render_advisor
 from .api import ADVISOR_PATH, PublicApi
 from .artifacts import build_artifacts
@@ -46,10 +47,32 @@ GOALS_ROUTE = re.compile(
 )
 
 
+def render_contributor_receipt(revisions):
+    items = []
+    for revision in revisions:
+        status = escape(revision["status"].replace("_", " ").capitalize())
+        item = f'<li><h2>Version {revision["version"]}</h2><p>{status}</p>'
+        if revision["issues"]:
+            issues = ", ".join(escape(issue.replace("_", " ").capitalize()) for issue in revision["issues"])
+            item += f"<p>Intake issues: {issues}</p>"
+        if "url" in revision:
+            label = "View withdrawal notice" if revision["status"] == "withdrawn" else "View published evidence"
+            item += f'<p><a href="{escape(revision["url"])}">{label}</a></p>'
+        items.append(item + "</li>")
+    return (
+        '<!doctype html><html lang="en"><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<title>Benchmark submission status</title><main><h1>Benchmark submission status</h1><ol>'
+        + "".join(items) + "</ol></main></html>"
+    )
+
+
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
-                scaling_pair=(), cost_scenario=None):
+                scaling_pair=(), cost_scenario=None, contributor_receipts=False):
     """Bind a read-only HTTP server that checks rights on every release request."""
+    if contributor_receipts and store is None:
+        raise ValueError("Contributor receipts require a release reader.")
     scaling_pair = tuple(scaling_pair)
     if scaling_pair and (
         store is None or len(scaling_pair) != 2 or len(set(scaling_pair)) != 2
@@ -73,7 +96,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     class ReleaseRequest(BaseHTTPRequestHandler):
         def log_request(self, code="-", size="-"):
             path = self.path.partition("?")[0]
-            if path in {ADVISOR_ROUTE, ADVISOR_PATH}:
+            if path in {ADVISOR_ROUTE, ADVISOR_PATH, CONTRIBUTOR_RECEIPT_PATH}:
                 self.log_message('"%s %s %s" %s %s', self.command, path, self.request_version, code, size)
             else:
                 super().log_request(code, size)
@@ -86,6 +109,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
+            if self.path.partition("?")[0] == CONTRIBUTOR_RECEIPT_PATH:
+                self.send_header("X-Robots-Tag", "noindex")
             policy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
             self.send_header("Content-Security-Policy", policy + ("; script-src 'self'" if profile_script else ""))
             if location is not None:
@@ -99,6 +124,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             if len(request_hosts) != 1 or request_hosts[0].lower() not in allowed_hosts:
                 return self._respond(400, "Invalid Host header.\n")
             path, _, query = self.path.partition("?")
+            if path == CONTRIBUTOR_RECEIPT_PATH and contributor_receipts:
+                return self._contributor_receipt(query)
             price_match = PRICE_ROUTE.fullmatch(path)
             if price_match and price_reader is not None:
                 return self._price(price_match[1])
@@ -168,6 +195,20 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _contributor_receipt(self, query):
+            key, _, receipt = query.partition("=")
+            unavailable = "Contributor receipt unavailable.\n"
+            if key != "id" or not RUN_ID.fullmatch(receipt):
+                return self._respond(404, unavailable)
+            try:
+                revisions = store.read_contributor_receipt(receipt)
+            except ReleaseNotFound:
+                return self._respond(404, unavailable)
+            except (ReleaseError, TimeoutExpired, OSError):
+                logging.warning("Cannot read a contributor receipt")
+                return self._respond(503, "Contributor receipt service unavailable.\n")
+            return self._respond(200, render_contributor_receipt(revisions), CONTENT_TYPES["benchmark.html"])
 
         def _scaling(self, path):
             is_json = path.endswith(".json")

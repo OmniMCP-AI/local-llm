@@ -130,6 +130,13 @@ RETURNS jsonb LANGUAGE sql STABLE AS $$
     GROUP BY submission.receipt;
 $$;
 
+CREATE OR REPLACE FUNCTION fastest_release.read_contributor_receipt(receipt_code uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp AS $$
+    SELECT fastest_contributor.receipt_status(receipt_code)->'revisions';
+$$;
+
+REVOKE ALL ON FUNCTION fastest_release.read_contributor_receipt(uuid) FROM PUBLIC;
 REVOKE ALL ON SCHEMA fastest_contributor FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_contributor FROM PUBLIC;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA fastest_contributor FROM PUBLIC;

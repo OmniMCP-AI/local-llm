@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from fastest_release import ReleaseNotFound, ReleaseStore, _sql_text
+from fastest_release import CONTRIBUTOR_RECEIPT_PATH, ReleaseNotFound, ReleaseStore, _sql_text
 from fastest_release.validation import validate
 
 from .validation import candidate, decode, identifier, review_decision, submission_issues, version_number
@@ -47,7 +47,9 @@ class ContributorStore:
         status = self.release._query(f"SELECT fastest_contributor.receipt_status('{receipt}'::uuid);")
         if not status:
             raise ReleaseNotFound("Contributor receipt")
-        return json.loads(status)
+        result = json.loads(status)
+        result["status_url"] = f"{CONTRIBUTOR_RECEIPT_PATH}?id={result['receipt']}"
+        return result
 
     def inspect(self, receipt, version):
         identifier(receipt, "Receipt")

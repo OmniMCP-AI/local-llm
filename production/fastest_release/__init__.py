@@ -8,6 +8,9 @@ from .artifacts import build_artifacts
 from .validation import InvalidObservation, plain_text, validate
 
 
+CONTRIBUTOR_RECEIPT_PATH = "/contributors/receipt"
+
+
 class ReleaseNotFound(LookupError):
     """No release is available at the requested ID."""
 
@@ -62,6 +65,13 @@ class ReleaseStore:
         result = self._query(f"SELECT fastest_release.read_evidence('{identifier}'::uuid);")
         if not result:
             raise ReleaseNotFound(evidence_id)
+        return json.loads(result)
+
+    def read_contributor_receipt(self, receipt_id):
+        identifier = uuid.UUID(receipt_id)
+        result = self._query(f"SELECT fastest_release.read_contributor_receipt('{identifier}'::uuid);")
+        if not result:
+            raise ReleaseNotFound("Contributor receipt")
         return json.loads(result)
 
     def read_many(self, release_ids):
