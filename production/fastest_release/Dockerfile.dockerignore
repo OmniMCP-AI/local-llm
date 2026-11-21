@@ -22,6 +22,9 @@
 !production/fastest_image/intake.py
 !production/fastest_image/render.py
 !production/fastest_image/plan.json
+!production/fastest_image/workflow.json
+!production/fastest_image/requirements-mps.txt
+!production/fastest_image/requirements-cuda.txt
 !production/fastest_prices/__init__.py
 !production/fastest_prices/artifacts.py
 !production/fastest_prices/result.py
