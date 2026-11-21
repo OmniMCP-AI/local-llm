@@ -19,6 +19,20 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    services:
+      catalog:
+        image: postgres:17
+        env:
+          POSTGRES_DB: catalog_ci
+          POSTGRES_USER: catalog_publisher
+          POSTGRES_PASSWORD: ci-publisher
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U catalog_publisher -d catalog_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: opendesign/mockups/llm-observatory
@@ -30,4 +44,32 @@ jobs:
           cache: npm
           cache-dependency-path: opendesign/mockups/llm-observatory/package-lock.json
       - run: npm ci
-      - run: npm run test:pages
+      - name: Prepare the disposable catalog database
+        env:
+          FASTEST_TEST_DATABASE_URL: &publisher postgresql://catalog_publisher:ci-publisher@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
+        run: |
+          psql -Xw -v ON_ERROR_STOP=1 "$FASTEST_TEST_DATABASE_URL" -f catalog-pg.sql -f - <<'SQL'
+          CREATE ROLE catalog_reader LOGIN PASSWORD 'ci-reader';
+          ALTER ROLE catalog_reader SET default_transaction_read_only = on;
+          GRANT USAGE ON SCHEMA fastest_catalog TO catalog_reader;
+          GRANT SELECT ON fastest_catalog.snapshot, fastest_catalog.gpu, fastest_catalog.machine,
+            fastest_catalog.runtime, fastest_catalog.model_repository, fastest_catalog.model_artifact,
+            fastest_catalog.model_discovery, fastest_catalog.topology_revision, fastest_catalog.topology_node,
+            fastest_catalog.topology_link, fastest_catalog.topology_media TO catalog_reader;
+          SQL
+      - name: Verify Pages and replay the catalog import
+        shell: bash
+        env:
+          FASTEST_TEST_DATABASE_URL: *publisher
+          FASTEST_TEST_CATALOG_READER_URL: postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
+          NODE_OPTIONS: --test-reporter=tap
+        run: |
+          results=$(mktemp)
+          trap 'rm -f "$results"' EXIT
+          hosted_case='production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs'
+          replay_case='the local PostgreSQL snapshot exports ranked repositories and complete factory profiles'
+
+          npm run test:pages | tee "$results"
+          grep -qxE "ok [0-9]+ - $hosted_case" "$results"
+          node --test --test-name-pattern="^$replay_case$" catalog-release.test.mjs | tee "$results"
+          grep -qxE "ok [0-9]+ - $replay_case" "$results"

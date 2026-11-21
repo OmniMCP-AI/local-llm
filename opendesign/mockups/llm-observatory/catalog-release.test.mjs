@@ -420,7 +420,9 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   t.after(() => rm(output, { recursive: true, force: true }));
   const hardware = await readHardwareCatalog(here);
   const imported = await importLocalCatalog(hardware, testDatabase);
-  const release = await writeLocalCatalogProfiles(output, imported, imported.modelLicenseNotice);
+  const replayed = await importLocalCatalog(hardware, testDatabase);
+  assert.deepEqual(replayed, imported);
+  const release = await writeLocalCatalogProfiles(output, replayed, replayed.modelLicenseNotice);
   const root = join(output, "catalog", release);
   const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, imported.snapshotId);
