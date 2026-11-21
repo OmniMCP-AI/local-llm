@@ -1,11 +1,75 @@
 import assert from "node:assert/strict";
 import { dirname } from "node:path";
 import { test } from "node:test";
+import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { hardwareCard, renderCard } from "./catalog-card.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+test("GPU profile main navigation matches the home page and links back from deep paths", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const release = "v1-1234567890abcdef";
+  const card = hardwareCard(catalog.cards[0], release, "cards");
+  for (const local of [true, false]) {
+    const html = renderCard(card, { release, pathname: `catalog/${release}/cards/${card.id}.html`, local });
+    const nav = html.match(/<nav[^>]*aria-label="Main navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
+    assert.ok(nav, "main navigation is present in the initial HTML");
+    assert.match(html, /<select[^>]*id="profile-language"/);
+    assert.match(html, /<select[^>]*id="profile-currency"/);
+    assert.match(html, /繁體中文/);
+    const labels = [...nav.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(match => match[1]);
+    assert.deepEqual(labels, ["Explorer", "Compare", "Battles", "Methods", "Costs", "Catalog", "Machines", "Models", "Wiki", "Price watch", "For agents"]);
+    const home = local ? "../../../../fastest-ai.html" : "/";
+    assert.ok(nav.includes(`href="${home}#explorer"`));
+    assert.ok(nav.includes(`href="${home}#catalog" aria-current="page"`));
+    if (local) assert.ok(nav.includes(`href="${home}#models">Models</a>`));
+  }
+  const hosted = renderCard(card, { release, pathname: `/catalog/${release}/cards/${card.id}.html`, releaseOrigin: "https://evidence.example" });
+  assert.match(hosted, /href="https:\/\/evidence\.example\/profiles">Explorer/);
+  assert.match(hosted, /href="https:\/\/evidence\.example\/advisor">Guided advisor/);
+  assert.match(hosted, /href="\/wiki\/catalog\/" aria-current="page">Catalog/);
+});
+
+test("GPU profile locale controls retain the shared language and currency choices", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const release = "v1-1234567890abcdef";
+  const card = hardwareCard(catalog.cards[0], release, "cards");
+  const html = renderCard(card, { release, pathname: `catalog/${release}/cards/${card.id}.html`, local: true });
+  const script = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
+  const handlers = {};
+  const language = { value: "", addEventListener: (name, handler) => { handlers.language = handler; } };
+  const currency = { value: "auto", options: [{ value: "auto" }], add: option => currency.options.push(option), addEventListener: (name, handler) => { handlers.currency = handler; } };
+  const rateForm = { hidden: false, addEventListener: (name, handler) => { handlers.rate = handler; } };
+  const rateValue = { value: "" };
+  const links = [{ textContent: "Explorer" }, { textContent: "Compare demo" }];
+  let saved;
+  const document = {
+    documentElement: { dataset: { visitorLanguage: "fr" } },
+    getElementById: id => ({ "profile-language": language, "profile-currency": currency, "profile-rate": rateForm, "profile-rate-value": rateValue })[id],
+    querySelectorAll: () => links,
+  };
+  const localStorage = { getItem: () => JSON.stringify({ language: "zh-Hant", currency: "USD", manual: { ABC: 1 } }), setItem: (_key, value) => { saved = JSON.parse(value); } };
+  runInNewContext(script, { document, localStorage, navigator: { languages: ["en-US"] }, Intl, Option: function(_text, value) { this.value = value; } });
+  assert.equal(document.documentElement.lang, "zh-Hant");
+  assert.equal(links[0].textContent, "探索");
+  assert.equal(currency.value, "USD");
+  language.value = "es";
+  currency.value = "EUR";
+  handlers.language();
+  assert.equal(links[0].textContent, "Explorar");
+  assert.deepEqual(saved, { language: "es", currency: "EUR", manual: { ABC: 1 } });
+  currency.value = "AED";
+  handlers.currency();
+  assert.equal(rateForm.hidden, false);
+  rateValue.value = "3.67";
+  handlers.rate({ preventDefault() {} });
+  assert.equal(saved.manual.AED, 3.67);
+  localStorage.getItem = () => "{}";
+  runInNewContext(script, { document, localStorage, navigator: { languages: ["en-US"] }, Intl, Option: function(_text, value) { this.value = value; } });
+  assert.equal(document.documentElement.lang, "fr");
+});
 
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {
   const { manifest, catalog } = await readHardwareCatalog(here);
@@ -18,8 +82,8 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.completeBuilds, 4);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 124 + manifest.coverage.creatorBuilds);
-  assert.equal(manifest.coverage.manufacturerMachines, 5);
+  assert.equal(catalog.machines.length, 125 + manifest.coverage.creatorBuilds);
+  assert.equal(manifest.coverage.manufacturerMachines, 6);
   assert.equal(manifest.coverage.cards, catalog.cards.length);
   assert.equal(catalog.cards.filter(card => !card.modification || card.relatedProfiles.length).length, 156);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 149);
@@ -294,8 +358,10 @@ test("GPU photo galleries publish exact models with photo and license links", as
   assert.equal(manifest.coverage.cardsWithPhotos, photographed.length);
   assert.ok(photographed.every(({ modification }) => !modification));
   const photos = photographed.flatMap(({ photos }) => photos);
-  assert.equal(new Set(photos.map(({ source }) => source)).size, photos.length);
-  assert.equal(new Set(photos.map(({ sha256 }) => sha256)).size, photos.length);
+  for (const { photos: gallery } of photographed) {
+    assert.equal(new Set(gallery.map(({ source }) => source)).size, gallery.length);
+    assert.equal(new Set(gallery.map(({ sha256 }) => sha256)).size, gallery.length);
+  }
   for (const { author, credit, license, licenseUrl } of photos) {
     assert.ok(credit.includes(author) && /resized|converted to JPEG/.test(credit), credit);
     const licensePath = license === "CC0 1.0" ? "publicdomain/zero/1.0/" :
@@ -319,6 +385,17 @@ test("GPU photo galleries publish exact models with photo and license links", as
   assert.deepEqual(filteredCard.vendorSpec.gallery, card.vendorSpec.gallery);
 });
 
+test("a shared board photo is withdrawn from every matching profile", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const ids = ["pny-vcg5060t16dfxpb1-o", "nvidia-geforce-rtx-5060-ti-16gb", "nvidia-geforce-rtx-5060-ti"];
+  const cards = ids.map(id => catalog.cards.find(row => row.id === id));
+  const source = cards[0].photos[0].source;
+  assert.ok(cards.every(card => card.photos.some(photo => photo.source === source)));
+  const { catalog: filtered } = await readHardwareCatalog(here, url => url === source);
+  assert.ok(ids.every(id => filtered.cards.find(row => row.id === id).photos.every(photo => photo.source !== source)));
+  assert.ok(ids.every(id => filtered.cards.find(row => row.id === id).photos.length));
+});
+
 test("a GPU photo stays on the exact board when the catalog also contains other variants", async () => {
   const { catalog } = await readHardwareCatalog(here);
   const card = id => catalog.cards.find(row => row.id === id);
@@ -327,4 +404,30 @@ test("a GPU photo stays on the exact board when the catalog also contains other 
   assert.equal(card("intel-arc-a770-8gb").photos, undefined);
   assert.equal(card("intel-arc-a770-16gb").photos.length, 3);
   assert.equal(card("nvidia-geforce-rtx-3080-12gb").photos, undefined);
+  const founders = card("nvidia-geforce-rtx-4060-ti-8gb").photos[0];
+  assert.match(founders.alt, /4060 Ti 8 GB Founders Edition/);
+  assert.equal(card("nvidia-geforce-rtx-4060-ti").photos[0].source, founders.source);
+  assert.equal(card("nvidia-geforce-rtx-4060-ti-16gb").photos, undefined);
+  for (const markdown of [false, true]) {
+    const release = "v1-1234567890abcdef";
+    const page = renderCard(hardwareCard(card("nvidia-geforce-rtx-4060-ti-8gb"), release, "cards"), {
+      release, pathname: `/catalog/${release}/cards/nvidia-geforce-rtx-4060-ti-8gb.${markdown ? "md" : "html"}`, markdown,
+    });
+    assert.ok(page.includes(founders.source) && page.includes(founders.author) && page.includes(founders.licenseUrl));
+  }
+});
+
+test("HP ZBook AI PC retains its exact SKU, shared memory and source-linked parts", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const machine = catalog.machines.find(({ id }) => id === "hp-zbook-ultra-g1a-bn2v1ua");
+  assert.ok(machine);
+  assert.equal(machine.configuration, "BN2V1UA#ABA");
+  assert.equal(machine.memory.system, "128 GB LPDDR5x-8533 unified memory");
+  assert.match(machine.interconnect, /shares/i);
+  assert.ok(machine.bom.every(part => part.source && part.locator));
+  const html = renderCard(hardwareCard(machine, "v1-1234567890abcdef", "machines"), {
+    release: "v1-1234567890abcdef", pathname: "/catalog/v1-1234567890abcdef/machines/hp-zbook-ultra-g1a-bn2v1ua.html",
+  });
+  assert.match(html, /BN2V1UA#ABA/);
+  assert.match(html, /hp\.com\/us-en\/shop/);
 });

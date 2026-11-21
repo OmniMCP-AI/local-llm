@@ -335,12 +335,12 @@ class ProfileRelease:
                           f'<circle class="mark" cx="{x:.3f}" cy="{y:.3f}" r="5"/></a>')
         svg = ('<svg class="overview-map" role="group" aria-label="Measured run overview" viewBox="0 0 300 193">'
                f'<text x="42" y="16" font-size="10">{escape(vertical["label"])} ({escape(vertical["unit"])})</text>'
-               '<path class="axis" d="M42 25 V150 H275"/><text x="37" y="166" font-size="9">0</text>'
-               f'<text x="270" y="166" text-anchor="end" font-size="9">{x_max}</text>'
+               '<path class="axis" d="M42 25 V150 H275"/><text data-chart-x="start" x="37" y="166" font-size="9">0</text>'
+               f'<text data-chart-x="end" x="270" y="166" text-anchor="end" font-size="9">{x_max}</text>'
                f'<text x="36" y="34" text-anchor="end" font-size="9">{y_max}</text>'
                f'<text x="158" y="183" text-anchor="middle" font-size="10">{escape(horizontal["label"])} '
                f'({escape(horizontal["unit"])})</text>' + "".join(points) + '</svg>')
-        return f"<figure><figcaption>Overview map</figcaption>{chart_with_labels(svg)}</figure>"
+        return f"<figure><figcaption>Overview map</figcaption>{chart_with_labels(svg, left=42, right=270, start=0, end=float(x_max))}</figure>"
 
 
     def measurements(self, cohort, kind, selected):

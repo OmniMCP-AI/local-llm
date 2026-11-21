@@ -150,14 +150,15 @@ def _chart(result):
         '<path d="M 64 29 V 145 H 610" fill="none" stroke="#527190"/>'
         f'<text x="58" y="149" text-anchor="end" font-size="12">{low}</text>'
         + (f'<text x="58" y="43" text-anchor="end" font-size="12">{high}</text>' if high != low else "")
-        + f'<text x="64" y="170" font-size="12">{result["start"]}</text>'
-        f'<text x="610" y="170" text-anchor="end" font-size="12">{result["as_of"]}</text>'
+        + f'<text data-chart-x="start" x="64" y="170" font-size="12">{result["start"]}</text>'
+        f'<text data-chart-x="end" x="610" y="170" text-anchor="end" font-size="12">{result["as_of"]}</text>'
         '<text x="337" y="188" text-anchor="middle">Quote date (UTC)</text>'
         f'{"".join(circles)}</svg>'
     )
+    chart = chart_with_labels(svg, left=64, right=610, start=result["start"], end=result["as_of"], date_axis=True)
     return (
         "<figure><figcaption>Comparable observed quotes by UTC day. Exact values and gaps appear below.</figcaption>"
-        f"{chart_with_labels(svg)}</figure>"
+        f"{chart}</figure>"
     )
 
 

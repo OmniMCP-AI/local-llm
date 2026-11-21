@@ -18,10 +18,15 @@ export const profileStyles = `
 .profile-nav, .profile-actions {
   display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.2rem; font-size: .86rem;
 }
-.profile-nav { padding: 1rem 0; border-bottom: 1px solid var(--profile-edge); }
-.profile-nav a { color: var(--profile-muted); text-decoration: none; min-height: 2rem; display: inline-flex; align-items: center; }
-.profile-nav a:first-child { color: var(--profile-ink); font-weight: 750; }
-.profile-nav a[aria-current] { color: var(--profile-accent); }
+.profile-header { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 0 1.5rem; align-items: center; border-bottom: 1px solid var(--profile-edge); }
+.profile-nav { flex-wrap: nowrap; min-width: 0; overflow-x: auto; gap: 1.4rem; }
+.profile-nav a { color: var(--profile-muted); text-decoration: none; min-height: 4rem; display: inline-flex; align-items: center; white-space: nowrap; border-bottom: 2px solid transparent; }
+.profile-brand { display: inline-block; color: var(--profile-ink) !important; font-weight: 750; text-decoration: none; }
+.profile-nav a[aria-current] { color: var(--profile-ink); border-color: var(--profile-accent); }
+.profile-catalog-nav { grid-column: 1 / -1; }
+.profile-locale { position: relative; padding: .5rem 0; }
+.profile-locale label { display: inline-flex; gap: .4rem; margin: .4rem .8rem .4rem 0; }
+.profile-locale select { max-width: 100%; font: inherit; }
 .profile-actions a[aria-current] { color: var(--profile-ink); font-weight: 750; }
 .profile-lookup { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 .profile-lookup label { flex-basis: 100%; }
@@ -60,15 +65,13 @@ export const profileStyles = `
 .profile-photo-notices pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .profile-footer { color: var(--profile-muted); margin-top: 1.2rem; overflow-wrap: anywhere; font-size: .85rem; }
 .profile-chart-note { color: var(--profile-ink) !important; font-weight: 650; }
-.profile-card-schematic { margin: 1.25rem 0; padding: .65rem 1rem; border: 1px solid var(--profile-edge); background: var(--profile-panel); }
-.profile-card-schematic svg { display: block; width: min(100%, 34rem); margin-inline: auto; }
-.profile-card-schematic figcaption { color: var(--profile-muted); text-align: center; font-size: .84rem; }
 .profile-chart-table { width: 100%; margin-top: .65rem; text-align: start; border-collapse: collapse; font-size: .85rem; }
 .profile-chart-table :is(th,td) { text-align: start; padding: .45rem; border-bottom: 1px solid var(--profile-edge); }
 .profile-chart-table tr[aria-current] { background: #302016; }
 .profile-directory-table { table-layout: fixed; overflow-wrap: anywhere; }
 .profile-directory-table :is(th,td) { vertical-align: top; }
 .profile-directory-table code { color: var(--profile-muted); font-weight: 400; }
+@media (max-width: 700px) { .profile-header { grid-template-columns: 1fr auto; } .profile-nav { grid-column: 1 / -1; grid-row: 2; } .profile-locale { grid-column: 2; grid-row: 1; } }
 @media (max-width: 520px) { .profile-shell { padding-inline: .9rem; } }
 ${coordinatePlotStyles}
 `;

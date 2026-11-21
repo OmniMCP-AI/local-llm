@@ -229,12 +229,12 @@ def _curve(result):
         f'<path d="M {left} {top} H {right} M {left} {top} V {bottom} H {right}" fill="none" stroke="#a2afb3"/>'
         f'<g fill="currentColor" font-size="13"><text x="{left}" y="14">Cumulative cost ({currency})</text><text x="{left - 8}" y="{top + 4}" text-anchor="end">{high}</text>'
         f'<text x="{left - 8}" y="{bottom + 4}" text-anchor="end">{low}</text>'
-        f'<text x="{left}" y="219" text-anchor="middle">Month 0</text>'
-        f'<text x="{right}" y="219" text-anchor="end">Month {months}</text></g>'
+        f'<text data-chart-x="start" x="{left}" y="219" text-anchor="middle">0</text>'
+        f'<text data-chart-x="end" x="{right}" y="219" text-anchor="end">{months}</text></g>'
         f'<text x="{(left + right) / 2}" y="239" text-anchor="middle">Ownership month</text>'
         + "".join(paths) + "".join(marks) + "</svg>"
     )
-    return chart_with_labels(svg) + "<ul class='legend'>" + "".join(legend) + "</ul>"
+    return chart_with_labels(svg, left=left, right=right, start=0, end=months) + "<ul class='legend'>" + "".join(legend) + "</ul>"
 
 
 def _html_cell(value):

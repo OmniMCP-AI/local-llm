@@ -152,3 +152,6 @@
   .catalog-table th, .catalog-table td { padding: 7px; }
   .catalog-tuning div { grid-template-columns: 1fr; gap: 3px; }
 }
+
+.catalog-runtime-overview { margin-block: 2rem; }
+.catalog-runtime-overview .catalog-table { min-width: 52rem; }

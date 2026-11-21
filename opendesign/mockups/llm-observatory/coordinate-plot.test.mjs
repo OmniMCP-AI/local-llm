@@ -26,16 +26,18 @@ test("GPU pages retain one rated bandwidth cohort and show a measured speed cove
     assert.match(html, /Nominal GPU memory<\/dt><dd>32 GB/);
     assert.match(html, /Rated memory bandwidth<\/dt><dd>576 GB\/s/);
     assert.match(html, /Measured decode speed unavailable/);
-    assert.match(html, /Original schematic/);
+    assert.doesNotMatch(html, /Original schematic|Conceptual GPU and memory layout/);
     assert.doesNotMatch(html, /GPU position by rated graphics power/);
   }
   assert.match(selected, /href="\/Known%20GPU" aria-current="page"/);
+  assert.equal((selected.match(/class="coordinate-point coordinate-selected"/g) ?? []).length, 2);
+  assert.match(selected, /Selected GPU: Known GPU · 32 GB · 576 GB\/s/);
   assert.doesNotMatch(unavailable, /href="\/Known%20GPU" aria-current="page"/);
   assert.match(unavailable, /GPU with missing bandwidth has no unambiguous pair of rated specifications/);
   const markdown = render(known, true);
   assert.match(markdown, /Selected GPU: Known GPU · 32 GB · 576 GB\/s/);
   assert.match(markdown, /Measured decode speed unavailable/);
-  assert.match(markdown, /Original schematic/);
+  assert.doesNotMatch(markdown, /Original schematic|Conceptual GPU and memory layout/);
 });
 
 test("NVIDIA product and architecture sources cover distinct RTX 3090 and RTX 4090 bandwidth values", async () => {
@@ -75,4 +77,105 @@ test("the highlighted budget region covers the best performance side of the targ
     });
     assert.ok(chart.includes(`--area-width:45.00000%;--area-height:${expectedHeight};top:0`));
   }
+});
+
+test("dense point labels are readable in a separate list with exact values", () => {
+  const chart = renderCoordinatePlot({
+    title: "Costs", kind: "line", showLabels: true,
+    xAxis: { label: "Month" }, yAxis: { label: "Cost", unit: "USD" },
+    points: [
+      { id: "local", name: "Local", x: 1, y: 1000, short: "$1,000" },
+      { id: "cloud", name: "Cloud", x: 1, y: 1001, short: "$1,001" },
+    ],
+  });
+  const list = chart.match(/<ul class="coordinate-label-list"[\s\S]*?<\/ul>/)?.[0];
+  assert.ok(list, "point labels have their own space outside the plot");
+  assert.match(list, /Local[\s\S]*Month: 1[\s\S]*Cost: 1,000 USD/);
+  assert.match(list, /Cloud[\s\S]*Month: 1[\s\S]*Cost: 1,001 USD/);
+  assert.match(chart, /class="coordinate-viewport"/);
+});
+
+test("zoom shows an inspectable categorical subset while retaining the full exact-value list and selection", () => {
+  const chart = renderCoordinatePlot({
+    title: "Ranks", kind: "bar", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "GPU", categorical: true }, yAxis: { label: "Speed", unit: "tok/s" },
+    points: ["A", "B", "C", "D"].map((name, i) => ({ id: name, name, x: name, y: i + 1 })),
+    selectedId: "A", showLabels: true,
+  });
+  assert.match(chart, /Zoom in/);
+  assert.match(chart, /Reset zoom/);
+  assert.doesNotMatch(chart, /data-point-id="A"/);
+  assert.match(chart, /data-point-id="B"/);
+  assert.match(chart, /data-point-id="C"/);
+  assert.doesNotMatch(chart, /data-point-id="D"/);
+  assert.match(chart, /A · GPU: A · Speed: 1 tok\/s/);
+  assert.match(chart, /coordinate-selection/);
+  assert.match(chart, /type="checkbox" checked/);
+});
+
+test("continuous zoom rescales the horizontal domain and preserves exact units", () => {
+  const chart = renderCoordinatePlot({
+    title: "Prices", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "Price", unit: "USD", domain: [0, 100] },
+    yAxis: { label: "Speed", unit: "tok/s", domain: [0, 100] },
+    points: [
+      { id: "low", name: "Low", x: 10, y: 30 },
+      { id: "middle", name: "Middle", x: 50, y: 60 },
+      { id: "high", name: "High", x: 90, y: 80 },
+    ],
+  });
+  assert.doesNotMatch(chart, /data-point-id="low"/);
+  assert.match(chart, /data-point-id="middle"[^>]*--column:50\.00000%/);
+  assert.doesNotMatch(chart, /data-point-id="high"/);
+  assert.match(chart, /Price 50 USD, Speed 60 tok\/s/);
+  assert.match(chart, /Price \(USD\)/);
+});
+
+test("zoom retains a line crossing the visible range even when its endpoints are outside it", () => {
+  const chart = renderCoordinatePlot({
+    title: "Costs", kind: "line", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "Month", domain: [0, 100] }, yAxis: { label: "Cost", domain: [0, 100] },
+    points: [{ id: "a", name: "Start", x: 0, y: 0 }, { id: "b", name: "End", x: 100, y: 100 }],
+  });
+  assert.match(chart, /<polyline[^>]+points="-500\.000,1000\.000 1500\.000,0\.000"/);
+});
+
+test("standalone GPU profile plots include independent accessible zoom controls", () => {
+  const html = render(known, false);
+  assert.equal((html.match(/<div data-coordinate-static>/g) ?? []).length, 2);
+  assert.equal((html.match(/<div class="coordinate-zoom" role="group" aria-label="Zoom GPU /g) ?? []).length, 2);
+  assert.match(html, /data-zoom="reset"/);
+  assert.match(html, /data-coordinate-script/);
+  assert.match(html, /Selected GPU: Known GPU/);
+  assert.match(html, /View memory data/);
+});
+
+test("standalone zoom keeps each chart's selection, labels and range independent", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const { standaloneCoordinateScript } = await import("./coordinate-plot.mjs");
+  const chart = {
+    title: "Memory", xAxis: { label: "GPU", categorical: true }, yAxis: { label: "Memory", unit: "GB" },
+    points: ["A", "B", "C", "D"].map((name, i) => ({ id: name, name, x: name, y: i + 1 })), selectedId: "B",
+  };
+  const makeRoot = () => {
+    const handlers = {};
+    const content = { innerHTML: "", addEventListener: (type, handler) => { handlers[type] = handler; },
+      querySelector: () => ({ disabled: false, focus() {} }) };
+    return { content, handlers, querySelector: selector => selector === "[data-coordinate-data]"
+      ? { textContent: JSON.stringify(chart) } : content };
+  };
+  const [first, second] = [makeRoot(), makeRoot()];
+  const source = standaloneCoordinateScript().replace(/^<script[^>]*>/, "").replace(/<\/script>$/, "");
+  runInNewContext(source, { document: { querySelectorAll: () => [first, second] }, Intl });
+  first.handlers.change({ target: { checked: true, matches: () => true } });
+  const click = (root, action) => root.handlers.click({ target: { closest: () => ({ dataset: { zoom: action } }) } });
+  click(first, "in");
+  assert.match(first.content.innerHTML, /type="checkbox" checked/);
+  assert.match(first.content.innerHTML, /data-point-id="B"/);
+  assert.doesNotMatch(first.content.innerHTML, /data-point-id="A"/);
+  assert.match(first.content.innerHTML, /coordinate-selection/);
+  assert.equal(second.content.innerHTML, "");
+  click(first, "reset");
+  assert.match(first.content.innerHTML, /data-point-id="A"/);
+  assert.match(first.content.innerHTML, /type="checkbox" checked/);
 });

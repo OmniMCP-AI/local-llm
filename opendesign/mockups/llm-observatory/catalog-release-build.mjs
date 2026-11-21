@@ -1,3 +1,5 @@
+import { guidanceVersion, profileGuidance } from "./catalog-guidance.mjs";
+import { runtimeOverview } from "./runtime-overview.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -13,7 +15,7 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
-function readPublisherEvaluations(rows, id, revision, cardUrl) {
+function readPublisherEvaluations(rows, id, revision, revisionDate, cardUrl, infoUrl) {
   if (!Array.isArray(rows)) throw new Error("Invalid publisher evaluations for " + id);
   return rows.map(({ benchmark, version, metric, scorePercent, harness, source, cardRevision, cardLine }) => {
     if (cardRevision !== revision) throw new Error("Publisher evaluation revision does not match " + id);
@@ -25,7 +27,11 @@ function readPublisherEvaluations(rows, id, revision, cardUrl) {
         !Number.isSafeInteger(cardLine) || cardLine < 1) {
       throw new Error("Invalid publisher evaluation for " + id);
     }
-    return { benchmark, version, ...(metric && { metric }), scorePercent, harness, source, cardUrl: cardUrl + "#L" + cardLine,
+    const rowUrl = cardUrl + "#L" + cardLine;
+    const unknown = { value: null, precision: "unknown", timezone: null, source: rowUrl };
+    return { benchmark, version, ...(metric && { metric }), scorePercent, harness, source, cardUrl: rowUrl,
+      dates: { origin: unknown, publication: unknown,
+        revision: { value: revisionDate, precision: "day", timezone: null, source: infoUrl }, ingestion: unknown },
       evidenceClass: "publisher_reported", executionHardware: null };
   });
 }
@@ -56,7 +62,8 @@ function readSupplement(bytes, source, identities, isPublisherWithdrawn) {
     const source = "https://huggingface.co/" + id;
     const pinned = source + "/blob/" + revision;
     const cardUrl = pinned + "/README.md";
-    const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
+    const infoUrl = "https://huggingface.co/api/models/" + id + "/revision/" + revision;
+    const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, revisionDate, cardUrl, infoUrl);
     const evaluations = reviewed.filter(({ source }) => !isPublisherWithdrawn(source));
     omittedPublisherResult ||= evaluations.length !== reviewed.length;
     const upstreamRow = upstreamRows.get(id);
@@ -67,7 +74,7 @@ function readSupplement(bytes, source, identities, isPublisherWithdrawn) {
         capturedAt, revision, revisionDate, parameters, inputs, outputs,
         cardUrl, cardSha256,
         ...(evaluations.length > 0 && { publisherEvaluations: evaluations }),
-        infoUrl: "https://huggingface.co/api/models/" + id + "/revision/" + revision,
+        infoUrl,
         licenseName: apache ? "Apache License 2.0" : licenseName,
         licenseUrl: apache ? "https://www.apache.org/licenses/LICENSE-2.0" : pinned + "/LICENSE",
         ...(!apache && { licenseSha256 }),
@@ -115,7 +122,7 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
     hardware ?? readHardwareCatalog(directory),
   ]);
   const runtimes = JSON.parse(runtimeBytes);
-  const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes,
+  const digest = sha256(Buffer.concat([Buffer.from("publisher-benchmark-dates-v1:" + guidanceVersion), models.sourceBytes, models.identityBytes, runtimeBytes,
     Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : []),
     ...(models.supplement?.projectionSha256 ? [Buffer.from(models.supplement.projectionSha256, "hex")] : [])]));
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
@@ -144,7 +151,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     ids.add(row.id);
     const key = modelShard(row.id);
     if (!shards.has(key)) shards.set(key, []);
-    shards.get(key).push({ ...row, identity: identities[row.id], ...(ranks.has(row.id) && {
+    shards.get(key).push({ ...row, guidance: profileGuidance("models", row), identity: identities[row.id], ...(ranks.has(row.id) && {
       discovery: ranks.get(row.id), discoveryCapture: { capturedAt, source: rankingSource },
     }) });
   }
@@ -158,6 +165,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
   const reviewed = Object.values(identities);
   const manifest = {
     release,
+    guidanceVersion,
     ...(snapshotId && {
       snapshotId,
       discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length },
@@ -184,10 +192,10 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
   const topologyByMachine = new Map(topologies?.map(({ id, revision }) => [id, revision]));
   const machines = hardware.catalog.machines.map(row => {
     const topologyRevision = topologyByMachine.get(row.id);
-    return topologyRevision ? { ...row, topologyRevision } : row;
+    return { ...row, guidance: profileGuidance("machines", row), ...(topologyRevision && { topologyRevision }) };
   });
-  return { manifest, shards, hardware: { ...hardware, catalog: { ...hardware.catalog, machines } },
-    runtimes, licenseNotice: source.licenseNotice };
+  return { manifest, shards, hardware: { ...hardware, catalog: { ...hardware.catalog, cards: hardware.catalog.cards.map(row => ({ ...row, guidance: profileGuidance("cards", row) })), machines } },
+    runtimes: runtimes.map(row => ({ ...row, guidance: profileGuidance("runtimes", row) })), licenseNotice: source.licenseNotice };
 }
 
 export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }, { catalogApi = true } = {}) {
@@ -200,6 +208,7 @@ export async function writeCatalogProjection(output, { manifest, shards, hardwar
     writeFile(join(target, "LICENSE.txt"), licenseNotice + "\n"),
     ...(manifest.snapshotId && catalogApi ? [writeFile(join(target, "openapi.json"), JSON.stringify(catalogOpenApi(release), null, 2) + "\n")] : []),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
+    writeFile(join(data, "runtime-overview-v1.json"), JSON.stringify(runtimeOverview(runtimes))),
     writeFile(join(data, "cards.json"), JSON.stringify(hardware.catalog.cards)),
     writeFile(join(data, "machines.json"), JSON.stringify(hardware.catalog.machines)),
     ...[...shards].map(([key, rows]) => writeFile(join(data, key + ".json"), JSON.stringify(rows))),
