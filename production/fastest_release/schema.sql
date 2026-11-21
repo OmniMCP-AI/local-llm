@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS fastest_release.evidence_withdrawal (
     withdrawn_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 
+CREATE TABLE IF NOT EXISTS fastest_release.agent_task_release (
+    pin text PRIMARY KEY CHECK (pin ~ '^[a-f0-9]{64}$'),
+    artifacts jsonb NOT NULL,
+    evidence_ids uuid[] NOT NULL CHECK (cardinality(evidence_ids) BETWEEN 1 AND 2),
+    expires_at timestamptz
+);
+
 CREATE OR REPLACE FUNCTION fastest_release.publish_observation(input jsonb)
 RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE
@@ -181,12 +188,53 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog 
     LIMIT 1;
 $$;
 
+CREATE OR REPLACE FUNCTION fastest_release.publish_agent_task(
+    input_artifacts jsonb, input_evidence_ids uuid[], input_expiry timestamptz
+) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE
+    input_pin text := encode(sha256(convert_to(input_artifacts->>'manifest.json', 'UTF8')), 'hex');
+BEGIN
+    PERFORM 1 FROM fastest_release.current_release WHERE singleton FOR UPDATE;
+
+    IF EXISTS (SELECT FROM fastest_release.evidence_withdrawal WHERE evidence_id = ANY (input_evidence_ids)) THEN
+        RAISE EXCEPTION 'Agent task evidence has been withdrawn';
+    END IF;
+
+    INSERT INTO fastest_release.agent_task_release (pin, artifacts, evidence_ids, expires_at)
+    VALUES (input_pin, input_artifacts, input_evidence_ids, input_expiry)
+    ON CONFLICT (pin) DO NOTHING;
+
+    IF NOT EXISTS (
+        SELECT FROM fastest_release.agent_task_release AS release
+        WHERE release.pin = input_pin AND release.artifacts = input_artifacts
+          AND release.evidence_ids = input_evidence_ids AND release.expires_at IS NOT DISTINCT FROM input_expiry
+    ) THEN
+        RAISE EXCEPTION 'Agent task release already has different approval conditions';
+    END IF;
+    RETURN input_pin;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION fastest_release.read_agent_task_artifact(requested text, artifact text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog AS $$
+    SELECT CASE WHEN (release.expires_at IS NULL OR release.expires_at > statement_timestamp())
+        AND NOT EXISTS (
+            SELECT FROM fastest_release.evidence_withdrawal WHERE evidence_id = ANY (release.evidence_ids)
+        ) THEN jsonb_build_object('status', 'published', 'content', release.artifacts->>artifact)
+        ELSE jsonb_build_object('status', 'withdrawn')
+    END
+    FROM fastest_release.agent_task_release AS release
+    WHERE release.pin = requested
+      AND artifact IN ('agent-task.html', 'agent-task.md', 'agent-task.json', 'task.json', 'manifest.json');
+$$;
+
 CREATE OR REPLACE FUNCTION fastest_release.withdraw_evidence(evidence uuid, withdrawal_reason text)
 RETURNS boolean LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM 1 FROM fastest_release.current_release WHERE singleton FOR UPDATE;
 
-    IF NOT EXISTS (SELECT FROM fastest_release.observation_revision WHERE evidence_id = evidence) THEN
+    IF NOT EXISTS (SELECT FROM fastest_release.observation_revision WHERE evidence_id = evidence)
+       AND NOT EXISTS (SELECT FROM fastest_release.agent_task_release WHERE evidence = ANY (evidence_ids)) THEN
         RETURN false;
     END IF;
 
@@ -201,6 +249,8 @@ $$;
 REVOKE ALL ON FUNCTION fastest_release.publish_observation(jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fastest_release.read_release(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fastest_release.read_evidence(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION fastest_release.publish_agent_task(jsonb, uuid[], timestamptz) FROM PUBLIC;
+REVOKE ALL ON FUNCTION fastest_release.read_agent_task_artifact(text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fastest_release.withdraw_evidence(uuid, text) FROM PUBLIC;
 
 COMMIT;
