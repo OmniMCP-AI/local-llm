@@ -60,9 +60,6 @@ export const profileStyles = `
 .profile-photo-notices pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .profile-footer { color: var(--profile-muted); margin-top: 1.2rem; overflow-wrap: anywhere; font-size: .85rem; }
 .profile-chart-note { color: var(--profile-ink) !important; font-weight: 650; }
-.profile-card-schematic { margin: 1.25rem 0; padding: .65rem 1rem; border: 1px solid var(--profile-edge); background: var(--profile-panel); }
-.profile-card-schematic svg { display: block; width: min(100%, 34rem); margin-inline: auto; }
-.profile-card-schematic figcaption { color: var(--profile-muted); text-align: center; font-size: .84rem; }
 .profile-chart-table { width: 100%; margin-top: .65rem; text-align: start; border-collapse: collapse; font-size: .85rem; }
 .profile-chart-table :is(th,td) { text-align: start; padding: .45rem; border-bottom: 1px solid var(--profile-edge); }
 .profile-chart-table tr[aria-current] { background: #302016; }
