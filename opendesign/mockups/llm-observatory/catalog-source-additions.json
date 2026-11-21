@@ -381,6 +381,54 @@
       "variant": "Max-Q Workstation Edition manufacturer reference",
       "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/",
       "parent": "nvidia-rtx-pro-6000"
+    },
+    {
+      "id": "msi-geforce-rtx-5090-32g-suprim-soc",
+      "name": "MSI GeForce RTX 5090 32 GB SUPRIM SOC",
+      "manufacturer": "MSI",
+      "variant": "G5090-32SPS",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-SOC/Specification",
+      "parent": "nvidia-geforce-rtx-5090"
+    },
+    {
+      "id": "msi-geforce-rtx-5090-32g-suprim-oc",
+      "name": "MSI GeForce RTX 5090 32 GB SUPRIM OC",
+      "manufacturer": "MSI",
+      "variant": "G5090-32SPC",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-OC/Specification",
+      "parent": "nvidia-geforce-rtx-5090"
+    },
+    {
+      "id": "msi-geforce-rtx-5090-32g-suprim-liquid-soc",
+      "name": "MSI GeForce RTX 5090 32 GB SUPRIM LIQUID SOC",
+      "manufacturer": "MSI",
+      "variant": "G5090-32SLS",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-LIQUID-SOC/Specification",
+      "parent": "nvidia-geforce-rtx-5090"
+    },
+    {
+      "id": "msi-geforce-rtx-5090-d-32g-vanguard-oc",
+      "name": "MSI GeForce RTX 5090 D 32G VANGUARD OC",
+      "manufacturer": "MSI",
+      "variant": "GeForce RTX 5090 D 32G VANGUARD OC",
+      "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-32G-VANGUARD-OC.pdf",
+      "parent": "nvidia-geforce-rtx-5090-d-32gb"
+    },
+    {
+      "id": "msi-geforce-rtx-5090-d-v2-24g-ventus-3x-oc",
+      "name": "MSI GeForce RTX 5090 D v2 24G VENTUS 3X OC",
+      "manufacturer": "MSI",
+      "variant": "GeForce RTX 5090 D v2 24G VENTUS 3X OC",
+      "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-v2-24G-VENTUS-3X-OC.pdf",
+      "parent": "nvidia-geforce-rtx-5090-d-v2"
+    },
+    {
+      "id": "asus-prime-rtx5070ti-o16g",
+      "name": "ASUS Prime GeForce RTX 5070 Ti 16 GB OC",
+      "manufacturer": "ASUS",
+      "variant": "PRIME-RTX5070TI-O16G",
+      "source": "https://www.asus.com/ie/motherboards-components/graphics-cards/prime/prime-rtx5070ti-o16g/techspec/",
+      "parent": "nvidia-geforce-rtx-5070-ti"
     }
   ],
   "specs": {
@@ -2438,6 +2486,165 @@
         "label": "Edition product images on NVIDIA",
         "scope": "RTX PRO 6000 Blackwell Max-Q Workstation Edition"
       }
+    },
+    "msi-geforce-rtx-5090-32g-suprim-soc": {
+      "designation": "G5090-32SPS",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-SOC/Specification",
+      "locator": "Product Specifications · model G5090-32SPS",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bus": "512-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0 ×16",
+        "CUDA cores": "21760",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "1000",
+        "Gaming mode boost clock": "2565 MHz",
+        "Silent mode boost clock": "2512 MHz",
+        "Gaming mode clock in MSI Center": "2580 MHz",
+        "Silent mode clock in MSI Center": "2527 MHz",
+        "Rated graphics power (W)": "600",
+        "Power mode ratings": "600 W gaming mode; 575 W silent mode",
+        "Dimensions": "359 × 150 × 76 mm",
+        "Card weight": "2840 g"
+      },
+      "gallery": {
+        "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-SOC/Overview",
+        "label": "Multiple product views from MSI",
+        "scope": "MSI GeForce RTX 5090 32 GB SUPRIM SOC"
+      }
+    },
+    "msi-geforce-rtx-5090-32g-suprim-oc": {
+      "designation": "G5090-32SPC",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-OC/Specification",
+      "locator": "Product Specifications · model G5090-32SPC",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bus": "512-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0 ×16",
+        "CUDA cores": "21760",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "1000",
+        "Default boost clock": "2482 MHz",
+        "Performance clock in MSI Center": "2497 MHz",
+        "Rated graphics power (W)": "575",
+        "Dimensions": "359 × 150 × 76 mm",
+        "Card weight": "2840 g"
+      },
+      "gallery": {
+        "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-OC/Overview",
+        "label": "Multiple product views from MSI",
+        "scope": "MSI GeForce RTX 5090 32 GB SUPRIM OC"
+      }
+    },
+    "msi-geforce-rtx-5090-32g-suprim-liquid-soc": {
+      "designation": "G5090-32SLS",
+      "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-LIQUID-SOC/Specification",
+      "locator": "Product Specifications · model G5090-32SLS",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bus": "512-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0 ×16",
+        "CUDA cores": "21760",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "1000",
+        "Gaming mode boost clock": "2565 MHz",
+        "Silent mode boost clock": "2512 MHz",
+        "Gaming mode clock in MSI Center": "2580 MHz",
+        "Silent mode clock in MSI Center": "2527 MHz",
+        "Rated graphics power (W)": "600",
+        "Power mode ratings": "600 W gaming mode; 575 W silent mode",
+        "Dimensions": "280 × 148 × 51 mm",
+        "Radiator dimensions": "394 × 121 × 55 mm",
+        "Tube length": "450 mm",
+        "Card weight": "2969 g"
+      },
+      "gallery": {
+        "source": "https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-LIQUID-SOC/Overview",
+        "label": "Multiple product views from MSI",
+        "scope": "MSI GeForce RTX 5090 32 GB SUPRIM LIQUID SOC"
+      }
+    },
+    "msi-geforce-rtx-5090-d-32g-vanguard-oc": {
+      "designation": "GeForce RTX 5090 D 32G VANGUARD OC",
+      "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-32G-VANGUARD-OC.pdf",
+      "locator": "MSI China datasheet · Specifications · page 1 · document generated 2025-05-20",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "32 GB GDDR7",
+        "Memory bus": "512-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0",
+        "Default boost clock": "2482 MHz",
+        "Performance clock in MSI Center": "2497 MHz",
+        "Dimensions": "357 × 151 × 76 mm",
+        "Card weight": "2707 g",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "1000"
+      },
+      "gallery": {
+        "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-32G-VANGUARD-OC.pdf",
+        "label": "Multiple product views from MSI",
+        "scope": "MSI GeForce RTX 5090 D 32G VANGUARD OC"
+      }
+    },
+    "msi-geforce-rtx-5090-d-v2-24g-ventus-3x-oc": {
+      "designation": "GeForce RTX 5090 D v2 24G VENTUS 3X OC",
+      "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-v2-24G-VENTUS-3X-OC.pdf",
+      "locator": "MSI China datasheet · Specifications · page 1 · document generated 2025-09-02",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "24 GB GDDR7",
+        "Memory bus": "384-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0",
+        "Default boost clock": "2437 MHz",
+        "Performance clock in MSI Center": "2452 MHz",
+        "Dimensions": "325 × 139 × 67 mm",
+        "Card weight": "1902 g",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "1000"
+      },
+      "gallery": {
+        "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-v2-24G-VENTUS-3X-OC.pdf",
+        "label": "Multiple product views from MSI",
+        "scope": "MSI GeForce RTX 5090 D v2 24G VENTUS 3X OC"
+      }
+    },
+    "asus-prime-rtx5070ti-o16g": {
+      "designation": "PRIME-RTX5070TI-O16G",
+      "source": "https://www.asus.com/ie/motherboards-components/graphics-cards/prime/prime-rtx5070ti-o16g/techspec/",
+      "locator": "Tech Specs · PRIME-RTX5070TI-O16G product column",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "16 GB GDDR7",
+        "Memory bus": "256-bit",
+        "Memory speed": "28 Gbps",
+        "Host interface": "PCIe 5.0",
+        "CUDA cores": "8960",
+        "Default boost clock": "2497 MHz",
+        "OC mode clock": "2527 MHz",
+        "Dimensions": "304 × 126 × 50 mm",
+        "Slot width": "2.5 slots",
+        "Display outputs": "3 × DisplayPort 2.1b, 1 × HDMI 2.1b",
+        "Power connectors": "1 × 16-pin",
+        "Recommended system power (W)": "750"
+      },
+      "gallery": {
+        "source": "https://www.asus.com/ie/motherboards-components/graphics-cards/prime/prime-rtx5070ti-o16g/",
+        "label": "Multiple product views from ASUS",
+        "scope": "ASUS Prime GeForce RTX 5070 Ti 16 GB OC"
+      }
     }
   },
   "machines": [
@@ -2449,7 +2656,9 @@
       "configuration": "Batch 2 · 4 refurbished AMD Instinct MI300X accelerators",
       "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
       "locator": "tiny corp product specification and gallery · Batch 2 · reviewed November 21, 2026",
-      "cardIds": ["amd-instinct-mi300x"],
+      "cardIds": [
+        "amd-instinct-mi300x"
+      ],
       "memory": {
         "system": "192 GB DDR5",
         "perDevice": "192 GB nominal per MI300X",
