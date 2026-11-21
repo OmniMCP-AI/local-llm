@@ -190,6 +190,23 @@ test("reviewed model cards retain pinned sources and llmfit counts", async (t) =
   assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
 });
 
+test("publisher benchmark dates distinguish unknown run time from the model-card revision", async (t) => {
+  const { request, readData } = await buildFixture(t);
+  const id = "thinkingmachines/Inkling-2-Mini";
+  const row = (await readData("th.json")).find(row => row.id === id);
+  const dates = row.supplemental.publisherEvaluations[0].dates;
+  assert.deepEqual(dates.origin, { value: null, precision: "unknown", timezone: null, source: "https://huggingface.co/thinkingmachines/Inkling-2-Mini/blob/ed40e7da625f594fc9c4990f5f66be24873c22d7/README.md#L124" });
+  assert.equal(dates.publication.value, null);
+  assert.equal(dates.ingestion.value, null);
+  assert.deepEqual(dates.revision, { value: "2026-11-20", precision: "day", timezone: null, source: "https://huggingface.co/api/models/thinkingmachines/Inkling-2-Mini/revision/ed40e7da625f594fc9c4990f5f66be24873c22d7" });
+  for (const ext of ["html", "md"]) {
+    const body = await (await request(`models/${id}.${ext}`)).text();
+    for (const value of ["Benchmark run date", "Unknown", "Model-card revision date", "2026-11-20"]) {
+      assert.ok(body.includes(value), `${ext} lacks ${value}`);
+    }
+  }
+});
+
 test("compact Gemma and Arete cards publish selected scores from their own pinned model cards", async (t) => {
   const { request } = await buildFixture(t);
   for (const model of gemmaAndAreteProfiles) {
