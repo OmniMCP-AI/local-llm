@@ -1,14 +1,16 @@
-# llama.cpp release watch
+# Runtime release watch
 
-Refresh one official GitHub releases page into PostgreSQL. Use the
-review report to see the last successful refresh, upstream edits and superseded
-releases, and authored notes for exact card configurations.
+Refresh official GitHub release pages for llama.cpp, SGLang, vLLM and Ollama
+into PostgreSQL. The watch shows the last successful refresh of each feed,
+upstream edits, superseded releases and reviewed notes for exact card
+configurations.
 
 ## Run a fixture replay
 
 Run from `production/` with Python 3.11 or later. The supplied fixture contains
 synthetic releases and a sample suggested technique. The explicit `--db PATH`
-option also opens existing SQLite histories.
+option also opens existing SQLite histories. Choose a different fixture's
+feed with `--source sglang`, `--source vllm` or `--source ollama`.
 
 ```sh
 python3 -B -m fastest_release_watch --db watch-demo.sqlite3 refresh \
@@ -21,7 +23,7 @@ The reporter writes to standard output. Select `html`, `markdown`, or `json`.
 Use `--as-of` to set the freshness check clock. The release origin serves the
 current public view from a live PostgreSQL history. [Serve the watch](#serve-the-watch)
 
-## Refresh the live feed in PostgreSQL
+## Refresh the live feeds in PostgreSQL
 
 Run from `production/` with `psql` on your path. Point `FASTEST_DATABASE_URL` at
 the project PostgreSQL database using a libpq connection string or configured
@@ -31,29 +33,40 @@ Refreshes need write access to that schema.
 ```sh
 export FASTEST_DATABASE_URL='service=fastest-publisher'
 python3 -B -m fastest_release_watch --postgres migrate
-python3 -B -m fastest_release_watch --postgres refresh
+python3 -B -m fastest_release_watch --postgres refresh --source all
 python3 -B -m fastest_release_watch --postgres report
 ```
 
-The migration creates the `fastest_release_watch` schema. Reports can use a
+The migration creates or upgrades the `fastest_release_watch` schema and
+preserves existing llama.cpp history. Reports can use a
 read-only login with `USAGE` on the schema and `SELECT` on `source_status` and
 `release_revision`. Use separate databases for PostgreSQL fixture replays and
 live refreshes.
 
-The source allowlist contains the public [llama.cpp GitHub releases
-endpoint](https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1).
+Choose a single feed with `--source llama.cpp`, `--source sglang`,
+`--source vllm` or `--source ollama`. The original `refresh` command without
+`--source` refreshes llama.cpp. The adapter uses these exact endpoints.
+
+- [llama.cpp](https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1)
+- [SGLang](https://api.github.com/repos/sgl-project/sglang/releases?per_page=10&page=1)
+- [vLLM](https://api.github.com/repos/vllm-project/vllm/releases?per_page=10&page=1)
+- [Ollama](https://api.github.com/repos/ollama/ollama/releases?per_page=10&page=1)
+
 GitHub permits unauthenticated access to published releases. Use the optional
 `FASTEST_RELEASE_WATCH_GITHUB_TOKEN` environment variable for a least-privilege
 token with Contents read access when required by your environment. GitHub
 applies [rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
-The adapter uses one HTTPS GET, up to ten releases and 4 MiB, with an
-eight-second socket timeout and a body read deadline. An hourly schedule uses
-one request per hour. A failed request stops that refresh. For a quota
-error, wait until the reset or retry time before running it again. [GitHub
+Each feed uses one HTTPS GET for up to ten releases and 4 MiB, with an
+eight-second socket timeout and a body read deadline. A refresh of all feeds
+still attempts each feed when another fails, saves the successful responses,
+and exits nonzero if a feed fails. For a quota error, wait until the reset or
+retry time before running it again. [GitHub
 list releases documentation](https://docs.github.com/en/rest/releases/releases#list-releases)
 
-The receipt takes the observation time from the start of the request. Reports
-show the last attempt, any latest error, and the last successful refresh. A
+The receipt takes the observation time from the start of each request. Reports
+show the last attempt, any latest error, and the last successful refresh for
+each feed. JSON exposes these fields under `sources` keyed by runtime ID.
+The original top-level source summary still describes llama.cpp. A
 success older than 24 hours is stale. Late replay cannot advance the success
 timestamp or re-promote a previously recorded revision. The bounded feed window
 covers releases observed by the watcher. Older releases already observed remain
@@ -64,14 +77,15 @@ selected release fields. Changes to the tag, notes, release properties or
 selected asset metadata can produce a new revision. Download counters are
 excluded. The database keeps normalized release metadata, digests and source
 links. It discards upstream body text, author information, binary assets and
-credentials. Current means latest observed stable release by publication time.
+credentials. Current means the latest observed stable release of each runtime
+by publication time.
 Prereleases, superseded releases and previous edits have distinct statuses.
 Historical source links open the upstream release, whose visible text can
 change after the watcher captured its revision digest.
 
 ## Serve the watch
 
-Apply the watcher migration as the publisher and refresh the live feed
+Apply the watcher migration as the publisher and refresh the live feeds
 separately. Give the release origin's existing reader these additional grants.
 The example role is `fastest_reader`.
 

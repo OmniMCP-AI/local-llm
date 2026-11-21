@@ -4,7 +4,7 @@ PostgreSQL stores reviewed observation revisions and the current release pointer
 
 The [shared CI CPU baseline](fastest_release/CPU-BASELINE.md) describes the measured decode capture and local publication procedure.
 
-The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream releases and authored card applicability. It links matched retests to approved benchmark releases.
+The runtime release watch tracks upstream releases and authored card applicability for llama.cpp, SGLang, vLLM and Ollama. It links matched retests to approved benchmark releases. [Operate the runtime release watch](fastest_release_watch/README.md)
 
 [Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
 
@@ -139,7 +139,7 @@ read-only and pass the existing `serve` flags. A deployment with fit enabled
 also mounts the pinned fit executable and passes `--fit-engine`. To let
 benchmark contributors check their review status, apply the [receipt route
 setup](fastest_contributor/README.md#serve-receipt-links).
-To publish retained llama.cpp releases, grant read access to the watcher
+To publish retained runtime releases, grant read access to the watcher
 schema and enable the route. [Serve the watch](fastest_release_watch/README.md#serve-the-watch)
 
 Terminate TLS in the reverse proxy and forward the canonical `Host` header
