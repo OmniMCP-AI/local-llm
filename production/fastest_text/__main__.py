@@ -17,9 +17,9 @@ from .review import write_review_packet
 
 PLAN_PATH = Path(__file__).with_name("plan.json")
 LATENCY_METRICS = {
-    "ttft": ("Time to first token", "Client request start to first generated token."),
+    "ttft": ("Time to first token", "Client request start to receipt of the event containing generated token ordinal 1."),
     "first_visible_answer": (
-        "Time to first visible answer", "Client request start to first visibly rendered answer text."
+        "Time to first visible answer", "Client request start to the first complete frame with printable non-whitespace answer text, before browser rendering."
     ),
 }
 
