@@ -22,6 +22,36 @@
       "cards": ["nvidia-geforce-rtx-4090", "nvidia-geforce-rtx-5080"]
     },
     {
+      "id": "tHI2LyNX3ls",
+      "title": "Radeon RX 9070 XT vs. GeForce RTX 5070 Ti, 55 Game Benchmark",
+      "cards": ["amd-radeon-rx-9070-xt", "nvidia-geforce-rtx-5070-ti"]
+    },
+    {
+      "id": "OSvyUFSIUtU",
+      "title": "RTX 5060 Ti 16GB vs RX 9060 XT 16GB - DLSS 4 vs FSR 4 Performance Compared",
+      "cards": ["amd-radeon-rx-9060-xt-16gb", "nvidia-geforce-rtx-5060-ti-16gb"]
+    },
+    {
+      "id": "RRxNgWNk2Wo",
+      "title": "Price is everything- RX 9060 XT 16GB vs RTX 5060 Ti 16GB: The Ultimate Comparison!!!",
+      "cards": ["amd-radeon-rx-9060-xt-16gb", "nvidia-geforce-rtx-5060-ti-16gb"]
+    },
+    {
+      "id": "LslijvBfh3w",
+      "title": "ARC B580 12GB vs RTX 3060 12GB - Test in 10 Games",
+      "cards": ["intel-arc-b580", "nvidia-geforce-rtx-3060-12gb"]
+    },
+    {
+      "id": "wQ9g_CI1eWI",
+      "title": "RTX 3080 vs RTX 5070 at 4K & 1440p in New Games - Is it Worth Upgrading? | 10 Games Tested",
+      "cards": ["nvidia-geforce-rtx-3080", "nvidia-geforce-rtx-5070"]
+    },
+    {
+      "id": "gvl3mo_LqFo",
+      "title": "vLLM on Dual AMD Radeon 9700 AI PRO: Tutorials,  Benchmarks (vs RTX 5090/5000/4090/3090/A100)",
+      "exclusion": "The central comparison uses two Radeon AI PRO R9700 cards."
+    },
+    {
       "id": "7TyGIuwYHnA",
       "title": "RTX 5090 vs 2 RTX 3090 for Local AI: What's Worth It?",
       "exclusion": "The title explicitly compares one card with a two-card setup."
