@@ -42,6 +42,10 @@ class TextPilotTest(unittest.TestCase):
                     self.assertEqual(metric["status"], "missing")
                     self.assertEqual(metric["sample_count"], 0)
                     self.assertIsNone(metric["value"])
+            self.assertIn("first complete frame with printable non-whitespace answer text", markdown)
+            self.assertNotIn("visibly rendered", markdown)
+            self.assertIn("first complete frame with printable non-whitespace answer text", html)
+            self.assertIn("before browser rendering", cell["metrics"]["first_visible_answer"]["boundary"])
             self.assertIn("事实保真", markdown)
             self.assertIn("事实保真", html)
 
