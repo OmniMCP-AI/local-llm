@@ -134,7 +134,7 @@ export function PriceCohorts({ cohorts, releaseId, copy }) {
       const terms = references ? [cohort.source] : [cohort.destination, cohort.condition];
       return <li key={cohort.releaseId}>
         <a href={"/prices?release=" + cohort.releaseId} aria-current={cohort.releaseId === releaseId ? "page" : undefined}>
-          <strong><bdi>{cohort.scope.id}</bdi></strong>
+          <strong><bdi>{cohort.scope.kind === "whole_build" ? copy.scopeBuild : copy.scopeSku} · {cohort.scope.id}</bdi></strong>
           <span><bdi>{cohort.market}</bdi> · <bdi>{cohort.currency}</bdi> · <ObservationTime value={cohort.asOf} /></span>
           <small>{references ? copy.references : copy.offers}
             {terms.filter(Boolean).map((term, index) => <React.Fragment key={index}> · <bdi>{term}</bdi></React.Fragment>)}
@@ -199,7 +199,7 @@ function PriceOverview({ overview, selectedId, onSelect, copy, locale }) {
   return <section className="panel price-visual" aria-labelledby="price-overview-heading">
     <h2 id="price-overview-heading">{copy.overview}</h2>
     {!overview?.points.length ? <p>{copy.overviewEmpty}</p> : <>
-      <p><bdi>{[overview.market, overview.destination, overview.condition, overview.protocol].join(" · ")}</bdi></p>
+      <p><bdi>{[copy.scopeBuild, overview.market, overview.destination, overview.condition, overview.protocol].join(" · ")}</bdi></p>
       <CoordinatePlot title={copy.overview}
         xAxis={{ label: copy.landedAxis, unit: overview.currency, formatTick: moneyTicks(locale) }}
         yAxis={{ label: copy.decodeAxis, unit: overview.unit, formatTick: moneyTicks(locale) }}
@@ -230,7 +230,7 @@ export function PriceRelease({ data, query, copy, currency, locale, now = new Da
     <dl className="price-terms">
       <div><dt>{copy.market}</dt><dd data-market={price.market}><bdi>{price.market}</bdi></dd></div>
       <div><dt>{copy.destination}</dt><dd><bdi>{price.destination ?? copy.unknown}</bdi></dd></div>
-      <div><dt>{copy.scope}</dt><dd><bdi>{price.scope.id} · {price.scope.revision_id}</bdi></dd></div>
+      <div><dt>{copy.scope}</dt><dd><bdi>{price.scope.kind === "whole_build" ? copy.scopeBuild : copy.scopeSku} · {price.scope.id} · {price.scope.revision_id}</bdi></dd></div>
       <div><dt>{copy.condition}</dt><dd><bdi>{price.condition ?? copy.unknown}</bdi></dd></div>
       <div><dt>{copy.asOf}</dt><dd><ObservationTime value={price.as_of} unknown={copy.unknown} /></dd></div>
       {!citation && <>
@@ -241,6 +241,7 @@ export function PriceRelease({ data, query, copy, currency, locale, now = new Da
       <div><dt>{copy.release}</dt><dd><bdi>{price.release_id}</bdi> · <bdi>{price.authorization_decision_id}</bdi></dd></div>
     </dl>
     <p className="price-links"><a href={"/prices?" + query}>{copy.pinned}</a><a href={dataRoute + "?" + query}>{copy.exact}</a></p>
+    {!data.overview?.points.some(point => point.id === price.release_id) && <p role="status">{copy.performanceMissing}</p>}
     <PriceHistory price={price} copy={copy} locale={locale} />
     {citation ? <References price={price} copy={copy} /> : <>
       <Offers price={price} copy={copy} currency={currency} locale={locale} now={now} />

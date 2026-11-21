@@ -8,7 +8,8 @@ function number(value) {
 
 export function pricePerformanceOverview(goal, goalRelease, prices) {
   const { market, protocol, metrics, rows } = goal ?? {};
-  if (goal?.release_id !== goalRelease || !market?.destination || !/^[A-Z]{3}$/.test(market.currency)
+  if (goal?.release_id !== goalRelease || !marketFields.every(key => typeof market?.[key] === "string" && market[key].trim())
+      || !/^[A-Z]{3}$/.test(market.currency)
       || metrics?.decode?.unit !== "tok/s" || typeof protocol !== "string" || !Array.isArray(rows)) return null;
 
   const byRelease = new Map(prices.filter(Boolean).map(price => [price.release_id, price]));

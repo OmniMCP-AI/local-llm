@@ -198,6 +198,12 @@ test("the overview joins a measured decode rate to its exact released price and 
     points: [{ id: releaseId, name: "Apple M4 build", x: 1199.95, y: 58.6, xText: "1199.95 USD",
       yText: "58.6 tok/s", detail: "2026-11-21 · 20 samples" }],
   });
+  const missingTerms = { ...goal, market: { ...market, condition: undefined } };
+  paths.set(goalPath, missingTerms);
+  paths.set(`/price-releases/${releaseId}/prices.json`, { ...price, as_of: asOf, condition: undefined });
+  assert.equal((await (await request({}, env)).json()).overview, null);
+  paths.set(goalPath, goal);
+  paths.set(`/price-releases/${releaseId}/prices.json`, { ...price, as_of: asOf });
   goal.rows[0].metrics.decode.sample_count = 0;
   assert.deepEqual((await (await request({}, env)).json()).overview.points, []);
 });
@@ -329,6 +335,8 @@ test("localized price release displays current expiry and pinned collection gaps
   for (const label of ["Historical price references", "Original post-coupon price", "2026-11-01", "812.30 CNY",
     "Fixture Marketplace", "Fixture Price Monitor", sourceLocator, "Unknown"]) assert.ok(citation.includes(label), label);
   assert.doesNotMatch(citation, /Dated offers|Collection status|Display estimate|Available at release|Pinned decision order|Pinned cost scenario/);
+  assert.match(citation, /Single item \/ SKU · fixture-board · fixture-board-v1/);
+  assert.match(citation, /No compatible released performance is available for this item/);
 
   const referenceId = "55555555-5555-4555-8555-555555555555";
   const directory = loaded.exports.renderCohorts({
