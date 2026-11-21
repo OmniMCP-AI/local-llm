@@ -25,6 +25,10 @@ The client schedules one request per user every six seconds for 24 batches and k
 
 The least favorable of the four per-user p95 values drives the latency goal. Each p95 is the nearest rank among that user's accepted responses and requires 20 accepted responses. Capacity divides accepted output tokens by the full 144 seconds. Intensity divides the wall-meter delta by the accepted request count. Ratios are rounded to six decimal places. An incomplete schedule keeps its counts and outcomes and leaves the goal metrics unknown. A complete run can supply capacity even when its latency sample is too small or the wall meter is missing.
 
+## Store a private capture
+
+The [operator intake command](../fastest_intake/README.md#import-a-private-four-user-serving-capture) stores finalized capture timing and raw file digests in private PostgreSQL. It keeps diagnostic and interrupted captures available for inspection. Public comparison uses the separate serving review workflow.
+
 ## Retain calibrated AC meter evidence
 
 Use a calibrated cumulative energy meter across every AC power feed into the serving host. The meter includes idle gaps and unsuccessful work. Keep client, network equipment and external cooling power outside the metered boundary.

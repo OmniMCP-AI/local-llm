@@ -15,6 +15,7 @@ import tempfile
 from threading import Thread
 import time
 import unittest
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -28,6 +29,7 @@ from test_mcp_http import mcp_http_client, mcp_http_server
 from test_public_api import api_client, api_server
 from test_scaling import BASELINE, COMPARISON, fixture_releases
 from fastest_release.scaling import scaling_report
+from fastest_serving import capture
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -493,6 +495,183 @@ class ReleaseTest(unittest.TestCase):
         self.assertIn("workflow", invalid.stderr)
         self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_run"), "1")
         self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_attempt"), "2")
+
+    def serving_capture_packet(
+        self, *, diagnostic=False, cancel_at=None, miss_slot=False, meter=False, fail_warmup=False,
+    ):
+        packet = self.socket_path.parent / f"private-serving-{uuid4().hex}"
+        now = 10_000_000_000
+        calls = 0
+        window_start = None
+
+        async def sleep_until(target_ns):
+            nonlocal now, window_start
+            if window_start is None:
+                window_start = target_ns
+            if cancel_at is not None and target_ns == window_start + cancel_at * 6_000_000_000:
+                raise asyncio.CancelledError
+            now = max(now, target_ns)
+            if miss_slot and target_ns == window_start + 6_000_000_000:
+                now += 101_000_000
+
+        async def post(_host, _port, path, payload, started_ns, _timeout):
+            nonlocal now, calls
+            response = {"started_ns": started_ns, "http_status": 200, "response_headers": "private trace header"}
+            elapsed_ns = 12_000_001
+            if path != "/completion":
+                body = {"id_slot": int(path.split("/")[2][0]), "n_erased": 1024}
+            else:
+                calls += 1
+                user = {1251: 1, 1502: 2, 1753: 3, 1004: 4}[json.loads(payload)["prompt"][0]]
+                body = {"stop": True, "tokens": [42] * 128, "content": "private response body"}
+                if fail_warmup and calls == 1:
+                    response["http_status"] = 503
+                elif calls > 4:
+                    if user == 2:
+                        body["tokens"].pop()
+                    elif user == 3:
+                        response["http_status"] = 503
+                    elif user == 4:
+                        elapsed_ns = 5_000_000_001
+                        response["timeout"] = True
+            response["finished_ns"] = started_ns + elapsed_ns
+            await asyncio.sleep(0)
+            now = max(now, response["finished_ns"])
+            return response, json.dumps(body).encode()
+
+        clock = {"source": "linux-clock-monotonic", "boot_id": "cebb3678-779c-4b1d-a0df-d83885982ed0",
+                 "time_namespace": 4026531834}
+        with patch.multiple(capture, monotonic_ns=lambda: now, _post=post, _sleep_until=sleep_until,
+                            _meter_clock=lambda: clock), patch.object(capture.platform, "node", return_value="private hostname"):
+            try:
+                asyncio.run(capture.capture(
+                    packet, "127.0.0.1" if diagnostic else "192.0.2.25", 8080,
+                    diagnostic_reason="private diagnostic reason" if diagnostic else None,
+                    notes="private operator notes", meter_lead_ms=10 if meter else None,
+                ))
+            except asyncio.CancelledError:
+                if cancel_at is None:
+                    raise
+            except ValueError as error:
+                if not fail_warmup or "Warmup did not complete successfully" not in str(error):
+                    raise
+        return packet
+
+    def serving_intake(self, command, *args):
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url,
+             command, *args], cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
+        )
+
+    def test_private_serving_capture_intake_preserves_actual_timing_and_raw_digests(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.serving_capture_packet(diagnostic=True)
+        for body in packet.glob("*.bin"):
+            body.unlink()
+        result = self.serving_intake("ingest-serving-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        capture_hash = sha256((packet / "capture.json").read_bytes()).hexdigest()
+        trace_hash = sha256((packet / "trace.jsonl").read_bytes()).hexdigest()
+        self.assertEqual(receipt, {
+            "capture_sha256": capture_hash, "trace_sha256": trace_hash,
+            "kind": "diagnostic", "capture_status": "complete",
+            "review_status": "held", "separate_host_status": "unverified", "power_status": "missing",
+            "planned": 96, "attempted": 96, "unrecorded": 0, "accepted": 24, "accepted_output_tokens": 3072,
+        })
+        self.assertEqual(json.loads(self.serving_intake("ingest-serving-capture", packet).stdout), receipt)
+        self.assertEqual(self.store._query("""
+            SELECT user_slot, outcome, elapsed_ms, observed_elapsed_ns, output_tokens
+            FROM fastest_intake.serving_capture_attempt WHERE request_number = 1 ORDER BY user_slot
+        """).splitlines(), [
+            "1|accepted|13|12000001|128", "2|rejected|13|12000001|127",
+            "3|failed|13|12000001|0", "4|timeout|5000|5000000001|0",
+        ])
+        stats = json.loads(self.serving_intake("stats").stdout)
+        self.assertEqual((stats["serving_capture_runs"], stats["serving_capture_attempts"]), (1, 96))
+        rows = self.store._query("""
+            SELECT row_to_json(run) FROM fastest_intake.serving_capture_run AS run;
+            SELECT row_to_json(attempt) FROM fastest_intake.serving_capture_attempt AS attempt;
+        """)
+        for private in (str(packet), "127.0.0.1", "private hostname", "private trace header",
+                        "private diagnostic reason", "private operator notes", "private response body"):
+            self.assertNotIn(private, rows)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_release.observation_revision"), "0")
+        self.store._query("CREATE ROLE serving_public_reader LOGIN;")
+        reader = ReleaseStore(self.database_url + " user=serving_public_reader")
+        for table in ("serving_capture_run", "serving_capture_attempt"):
+            with self.assertRaisesRegex(ReleaseError, "permission denied"):
+                reader._query(f"SELECT * FROM fastest_intake.{table}")
+
+    def test_private_serving_capture_intake_rejects_trace_drift_and_false_claims(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.serving_capture_packet(diagnostic=True)
+        self.serving_intake("ingest-serving-capture", packet).check_returncode()
+        ledger = packet / "capture.json"
+        trace = packet / "trace.jsonl"
+        original_ledger, original_trace = ledger.read_bytes(), trace.read_bytes()
+
+        events = [json.loads(line) for line in original_trace.splitlines()]
+        first_timed = next(index for index, event in enumerate(events) if event["phase"] == "timed")
+        reordered = events[:first_timed] + events[first_timed + 4:first_timed + 8] + events[first_timed:first_timed + 4]
+        reordered += events[first_timed + 8:]
+
+        def encoded(items):
+            return ("\n".join(json.dumps(item) for item in items) + "\n").encode()
+
+        for changed, error in (
+            (encoded(reordered), "out of schedule order"),
+            (encoded(events[:-1]), "missing a timed request"),
+            (original_trace.replace(b'"elapsed_ms":13', b'"elapsed_ms":12', 1), "disagrees with monotonic"),
+            (original_trace.replace(b'"private trace header"', b'"alternate private header"', 1), "different trace.jsonl SHA-256"),
+        ):
+            with self.subTest(error=error):
+                trace.write_bytes(changed)
+                result = self.serving_intake("ingest-serving-capture", packet)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(error, result.stderr)
+        trace.write_bytes(original_trace)
+        data = json.loads(original_ledger)
+        for change, error in (
+            ({"kind": "private-capture"}, "agree with its diagnostic reason"),
+            ({"kind": "private-capture", "diagnostic_reason": None}, "Loopback captures require"),
+            ({"status": "capturing"}, "must be finalized"),
+            ({"power": {"status": "measured"}}, "must report missing power"),
+        ):
+            with self.subTest(change=change):
+                ledger.write_text(json.dumps({**data, **change}))
+                result = self.serving_intake("ingest-serving-capture", packet)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(error, result.stderr)
+        stats = json.loads(self.serving_intake("stats").stdout)
+        self.assertEqual((stats["serving_capture_runs"], stats["serving_capture_attempts"]), (1, 96))
+
+    def test_private_serving_capture_intake_holds_incomplete_captures_and_announced_meter_window(self):
+        self.serving_intake("migrate").check_returncode()
+        for options, status, attempted, unrecorded, accepted in (
+            ({"fail_warmup": True}, "failed", 0, 96, 0),
+            ({"cancel_at": 1}, "interrupted", 4, 92, 1),
+            ({"miss_slot": True}, "partial", 92, 4, 23),
+            ({"meter": True}, "complete", 96, 0, 24),
+        ):
+            with self.subTest(status=status):
+                packet = self.serving_capture_packet(**options)
+                ledger = json.loads((packet / "capture.json").read_bytes())
+                self.assertEqual(ledger["status"], status)
+                self.assertEqual("meter_window" in ledger, options.get("meter", False))
+                result = self.serving_intake("ingest-serving-capture", packet)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                receipt = json.loads(result.stdout)
+                self.assertEqual(
+                    [receipt[key] for key in ("kind", "capture_status", "review_status", "separate_host_status",
+                                              "power_status", "attempted", "unrecorded", "accepted")],
+                    ["private-capture", status, "held", "unverified", "missing", attempted, unrecorded, accepted],
+                )
+                self.assertEqual(self.store._query(f"""
+                    SELECT count(*) FROM fastest_intake.serving_capture_attempt
+                    WHERE capture_sha256 = '{receipt["capture_sha256"]}'
+                      AND outcome = 'unrecorded' AND elapsed_ms IS NULL AND output_tokens IS NULL
+                """), "4" if status == "partial" else "0")
 
     def test_agent_task_report_uses_reviewed_postgres_artifacts_and_live_withdrawal(self):
         from fastest_agent_task.harness import plan

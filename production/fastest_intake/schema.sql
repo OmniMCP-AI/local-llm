@@ -195,6 +195,42 @@ CREATE TABLE IF NOT EXISTS fastest_intake.image_pilot_attempt (
         OR (outcome <> 'success' AND output_sha256 IS NULL AND failure_reason IS NOT NULL))
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.serving_capture_run (
+    capture_sha256 text PRIMARY KEY CHECK (capture_sha256 ~ '^[0-9a-f]{64}$'),
+    trace_sha256 text NOT NULL CHECK (trace_sha256 ~ '^[0-9a-f]{64}$'),
+    protocol_id text NOT NULL CHECK (protocol_id = 'four-user-fixed-token-serving@1'),
+    kind text NOT NULL CHECK (kind IN ('diagnostic', 'private-capture')),
+    capture_status text NOT NULL CHECK (capture_status IN ('complete', 'partial', 'failed', 'interrupted')),
+    duration_ms integer NOT NULL CHECK (duration_ms BETWEEN 0 AND 144000),
+    window_started_at timestamptz,
+    capture_finished_at timestamptz,
+    review_status text NOT NULL CHECK (review_status = 'held'),
+    separate_host_status text NOT NULL CHECK (separate_host_status = 'unverified'),
+    power_status text NOT NULL CHECK (power_status = 'missing'),
+    CHECK (capture_status NOT IN ('complete', 'partial') OR duration_ms = 144000)
+);
+
+CREATE TABLE IF NOT EXISTS fastest_intake.serving_capture_attempt (
+    capture_sha256 text REFERENCES fastest_intake.serving_capture_run(capture_sha256),
+    user_slot smallint CHECK (user_slot BETWEEN 1 AND 4),
+    request_number smallint CHECK (request_number BETWEEN 1 AND 24),
+    scheduled_ms integer NOT NULL CHECK (scheduled_ms = (request_number - 1) * 6000),
+    started_ms bigint NOT NULL CHECK (started_ms >= scheduled_ms),
+    outcome text NOT NULL CHECK (outcome IN ('accepted', 'rejected', 'failed', 'timeout', 'unrecorded')),
+    elapsed_ms integer CHECK (elapsed_ms BETWEEN 1 AND 5000),
+    observed_elapsed_ns bigint CHECK (observed_elapsed_ns >= 0),
+    output_tokens integer CHECK (output_tokens >= 0),
+    PRIMARY KEY (capture_sha256, user_slot, request_number),
+    CHECK (
+        (outcome = 'unrecorded' AND elapsed_ms IS NULL AND observed_elapsed_ns IS NULL AND output_tokens IS NULL)
+        OR (outcome <> 'unrecorded' AND elapsed_ms IS NOT NULL AND observed_elapsed_ns IS NOT NULL
+            AND output_tokens IS NOT NULL AND started_ms <= scheduled_ms + 100)
+    ),
+    CHECK (outcome <> 'accepted' OR output_tokens = 128),
+    CHECK (outcome NOT IN ('failed', 'timeout') OR output_tokens = 0),
+    CHECK (outcome <> 'timeout' OR elapsed_ms = 5000)
+);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;
 
 COMMIT;
