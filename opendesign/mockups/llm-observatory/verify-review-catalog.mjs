@@ -1,6 +1,7 @@
 import { verifyCatalogScripts, catalogNavigationLinks } from "./verify-catalog-html.mjs";
 import assert from "node:assert/strict";
 import { escapeHtml, escapeMarkdown } from "./catalog-card.mjs";
+import { profileGuidance } from "./catalog-guidance.mjs";
 import { readPublishedCatalog } from "./catalog-pg.mjs";
 import { modelShard } from "./catalog-paths.mjs";
 
@@ -64,7 +65,7 @@ export async function verifyReviewCatalog(catalog, review, { read, origin }) {
         pinned.discovery[collection].map((row, index) => ({ ...row, rank: index + 1 })));
     }
     assert.deepEqual(new Set(collections.recent.map(row => row.id)), new Set(pinned.supplementalModels.map(row => row.id)));
-    assert.deepEqual(runtimes, pinned.runtimes);
+    assert.deepEqual(runtimes, pinned.runtimes.map(row => ({ ...row, guidance: profileGuidance("runtimes", row) })));
   }
 
   async function readPair(path) {
