@@ -105,8 +105,10 @@ python3 -B -m fastest_agent_task.capture_hosted plan
 The job checks the official runtime archive and executable, both model
 shards, effective context and batch sizes, CPU-only buffer placement, guest
 affinity and cgroup quotas. It uses one Unix socket and confirms an empty KV
-slot before each warmup and timed attempt. It samples guest idle and steal
-time before and after the session. Physical host load is unknown, and shared
+slot before each warmup and timed attempt. If an earlier request is still
+draining, the reset can wait up to 90 seconds before failing the capture.
+That wait precedes the next attempt and its 30-second deadline. The job
+samples guest idle and steal time before and after the session. Physical host load is unknown, and shared
 infrastructure can affect timing. The results describe this run attempt.
 
 The job verifies the attempt sequence and monotonic elapsed times with its

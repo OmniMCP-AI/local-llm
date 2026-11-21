@@ -139,8 +139,8 @@ def interrupt(signum, _frame):
 
 def exchange(path, endpoint, timeout, body=None):
     conn = LocalConnection(path, timeout)
-    signal.setitimer(signal.ITIMER_REAL, timeout)
     try:
+        signal.setitimer(signal.ITIMER_REAL, timeout)
         if body is None:
             conn.request("GET", endpoint)
         else:
@@ -170,7 +170,26 @@ def event(directory, data):
 
 
 @contextmanager
-def local_server(directory, binary, model, device, settings, env, check_server=None):
+def capture_stage(report, stage, **scope):
+    if report is None:
+        yield
+        return
+    identity = {"stage": stage, **scope}
+    started = time.monotonic_ns()
+    report({**identity, "status": "started"})
+    try:
+        yield
+    except (OSError, HTTPException, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        kind = type(error).__name__
+        report({**identity, "status": "failed", "error_type": kind,
+                "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000})
+        raise RuntimeError(f"{stage} failed ({kind})") from None
+    else:
+        report({**identity, "status": "finished", "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000})
+
+
+@contextmanager
+def local_server(directory, binary, model, device, settings, env, check_server=None, report_progress=None):
     listener = directory / "run.sock"
     command = [
         str(binary), "--model", str(model), "--host", str(listener), "--device", device,
@@ -187,34 +206,38 @@ def local_server(directory, binary, model, device, settings, env, check_server=N
     with TemporaryDirectory(dir=directory, prefix="slot-cache-") as cache_dir, (directory / "server.log").open("wb") as output:
         # b5163 requires a slot storage path even for the in-memory erase operation.
         command += ["--slot-save-path", cache_dir]
-        child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, env=env)
+        child = None
         try:
+            with capture_stage(report_progress, "server_launch"):
+                child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, env=env)
             event(directory, {"event": "server_started", "pid": child.pid, "command": command})
-            for _ in range(120):
-                if child.poll() is not None:
-                    raise RuntimeError("llama.cpp stopped before readiness. Inspect server.log in the private packet.")
-                try:
-                    if exchange(listener, "/health", 1).get("status") == "ok":
-                        break
-                except (OSError, HTTPException, ValueError):
-                    pass
-                time.sleep(0.5)
-            else:
-                raise RuntimeError("llama.cpp never became ready")
-            if check_server is not None:
-                check_server(child.pid, directory / "server.log")
+            with capture_stage(report_progress, "server_ready"):
+                for _ in range(120):
+                    if child.poll() is not None:
+                        raise RuntimeError("llama.cpp stopped before readiness. Inspect server.log in the private packet.")
+                    try:
+                        if exchange(listener, "/health", 1).get("status") == "ok":
+                            break
+                    except (OSError, HTTPException, ValueError):
+                        pass
+                    time.sleep(0.5)
+                else:
+                    raise RuntimeError("llama.cpp never became ready")
+                if check_server is not None:
+                    check_server(child.pid, directory / "server.log")
             event(directory, {"event": "server_ready", "pid": child.pid})
             yield listener
         finally:
-            if child.poll() is None:
-                child.terminate()
-                try:
-                    child.wait(5)
-                except subprocess.TimeoutExpired:
-                    child.kill()
-                    child.wait()
-            listener.unlink(missing_ok=True)
-            event(directory, {"event": "server_stopped", "pid": child.pid, "returncode": child.returncode})
+            if child is not None:
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(5)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait()
+                listener.unlink(missing_ok=True)
+                event(directory, {"event": "server_stopped", "pid": child.pid, "returncode": child.returncode})
 
 
 def capture_host(path):
@@ -240,7 +263,7 @@ def capture_host(path):
 
 
 def run(directory, binary, model, hardware, os_build, backend, device, *,
-        protocol=None, check_server=None, runtime_environment=None):
+        protocol=None, check_server=None, runtime_environment=None, report_progress=None):
     if protocol is None:
         protocol = plan()
     directory.mkdir(mode=0o700)
@@ -252,21 +275,23 @@ def run(directory, binary, model, hardware, os_build, backend, device, *,
     env = {key: value for key, value in os.environ.items() if not key.startswith(("LLAMA_", "GGML_", "DYLD_", "LD_"))}
     if runtime_environment is not None:
         env = runtime_environment
-    version = subprocess.check_output([binary, "--version"], stderr=subprocess.STDOUT, text=True, timeout=10, env=env)
-    (directory / "runtime-version.txt").write_text(version, encoding="utf-8")
-    revision = protocol["runtime"]["revision"]
-    version_match = re.search(r"^version: ([0-9]+) \(([0-9a-f]{7,40})\)", version, re.MULTILINE)
-    if (not version_match or not revision.startswith(version_match[2])
-            or ("build" in protocol["runtime"] and int(version_match[1]) != protocol["runtime"]["build"])):
-        raise ValueError("llama-server revision does not match the plan")
+    with capture_stage(report_progress, "runtime_probe"):
+        version = subprocess.check_output([binary, "--version"], stderr=subprocess.STDOUT, text=True, timeout=10, env=env)
+        (directory / "runtime-version.txt").write_text(version, encoding="utf-8")
+        revision = protocol["runtime"]["revision"]
+        version_match = re.search(r"^version: ([0-9]+) \(([0-9a-f]{7,40})\)", version, re.MULTILINE)
+        if (not version_match or not revision.startswith(version_match[2])
+                or ("build" in protocol["runtime"] and int(version_match[1]) != protocol["runtime"]["build"])):
+            raise ValueError("llama-server revision does not match the plan")
 
-    shards = protocol["artifact"]["shards"]
-    if model.name != shards[0]["path"]:
-        raise ValueError("Supply the first pinned GGUF shard; keep its companion alongside it")
-    for shard in shards:
-        path = model.with_name(shard["path"])
-        if path.stat().st_size != shard["bytes"] or digest(path) != shard["sha256"]:
-            raise ValueError(f"{path.name} does not match the pinned artifact")
+    with capture_stage(report_progress, "verify_model_shards"):
+        shards = protocol["artifact"]["shards"]
+        if model.name != shards[0]["path"]:
+            raise ValueError("Supply the first pinned GGUF shard; keep its companion alongside it")
+        for shard in shards:
+            path = model.with_name(shard["path"])
+            if path.stat().st_size != shard["bytes"] or digest(path) != shard["sha256"]:
+                raise ValueError(f"{path.name} does not match the pinned artifact")
 
     build = {"llama-server": digest(binary)}
     for pattern in ("*.dylib", "*.so*", "*.metal"):
@@ -285,21 +310,28 @@ def run(directory, binary, model, hardware, os_build, backend, device, *,
         for name, context in contexts.items()
     }
 
-    capture_host(directory / "host-before.txt")
+    with capture_stage(report_progress, "host_before"):
+        capture_host(directory / "host-before.txt")
     try:
-        with local_server(directory, binary, model, device, protocol["settings"], env, check_server) as listener:
+        with local_server(directory, binary, model, device, protocol["settings"], env,
+                          check_server, report_progress) as listener:
             def complete(body, timeout):
                 return exchange(listener, "/v1/chat/completions", timeout, body)
 
             def attempt(name, trial, number, warmup=False):
-                erased = exchange(listener, "/slots/0?action=erase", 5, {})
-                if erased.get("id_slot") != 0 or type(erased.get("n_erased")) is not int:
-                    raise RuntimeError("llama.cpp did not confirm the attempt's KV reset")
-                event(directory, {"event": "kv_reset", "context_id": name, "trial": trial,
-                                  "attempt": number, "warmup": warmup, "response": erased,
-                                  "completed_monotonic_ns": time.monotonic_ns()})
+                scope = {"context_id": name, "trial": trial, "attempt": number}
+                with capture_stage(report_progress, "kv_reset", warmup=warmup, **scope):
+                    reset_timeout = protocol["settings"].get("kv_reset_timeout_seconds", 5)
+                    erased = exchange(listener, "/slots/0?action=erase", reset_timeout, {})
+                    if erased.get("id_slot") != 0 or type(erased.get("n_erased")) is not int or erased["n_erased"] < 0:
+                        raise RuntimeError("llama.cpp did not confirm the attempt's KV reset")
+                    event(directory, {"event": "kv_reset", "warmup": warmup, **scope, "response": erased,
+                                      "completed_monotonic_ns": time.monotonic_ns()})
                 raw = run_attempt(complete, contexts[name], trial, number, protocol["settings"])
                 event(directory, {"event": "attempt", "warmup": warmup, **raw})
+                if report_progress is not None:
+                    report_progress({"stage": "warmup" if warmup else "measured_attempt", "status": "finished",
+                                     **scope, "outcome": raw["outcome"], "wall_ns": raw["attempt"]["wall_ns"]})
                 return raw
 
             for name in contexts:
@@ -316,7 +348,8 @@ def run(directory, binary, model, hardware, os_build, backend, device, *,
                         break
 
     finally:
-        capture_host(directory / "host-after.txt")
+        with capture_stage(report_progress, "host_after"):
+            capture_host(directory / "host-after.txt")
         captured = {name: context for name, context in contexts.items() if records[name]["attempts"]}
         if captured:
             write_review_packet(directory, captured)

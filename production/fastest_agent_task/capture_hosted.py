@@ -154,6 +154,10 @@ def evidence_ids(locator):
     return {name: evidence_id(locator, name) for name in WARMUPS}
 
 
+def report_progress(data):
+    print("Hosted capture", json.dumps(data, sort_keys=True), flush=True)
+
+
 def capture(archive, models, directory):
     runner = runner_provenance()
     locator = run_url(runner)
@@ -191,7 +195,7 @@ def capture(archive, models, directory):
         before = guest_load()
         try:
             run(private, binary, model, environment["hardware"], OS, "CPU", settings["device"],
-                protocol=protocol, check_server=partial(check_server, affinity),
+                protocol=protocol, check_server=partial(check_server, affinity), report_progress=report_progress,
                 runtime_environment={"LC_ALL": "C", "LD_LIBRARY_PATH": str(runtime), "OMP_NUM_THREADS": str(THREADS)})
         except (ValueError, RuntimeError, subprocess.SubprocessError):
             print("Parsed startup diagnostics", json.dumps(startup_diagnostics(private / "server.log"), sort_keys=True))
