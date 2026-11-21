@@ -25,21 +25,48 @@ A new live slot must already be due on the current Asia/Shanghai date. Use `--mo
 
 ## Run the audit
 
-Run from `production/` with Python 3.11 or later. Set `PILOT_START` to the first editorial date and `OPERATOR_LOG` to the file described below.
+Run from `production/` with Python 3.11 or later. Set `PILOT_START` to the first editorial date. Retain the operator log and the first-party engagement export in the private pilot directory.
 
 ```sh
 python3 -m fastest_delivery.pilot \
   --start "$PILOT_START" \
   --draft-dir "$PILOT_ROOT/editorial-drafts" \
   --run-dir "$PILOT_ROOT/scheduler" \
-  --operator-log "$OPERATOR_LOG" > distribution-audit.json
+  --operator-log "$OPERATOR_LOG" \
+  --engagement-export "$ENGAGEMENT_EXPORT" > distribution-audit.json
 ```
 
 The default input directories are `./editorial-drafts`, `./x-approvals`, `./x-deliveries`, `./shorts-approvals`, and `./shorts-deliveries`. Override them with `--draft-dir`, `--x-approvals`, `--x-deliveries`, `--shorts-approvals`, and `--shorts-deliveries`. The audit reads local records. Omit `--operator-log` to see what is already retained and which inputs are still due.
 
 The report lists seven dates, drafts or no-story reasons, scheduled run outcomes, exact claim and evidence references, and each linked approval, delivery receipt and correction. A verified receipt counts toward the pilot only if its publication time falls within both its approved window and the seven Shanghai dates. The report identifies earlier approvals superseded by a retained handoff. An exported package awaiting reconciliation has its own status.
 
-Check `status` and `gaps` in the JSON. A report with missing evidence exits successfully with `status: incomplete` so an operator can inspect the gaps. Invalid or mismatched evidence exits with a nonzero status. Completion requires reported schedules on all seven dates, a publication on each pilot channel, the three exercises, review time evidence, both observed engagement metrics, and assessments of every outstanding channel. A rehearsal report stays incomplete for the live pilot.
+Check `status` and `gaps` in the JSON. A report with missing evidence exits successfully with `status: incomplete` so an operator can inspect the gaps. Invalid or mismatched evidence exits with a nonzero status. Completion requires reported schedules on all seven dates, a publication on each pilot channel, the three exercises, review time evidence, both totals from the first-party engagement export, and assessments of every outstanding channel. A rehearsal report stays incomplete for the live pilot.
+
+## First-party engagement export
+
+Before scheduling the pilot, verify that an authorized first-party event source can identify the exact published post and observe the two workflow milestones below. This audit reads a local export from that source. It verifies the export against the retained approvals, handoffs, receipts and drafts. Keep the source query or projection with the export so another operator can reproduce it.
+
+Use an exact post URL from first-party attribution and join it to the verified `receipt_id`. If the source uses a first-party attribution key, retain the mapping that ties that key to the exact published post. A platform name, domain-only referrer, shared evidence URL or aggregate click count is insufficient to attribute an event to a post. Export only observations for the two pilot channels within the seven Shanghai dates and at or after publication.
+
+| Event `kind` | Include when | Additional fields |
+| --- | --- | --- |
+| `evidence_arrival` | A visit reaches the pinned evidence and citation represented by the approved draft's `evidence_destination`. | `visit_id` and the exact `evidence_destination`, including its citation anchor. |
+| `comparison_result` | The attributed comparison workflow actually delivers its result. | `comparison_id` for that specific result-producing workflow run. |
+
+For both kinds include `receipt_id`, the exact `post_url` from the receipt, and `occurred_at` with its UTC offset. Use separate random UUIDv4 identifiers scoped to the pilot for visits and comparison runs. Use the same identifier and original occurrence time in repeat exports. A reload of the same visit or comparison result counts once. Equivalent UTC offsets are treated as the same occurrence. Reuse of the same identifier with conflicting attribution or time fails validation. Keep raw log fields, IP addresses, cookie or account identifiers, credentials and comparison inputs out of the export.
+
+Save a single JSON object with these fields.
+
+| Field | Value |
+| --- | --- |
+| `schema_version` | Integer `1`. |
+| `mode` | `live` for an observed pilot or `rehearsal` for a fixture, matching the operator log and scheduler records. |
+| `start_date` | The first Shanghai date passed to `--start`. |
+| `reference` | A resolvable identifier for the retained first-party query or projection. |
+| `coverage` | An object with arrays for `qualified_evidence_visits` and `completed_comparisons`. Each array contains `{"date": "YYYY-MM-DD", "receipt_id": "..."}` for each Shanghai date and exact receipt where that source observed the full eligible period. The eligible period starts at publication on the first day and at midnight on later days. |
+| `events` | An array of the first-party observations described above. |
+
+Omit a coverage row when attribution or measurement was unavailable for any part of that eligible period. Keep eligible events that were observed on partially covered dates. An empty event array with full coverage produces an observed zero. If coverage is missing or no eligible receipt exists, the metric is `null`. The `engagement_evidence` result lists coverage and missing receipt-days, the number of unique events in the supplied export, and its path and SHA-256 digest. It keeps event identifiers out of the audit output. Retain the export privately with the report.
 
 ## Operator log
 
@@ -62,7 +89,7 @@ Start with this JSON and replace `YYYY-MM-DD` with the actual starting date. Use
 | --- | --- |
 | `runs` | One entry per slot that the audit does not already read through `--run-dir`. Include `scheduled_at` with a UTC offset and `reference`. Add the resulting `draft_revision` for a story or no-story decision, or `error` for a failed run. Multiple distinct slots on the same date are allowed. The audit checks coverage by date. The operator checks the entries against the scheduler log. |
 | `reviews` | One entry per distinct review session, with elapsed `minutes` as a nonnegative integer, `reference`, and either the reviewed `approval_id` or the `draft_revision` for a draft-only review. Include approval-specific time for each published package. |
-| `metrics` | Optional entries named `qualified_evidence_visits` and `completed_comparisons`, each with a nonnegative integer `count` and a query or export `reference` for the pilot dates. Use first-party observations attributable to the pilot posts. Count a qualified visit when the visit reaches the pinned evidence. Count a completed comparison when that workflow reaches its result. Include an observed zero only when the source supports it. Missing entries appear as `null`. |
+| `metrics` | Optional historical entries named `qualified_evidence_visits` and `completed_comparisons`, each with a nonnegative integer `count` and a `reference`. The audit can display these manually recorded values when there is no export. A live audit in that case reports `engagement_evidence_unreported`. If an export is supplied, its totals and missing coverage determine both reported metrics. |
 | `readiness` | One entry per outstanding channel. Use `tiktok`, `bilibili`, `weibo`, `wechat-official-account`, and `wechat-channels`. Each entry contains `access` (`available`, `unavailable`, or `unknown`), `readiness` (`ready`, `blocked`, or `unknown`), and `reference`. Check authorized account access, the required format, rights, and the delivery handoff. The report lists available, ready channels as expansion candidates. |
 
 Each `exercises` entry includes `kind`, `occurred_at` with a UTC offset, and the `reference` to the exercise log. The additional fields depend on the exercise.

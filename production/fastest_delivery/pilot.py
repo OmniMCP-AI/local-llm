@@ -11,14 +11,14 @@ from zoneinfo import ZoneInfo
 from fastest_editorial import EDITORIAL_TIMEZONE
 from fastest_release.validation import plain_text
 
-from . import shorts, x_post
+from . import engagement, shorts, x_post
 from .approval import decode_sealed, instant, json_bytes, read_sealed, require_window
 from .run_slot import scheduled_runs
 
 
 TIMEZONE = ZoneInfo(EDITORIAL_TIMEZONE)
 CHANNELS = {"x": x_post, "youtube-shorts": shorts}
-METRICS = ("qualified_evidence_visits", "completed_comparisons")
+METRICS = engagement.METRICS
 EXERCISES = ("partial_failure", "replay", "withdrawal")
 OUTSTANDING_CHANNELS = ("tiktok", "bilibili", "weibo", "wechat-official-account", "wechat-channels")
 
@@ -251,7 +251,7 @@ def load_operator_log(path, start):
     return record
 
 
-def audit(start, draft_dir, directories, operator_log=None, run_dir=None):
+def audit(start, draft_dir, directories, operator_log=None, run_dir=None, engagement_export=None):
     runs, mode = scheduled_runs(run_dir, ((start + timedelta(days=offset)).isoformat() for offset in range(7)))
     operator = load_operator_log(operator_log, start)
     if mode and operator_log is not None and mode != operator["mode"]:
@@ -280,7 +280,12 @@ def audit(start, draft_dir, directories, operator_log=None, run_dir=None):
     metrics = _metrics(operator.get("metrics", {}))
     readiness = _readiness(operator.get("readiness", {}))
     mode = mode or operator["mode"]
+    engagement_evidence = None
+    if engagement_export is not None:
+        metrics, engagement_evidence = engagement.aggregate(engagement_export, days, TIMEZONE, mode, deliveries, drafts)
     gaps = _gaps(mode, days, channels, exercises, effort, metrics, readiness)
+    if mode == "live" and engagement_evidence is None:
+        gaps.append("engagement_evidence_unreported")
     return {
         "schema_version": 1,
         "status": "incomplete" if gaps else "complete",
@@ -294,6 +299,7 @@ def audit(start, draft_dir, directories, operator_log=None, run_dir=None):
         "exercises": exercises,
         "review_effort": effort,
         "metrics": metrics,
+        "engagement_evidence": engagement_evidence,
         "outstanding_channels": readiness,
         "expansion_candidates": [channel for channel, record in readiness.items()
                                  if record["access"] == "available" and record["readiness"] == "ready"],
@@ -304,15 +310,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", required=True, type=date.fromisoformat, help="First pilot date (YYYY-MM-DD).")
     for key in ("draft-dir", "x-approvals", "x-deliveries", "shorts-approvals", "shorts-deliveries", "operator-log",
-                "run-dir"):
-        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None, "run-dir": None}
+                "run-dir", "engagement-export"):
+        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None, "run-dir": None,
+                    "engagement-export": None}
         parser.add_argument(f"--{key}", type=Path, default=defaults.get(key, Path(key)))
     args = parser.parse_args(argv)
     try:
         result = audit(args.start, args.draft_dir, {
             "x": (args.x_approvals, args.x_deliveries),
             "youtube-shorts": (args.shorts_approvals, args.shorts_deliveries),
-        }, args.operator_log, args.run_dir)
+        }, args.operator_log, args.run_dir, args.engagement_export)
     except (AttributeError, BadZipFile, OSError, KeyError, TypeError, ValueError, OverflowError) as error:
         parser.exit(1, f"invalid pilot evidence: {error}\n")
     print(json_bytes(result).decode(), end="")
