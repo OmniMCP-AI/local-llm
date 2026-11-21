@@ -158,6 +158,41 @@ baseline. The report links the separate baseline and tuned records. The
 benchmark service provides their measurements and handles withdrawal. Re-render
 or remove distributed review copies after an evidence withdrawal.
 
+## Review a runtime update
+
+To track an exact configuration across releases, add a stable `review_line`
+ID to its authored applicability note. Reuse that ID on later decisions for
+the same technique and keep the earlier notes. Give each note its own `id`
+and pin it to the revision it assesses. The line must match the runtime,
+card and all configuration fields except `build_sha`. A change to the driver,
+OS, backend, arguments, workload or model artifact needs its own reviewed
+history. The build SHA can advance when a reviewer records a new observation.
+
+After refreshing the feed, run this read-only command from `production/` using
+the same applicability document and PostgreSQL history.
+
+```sh
+python3 -B -m fastest_release_watch --postgres review --notes /path/to/reviewed-applicability.json
+```
+
+The JSON shows each tracked line whose runtime's latest revision is newer
+than a prior authored note in the same release lane. A note pinned to a stable
+release follows stable releases. A note pinned to a prerelease follows
+prereleases, including runtimes that publish only prereleases. A later release
+or an edit to the latest release in that lane can trigger review. Each row
+preserves the prior note's status and exact conditions, and identifies the
+target revision, first-seen time, and official source. The `review_id` is
+derived from the line, exact conditions and target revision, so replays and
+changes to the target's assessment keep the same ID. Retained releases and
+authored notes hold the history behind the current view.
+
+A fresh `review_due` row is actionable after a successful refresh. A stale
+feed or latest refresh error keeps the row visible and sets `actionable` to
+false. A `suggested` or `unresolved` decision keeps review due. A decision on
+the exact target records `assessed` or `unsupported` alongside its editorial
+status. The `report` command continues to show only the notes explicitly pinned
+to each revision. Only approved matched measurements establish a comparison.
+
 ## Test
 
 The PostgreSQL cases use the PostgreSQL command-line tools and a temporary

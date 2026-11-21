@@ -59,11 +59,15 @@ def ingest(store, bundle):
             AS item(source text, url text, status text, note text)
         ON CONFLICT DO NOTHING;
         INSERT INTO fastest_intake.price_candidate
+            (batch_id, id, source, locator, gpu_id, board, channel, market, currency, amount,
+             kind, condition, source_date, listing_url, qualification, seller_business_name,
+             listing_status, shipping_amount, tax_amount)
         SELECT '{batch_id}', item.* FROM intake_payload,
         jsonb_to_recordset(document->'prices')
             AS item(id text, source text, locator text, gpu_id text, board text, channel text,
                     market text, currency text, amount numeric, kind text, condition text, source_date date,
-                    listing_url text, qualification text)
+                    listing_url text, qualification text, seller_business_name text, listing_status text,
+                    shipping_amount numeric, tax_amount numeric)
         ON CONFLICT DO NOTHING;
         INSERT INTO fastest_intake.model_evaluation
         SELECT '{batch_id}', item.* FROM intake_payload,

@@ -71,6 +71,22 @@
       "parent": "intel-arc-a770-16gb"
     },
     {
+      "id": "asrock-b60-ct-24g",
+      "name": "ASRock Intel Arc Pro B60 Creator 24 GB",
+      "manufacturer": "ASRock",
+      "variant": "B60 CT 24G",
+      "source": "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20Pro%20B60%20Creator%2024GB/index.asp",
+      "parent": "intel-arc-pro-b60"
+    },
+    {
+      "id": "sparkle-sbp60w-24g",
+      "name": "Sparkle Intel Arc Pro B60 24 GB Blower",
+      "manufacturer": "Sparkle",
+      "variant": "SBP60W-24G",
+      "source": "https://www.sparkle.com.tw/files/20251230103738615.pdf",
+      "parent": "intel-arc-pro-b60"
+    },
+    {
       "id": "nvidia-rtx-pro-5000-48gb",
       "name": "NVIDIA RTX PRO 5000 Blackwell 48 GB",
       "manufacturer": "NVIDIA",
@@ -1019,6 +1035,50 @@
         "source": "https://pg.asrock.com/Graphics-Card/Intel/Intel%20Arc%20A770%20Phantom%20Gaming%2016GB%20OC/#Gallery",
         "label": "Product images on ASRock",
         "scope": "ASRock Intel Arc A770 Phantom Gaming 16 GB OC (A770 PG 16GO)"
+      }
+    },
+    "asrock-b60-ct-24g": {
+      "designation": "B60 CT 24G",
+      "source": "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20Pro%20B60%20Creator%2024GB/index.asp",
+      "locator": "Specification tab for B60 CT 24G",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "24 GB GDDR6",
+        "Memory bus": "192-bit",
+        "Memory speed": "19 Gbps",
+        "Host interface": "PCI Express 5.0 x8",
+        "Graphics clock": "2400 MHz",
+        "Dimensions": "271 × 112 × 39 mm",
+        "Slot width": "2",
+        "Power connectors": "1 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20Pro%20B60%20Creator%2024GB/index.asp",
+        "label": "Product images on ASRock",
+        "scope": "ASRock Intel Arc Pro B60 Creator 24 GB (B60 CT 24G)"
+      }
+    },
+    "sparkle-sbp60w-24g": {
+      "designation": "SBP60W-24G",
+      "source": "https://www.sparkle.com.tw/files/20251230103738615.pdf",
+      "locator": "Page 1, SBP60W-24G specifications and dimensions",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "24 GB GDDR6",
+        "Memory bus": "192-bit",
+        "Memory bandwidth": "456 GB/s",
+        "Host interface": "PCI Express 5.0 x8",
+        "Boost clock (MHz)": "2400",
+        "Dimensions": "289 × 120 × 42 mm",
+        "Slot width": "2",
+        "Rated graphics power (W)": "200",
+        "Recommended system power (W)": "600 or greater",
+        "Power connectors": "1 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://www.sparkle.com.tw/en/products/view/26C8B0add19C",
+        "label": "Product images on Sparkle",
+        "scope": "Sparkle Intel Arc Pro B60 24 GB Blower (SBP60W-24G)"
       }
     },
     "asus-dual-rtx5060ti-16g": {

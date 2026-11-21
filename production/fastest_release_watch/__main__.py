@@ -12,6 +12,7 @@ from .applicability import apply_notes
 from .postgres import PostgresStore, WatchStorageError
 from .render import render
 from .retest import evidence_origin
+from .review import review_snapshot
 
 
 def main():
@@ -31,6 +32,9 @@ def main():
     report.add_argument("--notes", type=Path, help="Authored applicability JSON")
     report.add_argument("--format", choices=("json", "html", "markdown"), default="json")
     report.add_argument("--evidence-origin", type=evidence_origin, help="HTTPS origin for approved benchmark links")
+    review = commands.add_parser("review", help="Show exact tracked configurations due for release review")
+    review.add_argument("--notes", type=Path, required=True, help="Authored applicability JSON")
+    review.add_argument("--as-of", default=feed.utc_now(), help="UTC time for the freshness check")
     args = parser.parse_args()
 
     try:
@@ -43,12 +47,16 @@ def main():
             if postgres is None:
                 parser.error("migrate requires --postgres")
             postgres.migrate()
-        elif args.command == "report":
+        elif args.command in ("report", "review"):
             feed.timestamp(args.as_of)
             read_release = ReleaseStore(database_url).read if database_url else None
             history = postgres.snapshot(args.as_of) if postgres else store.snapshot(args.db, args.as_of)
-            report = apply_notes(history, args.notes, read_release, args.evidence_origin or "")
-            print(render(report, args.format))
+            if args.command == "review":
+                reviewed = apply_notes(history, args.notes, read_release, include_review_lines=True)
+                print(render(review_snapshot(reviewed), "json"))
+            else:
+                report = apply_notes(history, args.notes, read_release, args.evidence_origin or "")
+                print(render(report, args.format))
         else:
             record = postgres.record if postgres else partial(store.record, args.db)
             if bool(args.fixture) != bool(args.observed_at):

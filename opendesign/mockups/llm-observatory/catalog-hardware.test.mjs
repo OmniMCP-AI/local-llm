@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 124);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
-  assert.equal(manifest.coverage.cards, 148);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 141);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 119);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 63);
-  assert.equal(manifest.coverage.boardPartnerCards, 9);
+  assert.equal(manifest.coverage.cards, 150);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 143);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 121);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 65);
+  assert.equal(manifest.coverage.boardPartnerCards, 11);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -99,6 +99,30 @@ test("official accelerator and workstation configurations keep form-factor speci
   }
 });
 
+test("the Arc Pro B60 family links exact manufacturer board specifications and galleries", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const cards = new Map(catalog.cards.map(card => [card.id, card]));
+  const family = cards.get("intel-arc-pro-b60");
+  for (const [id, sku, source, gallery] of [
+    ["asrock-b60-ct-24g", "B60 CT 24G",
+      "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20Pro%20B60%20Creator%2024GB/index.asp",
+      "https://www.asrock.com/Graphics-Card/Intel/Intel%20Arc%20Pro%20B60%20Creator%2024GB/index.asp"],
+    ["sparkle-sbp60w-24g", "SBP60W-24G",
+      "https://www.sparkle.com.tw/files/20251230103738615.pdf",
+      "https://www.sparkle.com.tw/en/products/view/26C8B0add19C"],
+  ]) {
+    assert.ok(family.variants.some(variant => variant.id === id), id);
+    const board = cards.get(id);
+    assert.equal(board.parent, family.id);
+    assert.equal(board.variant, sku);
+    assert.equal(board.vendorSpec.designation, sku);
+    assert.equal(board.vendorSpec.scope, "Board-partner SKU");
+    assert.equal(board.vendorSpec.facts["Memory configuration"], "24 GB GDDR6");
+    assert.equal(board.vendorSpec.source, source);
+    assert.equal(board.vendorSpec.gallery.source, gallery);
+  }
+});
+
 test("exact factory configurations carry a sourced system bill of materials", async () => {
   const { catalog } = await readHardwareCatalog(here);
   const builds = catalog.machines.filter(({ kind, cardIds }) => kind === "Complete factory configuration" && !cardIds.length);
@@ -168,6 +192,6 @@ test("withdrawing the Colorful launch announcement removes just its sourced RTX 
     "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb", "nvidia-geforce-rtx-5060-ti-8gb",
     "pny-vcg5060t8dfxpb1-o",
   ]);
-  assert.equal(manifest.coverage.boardPartnerCards, 8);
+  assert.equal(manifest.coverage.boardPartnerCards, 10);
   assert.ok(!JSON.stringify(catalog).includes(source));
 });

@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE SCHEMA IF NOT EXISTS fastest_intake;
 REVOKE ALL ON SCHEMA fastest_intake FROM PUBLIC;
 
@@ -26,15 +28,48 @@ CREATE TABLE IF NOT EXISTS fastest_intake.price_candidate (
     channel text NOT NULL CHECK (channel <> ''),
     market text NOT NULL CHECK (market ~ '^[A-Z]{2}$'),
     currency text NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
-    amount numeric NOT NULL CHECK (amount >= 0 AND amount < 1e12),
-    kind text NOT NULL CHECK (kind IN ('asking_price', 'editorial_quote', 'bundle_quote', 'aggregate_low', 'historical_low', 'social_claim')),
-    condition text NOT NULL CHECK (condition IN ('new', 'used', 'refurbished', 'unknown')),
+    amount numeric CHECK (amount >= 0 AND amount < 1e12),
+    kind text NOT NULL,
+    condition text NOT NULL,
     source_date date,
     listing_url text CHECK (listing_url ~ '^https://'),
     qualification text NOT NULL CHECK (qualification <> ''),
     PRIMARY KEY (batch_id, id),
     FOREIGN KEY (batch_id, source) REFERENCES fastest_intake.source_probe(batch_id, source)
 );
+
+-- Add retail provenance to existing captures without replacing the table or its rows.
+ALTER TABLE fastest_intake.price_candidate
+    ADD COLUMN IF NOT EXISTS seller_business_name text CHECK (seller_business_name ~ '[^[:space:]]'),
+    ADD COLUMN IF NOT EXISTS listing_status text
+        CHECK (listing_status IN ('in_stock', 'out_of_stock', 'preorder', 'sold', 'ended', 'unknown')),
+    ADD COLUMN IF NOT EXISTS shipping_amount numeric CHECK (shipping_amount >= 0 AND shipping_amount < 1e12),
+    ADD COLUMN IF NOT EXISTS tax_amount numeric CHECK (tax_amount >= 0 AND tax_amount < 1e12);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM pg_constraint
+        WHERE conrelid = 'fastest_intake.price_candidate'::regclass
+            AND conname = 'price_candidate_kind_status_check'
+    ) THEN
+        ALTER TABLE fastest_intake.price_candidate
+            ALTER COLUMN amount DROP NOT NULL,
+            DROP CONSTRAINT IF EXISTS price_candidate_kind_check,
+            DROP CONSTRAINT IF EXISTS price_candidate_condition_check,
+            ADD CONSTRAINT price_candidate_condition_check
+                CHECK (condition IN ('new', 'used', 'open_box', 'refurbished', 'unknown')),
+            ADD CONSTRAINT price_candidate_amount_required
+                CHECK (kind = 'best_offer_accepted' OR amount IS NOT NULL),
+            ADD CONSTRAINT price_candidate_kind_status_check CHECK (
+                kind IN ('asking_price', 'editorial_quote', 'bundle_quote', 'aggregate_low',
+                         'historical_low', 'social_claim')
+                OR (kind = 'completed_listing_price' AND coalesce(listing_status IN ('sold', 'ended'), false))
+                OR (kind IN ('best_offer_accepted', 'verified_settlement') AND listing_status IS NOT DISTINCT FROM 'sold')
+            );
+    END IF;
+END;
+$$;
 
 CREATE TABLE IF NOT EXISTS fastest_intake.model_evaluation (
     batch_id text,
@@ -118,3 +153,5 @@ CREATE TABLE IF NOT EXISTS fastest_intake.image_pilot_attempt (
 );
 
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;
+
+COMMIT;
