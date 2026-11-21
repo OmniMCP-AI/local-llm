@@ -18,6 +18,8 @@ export const coordinatePlotStyles = `
 .coordinate-heading strong, .coordinate-x-title { font-weight: 650; }
 .coordinate-heading label { display: inline-flex; align-items: center; gap: .35rem; color: var(--chart-muted); cursor: pointer; }
 .coordinate-heading input { accent-color: var(--chart-accent); margin: 0; }
+.coordinate-zoom { display: flex; flex-wrap: wrap; gap: .35rem; margin: .6rem 0; }
+.coordinate-zoom button { min-height: 2.5rem; padding: .35rem .65rem; cursor: pointer; }
 .coordinate-viewport { overflow-x: auto; overscroll-behavior-x: contain; }
 .coordinate-canvas { min-width: 36rem; }
 .coordinate-grid {
