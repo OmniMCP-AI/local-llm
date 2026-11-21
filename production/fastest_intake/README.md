@@ -15,6 +15,17 @@ python3 -B -m fastest_intake stats
 
 The input JSON has `checked_at`, `note`, `sources`, `prices` and `evaluations`, with an optional `tariffs` array. Run `migrate` before ingesting with the updated CLI. See the schema for typed columns. The content hash identifies the batch and replay is idempotent. Earlier bundles keep their original hash when replayed as supplied. Keep capture bundles under the ignored intake directory.
 
+Use the exact catalog board ID as `gpu_id` when it is known. The optional `seller_business_name` records the business named by the source. Use `listing_status` for the observed state (`in_stock`, `out_of_stock`, `preorder`, `sold`, `ended`, or `unknown`). Use `ended` when the source shows a closed listing without confirming a sale. Use `open_box` when the source explicitly identifies that condition.
+
+Record separately stated `shipping_amount` and `tax_amount` as decimal strings in the row's `currency`. Use null or omit the field when the amount is unknown. Zero represents an explicitly zero charge.
+
+- `asking_price` records a seller's quoted price.
+- `completed_listing_price` records the amount shown for a listing marked `sold` or `ended`.
+- `best_offer_accepted` records a listing marked `sold` that confirms an accepted offer and leaves the final amount undisclosed. Set `amount` to the displayed reference price when available or use null.
+- `verified_settlement` records the final amount supported by transaction evidence for a listing marked `sold`. Use the source and locator to identify that evidence.
+
+Record the listing wording, charges or exclusions, and evidence limits in `qualification`. The price rows appear in the private `price_candidates` total. Public price cohorts require their own editorial review.
+
 Use one tariff row for each quoted rate component. Each row identifies the provider, exact offering, tariff revision, market, region, currency, amount, billing unit and component, source and locator. Use a decimal string for the amount. Electricity accepts `kwh` and `month`. Rental accepts `instance_hour` and `month`. API accepts `million_input_tokens`, `million_cached_input_tokens`, `million_output_tokens` and `month`. Record the published start date as `effective_from` and the exclusive end date as `effective_until` when known. The batch's `checked_at` records capture time. Use `qualification` for time bands, account eligibility, billing terms and exclusions.
 
 Every tariff candidate must reference a `captured` source probe in the same bundle. Use a `no_quote` probe by itself when the source provides no applicable rate. With an intake operator connection, join `fastest_intake.tariff_candidate`, `fastest_intake.source_probe` and `fastest_intake.batch` on batch and source to inspect the terms, cited URL and check time. Operator review can approve [tariff references for public display](../fastest_cost/README.md#configure-reviewed-tariff-references) or [workload-specific calculation inputs](../fastest_cost/README.md#configure-reviewed-evidence).

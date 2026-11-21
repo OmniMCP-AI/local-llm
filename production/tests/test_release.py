@@ -209,6 +209,88 @@ class ReleaseTest(unittest.TestCase):
                 "SELECT amount FROM fastest_intake.tariff_candidate"
             )
 
+    def test_private_retail_intake_upgrades_legacy_rows_and_preserves_batch_replay(self):
+        production = FIXTURE.parents[1]
+        bundle_path = self.socket_path.parent / "retail-capture.json"
+
+        def intake(command, bundle=None, *, check=True):
+            args = [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url, command]
+            if bundle is not None:
+                bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+                args.append(str(bundle_path))
+            result = subprocess.run(args, cwd=production, text=True, capture_output=True, timeout=30)
+            if check:
+                self.assertEqual(result.returncode, 0, result.stderr)
+            return result
+
+        legacy_id = "9e9ad7e3222a231a1893b24f0eb7ac61ba700fc41d72626d113a9da7149450a0"
+        legacy_price = {
+            "id": "fixture-legacy", "source": "fixture-retailer", "locator": "Product page",
+            "gpu_id": "arc-pro-b60", "board": "Fixture B60", "channel": "Fixture retail",
+            "market": "US", "currency": "USD", "amount": "599.95", "kind": "asking_price",
+            "condition": "new", "source_date": "2026-11-19", "listing_url": "https://retail.example/card",
+            "qualification": "Original figure.",
+        }
+        legacy_bundle = {
+            "checked_at": "2026-11-20T00:00:00Z", "note": "Fixture retail capture.",
+            "sources": [{"source": "fixture-retailer", "url": "https://retail.example/card",
+                         "status": "captured", "note": "Synthetic GPU listing."}],
+            "prices": [legacy_price], "evaluations": [],
+        }
+        self.store._query((production / "fixtures" / "legacy-price-intake.sql").read_text(encoding="utf-8"))
+        self.store._query(f"""
+            INSERT INTO fastest_intake.batch VALUES ('{legacy_id}', '2026-11-20T00:00:00Z', 'Fixture retail capture.');
+            INSERT INTO fastest_intake.source_probe VALUES ('{legacy_id}', 'fixture-retailer',
+                'https://retail.example/card', 'captured', 'Synthetic GPU listing.');
+            INSERT INTO fastest_intake.price_candidate VALUES ('{legacy_id}', 'fixture-legacy', 'fixture-retailer',
+                'Product page', 'arc-pro-b60', 'Fixture B60', 'Fixture retail', 'US', 'USD', 599.95,
+                'asking_price', 'new', '2026-11-19', 'https://retail.example/card', 'Original figure.');
+        """)
+        intake("migrate")
+        legacy_receipt = json.loads(intake("ingest", legacy_bundle).stdout)
+        self.assertEqual((legacy_receipt["batch_id"], legacy_receipt["price_candidates"]), (legacy_id, 1))
+
+        bundle = {**legacy_bundle, "prices": [
+            {**legacy_price, "id": "retail", "seller_business_name": "Fixture Retail LLC",
+             "listing_status": "in_stock", "shipping_amount": "0"},
+            {**legacy_price, "id": "completed", "kind": "completed_listing_price", "listing_status": "ended",
+             "condition": "open_box", "shipping_amount": "14.95", "tax_amount": "25.10"},
+            {**legacy_price, "id": "best-offer", "kind": "best_offer_accepted", "listing_status": "sold"},
+            {**legacy_price, "id": "best-offer-hidden", "kind": "best_offer_accepted", "listing_status": "sold",
+             "amount": None},
+            {**legacy_price, "id": "settlement", "kind": "verified_settlement", "listing_status": "sold",
+             "amount": "429.90"},
+        ]}
+        receipt = json.loads(intake("ingest", bundle).stdout)
+        self.assertEqual((receipt["batches"], receipt["price_candidates"]), (2, 6))
+        intake("migrate")
+        self.assertEqual(json.loads(intake("ingest", bundle).stdout), receipt)
+        self.assertEqual(json.loads(intake("ingest", legacy_bundle).stdout)["batch_id"], legacy_id)
+        self.assertEqual(self.store._query("""
+            SELECT id, kind, amount, condition, seller_business_name, listing_status, shipping_amount, tax_amount
+            FROM fastest_intake.price_candidate ORDER BY id
+        """).splitlines(), [
+            "best-offer|best_offer_accepted|599.95|new||sold||",
+            "best-offer-hidden|best_offer_accepted||new||sold||",
+            "completed|completed_listing_price|599.95|open_box||ended|14.95|25.10",
+            "fixture-legacy|asking_price|599.95|new||||",
+            "retail|asking_price|599.95|new|Fixture Retail LLC|in_stock|0|",
+            "settlement|verified_settlement|429.90|new||sold||",
+        ])
+
+        for changes, constraint in [
+            ({"kind": "verified_settlement", "listing_status": "in_stock"}, "price_candidate_kind_status_check"),
+            ({"kind": "completed_listing_price"}, "price_candidate_kind_status_check"),
+            ({"kind": "verified_settlement", "listing_status": "sold", "amount": None}, "price_candidate_amount_required"),
+            ({"shipping_amount": "-1"}, "price_candidate_shipping_amount_check"),
+        ]:
+            with self.subTest(changes=changes):
+                rejected = intake("ingest", {**legacy_bundle, "prices": [{**legacy_price, **changes}]}, check=False)
+                self.assertEqual(rejected.returncode, 1)
+                self.assertIn(constraint, rejected.stderr)
+        stats = json.loads(intake("stats").stdout)
+        self.assertEqual(stats, {key: value for key, value in receipt.items() if key != "batch_id"})
+
     def test_private_image_pilot_intake_pins_timing_rows_and_keeps_release_unchanged(self):
         production = FIXTURE.parents[1]
         plan_path = production / "fastest_image" / "plan.json"
