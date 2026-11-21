@@ -163,7 +163,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 112);
+  assert.equal(hardware.coverage.cards, 114);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -227,9 +227,56 @@ test("released RTX 5090 D variants preserve separate evidence and product views"
   }
 });
 
+const exact5060TiBoards = [
+  {
+    id: "colorful-igame-rtx5060ti-mini-w-oc-8gb",
+    designation: "iGame GeForce RTX 5060 Ti Mini W OC 8GB",
+    source: "https://www.colorful.cn/home/new?id=09e8d6a3-f28d-419e-bc68-2b25cbe99968",
+    galleryLabel: "White Mini series images on Colorful",
+    facts: ["8 GB", "Single fan", "White Mini series"],
+  },
+  {
+    id: "asus-t1-rtx5060ti-o8g-gaming",
+    designation: "T1-RTX5060TI-O8G-GAMING",
+    source: "https://www.asus.com/ca-en/motherboards-components/graphics-cards/asus/t1-rtx5060ti-o8g-gaming/techspec/",
+    galleryLabel: "T1 product images on ASUS",
+    facts: ["8 GB GDDR7", "269 × 120 × 50 mm", "2662 MHz", "1 × 8-pin"],
+  },
+];
+
+function assertExact5060TiBoard(html, markdown, { id, designation, source, galleryLabel, facts }) {
+  for (const body of [html, markdown]) {
+    for (const value of [designation, source, galleryLabel, "Board-partner SKU", ...facts]) {
+      assert.ok(body.includes(value), `${id} lacks ${value}`);
+    }
+    assert.match(body, /cards\/nvidia-geforce-rtx-5060-ti\.html/);
+    assert.doesNotMatch(body, /16 GB GDDR7|DUAL-RTX5060TI-16G/);
+  }
+  assert.match(html, /<dt>Rated graphics power \(W\)<\/dt><dd>Unknown<\/dd>/);
+  assert.match(markdown, /\*\*Rated graphics power \(W\)\*\* — Unknown/);
+  assertProfileFieldsAgree(html, markdown, id);
+}
+
+test("released RTX 5060 Ti boards use exact manufacturer sources and stay distinct", async (t) => {
+  const { request } = await buildFixture(t);
+  for (const board of exact5060TiBoards) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(async (format) => {
+      const response = await request(`cards/${board.id}.${format}`);
+      assert.equal(response.status, 200, board.id);
+      return response.text();
+    }));
+    assertExact5060TiBoard(html, markdown, board);
+  }
+  const family = await request("cards/nvidia-geforce-rtx-5060-ti.html").then(response => response.text());
+  for (const { id } of exact5060TiBoards) {
+    assert.ok(family.includes(`cards/${id}.html`));
+  }
+  assert.ok(family.includes("cards/nvidia-geforce-rtx-5060-ti-16gb.html"));
+});
+
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 112], ["machines", 123]]) {
+  for (const [kind, count] of [["cards", 114], ["machines", 123]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -462,6 +509,11 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
       readFile(join(root, "machines", profile[0] + "." + ext), "utf8")));
     assertFactoryProfile(html, markdown, profile);
   }
+  for (const board of exact5060TiBoards) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
+      readFile(join(root, "cards", board.id + "." + ext), "utf8")));
+    assertExact5060TiBoard(html, markdown, board);
+  }
   assert.equal(manifest.models.inventory, 19_192);
   assert.equal(manifest.models.profiles, 303);
   assert.equal(manifest.models.supplement.repositories, 3);
@@ -470,6 +522,12 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
   assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
   const published = readPublishedCatalog(testDatabase, imported.snapshotId);
+  for (const { id, designation, source } of exact5060TiBoards) {
+    const board = published.hardware.catalog.cards.find(row => row.id === id);
+    assert.equal(board?.parent, "nvidia-geforce-rtx-5060-ti");
+    assert.equal(board.vendorSpec.designation, designation);
+    assert.equal(board.vendorSpec.source, source);
+  }
   assert.equal(published.source.models.length, 19_192);
   assert.deepEqual(published.supplementalModels.map(({ id }) => id).sort(), recentModels.map(([id]) => id).sort());
   for (const model of recentModels) {
