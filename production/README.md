@@ -198,6 +198,10 @@ unavailable coverage until a reviewed pair is configured. Set the HTTPS
 `FASTEST_RELEASE_ORIGIN` in the Pages build to link both the interactive and static
 Technology views to this report.
 
+Use the [operator capture instructions](fastest_release/SCALING-EVIDENCE.md#capture-a-pair)
+to run the pinned decode protocol on an authorized CUDA host and retain a private
+record of both attempts and the transfer trace.
+
 To serve a pair, publish both reviewed observations, then give the release listener
 their exact release UUIDs in baseline and comparison order.
 

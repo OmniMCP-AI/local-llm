@@ -80,14 +80,119 @@ documentation under MIT. The release workflow still requires an explicit
 rights decision for the exact observation fields.
 [Source license](https://github.com/andrewleech/v100-llm-kit/blob/0ff9df3a2e7c2ad4bc14c6abffefca746b3fafdf/LICENSE)
 
-## Evidence needed to publish
+## Capture a pair
 
-Use an authorized multi-CUDA-GPU host for both runs. Retain one physical host
-revision and the [pinned text plan’s](../fastest_text/plan.json) two GGUF digests,
-llama.cpp revision, decode boundary, fixed settings and quality rubric. Record
-the binary digest, OS and drivers, effective device placement and 20 warm
-samples per run. Capture the actual multi-GPU path with PCI endpoints,
-direction, payload and method. Keep rated and under-load negotiated link
-properties distinct and record unknowns. An editor can then review the
-observations and rights, publish through the existing release store, and
-configure the pair by release UUID.
+Use Python 3.11+, `nvidia-smi` and an authorized, idle CUDA host with at least
+two full physical NVIDIA GPUs. Keep the same physical host revision, OS,
+drivers, libraries and host settings across both attempts. Record the revision
+identifier and its machine configuration in the private evidence. Reserve the
+selected GPUs and avoid simultaneous workloads. Keep the runner and weights
+at stable local paths during the capture.
+
+Build a Release CUDA `llama-bench` and `llama-server` from the clean llama.cpp
+commit `84a9bf2fc2875205f0806fbbfbb66dc67204094c` (`b5163`), or verify the
+official release asset against that commit. Retain the complete build revision,
+configuration or asset provenance and linked-library digests in a private build
+evidence file. For a local build with the CUDA toolkit installed, set
+`llama_source` to the clean pinned checkout and `llama_build` to a fresh build
+directory.
+
+```sh
+cmake -S "$llama_source" -B "$llama_build" -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build "$llama_build" --config Release --target llama-bench llama-server --parallel
+```
+
+Place both GGUF shards from the [exact Qwen revision](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/tree/bb5d59e06d9551d752d08b292a50eb208b07ab1f)
+together under their original names. The collector checks both lengths and
+digests against the [pinned text plan](../fastest_text/plan.json) before starting.
+Use a model path without commas because b5163 interprets them as separators.
+
+Get the physical GPU UUIDs and PCI addresses, then look up the corresponding
+physical slot labels in the host inventory.
+
+```sh
+nvidia-smi --query-gpu=uuid,pci.bus_id,name,driver_version --format=csv,noheader
+```
+
+Create `devices.json` and replace the placeholders with those UUIDs and slot
+labels. The first device is the one-GPU baseline and stays present in the
+multi-GPU comparison. If an allocation uses `CUDA_VISIBLE_DEVICES`, it must
+permit all selected devices by full UUID. Ask the host operator for a
+UUID-form allocation if the scheduler supplies ordinal IDs.
+
+```json
+[
+  {"uuid": "GPU-<first-full-uuid>", "slot": "<first-physical-slot>"},
+  {"uuid": "GPU-<second-full-uuid>", "slot": "<second-physical-slot>"}
+]
+```
+
+From `production/`, set `capture` to a new directory outside the repository
+under a private parent. Set `bench`, `model_dir`, `devices`, and
+`build_evidence` to the local paths prepared above and `host_revision` to
+the stable physical host identifier.
+
+```sh
+python3 -B -m fastest_release.capture_scaling capture "$capture" \
+  --bench "$bench" --model-dir "$model_dir" --devices "$devices" \
+  --host-revision "$host_revision" --build-evidence "$build_evidence"
+```
+
+The b5163 runner uses the ordered UUID mask for local devices. Both invocations
+use the same layer-split mode, with equal weights for the visible GPUs and
+CUDA ordinal zero as the reference. The benchmark requests one 128-token
+decode phase from empty KV, with one warmup token and 20 timed repetitions.
+The capture runs the baseline first and continues to the comparison after a
+benchmark failure. Set `--timeout` in seconds if the default 900-second budget
+per attempt is insufficient. Use a new directory for a retry so the original
+attempts remain available. [Pinned runner source](https://github.com/ggml-org/llama.cpp/blob/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/llama-bench/llama-bench.cpp)
+
+`capture.json` records shared controls, the binary digest and the build evidence
+hash. Each run has a distinct ID, arguments and CUDA mask, a timestamped receipt
+with the exit status, and the original JSONL and stderr with SHA-256 hashes.
+Keep incomplete captures too. Compare the placement summaries with the
+per-device model and KV buffers, layer placement, offload and errors in stderr.
+The pinned runner emits a timing row only after the timed loop. Its progress
+lines can identify a failed repetition when a timing row is absent.
+
+## Attach an independently recorded transfer trace
+
+Use an operator-supplied CUDA transfer trace or a documented instrumented
+replay of the same decode invocation. Record the trace's run or replay
+boundary, method, PCI endpoints, direction, and payload. Identify direct
+peer transfers or both legs of a host-staged transfer from observations.
+Record measured bandwidth where available. Use device or link specifications
+for rated properties and under-load link evidence for negotiated properties.
+Topology inventory and peer capability checks alone leave transfer path
+unknown.
+
+Create a JSON summary with `run_id` from `comparison/attempt.json` and a
+`links` array in the [release transport shape](../README.md#compare-one-gpu-with-multiple-gpus).
+Use the `scope` field to state whether the trace covers the decode itself or a
+replay, and use null for unknown rated, negotiated or bandwidth data. Retain
+the original trace file for review.
+
+```sh
+python3 -B -m fastest_release.capture_scaling attach-transport "$capture" \
+  --trace "$trace" --links "$links"
+```
+
+The attachment validates the link schema and active PCI endpoints and retains
+the trace and summary with hashes in `transport/`. The original capture
+manifest records transport as unknown at collection. If no attachment exists,
+the evidence still has an unknown path.
+
+## Review and release
+
+Use the [pinned quality task](../fastest_text/README.md#review-and-ingest-runner-evidence)
+with the same model, runtime revision and each run's placement treatment.
+Retain the completion and independent rubric results privately. Review
+the timing logs and transfer evidence, then obtain an explicit public rights
+decision for the exact fields to release.
+
+Compute each successful run's median of `128 × 10⁹ / elapsed_ns` across its
+20 timed samples. Limit the released decimal to 12 fractional digits and keep
+the original sample integers in the private capture. Publish the two reviewed
+observations through the [release workflow](../README.md#publish-correct-and-withdraw)
+and configure the pair by release UUID. A failed baseline or unknown
+multi-GPU path leaves speedup and efficiency unavailable.
