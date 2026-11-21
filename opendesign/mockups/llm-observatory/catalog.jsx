@@ -166,6 +166,7 @@ export function CatalogModelProfile({ id, go }) {
 
   const runtimeRoot = "local-catalog/catalog/" + localCatalogRelease;
   const card = modelCard({ ...row, identity: modelIdentities[row.id] }, localCatalogRelease, { runtimeRoot });
+  const evaluation = card.publisherEvaluations;
   const localProfile = localModelIds.has(id) && "local-catalog/" + catalogPath(localCatalogRelease, "models", id);
   const markdown = localProfile ? null : renderCard(card, {
     release: localCatalogRelease, pathname: id + ".html", markdown: true, local: true,
@@ -185,6 +186,15 @@ export function CatalogModelProfile({ id, go }) {
     </header>
     <section className="profile-section"><h2>{t("Repository details", "仓库详情")}</h2>{fields(card.fields)}</section>
     {card.sections.map(({ title, fields: rows }) => <section key={title} className="profile-section"><h2>{title}</h2>{fields(rows)}</section>)}
+    {evaluation && <section className="profile-section"><h2>{evaluation.title}</h2><p>{evaluation.summary}</p>
+      <table className="profile-chart-table">
+        <thead><tr>{evaluation.headings.map(heading => <th key={heading} scope="col">{heading}</th>)}</tr></thead>
+        <tbody>{evaluation.rows.map(([[benchmark, url], ...cells]) => <tr key={cells.at(-1)[1]}>
+          <th scope="row"><a href={url}>{benchmark}</a></th>
+          {cells.map(([value, href], i) => <td key={evaluation.headings[i + 1]}>{href ? <a href={href}>{value}</a> : value}</td>)}
+        </tr>)}</tbody>
+      </table>
+    </section>}
     <section className="profile-section"><h2>{t("Evidence", "证据")}</h2><p>{card.evidence}</p></section>
   </article>;
 }

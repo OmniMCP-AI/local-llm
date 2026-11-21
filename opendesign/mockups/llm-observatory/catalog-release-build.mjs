@@ -12,6 +12,22 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
+function readPublisherEvaluations(rows, id, revision, cardUrl) {
+  if (!Array.isArray(rows)) throw new Error("Invalid publisher evaluations for " + id);
+  return rows.map(({ benchmark, version, scorePercent, harness, source, cardRevision, cardLine }) => {
+    if (cardRevision !== revision) throw new Error("Publisher evaluation revision does not match " + id);
+    const url = URL.parse(source);
+    if (!url || url.protocol !== "https:" || url.username || url.password || url.href !== source ||
+        ![benchmark, version, harness].every(value => typeof value === "string" && value.trim()) ||
+        !Number.isFinite(scorePercent) || scorePercent < 0 || scorePercent > 100 ||
+        !Number.isSafeInteger(cardLine) || cardLine < 1) {
+      throw new Error("Invalid publisher evaluation for " + id);
+    }
+    return { benchmark, version, scorePercent, harness, source, cardUrl: cardUrl + "#L" + cardLine,
+      evidenceClass: "publisher_reported", executionHardware: null };
+  });
+}
+
 function readSupplement(bytes, source, identities, discovery) {
   const { capturedAt, models } = JSON.parse(bytes);
   const date = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
@@ -25,7 +41,7 @@ function readSupplement(bytes, source, identities, discovery) {
   const hasModalities = values => Array.isArray(values) && values.length > 0 &&
     values.every(value => typeof value === "string" && value.trim());
   const supplementalModels = models.map(({ id, revision, revisionDate, cardSha256, license, licenseName,
-    licenseSha256, parameters, inputs, outputs, task }) => {
+    licenseSha256, parameters, inputs, outputs, task, publisherEvaluations = [] }) => {
     const apache = license === "apache-2.0";
     if (!modelIdPattern.test(id) || usedIds.has(id) || !/^[a-f0-9]{40}$/.test(revision) ||
         !date(revisionDate) || revisionDate > capturedAt || !hasDigest(cardSha256) ||
@@ -37,11 +53,14 @@ function readSupplement(bytes, source, identities, discovery) {
     usedIds.add(id);
     const source = "https://huggingface.co/" + id;
     const pinned = source + "/blob/" + revision;
+    const cardUrl = pinned + "/README.md";
+    const evaluations = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
     return {
       id, name: id, source, license, detail: task,
       supplemental: {
         capturedAt, revision, revisionDate, parameters, inputs, outputs,
-        cardUrl: pinned + "/README.md", cardSha256,
+        cardUrl, cardSha256,
+        ...(evaluations.length > 0 && { publisherEvaluations: evaluations }),
         infoUrl: "https://huggingface.co/api/models/" + id + "/revision/" + revision,
         licenseName: apache ? "Apache License 2.0" : licenseName,
         licenseUrl: apache ? "https://www.apache.org/licenses/LICENSE-2.0" : pinned + "/LICENSE",
@@ -49,8 +68,13 @@ function readSupplement(bytes, source, identities, discovery) {
       },
     };
   });
+  const publisherResults = supplementalModels.reduce((total, row) =>
+    total + (row.supplemental.publisherEvaluations?.length ?? 0), 0);
   return {
-    supplement: { capturedAt, sha256: sha256(bytes), repositories: models.length, scope: "repository-metadata-only" },
+    supplement: {
+      capturedAt, sha256: sha256(bytes), repositories: models.length, publisherResults,
+      scope: publisherResults ? "repository-metadata-and-selected-publisher-results" : "repository-metadata-only",
+    },
     supplementalModels,
   };
 }

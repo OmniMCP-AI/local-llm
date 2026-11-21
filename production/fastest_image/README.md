@@ -10,6 +10,8 @@ python3 -B -m fastest_image build /path/to/image-pilot-v1
 
 The bundle has Markdown, static HTML, typed JSON, the exact API workflow, both dependency locks and their SHA-256 manifest. Keep the files together when serving the directory. Each build takes at most one reviewed record per planned machine. A correction or withdrawal requires replacing or removing the affected published bundle.
 
+The read-only release service links to the planned report from its home page and the SDXL Turbo sections of the machine and model profiles. Run `python3 -B -m fastest_release serve` from `production`, then open `/image-pilot`. It redirects to a URL pinned by the SHA-256 of the bundle manifest. HTML, Markdown, JSON, the workflow and both dependency locks come from the same validated build. Reviewed run bundles still use the publishing command below.
+
 ## Pin the workflow, weights and runtime
 
 Use the [exact API graph](workflow.json) and [fixed protocol and acceptance rubric](plan.json). The graph draws one unbranded cobalt blue ceramic mug at 512 × 512 with one Euler ancestral step, the SD Turbo schedule, CFG 1 and denoise 1. It uses only the pinned ComfyUI core nodes and the single SDXL Turbo fp16 safetensors checkpoint, including both text encoders and the VAE. The workflow and wheel file digests appear in the plan and public manifest.

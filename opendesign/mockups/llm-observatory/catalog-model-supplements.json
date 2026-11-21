@@ -10,7 +10,18 @@
       "task": "Image and text to text",
       "parameters": "26.4B total, 3.4B active. The publisher reports 5.4B effective active parameters per token with three passes through the looped layers.",
       "inputs": ["Text", "image"],
-      "outputs": ["Text"]
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "DeepSWE",
+          "version": "1.1",
+          "scorePercent": 48.2,
+          "harness": "mini-swe-agent v2.4.6",
+          "source": "https://thinkingmachines.ai/news/inkling-2-mini/",
+          "cardRevision": "ed40e7da625f594fc9c4990f5f66be24873c22d7",
+          "cardLine": 124
+        }
+      ]
     },
     {
       "id": "thinkingmachines/Inkling-2-Small",
@@ -21,7 +32,18 @@
       "task": "Image and text to text",
       "parameters": "594B total, 17B active.",
       "inputs": ["Text", "image"],
-      "outputs": ["Text"]
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "DeepSWE",
+          "version": "1.1",
+          "scorePercent": 72.1,
+          "harness": "mini-swe-agent v2.4.6",
+          "source": "https://thinkingmachines.ai/news/inkling-2-small/",
+          "cardRevision": "885d78bfca61a7e9a498e33cfa7ad35850533b8c",
+          "cardLine": 124
+        }
+      ]
     },
     {
       "id": "moonshotai/Kimi-K3.1-Pro",

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { writeCatalogRelease } from "./catalog-release-build.mjs";
+import { readCatalogModelFiles, writeCatalogRelease } from "./catalog-release-build.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { importLocalCatalog, readPublishedCatalog } from "./catalog-pg.mjs";
@@ -87,6 +87,26 @@ function assertReviewedModel(body, [id, revision, total, active, license]) {
   assert.doesNotMatch(body, /Popular rank|Small rank|Downloads in the Hub snapshot|\/blob\/main\//);
 }
 
+const publisherScores = new Map([
+  ["thinkingmachines/Inkling-2-Mini", ["48.2%", "inkling-2-mini"]],
+  ["thinkingmachines/Inkling-2-Small", ["72.1%", "inkling-2-small"]],
+]);
+
+function assertPublisherScore(body, [id, revision]) {
+  if (!publisherScores.has(id)) {
+    assert.doesNotMatch(body, /Publisher-reported benchmark results/);
+    return;
+  }
+  const [score, slug] = publisherScores.get(id);
+  for (const value of ["Publisher-reported benchmark results", "DeepSWE v1.1", score,
+    "mini-swe-agent v2.4.6", "Execution hardware", "Unknown",
+    `https://thinkingmachines.ai/news/${slug}/`,
+    `https://huggingface.co/${id}/blob/${revision}/README.md#L124`]) {
+    assert.ok(body.includes(value), `${id} lacks ${value}`);
+  }
+  assert.doesNotMatch(body, /Artificial Analysis|Terminal.Bench|BrowseComp/);
+}
+
 test("reviewed releases have pinned source-backed cards outside the llmfit counts", async (t) => {
   const { read, request } = await buildFixture(t);
   const manifest = JSON.parse(await read("manifest.json"));
@@ -95,11 +115,29 @@ test("reviewed releases have pinned source-backed cards outside the llmfit count
     for (const ext of ["html", "md"]) {
       const response = await request("models/" + model[0] + "." + ext);
       assert.equal(response.status, 200);
-      assertReviewedModel(await response.text(), model);
+      const body = await response.text();
+      assertReviewedModel(body, model);
+      assertPublisherScore(body, model);
     }
   }
   assert.equal(manifest.supplement.repositories, 3);
+  assert.equal(manifest.supplement.publisherResults, 2);
   assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
+});
+
+test("a publisher score pinned to a different model-card revision cannot enter the catalog", async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-catalog-stale-score-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  const seed = "catalog-model-supplements.json";
+  const supplement = JSON.parse(await readFile(join(here, seed), "utf8"));
+  const [mini] = supplement.models;
+  mini.revision = "b".repeat(40);
+  await Promise.all([
+    ...["catalog-models.json", "catalog-identities.json", "model-discovery.json"].map((name) =>
+      copyFile(join(here, name), join(output, name))),
+    writeFile(join(output, seed), JSON.stringify(supplement)),
+  ]);
+  await assert.rejects(readCatalogModelFiles(output), /Publisher evaluation .*does not match.*Inkling-2-Mini/);
 });
 
 test("reviewed repository and conversion artifacts retain their own revisions and digests", async (t) => {
@@ -535,6 +573,8 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
       readFile(join(root, "models", model[0] + "." + ext), "utf8")));
     assertReviewedModel(html, model);
     assertReviewedModel(markdown, model);
+    assertPublisherScore(html, model);
+    assertPublisherScore(markdown, model);
     assertProfileFieldsAgree(html, markdown, model[0]);
   }
   for (const ext of ["html", "md"]) {

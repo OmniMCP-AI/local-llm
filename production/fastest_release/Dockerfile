@@ -18,7 +18,9 @@ COPY production/fastest_release/__init__.py production/fastest_release/__main__.
 COPY production/fastest_cost/*.py production/fastest_cost/illustrative.json ./fastest_cost/
 COPY production/fastest_fit/__init__.py production/fastest_fit/page.py ./fastest_fit/
 COPY production/fastest_goals/*.py ./fastest_goals/
-COPY production/fastest_image/__init__.py production/fastest_image/__main__.py production/fastest_image/intake.py production/fastest_image/render.py production/fastest_image/plan.json ./fastest_image/
+COPY production/fastest_image/__init__.py production/fastest_image/__main__.py production/fastest_image/intake.py production/fastest_image/render.py \
+     production/fastest_image/plan.json production/fastest_image/workflow.json production/fastest_image/requirements-mps.txt \
+     production/fastest_image/requirements-cuda.txt ./fastest_image/
 COPY production/fastest_prices/__init__.py production/fastest_prices/artifacts.py production/fastest_prices/result.py production/fastest_prices/validation.py ./fastest_prices/
 COPY production/fastest_text/*.py production/fastest_text/plan.json ./fastest_text/
 COPY production/fastest_serving/__init__.py ./fastest_serving/
