@@ -166,28 +166,48 @@ argument list can use the following command, substituting absolute paths.
 
 | MCP operation | Released data |
 | --- | --- |
-| `v1_search` | Paginated machine and model catalog |
+| `v1_search` | Paginated benchmark profile directory |
+| `v1_catalog` | Paginated Pages cards, machines, model repositories and runtimes, when `--catalog-origin` is configured |
 | `v1_coverage` | Profile cohorts, evidence references and exclusions |
 | `v1_evidence` | One evidence ID or release UUID, when the evidence reader is configured |
 | `v1_comparison` | Goals comparison with its release ID and pinned page URL |
 | `v1_profile_comparison` | Reviewed measurements and exclusions from a pinned profile cohort |
 | `v1_historical_offers` | Authorized historical quotes, when the price reader is configured |
 | `v1_calculator` | Deterministic cost projection for the same accepted workload |
-| `fastest://v1/catalog` | First page of the public catalog with its resolved revision |
+| `fastest://v1/catalog` | First page of the public benchmark profile directory with its resolved revision |
 | `fastest://v1/releases/{release_id}/evidence` | Evidence JSON by release UUID, when the evidence reader is configured |
 
 Tools publish their supported arguments through `tools/list`. Save the returned
 release or revision along with the selection to replay a comparison. For lists,
-reuse the revision and filters with the returned `next_offset`. Each read goes
-to the same public listener on `127.0.0.1`. Its pagination, rate limit and
-current rights checks apply to every tool and resource read, including pinned
-URIs. The adapter accepts only those public selectors and caps each upstream
-response at 2 MiB. All client calls use fixed GET paths with no client-supplied
-URL, query language, file path or mutation action.
+reuse the revision and filters with the returned `next_offset`. The evidence
+tools and resources use the public listener on `127.0.0.1`. Its pagination,
+rate limit and current rights checks apply on every read, including pinned
+URIs.
 
-The wire tests start a disposable listener and exercise the official client.
-The tests compare the site's profile evidence IDs, exclusions and withdrawal
-behavior, and verify the calculator's exact decimal strings.
+To browse the PostgreSQL-backed Pages catalog as well, pass the public HTTPS
+origin of that deployment when launching the adapter.
+
+```sh
+python3 -m fastest_mcp --port 8000 --catalog-origin https://fastest.ai
+```
+
+Supply the origin without credentials, a path or query parameters. An HTTP
+loopback origin such as `http://127.0.0.1:8788` works with a local Pages preview.
+The optional `v1_catalog` tool accepts `kind` (`cards`, `machines`, `models`, or
+`runtimes`), an optional search `q` and a page limit of up to 25. Use an exact
+`owner/repository` ID for model searches. Continue with the result's `revision`
+and `pagination.nextOffset`. Catalog results retain the snapshot ID, manifest,
+profile links and source URLs from Pages. Resolve relative links against the
+configured Pages origin. The published endpoint checks withdrawal on every
+request.
+
+The adapter caps each upstream response at 2 MiB. It sends requests directly to
+its configured origins, uses fixed GET paths and rejects redirects. Client
+selectors cannot change the destination or run private queries.
+
+The wire tests start disposable listeners and exercise the official client.
+They compare profile evidence, exclusions, withdrawal and exact calculator
+decimals, and check that catalog results equal the Pages API payload.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -s tests -k mcp -v
