@@ -10,6 +10,7 @@ import time
 import unittest
 
 from fastest_release import ReleaseStore
+from fastest_release.capture_cpu import candidate
 
 
 PRODUCTION = Path(__file__).resolve().parents[1]
@@ -290,6 +291,40 @@ main(sys.argv[1:])
         self.assertEqual(story["rights"]["decision_id"], self.observation["rights"]["decision_id"])
         self.assertEqual(story["media"], [])
         self.assertNotIn(b"private calibration note", path.read_bytes())
+
+    def test_shared_cpu_decode_draft_preserves_claim_identity_across_languages(self):
+        observation = candidate({
+            "runner": {"cpu_model": "Test CPU", "architecture": "x86_64", "image_version": "test"},
+            "run_url": "https://benchmark.example/test-cpu-attempt",
+            "median_tokens_per_second": "37.624926513815",
+            "samples_ns": [3_402_000_000] * 7,
+        }, "a" * 64)
+        observation["rights"] = self.observation["rights"]
+        for field in observation["fields"].values():
+            field["rights"] = "allow"
+        release_id = self.store.publish(observation)
+        claim_id = f"{release_id}:{observation['evidence_id']}:llama-bench-decode@1"
+        drafts = set()
+        for locale, wording in (
+            ("en", ("shared CI runner", "one CPU thread", "empty KV cache", "7 repetitions")),
+            ("zh-CN", ("共享 CI 运行器", "单个 CPU 线程", "空 KV 缓存", "7 次重复测量")),
+            ("zh-TW", ("共用 CI 執行器", "單一 CPU 執行緒", "空的 KV 快取", "7 次重複測量")),
+        ):
+            with self.subTest(locale=locale):
+                _, package = self.draft("--locale", locale, "--release", release_id)
+                self.assertEqual(package["outcome"], "story")
+                story = package["story"]
+                self.assertEqual(story["claims"], [{
+                    **observation["metric"], "claim_id": claim_id, "evidence_id": observation["evidence_id"],
+                }])
+                self.assertEqual(story["copy"]["claim_refs"], [claim_id])
+                self.assertEqual(story["benchmark_conditions"]["workload"], observation["workload"])
+                self.assertEqual(story["attribution"], observation["source"])
+                self.assertEqual(story["media"], [])
+                for phrase in (*wording, "37.624926513815 tok/s"):
+                    self.assertIn(phrase, story["copy"]["body"])
+                drafts.add(package["draft_revision"])
+        self.assertEqual(len(drafts), 3)
 
     def test_ineligible_release_records_no_story_without_exposing_claims(self):
         _, missing = self.draft()
