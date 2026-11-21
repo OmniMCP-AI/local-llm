@@ -101,6 +101,67 @@ test("a withdrawal from the origin removes offers, decisions and economics immed
   assert.equal(fetchMock.mock.callCount(), 1);
 });
 
+test("the edge lists configured published cohorts with their own scopes and currencies", async (t) => {
+  const referenceId = "55555555-5555-4555-8555-555555555555";
+  const retiredId = "77777777-7777-4777-8777-777777777777";
+  const scope = { kind: "sku", id: "fixture-board", revision_id: "board-rev" };
+  const reference = {
+    ...price, release_id: referenceId, data_class: "reviewed_citations", market: "CN", currency: "CNY",
+    as_of: "2026-11-20", destination: null, condition: null, scope, offers: [],
+    source_name: "Fixture Price Monitor", references: [{ observed_on: "2026-11-19", price: "812.30" }],
+  };
+  const sources = {
+    [releaseId]: Response.json({ ...price, as_of: "2026-11-21" }),
+    [referenceId]: Response.json(reference),
+    [retiredId]: new Response(null, { status: 410 }),
+  };
+  const requested = [];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    requested.push(url.pathname);
+    assert.equal(url.origin, origin);
+    assert.equal(options.redirect, "manual");
+    assert.equal(options.cache, "no-store");
+    return sources[url.pathname.split("/")[2]].clone();
+  });
+  const env = {
+    FASTEST_RELEASE_ORIGIN: origin, FASTEST_PRICE_RELEASE: retiredId,
+    FASTEST_PRICE_RELEASES: [referenceId, releaseId, retiredId, referenceId].join(", "),
+  };
+  const response = await request({}, env);
+  assert.equal(response.status, 410);
+  const { status, price: withdrawnPrice, cohorts } = await response.json();
+  assert.equal(status, "withdrawn");
+  assert.equal(withdrawnPrice, undefined);
+  assert.deepEqual(cohorts, [
+    { releaseId: referenceId, market: "CN", currency: "CNY", asOf: "2026-11-20", scope,
+      dataClass: "reviewed_citations", source: "Fixture Price Monitor", destination: null, condition: null },
+    { releaseId, market: "US", currency: "USD", asOf: "2026-11-21", scope: price.scope,
+      dataClass: "authorized_observations", source: null, destination: market.destination, condition: "new" },
+  ]);
+  assert.deepEqual(requested.sort(), [releaseId, referenceId, retiredId].map(id => `/price-releases/${id}/prices.json`).sort());
+
+  const selected = await request({ release: referenceId }, env);
+  assert.equal(selected.status, 200);
+  assert.deepEqual((await selected.json()).price, reference);
+  const firstListed = await request({}, { ...env, FASTEST_PRICE_RELEASE: undefined });
+  assert.equal((await firstListed.json()).releaseId, referenceId);
+});
+
+test("a malformed or oversized cohort list leaves the legacy release available", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", async (url) => {
+    assert.equal(url.pathname, `/price-releases/${releaseId}/prices.json`);
+    return Response.json(price);
+  });
+  for (const list of [`${releaseId},https://elsewhere.example`, Array(7).fill(releaseId).join(",")]) {
+    const response = await request({}, {
+      FASTEST_RELEASE_ORIGIN: origin, FASTEST_PRICE_RELEASE: releaseId, FASTEST_PRICE_RELEASES: list,
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "published", releaseId, price, decision: null, economics: null });
+  }
+  assert.equal(fetchMock.mock.callCount(), 2);
+});
+
 test("a dated display FX basis documents each needed source and currency pairs can be missing", async () => {
   const { datedDisplayRate } = await import("./display-fx.mjs");
   assert.deepEqual(datedDisplayRate("USD", "USD"), { factor: 1, sources: [] });
@@ -174,8 +235,9 @@ test("localized price release displays current expiry and pinned collection gaps
     stdin: { contents: `
       import React from "react";
       import { renderToStaticMarkup } from "react-dom/server";
-      import { PriceRelease } from "./price-comparison.jsx";
+      import { PriceCohorts, PriceRelease } from "./price-comparison.jsx";
       export default function render(props) { return renderToStaticMarkup(<PriceRelease {...props} />); }
+      export function renderCohorts(props) { return renderToStaticMarkup(<PriceCohorts {...props} />); }
     `, loader: "jsx", resolveDir: process.cwd() },
     bundle: true, platform: "node", format: "cjs", packages: "external", write: false,
   });
@@ -227,4 +289,19 @@ test("localized price release displays current expiry and pinned collection gaps
   for (const label of ["Historical price references", "Original post-coupon price", "2026-11-01", "812.30 CNY",
     "Fixture Marketplace", "Fixture Price Monitor", sourceLocator, "Unknown"]) assert.ok(citation.includes(label), label);
   assert.doesNotMatch(citation, /Dated offers|Collection status|Display estimate|Available at release|Pinned decision order|Pinned cost scenario/);
+
+  const referenceId = "55555555-5555-4555-8555-555555555555";
+  const directory = loaded.exports.renderCohorts({
+    copy: priceCopy("zh-Hant"), releaseId,
+    cohorts: [
+      { releaseId, scope: price.scope, dataClass: "authorized_observations", asOf: "2026-11-21", ...market },
+      { releaseId: referenceId, scope: { id: "fixture-board" }, dataClass: "reviewed_citations",
+        asOf: "2026-11-20", market: "CN", currency: "CNY", source: "Fixture Price Monitor" },
+    ],
+  });
+  assert.ok(directory.includes(`href="/prices?release=${releaseId}" aria-current="page"`));
+  assert.ok(directory.includes(`href="/prices?release=${referenceId}"`));
+  for (const label of ["已發布的價格版本", "apple-m4", "US", "USD", "fixture-board", "CN", "CNY",
+    "2026-11-21", "2026-11-20", "歷史價格參考", "Fixture Price Monitor"]) assert.ok(directory.includes(label), label);
+  assert.doesNotMatch(directory, /goal=|cost=|812\.30/);
 });

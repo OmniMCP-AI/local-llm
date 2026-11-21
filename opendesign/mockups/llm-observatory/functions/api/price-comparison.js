@@ -4,6 +4,8 @@ const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const goalRoute = /^\/goals\/([a-f0-9]{64})\.json$/;
 const costRevision = /^v1-[a-f0-9]{64}$/;
 const parameters = new Set(["release", "goal", "cost"]);
+const maxCohorts = 6;
+const priceFailure = { withdrawn: 410, missing: 404, unavailable: 503 };
 
 function json(body, status = 200) {
   return Response.json(body, {
@@ -32,9 +34,42 @@ async function readJSON(url) {
   }
 }
 
+function directoryIds(value) {
+  if (typeof value !== "string" || value.length > maxCohorts * 40) return [];
+  const ids = value.split(",").map((id) => id.trim());
+  return ids.length <= maxCohorts && ids.every((id) => uuid.test(id)) ? [...new Set(ids)] : [];
+}
+
+async function readPrice(origin, id) {
+  const upstream = await readJSON(new URL(`/price-releases/${id}/prices.json`, origin));
+  if (upstream.status === 410) return { status: "withdrawn" };
+  if (upstream.status === 404) return { status: "missing" };
+  const price = upstream.value;
+  if (price?.result_type !== "regional-price-cohort" || price.schema_version !== 1
+      || price.release_id !== id || price.status !== "published" || !Array.isArray(price.offers)
+      || (price.data_class === "reviewed_citations" && (price.offers.length || !Array.isArray(price.references)))) {
+    return { status: "unavailable" };
+  }
+  return { status: "published", price };
+}
+
+function cohortSummary({ price }) {
+  if (!["authorized_observations", "reviewed_citations"].includes(price?.data_class)
+      || !["sku", "whole_build"].includes(price.scope?.kind)
+      || ![price.market, price.currency, price.as_of, price.scope.id, price.scope.revision_id]
+        .every((value) => typeof value === "string" && value.length > 0)) return null;
+  const { kind, id, revision_id } = price.scope;
+  return {
+    releaseId: price.release_id, market: price.market, currency: price.currency, asOf: price.as_of,
+    scope: { kind, id, revision_id }, dataClass: price.data_class,
+    source: price.source_name ?? null, destination: price.destination ?? null, condition: price.condition ?? null,
+  };
+}
+
 export async function onRequestGet({ request, env }) {
   const query = new URL(request.url).searchParams;
-  const releaseId = query.get("release") ?? env.FASTEST_PRICE_RELEASE ?? null;
+  const ids = directoryIds(env.FASTEST_PRICE_RELEASES);
+  const releaseId = query.get("release") ?? (env.FASTEST_PRICE_RELEASE || ids[0] || null);
   if ([...query.keys()].some((key) => !parameters.has(key) || query.getAll(key).length !== 1)
       || (query.has("release") && !uuid.test(releaseId))) {
     return json({ status: "invalid", releaseId: null }, 400);
@@ -52,17 +87,15 @@ export async function onRequestGet({ request, env }) {
     return json({ status: "invalid", releaseId }, 400);
   }
 
-  const upstream = await readJSON(new URL(`/price-releases/${releaseId}/prices.json`, origin));
-  if (upstream.status === 410) return json({ status: "withdrawn", releaseId }, 410);
-  if (upstream.status === 404) return json({ status: "missing", releaseId }, 404);
-  const price = upstream.value;
-  if (price?.result_type !== "regional-price-cohort" || price.schema_version !== 1
-      || price.release_id !== releaseId || price.status !== "published" || !Array.isArray(price.offers)) {
-    return json({ status: "unavailable", releaseId }, 503);
-  }
+  const selected = readPrice(origin, releaseId);
+  const [result, entries] = await Promise.all([
+    selected, Promise.all(ids.map((id) => id === releaseId ? selected : readPrice(origin, id))),
+  ]);
+  const directory = ids.length ? { cohorts: entries.map(cohortSummary).filter(Boolean) } : {};
+  const { status, price } = result;
+  if (!price) return json({ status, releaseId, ...directory }, priceFailure[status]);
   if (price.data_class === "reviewed_citations") {
-    if (price.offers.length || !Array.isArray(price.references)) return json({ status: "unavailable", releaseId }, 503);
-    return json({ status: "published", releaseId, price, decision: null, economics: null });
+    return json({ status, releaseId, price, decision: null, economics: null, ...directory });
   }
   costPath?.searchParams.delete("revision");
   const [goal, cost] = await Promise.all([
@@ -75,7 +108,7 @@ export async function onRequestGet({ request, env }) {
     && Array.isArray(goal.rows) && goal.rows.some((row) => row.id === price.scope.id && row.build_revision === price.scope.revision_id
       && row.metrics?.budget?.release_id === releaseId);
   return json({
-    status: "published", releaseId, price,
+    status, releaseId, price, ...directory,
     decision: matchingDecision ? goal : null,
     economics: revision && cost?.revision === revision && Array.isArray(cost.payback) ? cost : null,
   });
