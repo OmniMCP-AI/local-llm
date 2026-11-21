@@ -123,6 +123,26 @@ function Economics({ economics, copy }) {
   </section>;
 }
 
+export function PriceCohorts({ cohorts, releaseId, copy }) {
+  if (!cohorts?.length) return null;
+  return <nav className="price-cohorts" aria-labelledby="price-cohorts">
+    <h2 id="price-cohorts">{copy.cohorts}</h2>
+    <ul>{cohorts.map((cohort) => {
+      const references = cohort.dataClass === "reviewed_citations";
+      const terms = references ? [cohort.source] : [cohort.destination, cohort.condition];
+      return <li key={cohort.releaseId}>
+        <a href={"/prices?release=" + cohort.releaseId} aria-current={cohort.releaseId === releaseId ? "page" : undefined}>
+          <strong><bdi>{cohort.scope.id}</bdi></strong>
+          <span><bdi>{cohort.market}</bdi> · <bdi>{cohort.currency}</bdi> · <ObservationTime value={cohort.asOf} /></span>
+          <small>{references ? copy.references : copy.offers}
+            {terms.filter(Boolean).map((term, index) => <React.Fragment key={index}> · <bdi>{term}</bdi></React.Fragment>)}
+          </small>
+        </a>
+      </li>;
+    })}</ul>
+  </nav>;
+}
+
 export function HostedPrices() {
   const { language, locale, currency } = useLocale();
   const copy = priceCopy(language);
@@ -147,6 +167,7 @@ export function HostedPrices() {
       <LocaleControls datedRatesOnly sourceCurrency={price?.currency} />
     </header>
     <div className="page-heading"><h1>{copy.title}</h1></div>
+    <PriceCohorts cohorts={data?.cohorts} releaseId={data?.releaseId} copy={copy} />
     {price ? <PriceRelease data={data} copy={copy} currency={currency} locale={locale} query={query} /> : <p role="status">{!data ? copy.loading : copy[data.status] ?? copy.unavailable}</p>}
     <footer><a href="/wiki/research/" hrefLang="en">{copy.research}</a></footer>
   </main>;

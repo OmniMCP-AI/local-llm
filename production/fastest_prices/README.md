@@ -133,6 +133,14 @@ to the reviewed UUID to make it available at the unpinned entry point. A shared
 `/prices?release=UUID` link retains its release. With no configured release,
 the entry point shows the missing state.
 
+Set `FASTEST_PRICE_RELEASES` to a comma-separated list of up to six reviewed
+release UUIDs to add a release chooser. The first listed UUID becomes the
+default when `FASTEST_PRICE_RELEASE` is unset. Each choice links to its exact
+release and displays the item, market, original currency, date, and price type.
+The chooser checks the configured UUIDs at the origin on each request. It
+shows currently readable offer and reference releases. Invalid lists leave
+the individual default and direct release links available.
+
 Add `goal` and `cost` URL parameters for optional decision and economics
 context. Use the exact same-origin paths from the release service, including
 the decision selection and cost scenario parameters. URL-encode each path
