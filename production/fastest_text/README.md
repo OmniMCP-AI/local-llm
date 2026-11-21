@@ -64,7 +64,36 @@ For `--cell rtx-4090`, set the same single-device `CUDA_VISIBLE_DEVICES` mask as
 
 Time starts immediately before submitting the request. TTFT ends when the client receives a complete SSE event containing the token ID for generated ordinal 1. b5163 can buffer partial UTF-8 before emitting it, so a stream whose first emitted ordinal is higher has no TTFT sample. The first visible answer measurement ends at the first complete frame with printable non-whitespace answer text, before any browser rendering. The HTTP header and control frames supply no token timings. A complete request can yield either, both, or neither measurement. A timeout or missing terminal event can retain observed timestamps but yields zero eligible samples. [Pinned sampling and stream serializer](https://github.com/ggml-org/llama.cpp/blob/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/server/server.cpp)
 
-The private directory keeps `latency.json`, the byte-exact request, raw received SSE lines, the effective template input, startup and runtime verification logs, and SHA-256 hashes. A complete, nonempty answer also produces `response.json` for the existing `review-packet` command. The quality judgment still requires independent reviewers. This operator capture leaves the fixed-token phases, publication workflow and current public results as recorded.
+The private directory keeps `latency.json`, the byte-exact request, raw received SSE lines, the effective template input, startup and runtime verification logs, and SHA-256 hashes. A complete stream that emits printable answer text also produces `response.json` for the existing `review-packet` command. The quality judgment still requires independent reviewers.
+
+## Retain and review streaming latency
+
+From `production/`, select the private PostgreSQL database and import the finalized capture directory.
+
+```sh
+python3 -B -m fastest_intake migrate
+python3 -B -m fastest_intake ingest-text-latency /path/to/private/m4-latency-01
+```
+
+The receipt identifies the capture by its `latency.json` SHA-256. Replaying the exact packet returns the same receipt. Intake verifies the inventory hashes and checks the pinned build, runner arguments, accelerator placement, template request, generation settings, KV reset, warmup, terminal event, and boundary presence. The private `fastest_intake.text_latency_run` table holds outcomes, token counts and typed times. Incomplete requests may retain observed times for diagnosis and always have zero release-eligible samples. Keep the original packet for provenance review.
+
+Only attach an actual quiet-host capture after checking the retained packet and approving the release of its timing and provenance fields. Create one trusted approval file per machine with `capture_sha256` from the receipt and a `rights` object containing `decision_id`, `destination: "public-release"`, `core: "allow"` and `basis`. The approval file carries no timing or raw capture content. Use `--latency-review` alongside any reviewed fixed-token records.
+
+```sh
+python3 -B -m fastest_text build /path/to/text-pilot-v2 \
+  --record reviewed-m4.json --latency-review approved-m4-latency.json
+```
+
+The build reads `fastest_intake.eligible_text_latency` using `FASTEST_DATABASE_URL` or `--database-url`. The view exposes only the release fields for complete quiet-host captures. A missing boundary has zero samples. An observed boundary has one sample and displays the captured duration in milliseconds.
+
+For the release origin, add `"latency_reviews": ["approved-m4-latency.json"]` to the goals cohort manifest. Resolve the path relative to the manifest. Grant the trusted report database role access to the view.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_intake TO origin_reader;
+GRANT SELECT ON fastest_intake.eligible_text_latency TO origin_reader;
+```
+
+The origin also requires an `allow` entry for the capture's `<cell-id>:latency` observation digest in its live goals rights file. Remove that entry or mark it withdrawn to revoke access to the affected pinned text report. The latency attachment supplies no fixed-token attempts or Chinese quality ratings.
 
 ## Review and ingest runner evidence
 

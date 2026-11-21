@@ -21,6 +21,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+from fastest_goals import GoalService
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore, capture_scaling
 from fastest_release.capture_cpu import candidate as cpu_baseline_candidate
 from fastest_prices import PriceStore
@@ -35,6 +36,7 @@ from fastest_serving import capture
 from fastest_text.__main__ import PLAN_PATH as TEXT_PLAN_PATH, main as text_main
 from fastest_text.capture import finish_phase
 from test_text_capture import BENCH as TEXT_BENCH
+from test_text_latency import SERVER as TEXT_SERVER
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -583,6 +585,219 @@ class ReleaseTest(unittest.TestCase):
                        "--model-dir", str(root), "--host-revision", "fixture-text-host",
                        "--build-evidence", str(build), "--quiet-host", "--timeout", "1"])
         return packet
+
+    def text_latency_packet(self, mode="complete"):
+        root = self.socket_path.parent / uuid4().hex[:8]
+        root.mkdir()
+        packet, server, build = root / "capture", root / "llama-server", root / "build.txt"
+        server.write_text(f"#!{sys.executable}\n" + TEXT_SERVER)
+        server.chmod(0o700)
+        build.write_text("private-build-evidence-marker")
+        with redirect_stderr(StringIO()), patch.dict(os.environ, {"FIXTURE_STREAM": mode}), \
+                patch("fastest_text.latency.verify_shards", side_effect=lambda _, artifact, verified:
+                      verified.extend(artifact["shards"])):
+            result = text_main(["capture-latency", str(packet), "--cell", "apple-m4", "--server", str(server),
+                                "--model-dir", str(root), "--host-revision", "fixture-private-text-host",
+                                "--build-evidence", str(build), "--quiet-host", "--timeout", "1"])
+        self.assertEqual(result, int(mode in ("disconnected", "timeout")))
+        return packet
+
+    @staticmethod
+    def text_latency_approval(digest):
+        return {
+            "capture_sha256": digest,
+            "rights": {"decision_id": str(uuid4()), "destination": "public-release", "core": "allow",
+                       "basis": "Fixture review decision"},
+        }
+
+    def test_private_text_latency_intake_replays_typed_evidence(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_latency_packet()
+        result = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_sha256"], sha256((packet / "latency.json").read_bytes()).hexdigest())
+        self.assertEqual(receipt["capture_status"], "complete")
+        self.assertEqual(receipt["review_status"], "held")
+        self.assertEqual(receipt["eligible_samples"], 2)
+        self.assertEqual(json.loads(self.serving_intake("ingest-text-latency", packet).stdout), receipt)
+        row = self.store._query("SELECT row_to_json(run) FROM fastest_intake.text_latency_run AS run")
+        record = json.loads(row)
+        self.assertEqual(record["prompt_tokens"], 72)
+        self.assertEqual(record["output_tokens"], 3)
+        self.assertLess(0, record["ttft_ns"])
+        self.assertGreater(record["first_visible_answer_ns"], record["ttft_ns"])
+        for private in ("fixture-private-text-host", "private-build-evidence-marker", str(packet),
+                        "resolved chat prompt", "芽杯", "request.json", "attempt.sse"):
+            self.assertNotIn(private, row)
+
+    def test_reviewed_text_report_reads_only_approved_latency_from_postgres(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_latency_packet("buffered-first")
+        intake = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(intake.returncode, 0, intake.stderr)
+        digest = json.loads(intake.stdout)["capture_sha256"]
+        self.assertEqual(json.loads(intake.stdout)["eligible_samples"], 1)
+        target = packet.parent / "public"
+        approval = packet.parent / "approval.json"
+        approval.write_text(json.dumps(self.text_latency_approval(digest)))
+        self.store._query("""
+            CREATE ROLE test_latency_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_intake TO test_latency_reader;
+            GRANT SELECT ON fastest_intake.eligible_text_latency TO test_latency_reader;
+        """)
+        public_reader = self.database_url + " user=test_latency_reader"
+        result = subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_text", "build", str(target),
+             "--latency-review", str(approval), "--database-url", public_reader],
+            cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        files = {suffix: (target / f"text-pilot.{suffix}").read_text() for suffix in ("json", "md", "html")}
+        dataset = json.loads(files["json"])
+        cell, other = dataset["cells"]
+        self.assertEqual(dataset["evidence_kind"], "measured")
+        self.assertEqual(cell["status"], "blocked")
+        self.assertEqual(cell["metrics"]["prefill"]["sample_count"], 0)
+        self.assertEqual(cell["quality"]["review_count"], 0)
+        self.assertEqual(cell["metrics"]["ttft"]["status"], "missing")
+        self.assertEqual(cell["metrics"]["ttft"]["sample_count"], 0)
+        self.assertEqual(cell["metrics"]["first_visible_answer"]["status"], "available")
+        self.assertEqual(cell["metrics"]["first_visible_answer"]["sample_count"], 1)
+        self.assertGreater(float(cell["metrics"]["first_visible_answer"]["value"]), 0)
+        self.assertEqual(other["metrics"]["first_visible_answer"]["sample_count"], 0)
+        for suffix in files:
+            self.assertIn(digest, files[suffix])
+            for private in ("fixture-private-text-host", "resolved chat prompt", str(packet), "request.json", "attempt.sse"):
+                self.assertNotIn(private, files[suffix])
+        with self.assertRaises(ReleaseError):
+            ReleaseStore(public_reader)._query("SELECT * FROM fastest_intake.text_latency_run")
+
+    def test_text_latency_intake_rejects_unsealed_or_wrong_capture_controls(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_latency_packet()
+        ledger_path = packet / "latency.json"
+        ledger = json.loads(ledger_path.read_bytes())
+        request_path = packet / "request.json"
+        request = json.loads(request_path.read_bytes())
+        request_path.write_text(json.dumps({**request, "cache_prompt": True}))
+        rejected = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn("SHA-256 mismatch", rejected.stderr)
+        ledger["files"]["request.json"] = sha256(request_path.read_bytes()).hexdigest()
+        ledger_path.write_text(json.dumps(ledger))
+        rejected = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn("pinned generation controls", rejected.stderr)
+
+        request_path.write_text(json.dumps(request))
+        ledger["files"]["request.json"] = sha256(request_path.read_bytes()).hexdigest()
+        ledger["metrics"]["ttft"]["samples_ns"] = [1]
+        ledger_path.write_text(json.dumps(ledger))
+        rejected = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn("summary disagrees", rejected.stderr)
+        stats = self.serving_intake("stats")
+        self.assertEqual(json.loads(stats.stdout)["text_latency_runs"], 0)
+
+    def test_incomplete_and_ambient_text_latency_stay_out_of_reviewed_report(self):
+        self.serving_intake("migrate").check_returncode()
+        interrupted = self.text_latency_packet("disconnected")
+        ambient = self.text_latency_packet()
+        ledger = ambient / "latency.json"
+        record = json.loads(ledger.read_bytes())
+        record["quiet_host_operator_attested"] = False
+        ledger.write_text(json.dumps(record))
+        for packet, expected in ((interrupted, "incomplete"), (ambient, "complete")):
+            with self.subTest(status=expected):
+                result = self.serving_intake("ingest-text-latency", packet)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                receipt = json.loads(result.stdout)
+                self.assertEqual(receipt["capture_status"], expected)
+                self.assertEqual(receipt["eligible_samples"], 0)
+                approval = packet.parent / "approval.json"
+                approval.write_text(json.dumps(self.text_latency_approval(receipt["capture_sha256"])))
+                target = packet.parent / "public"
+                rejected = subprocess.run(
+                    [sys.executable, "-B", "-m", "fastest_text", "build", str(target),
+                     "--latency-review", str(approval), "--database-url", self.database_url],
+                    cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(rejected.returncode, 1, rejected.stderr)
+                self.assertIn("complete quiet-host capture", rejected.stderr)
+                self.assertFalse(target.exists())
+        self.assertEqual(self.store._query("""
+            SELECT attempt_status, ttft_ns IS NOT NULL, first_visible_answer_ns IS NOT NULL, output_tokens IS NULL
+            FROM fastest_intake.text_latency_run WHERE capture_status = 'incomplete';
+        """), "incomplete|t|t|t")
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.eligible_text_latency"), "0")
+
+    def test_text_latency_goal_report_uses_live_public_rights(self):
+        from fastest_text.latency_review import read_eligible_latency
+
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_latency_packet()
+        intake = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(intake.returncode, 0, intake.stderr)
+        digest = json.loads(intake.stdout)["capture_sha256"]
+        root = packet.parent
+        approval = self.text_latency_approval(digest)
+        (root / "latency.json").write_text(json.dumps(approval))
+        fixed = json.loads((FIXTURE.parent / "synthetic-text-pilot.json").read_text())
+        fixed["kind"] = "measured"
+        (root / "fixed.json").write_text(json.dumps(fixed))
+        policy = {"schema_version": 1, "records": ["fixed.json"], "candidates": {},
+                  "market": {"market": "US", "destination": None, "currency": "USD", "condition": "new"}}
+        cohort, rights = root / "cohort.json", root / "rights.json"
+        cohort.write_text(json.dumps(policy))
+        fixed_pin = GoalService(cohort).observation_digests["text"]["apple-m4"]
+        cohort.write_text(json.dumps({**policy, "latency_reviews": ["latency.json"]}))
+        service = GoalService(cohort, rights_path=rights,
+                              latency_reader=lambda capture: read_eligible_latency(self.store, capture))
+        pins = service.observation_digests["text"]
+        self.assertEqual(pins["apple-m4"], fixed_pin)
+        latency_pin = pins["apple-m4:latency"]
+        self.assertNotEqual(latency_pin, fixed_pin)
+        rights.write_text(json.dumps({"schema_version": 1, "observations": {value: "allow" for value in pins.values()}}))
+        self.store._query("""
+            CREATE ROLE origin_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_intake TO origin_reader;
+            GRANT SELECT ON fastest_intake.eligible_text_latency TO origin_reader;
+        """)
+        with patch.dict(os.environ, {"FASTEST_ORIGIN_TEST_IMAGE": ""}), \
+                self.deployed_origin("--goal-cohort", str(cohort), "--goal-rights", str(rights)) as (url, _):
+            with urlopen(f"{url}/text-pilot", timeout=5) as response:
+                self.assertIn(digest, response.read().decode())
+            rights.write_text(json.dumps({"schema_version": 1, "observations": {fixed_pin: "allow"}}))
+            with self.assertRaises(HTTPError) as denied:
+                urlopen(f"{url}/goals/{service.release_id}/text-pilot.json", timeout=5)
+            with denied.exception as response:
+                self.assertEqual(response.code, 410)
+
+    def test_reviewed_stream_with_both_boundaries_missing_keeps_planned_report(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_latency_packet("no-boundaries")
+        result = self.serving_intake("ingest-text-latency", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_status"], "complete")
+        self.assertEqual(receipt["eligible_samples"], 0)
+        digest = receipt["capture_sha256"]
+        target, approval = packet.parent / "public", packet.parent / "approval.json"
+        command = [sys.executable, "-B", "-m", "fastest_text", "build", str(target),
+                   "--latency-review", str(approval), "--database-url", self.database_url]
+        approval.write_text(json.dumps({"capture_sha256": digest, "rights_decision_id": str(uuid4())}))
+        result = subprocess.run(command, cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertFalse(target.exists())
+        approval.write_text(json.dumps(self.text_latency_approval(digest)))
+        result = subprocess.run(command, cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        dataset = json.loads((target / "text-pilot.json").read_bytes())
+        self.assertEqual(dataset["evidence_kind"], "planned")
+        for boundary in ("ttft", "first_visible_answer"):
+            metric = dataset["cells"][0]["metrics"][boundary]
+            self.assertEqual((metric["status"], metric["sample_count"], metric["value"]), ("missing", 0, None))
 
     def test_private_text_intake_preserves_raw_timings_and_attempt_outcomes(self):
         self.serving_intake("migrate").check_returncode()

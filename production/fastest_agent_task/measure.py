@@ -188,9 +188,7 @@ def capture_stage(report, stage, **scope):
         report({**identity, "status": "finished", "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000})
 
 
-@contextmanager
-def local_server(directory, binary, model, device, settings, env, check_server=None, report_progress=None):
-    listener = directory / "run.sock"
+def server_command(binary, model, listener, device, settings):
     command = [
         str(binary), "--model", str(model), "--host", str(listener), "--device", device,
         "--split-mode", settings.get("split_mode", "none"), "--no-webui", "--jinja", "--no-warmup",
@@ -203,6 +201,13 @@ def local_server(directory, binary, model, device, settings, env, check_server=N
     if "split_mode" in settings:
         command += ["--threads-batch", str(settings["threads"]), "--no-kv-offload"]
 
+    return command
+
+
+@contextmanager
+def local_server(directory, binary, model, device, settings, env, check_server=None, report_progress=None):
+    listener = directory / "run.sock"
+    command = server_command(binary, model, listener, device, settings)
     with TemporaryDirectory(dir=directory, prefix="slot-cache-") as cache_dir, (directory / "server.log").open("wb") as output:
         # b5163 requires a slot storage path even for the in-memory erase operation.
         command += ["--slot-save-path", cache_dir]

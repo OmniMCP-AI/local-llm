@@ -304,6 +304,34 @@ CREATE TABLE IF NOT EXISTS fastest_intake.text_capture_attempt (
     CHECK ((outcome = 'success') = (elapsed_ns IS NOT NULL))
 );
 
+CREATE TABLE IF NOT EXISTS fastest_intake.text_latency_run (
+    capture_sha256 text PRIMARY KEY CHECK (capture_sha256 ~ '^[0-9a-f]{64}$'),
+    cell_id text NOT NULL CHECK (cell_id IN ('apple-m4', 'rtx-4090')),
+    capture_status text NOT NULL CHECK (capture_status IN ('complete', 'incomplete', 'blocked', 'interrupted')),
+    started_at timestamptz NOT NULL,
+    finished_at timestamptz NOT NULL CHECK (finished_at >= started_at),
+    protocol text NOT NULL CHECK (protocol = 'llama-server-native-zh-copy-latency@1'),
+    quiet_host boolean NOT NULL,
+    warmup_status text NOT NULL CHECK (warmup_status IN ('not-run', 'complete', 'incomplete', 'failed', 'timeout', 'interrupted')),
+    attempt_status text NOT NULL CHECK (attempt_status IN ('not-run', 'complete', 'incomplete', 'failed', 'timeout', 'interrupted')),
+    prompt_tokens integer CHECK (prompt_tokens BETWEEN 1 AND 2048),
+    output_tokens integer CHECK (output_tokens BETWEEN 0 AND 256),
+    token_events integer NOT NULL CHECK (token_events BETWEEN 0 AND 256),
+    ttft_ns bigint CHECK (ttft_ns > 0),
+    first_visible_answer_ns bigint CHECK (first_visible_answer_ns > 0),
+    binary_sha256 text CHECK (binary_sha256 ~ '^[0-9a-f]{64}$'),
+    CHECK ((capture_status = 'complete') = (attempt_status = 'complete')),
+    CHECK (attempt_status = 'not-run' OR warmup_status = 'complete'),
+    CHECK (attempt_status <> 'complete' OR (prompt_tokens IS NOT NULL AND output_tokens IS NOT NULL
+                                            AND binary_sha256 IS NOT NULL)),
+    CHECK (ttft_ns <= first_visible_answer_ns)
+);
+
+CREATE OR REPLACE VIEW fastest_intake.eligible_text_latency AS
+SELECT capture_sha256, cell_id, binary_sha256, prompt_tokens, output_tokens, ttft_ns, first_visible_answer_ns
+FROM fastest_intake.text_latency_run
+WHERE capture_status = 'complete' AND quiet_host;
+
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_intake FROM PUBLIC;
 
 COMMIT;
