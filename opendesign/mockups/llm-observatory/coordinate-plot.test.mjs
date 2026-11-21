@@ -78,3 +78,19 @@ test("the highlighted budget region covers the best performance side of the targ
     assert.ok(chart.includes(`--area-width:45.00000%;--area-height:${expectedHeight};top:0`));
   }
 });
+
+test("dense point labels are readable in a separate list with exact values", () => {
+  const chart = renderCoordinatePlot({
+    title: "Costs", kind: "line", showLabels: true,
+    xAxis: { label: "Month" }, yAxis: { label: "Cost", unit: "USD" },
+    points: [
+      { id: "local", name: "Local", x: 1, y: 1000, short: "$1,000" },
+      { id: "cloud", name: "Cloud", x: 1, y: 1001, short: "$1,001" },
+    ],
+  });
+  const list = chart.match(/<ul class="coordinate-label-list"[\s\S]*?<\/ul>/)?.[0];
+  assert.ok(list, "point labels have their own space outside the plot");
+  assert.match(list, /Local[\s\S]*Month: 1[\s\S]*Cost: 1,000 USD/);
+  assert.match(list, /Cloud[\s\S]*Month: 1[\s\S]*Cost: 1,001 USD/);
+  assert.match(chart, /class="coordinate-viewport"/);
+});
