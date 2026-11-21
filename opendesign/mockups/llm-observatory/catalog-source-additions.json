@@ -109,6 +109,262 @@
       "variant": "ROG-ASTRAL-RTX5090D-O32G-GAMING",
       "source": "https://rog.asus.com/hk-en/graphics-cards/graphics-cards/rog-astral/rog-astral-rtx5090d-o32g-gaming/spec/?config=90YV0MK2-M0NA00",
       "parent": "nvidia-geforce-rtx-5090-d-32gb"
+    },
+    {
+      "id": "amd-radeon-rx-9060-xt-8gb",
+      "name": "AMD Radeon RX 9060 XT 8 GB",
+      "manufacturer": "AMD",
+      "variant": "8 GB manufacturer reference",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt-8gb.html",
+      "parent": "amd-radeon-rx-9060-xt"
+    },
+    {
+      "id": "asus-dual-rx9060xt-8g",
+      "name": "ASUS Dual Radeon RX 9060 XT 8 GB",
+      "manufacturer": "ASUS",
+      "variant": "DUAL-RX9060XT-8G",
+      "source": "https://www.asus.com/au/motherboards-components/graphics-cards/dual/dual-rx9060xt-8g/techspec/",
+      "parent": "amd-radeon-rx-9060-xt-8gb"
+    },
+    {
+      "id": "intel-arc-a770-8gb",
+      "name": "Intel Arc A770 8 GB",
+      "manufacturer": "Intel",
+      "variant": "8 GB manufacturer reference",
+      "source": "https://www.intel.com/content/www/us/en/products/sku/227955/intel-arc-a770-graphics-8gb/specifications.html",
+      "parent": "intel-arc-a770"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1650-gddr5",
+      "name": "NVIDIA GeForce GTX 1650 GDDR5",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR5 manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-gtx-1650"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1650-gddr6",
+      "name": "NVIDIA GeForce GTX 1650 GDDR6",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR6 manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-gtx-1650"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2060-6gb",
+      "name": "NVIDIA GeForce RTX 2060 6 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "6 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-2060"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2060-12gb",
+      "name": "NVIDIA GeForce RTX 2060 12 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "12 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-2060"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3050-6gb",
+      "name": "NVIDIA GeForce RTX 3050 6 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "6 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+      "parent": "nvidia-geforce-rtx-3050"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3050-8gb",
+      "name": "NVIDIA GeForce RTX 3050 8 GB (retail)",
+      "manufacturer": "NVIDIA",
+      "variant": "8 GB (retail) manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+      "parent": "nvidia-geforce-rtx-3050"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060-8gb",
+      "name": "NVIDIA GeForce RTX 3060 8 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "8 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+      "parent": "nvidia-geforce-rtx-3060"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060-ti-gddr6",
+      "name": "NVIDIA GeForce RTX 3060 Ti GDDR6",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR6 manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-3060-ti"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060-ti-gddr6x",
+      "name": "NVIDIA GeForce RTX 3060 Ti GDDR6X",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR6X manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-3060-ti"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3080-10gb",
+      "name": "NVIDIA GeForce RTX 3080 10 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "10 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-3080"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3080-12gb",
+      "name": "NVIDIA GeForce RTX 3080 12 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "12 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "parent": "nvidia-geforce-rtx-3080"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4060-ti-8gb",
+      "name": "NVIDIA GeForce RTX 4060 Ti 8 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "8 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/",
+      "parent": "nvidia-geforce-rtx-4060-ti"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4060-ti-16gb",
+      "name": "NVIDIA GeForce RTX 4060 Ti 16 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "16 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/",
+      "parent": "nvidia-geforce-rtx-4060-ti"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070-gddr6",
+      "name": "NVIDIA GeForce RTX 4070 GDDR6",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR6 manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/",
+      "parent": "nvidia-geforce-rtx-4070"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070-gddr6x",
+      "name": "NVIDIA GeForce RTX 4070 GDDR6X",
+      "manufacturer": "NVIDIA",
+      "variant": "GDDR6X manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/",
+      "parent": "nvidia-geforce-rtx-4070"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5060-ti-8gb",
+      "name": "NVIDIA GeForce RTX 5060 Ti 8 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "8 GB manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "parent": "nvidia-geforce-rtx-5060-ti"
+    },
+    {
+      "id": "nvidia-a100-sxm-40gb",
+      "name": "NVIDIA A100 SXM 40 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "SXM4 40 GB manufacturer reference",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "parent": "nvidia-a100-sxm"
+    },
+    {
+      "id": "nvidia-a100-sxm-80gb",
+      "name": "NVIDIA A100 SXM 80 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "SXM4 80 GB manufacturer reference",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "parent": "nvidia-a100-sxm"
+    },
+    {
+      "id": "nvidia-h200-sxm",
+      "name": "NVIDIA H200 SXM",
+      "manufacturer": "NVIDIA",
+      "variant": "SXM manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/data-center/h200/",
+      "parent": "nvidia-h200"
+    },
+    {
+      "id": "nvidia-h200-nvl",
+      "name": "NVIDIA H200 NVL",
+      "manufacturer": "NVIDIA",
+      "variant": "NVL manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/data-center/h200/",
+      "parent": "nvidia-h200"
+    },
+    {
+      "id": "nvidia-tesla-p100-pcie-12gb",
+      "name": "NVIDIA Tesla P100 PCIe 12 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "PCIe 12 GB manufacturer reference",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+      "parent": "nvidia-tesla-p100"
+    },
+    {
+      "id": "nvidia-tesla-p100-pcie-16gb",
+      "name": "NVIDIA Tesla P100 PCIe 16 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "PCIe 16 GB manufacturer reference",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+      "parent": "nvidia-tesla-p100"
+    },
+    {
+      "id": "nvidia-tesla-p100-sxm2-16gb",
+      "name": "NVIDIA Tesla P100 SXM2 16 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "SXM2 16 GB manufacturer reference",
+      "source": "https://images.nvidia.com/content/tesla/pdf/nvidia-tesla-p100-datasheet.pdf#page=1",
+      "parent": "nvidia-tesla-p100"
+    },
+    {
+      "id": "nvidia-tesla-v100-pcie-16gb",
+      "name": "NVIDIA Tesla V100 PCIe 16 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "PCIe 16 GB manufacturer reference",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "parent": "nvidia-tesla-v100-16gb"
+    },
+    {
+      "id": "nvidia-tesla-v100-pcie-32gb",
+      "name": "NVIDIA Tesla V100 PCIe 32 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "PCIe 32 GB manufacturer reference",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "parent": "nvidia-tesla-v100-32gb"
+    },
+    {
+      "id": "nvidia-tesla-v100-sxm2-32gb",
+      "name": "NVIDIA Tesla V100 SXM2 32 GB",
+      "manufacturer": "NVIDIA",
+      "variant": "SXM2 32 GB manufacturer reference",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "parent": "nvidia-tesla-v100-sxm"
+    },
+    {
+      "id": "nvidia-rtx-pro-6000-blackwell-server",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "manufacturer": "NVIDIA",
+      "variant": "Server Edition manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/data-center/rtx-pro-6000-blackwell-server-edition/",
+      "parent": "nvidia-rtx-pro-6000"
+    },
+    {
+      "id": "nvidia-rtx-pro-6000-blackwell-workstation",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "manufacturer": "NVIDIA",
+      "variant": "Workstation Edition manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+      "parent": "nvidia-rtx-pro-6000"
+    },
+    {
+      "id": "nvidia-rtx-pro-6000-blackwell-max-q",
+      "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+      "manufacturer": "NVIDIA",
+      "variant": "Max-Q Workstation Edition manufacturer reference",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/",
+      "parent": "nvidia-rtx-pro-6000"
     }
   ],
   "specs": {
@@ -1532,6 +1788,595 @@
         "source": "https://www.pny.com/geforce-rtx-5060-ti-16gb-models?sku=VCG5060T16DFXPB1-O",
         "label": "Product gallery on PNY",
         "scope": "VCG5060T16DFXPB1-O · angled, top, bracket, and backplate views"
+      }
+    },
+    "amd-radeon-rx-9060-xt-8gb": {
+      "designation": "AMD Radeon RX 9060 XT 8 GB",
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt-8gb.html",
+      "locator": "8 GB product page · GPU, Requirements, GPU Memory and Connectivity",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Memory speed": "Up to 20 Gbps",
+        "Memory bandwidth": "Up to 320 GB/s",
+        "Compute units": "32",
+        "Stream processors": "2048",
+        "AI accelerators": "64",
+        "Boost clock": "Up to 3130 MHz",
+        "Game clock": "2530 MHz",
+        "Host interface": "PCIe 5.0 x16",
+        "Rated graphics power (W)": "150",
+        "Recommended system power (W)": "450",
+        "Power connectors": "1 × 8-pin"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt-8gb.html",
+        "label": "Product illustration on AMD",
+        "scope": "Radeon RX 9060 XT 8 GB · AMD artist render"
+      }
+    },
+    "asus-dual-rx9060xt-8g": {
+      "designation": "DUAL-RX9060XT-8G",
+      "source": "https://www.asus.com/au/motherboards-components/graphics-cards/dual/dual-rx9060xt-8g/techspec/",
+      "locator": "Tech Specs · DUAL-RX9060XT-8G",
+      "scope": "Board-partner SKU",
+      "facts": {
+        "Memory configuration": "8 GB GDDR6",
+        "Memory speed": "20 Gbps",
+        "Memory bus": "128-bit",
+        "Stream processors": "2048",
+        "Boost clock": "Up to 3130 MHz (default)",
+        "OC mode boost clock": "Up to 3150 MHz",
+        "Host interface": "PCIe 5.0",
+        "Dimensions": "202 × 120 × 49 mm",
+        "Slot width": "2.5 slots",
+        "Power connectors": "1 × 8-pin",
+        "Recommended system power (W)": "550"
+      },
+      "gallery": {
+        "source": "https://www.asus.com/au/motherboards-components/graphics-cards/dual/dual-rx9060xt-8g/techspec/",
+        "label": "Product images on ASUS",
+        "scope": "ASUS DUAL-RX9060XT-8G · illustrative product views"
+      }
+    },
+    "intel-arc-a770-8gb": {
+      "designation": "Intel Arc A770 8 GB",
+      "source": "https://www.intel.com/content/www/us/en/products/sku/227955/intel-arc-a770-graphics-8gb/specifications.html",
+      "locator": "SKU 227955 · GPU Specifications and Memory Specifications",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "256-bit",
+        "Memory bandwidth": "512 GB/s",
+        "Memory speed": "16 Gbps",
+        "Graphics clock": "2100 MHz",
+        "Xe cores": "32",
+        "XMX engines": "512",
+        "Rated graphics power (W)": "225",
+        "Host interface": "Up to PCIe 4.0 x16"
+      }
+    },
+    "nvidia-geforce-gtx-1650-gddr5": {
+      "designation": "NVIDIA GeForce GTX 1650 GDDR5",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 16 Series Specs · GTX 1650 (G5) column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "896",
+        "Memory configuration": "4 GB GDDR5",
+        "Memory bus": "128-bit",
+        "Base clock (MHz)": "1485",
+        "Boost clock (MHz)": "1665",
+        "Rated graphics power (W)": "75",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-geforce-gtx-1650-gddr6": {
+      "designation": "NVIDIA GeForce GTX 1650 GDDR6",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 16 Series Specs · GTX 1650 (G6) column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "896",
+        "Memory configuration": "4 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Base clock (MHz)": "1410",
+        "Boost clock (MHz)": "1590",
+        "Rated graphics power (W)": "75",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-geforce-rtx-2060-6gb": {
+      "designation": "NVIDIA GeForce RTX 2060 6 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 20 Series Specs · RTX 2060 column, 6 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "1920",
+        "Memory configuration": "6 GB GDDR6",
+        "Memory bus": "192-bit",
+        "Base clock (GHz)": "1.37",
+        "Boost clock (GHz)": "1.68",
+        "Rated graphics power (W)": "160",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-geforce-rtx-2060-12gb": {
+      "designation": "NVIDIA GeForce RTX 2060 12 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 20 Series Specs · RTX 2060 column, 12 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Turing",
+        "CUDA cores": "2176",
+        "Memory configuration": "12 GB GDDR6",
+        "Memory bus": "192-bit",
+        "Base clock (GHz)": "1.47",
+        "Boost clock (GHz)": "1.65",
+        "Rated graphics power (W)": "185",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-geforce-rtx-3050-6gb": {
+      "designation": "NVIDIA GeForce RTX 3050 6 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+      "locator": "Full Specs · RTX 3050 (6 GB) desktop column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "2304",
+        "Memory configuration": "6 GB GDDR6",
+        "Memory bus": "96-bit",
+        "Base clock (GHz)": "1.04",
+        "Boost clock (GHz)": "1.47",
+        "Rated graphics power (W)": "70",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+        "label": "Product illustrations on NVIDIA",
+        "scope": "RTX 3050 family illustration · board and capacity not identified in the image"
+      }
+    },
+    "nvidia-geforce-rtx-3050-8gb": {
+      "designation": "NVIDIA GeForce RTX 3050 8 GB (retail)",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+      "locator": "Full Specs · RTX 3050 (8 GB) desktop column · standard 2560-core configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "2560",
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Base clock (GHz)": "1.55",
+        "Boost clock (GHz)": "1.78",
+        "Rated graphics power (W)": "130",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/",
+        "label": "Product illustrations on NVIDIA",
+        "scope": "RTX 3050 family illustration · board and capacity not identified in the image"
+      }
+    },
+    "nvidia-geforce-rtx-3060-8gb": {
+      "designation": "NVIDIA GeForce RTX 3060 8 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+      "locator": "Full Specs · RTX 3060 column, 8 GB / 128-bit configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "3584",
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Base clock (GHz)": "1.32",
+        "Boost clock (GHz)": "1.78",
+        "Host interface": "PCIe Gen 4"
+      }
+    },
+    "nvidia-geforce-rtx-3060-ti-gddr6": {
+      "designation": "NVIDIA GeForce RTX 3060 Ti GDDR6",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 30 Series Specs · RTX 3060 Ti column, GDDR6 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "4864",
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "256-bit",
+        "Base clock (GHz)": "1.41",
+        "Boost clock (GHz)": "1.67",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+        "label": "GeForce RTX 3060 Ti gallery on NVIDIA",
+        "scope": "RTX 3060 Ti product views · exact memory type unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-3060-ti-gddr6x": {
+      "designation": "NVIDIA GeForce RTX 3060 Ti GDDR6X",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 30 Series Specs · RTX 3060 Ti column, GDDR6X configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "4864",
+        "Memory configuration": "8 GB GDDR6X",
+        "Memory bus": "256-bit",
+        "Base clock (GHz)": "1.41",
+        "Boost clock (GHz)": "1.67",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/",
+        "label": "GeForce RTX 3060 Ti gallery on NVIDIA",
+        "scope": "RTX 3060 Ti product views · exact memory type unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-3080-10gb": {
+      "designation": "NVIDIA GeForce RTX 3080 10 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 30 Series Specs · RTX 3080 column, 10 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "8704",
+        "Memory configuration": "10 GB GDDR6X",
+        "Memory bus": "320-bit",
+        "Base clock (GHz)": "1.44",
+        "Boost clock (GHz)": "1.71",
+        "Rated graphics power (W)": "320",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/",
+        "label": "GeForce RTX 3080 family gallery on NVIDIA",
+        "scope": "RTX 3080 family imagery · exact 10 GB board unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-3080-12gb": {
+      "designation": "NVIDIA GeForce RTX 3080 12 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "locator": "Compare 30 Series Specs · RTX 3080 column, 12 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "CUDA cores": "8960",
+        "Memory configuration": "12 GB GDDR6X",
+        "Memory bus": "384-bit",
+        "Base clock (GHz)": "1.26",
+        "Boost clock (GHz)": "1.71",
+        "Rated graphics power (W)": "350",
+        "Host interface": "PCIe Gen 4"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/",
+        "label": "GeForce RTX 3080 family gallery on NVIDIA",
+        "scope": "RTX 3080 family imagery · exact 12 GB board unspecified"
+      }
+    },
+    "nvidia-geforce-rtx-4060-ti-8gb": {
+      "designation": "NVIDIA GeForce RTX 4060 Ti 8 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/",
+      "locator": "Full Specs · RTX 4060 Ti column, 8 GB GDDR6 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "CUDA cores": "4352",
+        "Memory configuration": "8 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Base clock (GHz)": "2.31",
+        "Boost clock (GHz)": "2.54",
+        "Host interface": "PCIe Gen 4"
+      }
+    },
+    "nvidia-geforce-rtx-4060-ti-16gb": {
+      "designation": "NVIDIA GeForce RTX 4060 Ti 16 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/",
+      "locator": "Full Specs · RTX 4060 Ti column, 16 GB GDDR6 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "CUDA cores": "4352",
+        "Memory configuration": "16 GB GDDR6",
+        "Memory bus": "128-bit",
+        "Base clock (GHz)": "2.31",
+        "Boost clock (GHz)": "2.54",
+        "Host interface": "PCIe Gen 4"
+      }
+    },
+    "nvidia-geforce-rtx-4070-gddr6": {
+      "designation": "NVIDIA GeForce RTX 4070 GDDR6",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/",
+      "locator": "Full Specs · RTX 4070 column, GDDR6 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "CUDA cores": "5888",
+        "Memory configuration": "12 GB GDDR6",
+        "Memory bus": "192-bit",
+        "Base clock (GHz)": "1.92",
+        "Boost clock (GHz)": "2.48",
+        "Rated graphics power (W)": "200",
+        "Host interface": "PCIe Gen 4"
+      }
+    },
+    "nvidia-geforce-rtx-4070-gddr6x": {
+      "designation": "NVIDIA GeForce RTX 4070 GDDR6X",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/",
+      "locator": "Full Specs · RTX 4070 column, GDDR6X configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ada Lovelace",
+        "CUDA cores": "5888",
+        "Memory configuration": "12 GB GDDR6X",
+        "Memory bus": "192-bit",
+        "Base clock (GHz)": "1.92",
+        "Boost clock (GHz)": "2.48",
+        "Rated graphics power (W)": "200",
+        "Host interface": "PCIe Gen 4"
+      }
+    },
+    "nvidia-geforce-rtx-5060-ti-8gb": {
+      "designation": "NVIDIA GeForce RTX 5060 Ti 8 GB",
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "locator": "Full Specs · RTX 5060 Ti column, 8 GB GDDR7 configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Blackwell",
+        "CUDA cores": "4608",
+        "Memory configuration": "8 GB GDDR7",
+        "Memory bus": "128-bit",
+        "Base clock (GHz)": "2.41",
+        "Boost clock (GHz)": "2.57",
+        "Rated graphics power (W)": "180",
+        "Host interface": "PCIe Gen 5"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+        "label": "Product images on NVIDIA",
+        "scope": "RTX 5060 family illustration · exact 8 GB board unspecified"
+      }
+    },
+    "nvidia-a100-sxm-40gb": {
+      "designation": "NVIDIA A100 SXM 40 GB",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "locator": "Page 1 · A100 40GB SXM column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "40 GB HBM2",
+        "Memory bandwidth": "1555 GB/s",
+        "Maximum TDP (W)": "400",
+        "Form factor": "SXM4",
+        "Host interface": "PCIe Gen 4",
+        "Interconnect": "NVLink 600 GB/s",
+        "Multi-instance GPU": "Up to 7 instances with 5 GB each"
+      }
+    },
+    "nvidia-a100-sxm-80gb": {
+      "designation": "NVIDIA A100 SXM 80 GB",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf#page=1",
+      "locator": "Page 1 · A100 80GB SXM column",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Ampere",
+        "Memory configuration": "80 GB HBM2e",
+        "Memory bandwidth": "2039 GB/s",
+        "Maximum TDP (W)": "400",
+        "Form factor": "SXM4",
+        "Host interface": "PCIe Gen 4",
+        "Interconnect": "NVLink 600 GB/s",
+        "Multi-instance GPU": "Up to 7 instances with 10 GB each"
+      }
+    },
+    "nvidia-h200-sxm": {
+      "designation": "NVIDIA H200 SXM",
+      "source": "https://www.nvidia.com/en-us/data-center/h200/",
+      "locator": "Specifications · H200 SXM column",
+      "scope": "Exact form-factor variant",
+      "facts": {
+        "Architecture": "Hopper",
+        "Memory configuration": "141 GB HBM3e",
+        "Memory bandwidth": "4.8 TB/s",
+        "Maximum TDP (W)": "Up to 700 W (configurable)",
+        "Form factor": "SXM",
+        "Host interface": "PCIe Gen 5",
+        "Interconnect": "NVLink 900 GB/s",
+        "Multi-instance GPU": "Up to 7 instances with 18 GB each",
+        "Source qualification": "NVIDIA labels these specifications preliminary"
+      }
+    },
+    "nvidia-h200-nvl": {
+      "designation": "NVIDIA H200 NVL",
+      "source": "https://www.nvidia.com/en-us/data-center/h200/",
+      "locator": "Specifications · H200 NVL column",
+      "scope": "Exact form-factor variant",
+      "facts": {
+        "Architecture": "Hopper",
+        "Memory configuration": "141 GB HBM3e",
+        "Memory bandwidth": "4.8 TB/s",
+        "Maximum TDP (W)": "Up to 600 W (configurable)",
+        "Form factor": "Dual-slot PCIe",
+        "Host interface": "PCIe Gen 5",
+        "Interconnect": "2- or 4-way NVLink bridge, 900 GB/s per GPU",
+        "Multi-instance GPU": "Up to 7 instances with 16.5 GB each",
+        "Source qualification": "NVIDIA labels these specifications preliminary",
+        "Cooling": "Air-cooled"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/data-center/h200/#h200nvl",
+        "label": "Product images on NVIDIA",
+        "scope": "H200 NVL PCIe board"
+      }
+    },
+    "nvidia-tesla-p100-pcie-12gb": {
+      "designation": "NVIDIA Tesla P100 PCIe 12 GB",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+      "locator": "Page 1 · Specifications · PCIe 12 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Pascal",
+        "CUDA cores": "3584",
+        "Memory configuration": "12 GB HBM2",
+        "Memory bandwidth": "549 GB/s",
+        "Rated graphics power (W)": "250",
+        "Form factor": "PCIe",
+        "Cooling": "Passive",
+        "Host interface": "PCIe Gen 3"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla P100 PCIe product views · memory capacity is not visible"
+      }
+    },
+    "nvidia-tesla-p100-pcie-16gb": {
+      "designation": "NVIDIA Tesla P100 PCIe 16 GB",
+      "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+      "locator": "Page 1 · Specifications · PCIe 16 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Pascal",
+        "CUDA cores": "3584",
+        "Memory configuration": "16 GB HBM2",
+        "Memory bandwidth": "732 GB/s",
+        "Rated graphics power (W)": "250",
+        "Form factor": "PCIe",
+        "Cooling": "Passive",
+        "Host interface": "PCIe Gen 3"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-p100/pdf/nvidia-tesla-p100-PCIe-datasheet.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "Tesla P100 PCIe product views · memory capacity is not visible"
+      }
+    },
+    "nvidia-tesla-p100-sxm2-16gb": {
+      "designation": "NVIDIA Tesla P100 SXM2 16 GB",
+      "source": "https://images.nvidia.com/content/tesla/pdf/nvidia-tesla-p100-datasheet.pdf#page=1",
+      "locator": "Page 1 · Specifications · SXM2 16 GB configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Pascal",
+        "CUDA cores": "3584",
+        "Memory configuration": "16 GB HBM2",
+        "Memory bandwidth": "732 GB/s",
+        "Rated graphics power (W)": "300",
+        "Form factor": "SXM2",
+        "Cooling": "Passive",
+        "Interconnect": "NVLink"
+      }
+    },
+    "nvidia-tesla-v100-pcie-16gb": {
+      "designation": "NVIDIA Tesla V100 PCIe 16 GB",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · PCIe column and 16 GB memory configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Tensor cores": "640",
+        "Memory configuration": "16 GB HBM2",
+        "Memory bandwidth": "900 GB/s",
+        "Rated graphics power (W)": "250",
+        "Form factor": "PCIe",
+        "Cooling": "Passive",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-tesla-v100-pcie-32gb": {
+      "designation": "NVIDIA Tesla V100 PCIe 32 GB",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · PCIe column and 32 GB memory configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Tensor cores": "640",
+        "Memory configuration": "32 GB HBM2",
+        "Memory bandwidth": "900 GB/s",
+        "Rated graphics power (W)": "250",
+        "Form factor": "PCIe",
+        "Cooling": "Passive",
+        "Host interface": "PCIe Gen 3"
+      }
+    },
+    "nvidia-tesla-v100-sxm2-32gb": {
+      "designation": "NVIDIA Tesla V100 SXM2 32 GB",
+      "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+      "locator": "Page 1 · Specifications · SXM2 column and 32 GB memory configuration",
+      "scope": "Exact memory variant",
+      "facts": {
+        "Architecture": "Volta",
+        "CUDA cores": "5120",
+        "Tensor cores": "640",
+        "Memory configuration": "32 GB HBM2",
+        "Memory bandwidth": "900 GB/s",
+        "Rated graphics power (W)": "300",
+        "Form factor": "SXM2",
+        "Cooling": "Passive",
+        "Interconnect": "NVLink 300 GB/s"
+      }
+    },
+    "nvidia-rtx-pro-6000-blackwell-server": {
+      "designation": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "source": "https://www.nvidia.com/en-us/data-center/rtx-pro-6000-blackwell-server-edition/",
+      "locator": "Specifications · Server Edition",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "96 GB GDDR7 with ECC",
+        "Memory bandwidth": "1597 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Form factor": "Air: dual-slot FHFL. Liquid: single-slot FHXL.",
+        "Cooling": "Air-cooled or liquid-cooled",
+        "Maximum TDP (W)": "Up to 600 W (configurable)"
+      }
+    },
+    "nvidia-rtx-pro-6000-blackwell-workstation": {
+      "designation": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+      "locator": "Specifications · Workstation Edition",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "96 GB GDDR7 with ECC",
+        "Memory bandwidth": "1792 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Form factor": "Dual-slot",
+        "Cooling": "Double flow-through",
+        "Rated graphics power (W)": "600"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/",
+        "label": "Edition product images on NVIDIA",
+        "scope": "RTX PRO 6000 Blackwell Workstation Edition"
+      }
+    },
+    "nvidia-rtx-pro-6000-blackwell-max-q": {
+      "designation": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+      "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/",
+      "locator": "Specifications · Max-Q Workstation Edition",
+      "scope": "Manufacturer product reference",
+      "facts": {
+        "Architecture": "Blackwell",
+        "Memory configuration": "96 GB GDDR7 with ECC",
+        "Memory bandwidth": "1792 GB/s",
+        "Host interface": "PCIe 5.0 x16",
+        "Form factor": "Dual-slot",
+        "Cooling": "Active",
+        "Rated graphics power (W)": "300"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q/",
+        "label": "Edition product images on NVIDIA",
+        "scope": "RTX PRO 6000 Blackwell Max-Q Workstation Edition"
       }
     }
   },
