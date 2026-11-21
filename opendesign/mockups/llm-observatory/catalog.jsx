@@ -19,7 +19,9 @@ const manifestPath = (catalogRelease || localCatalogRelease) &&
 const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
 const modifiedCardTag = "memory-modified";
-const machineKinds = ["Complete factory configuration", "Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
+const machineKinds = ["Creator-reported build", "Complete factory configuration", "Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
+const machineRows = hardwareCatalog.machines.toSorted((left, right) =>
+  Number(right.kind === "Creator-reported build") - Number(left.kind === "Creator-reported build"));
 const runtimeCategories = [...new Set(runtimes.map(row => row.category))].sort();
 const { byId: modelById, ...modelViews } = modelCollections(modelCatalog.models, discovery, __FASTEST_SUPPLEMENTAL_MODELS__);
 const modelStats = new Map([...discovery.popular, ...discovery.small].map(row => [row.id, row]));
@@ -32,10 +34,10 @@ const tabs = [
     descriptionZh: "浏览原厂显卡与显存改装版，并查看对应规格、卖家商品页和研究资料。",
   },
   {
-    key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Machine and component records",
+    key: "machines", title: "Machines", icon: Layers3, rows: machineRows, scope: "Machine and component records",
     titleZh: "整机", scopeZh: "整机与部件记录",
-    description: "Browse complete factory configurations, partial configurations, component and system references, and llmfit example presets.",
-    descriptionZh: "浏览厂商完整出厂配置、部分配置、部件和整机资料，以及 llmfit 示例配置。",
+    description: "Browse real builds documented by their builders, factory configurations, hardware references, and llmfit example presets.",
+    descriptionZh: "浏览装机者公开记录的实际配置、厂商出厂配置、硬件资料及 llmfit 示例配置。",
   },
   {
     key: "models", title: "Models", icon: List, rows: modelViews.all, scope: "Model metadata records",
@@ -53,6 +55,7 @@ const tabs = [
 const licenseTags = Array.from(new Set(modelViews.all.map(({ license }) => license).filter(Boolean))).sort();
 const validKind = (kind) => tabs.some((tab) => tab.key === kind) ? kind : "cards";
 const sourceLabelsZh = {
+  "Creator-reported build": "装机者公开配置",
   "Complete factory configuration": "完整出厂配置",
   "Manufacturer system reference": "厂商整机资料",
   "Partial configuration": "部分配置",
@@ -271,7 +274,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
     const filtered = terms.length || tag ? tab.rows.filter((row) => {
       const category = row.memoryModified ? modifiedCardTag : row.category ?? row.kind;
       if (tag && category !== tag) return false;
-      const text = [row.id, row.name, row.detail, row.tag, ...(row.aliases ?? [])].join(" ").toLowerCase();
+      const text = [row.id, row.name, row.detail, row.tag, row.platform, ...(row.aliases ?? [])].join(" ").toLowerCase();
       return terms.every((term) => text.includes(term));
     }) : tab.rows;
     const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -353,6 +356,9 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           components: number.format(coverage.researchComponentReferences),
           systems: number.format(coverage.manufacturerMachines - coverage.completeBuilds), presets: number.format(coverage.upstreamPresets),
         })} ·{" "}
+        {active === "machines" && coverage.creatorBuilds > 0 && <>{t("{builds} creator-reported builds", "装机者公开配置 {builds} 条", {
+          builds: number.format(coverage.creatorBuilds),
+        })} ·{" "}</>}
         {active === "cards" && <>{t("{specs} with manufacturer or board-partner specs", "{specs} 条附有厂商或板卡合作伙伴规格", {
           specs: number.format(coverage.cardsWithVendorSpecs),
         })} ·{" "}</>}
@@ -463,7 +469,9 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
                 {row.supplemental && <span>{t("Revision {date}", "版本日期 {date}", { date: row.supplemental.revisionDate })}</span>}
                 {modelTags(row, modelIdentities[row.id]).map((value) => <span key={value}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
                 {row.license && <span title={t("Model license metadata from the source catalog", "源目录中的模型许可证元数据")}>{row.license}</span>}
-              </div> : <>{row.category && <small>{row.category}</small>}{formatSourceDetail(row, t)}
+              </div> : <>{row.category && <small>{row.category}</small>}
+                {row.platform && <small>{t(row.kind, sourceLabelsZh[row.kind])} · {t(row.platform, row.platform === "Builder site" ? "装机者网站" : row.platform)}</small>}
+                {formatSourceDetail(row, t)}
                 {observed && <div className="catalog-runtime-release">
                   <small>{observed.release ? <>
                     {t("Last observed stable release", "最近观测到的稳定版")}{" "}

@@ -6,13 +6,15 @@ import { fileURLToPath } from "node:url";
 import { readCatalogModelFiles } from "./catalog-release-build.mjs";
 import { modelRepositoryMap } from "./catalog-search.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
+import { machineBuildRegistry } from "./catalog-hardware-build.mjs";
 import { readEvidenceState, withdrawnPublisherSource } from "./evidence-state.mjs";
 import { estimateBattleTitles } from "./battle-title-signals.mjs";
 
 const project = new URL(".", import.meta.url);
 const docs = new URL("../../../docs/", project);
 const seed = new URL("Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/", docs);
-const manufacturerSourcePath = "opendesign/mockups/llm-observatory/catalog-source-additions.json";
+const hardwareSourceFiles = ["catalog-source-additions.json", machineBuildRegistry];
+const hardwareSourceDirectory = "opendesign/mockups/llm-observatory/";
 const readJson = async (root, name) => JSON.parse(await readFile(new URL(name, root), "utf8"));
 const encode = JSON.stringify;
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -115,7 +117,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   isPublisherWithdrawn) {
   const publisherFilter = isPublisherWithdrawn ?? withdrawnPublisherSource(await readEvidenceState());
   const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos,
-    manufacturerSource, titleSample] = await Promise.all([
+    hardwareSources, titleSample] = await Promise.all([
     readFile(new URL("catalog-pg.sql", project), "utf8"),
     readCatalogModelFiles(fileURLToPath(project), publisherFilter),
     ...["catalog-runtimes.json", "catalog-topics.json"].map(name => readJson(project, name)),
@@ -124,7 +126,10 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     researchDocuments(),
     readJson(project, "catalog-topology.json"),
     readCatalogPhotos(project),
-    readFile(new URL(manufacturerSourcePath.split("/").at(-1), project), "utf8"),
+    Promise.all(hardwareSourceFiles.map(async name => {
+      const source = await readFile(new URL(name, project), "utf8");
+      return [hardwareSourceDirectory + name, sha256(source), source];
+    })),
     readJson(project, "battle-title-sample.json"),
   ]);
   const { source: models, identities, discovery, sourceManifest, supplement, supplementalModels } = modelFiles;
@@ -134,7 +139,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
   ]));
   const { cards, machines } = hardware.catalog;
   const battleTitleSignals = estimateBattleTitles(titleSample, hardware.catalog);
-  documents.push([manufacturerSourcePath, sha256(manufacturerSource), manufacturerSource]);
+  documents.push(...hardwareSources);
   const { topologies, records: topologyTables } = topologyRecords(reports, machines, documents, photos);
   const byPosition = new Map(inventory.map(row => [Number(row.position), row.id]));
   const distinctVideos = new Map();
@@ -310,8 +315,8 @@ export function readPublishedCatalog(database, id) {
     throw new Error("PostgreSQL catalog snapshot has no Pages publication metadata: " + id);
   }
   const { cards, machines, models: records } = catalog;
-  const { cards: cardCount, researchProfiles, upstreamPresets, manufacturerMachines } = pages.hardware.coverage;
-  if (cards?.length !== cardCount || machines?.length !== researchProfiles + upstreamPresets + manufacturerMachines ||
+  const { cards: cardCount, researchProfiles, upstreamPresets, manufacturerMachines, creatorBuilds = 0 } = pages.hardware.coverage;
+  if (cards?.length !== cardCount || machines?.length !== researchProfiles + upstreamPresets + manufacturerMachines + creatorBuilds ||
       runtimes?.length !== pages.runtimeProjects || modelManifest.popular !== pages.popular || modelManifest.small !== pages.small ||
       topologies.length !== pages.topologyRevisions) {
     throw new Error("PostgreSQL catalog snapshot coverage does not match its publication metadata: " + id);

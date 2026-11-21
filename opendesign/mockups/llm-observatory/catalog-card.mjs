@@ -255,6 +255,7 @@ export function hardwareCard(row, release, kind, {
   }
 
   const factory = row.kind === "Complete factory configuration";
+  const creator = row.buildSource;
   const topology = topologyRevisionHref(topologyRevision, local ? "../../../../fastest-ai.html" : "/");
   const sections = [{
     title: "Memory",
@@ -296,19 +297,26 @@ export function hardwareCard(row, release, kind, {
     title: row.name,
     kind: row.kind,
     source: row.source,
+    photos: row.photos,
+    video: row.video,
     fields: [
       ...(factory ? [
         ["Catalog ID", row.id],
         ["Manufacturer configuration", row.configuration, row.source],
         ["Source locator", row.locator, row.source],
       ] : common),
+      ...(creator ? [
+        ["Builder", creator.author],
+        ["Source platform", creator.platform, row.source],
+        ["Source locator", creator.locator, row.source],
+      ] : []),
       ...(!local && !reviewProfileHref && factory && row.fit ? [
         ["Model fit", "Estimate fit for this configuration", "/fit?machine=" + encodeURIComponent(row.id)],
       ] : []),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
       ...(topology ? [["Topology revision", reviewProfileHref ? topologyRevision : "Explore this configuration",
         reviewProfileHref ? null : topology]] : []),
-      ...(row.gallery ? [["Manufacturer product gallery", row.gallery.label, row.gallery.source]] : []),
+      ...(row.gallery ? [[creator ? "Photographs at the source" : "Manufacturer product gallery", row.gallery.label, row.gallery.source]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [
         ["Core build fields disclosed", `${row.coreFieldsReported} of ${row.coreFieldsTotal}`],
@@ -316,10 +324,12 @@ export function hardwareCard(row, release, kind, {
       ] : []),
       ...(row.interconnect || row.missingCoreFields ? [["Interconnect", row.interconnect ?? "Unknown"]] : []),
       ...row.cardIds.map((id) => ["Linked card reference", id, path("cards", id)]),
-      ...(!factory && !row.cardIds.length ? [["Card identity", "No unambiguous discrete-card link in this snapshot"]] : []),
+      ...(!factory && !creator && !row.cardIds.length ? [["Card identity", "No unambiguous discrete-card link in this snapshot"]] : []),
     ],
     sections,
-    evidence: row.associations
+    evidence: creator
+      ? "Hardware disclosed by the builder. Reviewed benchmark results are unavailable for this build."
+      : row.associations
       ? `${untested} ${row.associations} creator-reported research associations remain outside reviewed results.`
       : untested,
   };
@@ -429,6 +439,8 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   const sections = card.sections ?? [];
   const visuals = card.visuals ?? [];
   const photos = card.photos ?? [];
+  const { video } = card;
+  const mediaNotices = photoNotices(photos);
   const position = card.position;
   const evaluations = card.publisherEvaluations;
 
@@ -448,8 +460,12 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       ...visuals.flatMap(({ title, fields, graphic }) => [
         `## ${escapeMarkdown(title)}`, "", ...(graphic ? [ratingScale(graphic), ""] : []), ...markdownFields(fields), "",
       ]),
+      ...(photos.length || video ? ["## Build and product media", ""] : []),
       ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
         `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
+      ...(video ? [`- [${escapeMarkdown(video.title)}](<${card.source}>) · YouTube`] : []),
+      ...(mediaNotices.length ? ["", "### Image license notices", "", ...mediaNotices.flatMap(notice => ["```text", notice, "```", ""])] : []),
+      ...(photos.length || video ? [""] : []),
       ...(position ? [
         `## ${positionTitle}`, "", positionBasis, "",
         position.selected ? `Selected GPU: ${position.selected.capacity} GB · ${position.label}: ${position.selected.value}` : noPosition,
@@ -477,20 +493,29 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   });
 }
 
+const photoNotices = photos => [...new Set(photos.map(({ licenseNotice }) => licenseNotice).filter(Boolean))];
+
 export function renderCardContent(card, { mdLink, nested = false } = {}) {
   const title = nested ? "h2" : "h1";
   const heading = nested ? "h3" : "h2";
-  const { sections = [], visuals = [], photos = [], position, publisherEvaluations } = card;
+  const { sections = [], visuals = [], photos = [], video, position, publisherEvaluations } = card;
+  const mediaNotices = photoNotices(photos);
   return `<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><${title}>${escapeHtml(card.title)}</${title}>
 <p class="profile-evidence">${escapeHtml(card.evidence)}</p>
 <div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}${mdLink ? `<a href="${mdLink}">Markdown</a>` : ""}</div></div>
 ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
   `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? positionHtml(position) : ""}
+${video ? `<figure class="profile-video"><iframe loading="lazy" title="${escapeHtml(video.title)}"
+  src="https://www.youtube-nocookie.com/embed/${escapeHtml(video.id)}${video.start ? "?start=" + video.start : ""}"
+  referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  <figcaption><a href="${escapeHtml(card.source)}">${escapeHtml(video.title)} on YouTube</a></figcaption></figure>` : ""}
 ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
   ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}
   </figcaption></figure>`).join("")}</div>` : ""}
+${mediaNotices.length ? `<details class="profile-photo-notices"><summary>Image license notices</summary>
+${mediaNotices.map(notice => `<pre>${escapeHtml(notice)}</pre>`).join("")}</details>` : ""}
 <section class="profile-section"><${heading}>Catalog details</${heading}>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${htmlFields(fields)}</section>`).join("\n")}
 ${publisherEvaluations ? evaluationsHtml(publisherEvaluations, heading) : ""}`;

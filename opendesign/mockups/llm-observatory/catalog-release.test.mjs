@@ -308,7 +308,7 @@ test("the runtime profile links an exact commit and the relevant transcript", as
 test("versioned hardware cards preserve uncertain memory, source links and board variants", async (t) => {
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
-  assert.equal(hardware.asOf, "2026-11-21");
+  assert.equal(hardware.asOf, "2026-11-22");
   assert.equal(hardware.coverage.memoryModifiedCards, 16);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
@@ -526,7 +526,7 @@ test("the released tinybox profile separates installed GPU memory and documented
 test("every released hardware row resolves in both formats", async (t) => {
   const { read, readData, request } = await buildFixture(t);
   const { hardware: { coverage } } = JSON.parse(await read("manifest.json"));
-  for (const [kind, count] of [["cards", coverage.cards], ["machines", 124]]) {
+  for (const [kind, count] of [["cards", coverage.cards], ["machines", 124 + coverage.creatorBuilds]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {

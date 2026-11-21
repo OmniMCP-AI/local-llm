@@ -112,8 +112,8 @@ test("PostgreSQL Pages visitors enter the released catalog and can explicitly op
   assert.equal(catalogHome("explorer", false, null), null);
   assert.equal(navigationHref("machines", true, null, true), "#catalog/machines");
   assert.equal(navigationHref("models", true, null, true), "#catalog/models");
-  assert.equal(navigationHref("machines", true, origin, true), origin + "/profiles#machines");
-  assert.equal(navigationHref("machines", true, null), "#machines");
+  assert.equal(navigationHref("machines", true, origin, true), "#catalog/machines");
+  assert.equal(navigationHref("machines", true, null), "#catalog/machines");
 });
 
 test("the official Qwen model profile links the observed GGUF inventory benchmark in HTML and Markdown", async (t) => {
