@@ -57,6 +57,7 @@ async function verifyHardwareDirectory(catalog, reviewCatalog) {
     JSON.parse(await read(`/catalog-data/${release}/${kind}.json`, "application/json"))));
   const rows = kinds.flatMap((kind, index) => sheets[index].map(row => ({ ...row, path: `${root}/${kind}/${row.id}` })));
   const routes = rows.map(row => row.path).sort();
+  const cardRoutes = new Set(routes.filter(path => path.startsWith(root + "/cards/")));
   const htmlLinks = (body) => [...body.matchAll(/href="(\/[^"]*)"/g)].map(([, href]) => href);
   const markdownLinks = (body) => [...body.matchAll(/\]\(<?(\/[^)>\s]+)>?\)/g)].map(([, href]) => href);
   const isProfile = (href) => href.startsWith(root + "/cards/") || href.startsWith(root + "/machines/");
@@ -94,7 +95,7 @@ async function verifyHardwareDirectory(catalog, reviewCatalog) {
         if (htmlRoutes.has(linked)) assert.ok(links.includes(linked) && companionLinks.includes(linked + ".md"), linked);
       }
     }
-    verifyCatalogScripts(page, path);
+    verifyCatalogScripts(page, path, { chartLinks: cardRoutes.has(path) ? cardRoutes : undefined });
     assert.match(page, /<dt>Runtime-usable (?:GPU )?memory<\/dt><dd>Unknown<\/dd>/, path);
     assert.match(companion, /\*\*Runtime-usable (?:GPU )?memory\*\* — Unknown/, path);
     if (topologyRevision) assert.ok(page.includes(topologyRevision) && companion.includes(topologyRevision), path);
