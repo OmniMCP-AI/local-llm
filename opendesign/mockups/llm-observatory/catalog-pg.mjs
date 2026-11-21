@@ -4,6 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readCatalogModelFiles } from "./catalog-release-build.mjs";
+import { modelRepositoryMap } from "./catalog-search.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 import { readEvidenceState, withdrawnPublisherSource } from "./evidence-state.mjs";
 
@@ -164,7 +165,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     machine_gpu: machines.flatMap(row => row.cardIds.map(id => [row.id, id])),
     machine_part: machines.flatMap(row => (row.bom ?? []).map((part, index) => [row.id, index, encode(part)])),
     ...topologyTables,
-    model_repository: [...modelRows, ...supplementalModels].map(row => {
+    model_repository: Array.from(modelRepositoryMap(modelRows, supplementalModels).values(), row => {
       const { artifacts, ...identity } = identities[row.id] ?? {};
       return [row.id, encode(identities[row.id] ? { ...row, identity } : row)];
     }),
@@ -270,7 +271,9 @@ function readSnapshot(database, id, full = false) {
       ),
       'modelManifest', snapshot.document->'models' || jsonb_build_object(
         'inventory', (SELECT count(*) FROM fastest_catalog.model_repository
-          WHERE snapshot_id = :'snapshot_id' AND NOT (document ? 'supplemental')),
+          WHERE snapshot_id = :'snapshot_id' AND (
+            NOT (document ? 'supplemental') OR document #> '{supplemental,inUpstream}' = 'true'::jsonb
+          )),
         'popular', (SELECT count(*) FROM ranked_models WHERE rankings ? 'popular'),
         'small', (SELECT count(*) FROM ranked_models WHERE rankings ? 'small')
       ),
@@ -315,7 +318,11 @@ export function readPublishedCatalog(database, id) {
     if (identity) identities[row.id] = identity;
     if (discovery?.popular) popular.push(discovery.popular);
     if (discovery?.small) small.push(discovery.small);
-    (row.supplemental ? supplementalModels : models).push(row);
+    if (row.supplemental) supplementalModels.push(row);
+    if (!row.supplemental || row.supplemental.inUpstream) {
+      const { supplemental, ...upstream } = row;
+      models.push(upstream);
+    }
   }
   const { supplement } = modelManifest;
   if (models.length !== modelManifest.inventory || supplementalModels.length !== (supplement?.repositories ?? 0)) {

@@ -80,11 +80,18 @@ const recentModels = [
   ["thinkingmachines/Inkling-2-Small", "885d78bfca61a7e9a498e33cfa7ad35850533b8c", "594B total", "17B active", "https://www.apache.org/licenses/LICENSE-2.0"],
   ["moonshotai/Kimi-K3.1-Pro", "d9e99b0792a5e93b78ea9bea62a68167e36ddd9e", "2.8T total", "104B activated",
     "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/d9e99b0792a5e93b78ea9bea62a68167e36ddd9e/LICENSE"],
+  ["ibm-granite/granite-4.2-3b", "4e9c275e232f10211ec88644d106a1f6a1b60e06", "3B dense", "3.7B parameters",
+    "https://www.apache.org/licenses/LICENSE-2.0", "Text"],
+  ["mistralai/Mistral-Large-4-1T-A52B", "f12dabdc0c1e99e7f7924461a6f308859b05af4d", "1T total", "49B active per token",
+    "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B/blob/f12dabdc0c1e99e7f7924461a6f308859b05af4d/LICENSE",
+    "Text, image", ["52B including embeddings and output layers", "Mistral Ecosystem Open-Weight License",
+      "Model-as-a-Service businesses need a separate commercial license",
+      "d242ebedb53ffd7e26c220e3305665ca47e4e5267fa62ff4cdeb3953b8353c78"]],
 ];
 
-function assertReviewedModel(body, [id, revision, total, active, license]) {
+function assertReviewedModel(body, [id, revision, total, active, license, inputs = "Text, image", extra = []]) {
   for (const value of [id, `https://huggingface.co/${id}/blob/${revision}/README.md`, total, active, license,
-    "Input modalities", "Text, image", "Output modalities", "2026-11-21"]) {
+    "Input modalities", inputs, "Output modalities", "2026-11-21", ...extra]) {
     assert.ok(body.includes(value), `${id} lacks ${value}`);
   }
   assert.doesNotMatch(body, /Popular rank|Small rank|Downloads in the Hub snapshot|\/blob\/main\//);
@@ -96,6 +103,16 @@ const publisherScores = new Map([
 ]);
 
 function assertPublisherScore(body, [id, revision]) {
+  assert.doesNotMatch(body, /Artificial Analysis|Terminal.Bench|BrowseComp/);
+  if (id === "ibm-granite/granite-4.2-3b") {
+    for (const value of ["Publisher-reported benchmark results", "LiveCodeBench v6", "69.71% pass@1",
+      "NeMo Evaluator SDK", "Unknown", "8f22ddce440f0c15ecb58fc9f8501b882baf5f2b7ab0d13872fe77d88c1ad792",
+      "https://huggingface.co/blog/ibm-granite/granite-4-2#results",
+      `https://huggingface.co/${id}/blob/${revision}/README.md#L279`]) {
+      assert.ok(body.includes(value), `${id} lacks ${value}`);
+    }
+    return;
+  }
   if (!publisherScores.has(id)) {
     assert.doesNotMatch(body, /Publisher-reported benchmark results/);
     return;
@@ -107,10 +124,9 @@ function assertPublisherScore(body, [id, revision]) {
     `https://huggingface.co/${id}/blob/${revision}/README.md#L124`]) {
     assert.ok(body.includes(value), `${id} lacks ${value}`);
   }
-  assert.doesNotMatch(body, /Artificial Analysis|Terminal.Bench|BrowseComp/);
 }
 
-test("reviewed releases have pinned source-backed cards outside the llmfit counts", async (t) => {
+test("reviewed model cards retain pinned sources and llmfit counts", async (t) => {
   const { read, request } = await buildFixture(t);
   const manifest = JSON.parse(await read("manifest.json"));
   assert.equal(manifest.coverage.publishedRows, 19_192);
@@ -123,8 +139,8 @@ test("reviewed releases have pinned source-backed cards outside the llmfit count
       assertPublisherScore(body, model);
     }
   }
-  assert.equal(manifest.supplement.repositories, 3);
-  assert.equal(manifest.supplement.publisherResults, 2);
+  assert.equal(manifest.supplement.repositories, 5);
+  assert.equal(manifest.supplement.publisherResults, 3);
   assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
 });
 
@@ -663,8 +679,8 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     assertExact5060TiBoard(html, markdown, board);
   }
   assert.equal(manifest.models.inventory, 19_192);
-  assert.equal(manifest.models.profiles, 303);
-  assert.equal(manifest.models.supplement.repositories, 3);
+  assert.equal(manifest.models.profiles, 305);
+  assert.equal(manifest.models.supplement.repositories, 5);
   assert.equal(manifest.models.popular, 300);
   assert.equal(manifest.models.small, 75);
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
@@ -702,6 +718,9 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
     assert.equal(board.vendorSpec.source, source);
   }
   assert.equal(published.source.models.length, 19_192);
+  assert.deepEqual(published.source.models.find(({ id }) => id === "ibm-granite/granite-4.2-3b"),
+    JSON.parse(await readFile(join(here, "catalog-models.json"), "utf8")).models
+      .find(({ id }) => id === "ibm-granite/granite-4.2-3b"));
   assert.deepEqual(published.supplementalModels.map(({ id }) => id).sort(), recentModels.map(([id]) => id).sort());
   for (const model of recentModels) {
     const [html, markdown] = await Promise.all(["html", "md"].map(ext =>

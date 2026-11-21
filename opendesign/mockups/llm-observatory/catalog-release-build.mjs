@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { catalogOpenApi } from "./catalog-api.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { modelIdPattern, modelShard } from "./catalog-paths.mjs";
+import { modelRepositoryMap } from "./catalog-search.mjs";
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const upstream = {
@@ -14,39 +15,39 @@ const upstream = {
 
 function readPublisherEvaluations(rows, id, revision, cardUrl) {
   if (!Array.isArray(rows)) throw new Error("Invalid publisher evaluations for " + id);
-  return rows.map(({ benchmark, version, scorePercent, harness, source, cardRevision, cardLine }) => {
+  return rows.map(({ benchmark, version, metric, scorePercent, harness, source, cardRevision, cardLine }) => {
     if (cardRevision !== revision) throw new Error("Publisher evaluation revision does not match " + id);
     const url = URL.parse(source);
     if (!url || url.protocol !== "https:" || url.username || url.password || url.href !== source ||
         ![benchmark, version, harness].every(value => typeof value === "string" && value.trim()) ||
+        (metric !== undefined && (typeof metric !== "string" || !metric.trim())) ||
         !Number.isFinite(scorePercent) || scorePercent < 0 || scorePercent > 100 ||
         !Number.isSafeInteger(cardLine) || cardLine < 1) {
       throw new Error("Invalid publisher evaluation for " + id);
     }
-    return { benchmark, version, scorePercent, harness, source, cardUrl: cardUrl + "#L" + cardLine,
+    return { benchmark, version, ...(metric && { metric }), scorePercent, harness, source, cardUrl: cardUrl + "#L" + cardLine,
       evidenceClass: "publisher_reported", executionHardware: null };
   });
 }
 
-function readSupplement(bytes, source, identities, discovery, isPublisherWithdrawn) {
+function readSupplement(bytes, source, identities, isPublisherWithdrawn) {
   const { capturedAt, models } = JSON.parse(bytes);
   const date = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
   if (!date(capturedAt) || !Array.isArray(models)) throw new Error("Invalid reviewed model supplement");
-  const usedIds = new Set([
-    ...source.models.map(row => row.id), ...Object.keys(identities),
-    ...[...discovery.popular, ...discovery.small].map(row => row.id),
-  ]);
+  const upstreamRows = new Map(source.models.map(row => [row.id, row]));
+  const usedIds = new Set(Object.keys(identities));
   const hasDigest = value => /^[a-f0-9]{64}$/.test(value);
   const hasModalities = values => Array.isArray(values) && values.length > 0 &&
     values.every(value => typeof value === "string" && value.trim());
   let omittedPublisherResult = false;
   const supplementalModels = models.map(({ id, revision, revisionDate, cardSha256, license, licenseName,
-    licenseSha256, parameters, inputs, outputs, task, publisherEvaluations = [] }) => {
+    licenseSha256, licenseNote, parameters, inputs, outputs, task, publisherEvaluations = [] }) => {
     const apache = license === "apache-2.0";
     if (!modelIdPattern.test(id) || usedIds.has(id) || !/^[a-f0-9]{40}$/.test(revision) ||
         !date(revisionDate) || revisionDate > capturedAt || !hasDigest(cardSha256) ||
         !(apache || (license && licenseName && hasDigest(licenseSha256))) ||
+        (licenseNote !== undefined && (typeof licenseNote !== "string" || !licenseNote.trim())) ||
         typeof task !== "string" || !task.trim() || typeof parameters !== "string" || !parameters.trim() ||
         !hasModalities(inputs) || !hasModalities(outputs)) {
       throw new Error("Invalid or duplicate reviewed model repository: " + id);
@@ -58,9 +59,11 @@ function readSupplement(bytes, source, identities, discovery, isPublisherWithdra
     const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
     const evaluations = reviewed.filter(({ source }) => !isPublisherWithdrawn(source));
     omittedPublisherResult ||= evaluations.length !== reviewed.length;
+    const upstreamRow = upstreamRows.get(id);
     return {
-      id, name: id, source, license, detail: task,
+      ...(upstreamRow ?? { id, name: id, source, license, detail: task }),
       supplemental: {
+        ...(upstreamRow && { inUpstream: true, task }),
         capturedAt, revision, revisionDate, parameters, inputs, outputs,
         cardUrl, cardSha256,
         ...(evaluations.length > 0 && { publisherEvaluations: evaluations }),
@@ -68,6 +71,7 @@ function readSupplement(bytes, source, identities, discovery, isPublisherWithdra
         licenseName: apache ? "Apache License 2.0" : licenseName,
         licenseUrl: apache ? "https://www.apache.org/licenses/LICENSE-2.0" : pinned + "/LICENSE",
         ...(!apache && { licenseSha256 }),
+        ...(licenseNote && { licenseNote }),
       },
     };
   });
@@ -96,7 +100,7 @@ export async function readCatalogModelFiles(directory, isPublisherWithdrawn = ()
   const discovery = JSON.parse(discoveryBytes);
   return {
     sourceBytes, identityBytes, source,
-    identities, discovery, ...readSupplement(supplementBytes, source, identities, discovery, isPublisherWithdrawn),
+    identities, discovery, ...readSupplement(supplementBytes, source, identities, isPublisherWithdrawn),
     sourceManifest: {
       ...upstream, url: source.upstream, projectionSha256: sha256(sourceBytes),
       license: source.catalogLicense, licenseUrl: source.catalogLicenseUrl,
@@ -133,7 +137,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     }
   }
 
-  for (const row of [...source.models, ...supplementalModels]) {
+  for (const row of modelRepositoryMap(source.models, supplementalModels).values()) {
     if (!modelIdPattern.test(row.id) || new URL(row.source).href !== "https://huggingface.co/" + row.id || ids.has(row.id)) {
       throw new Error("Invalid or duplicate published catalog identity: " + row.id);
     }

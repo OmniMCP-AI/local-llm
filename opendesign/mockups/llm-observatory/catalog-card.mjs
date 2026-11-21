@@ -13,8 +13,9 @@ function publisherEvaluationTable(evaluations) {
     title: "Publisher-reported benchmark results",
     summary: "These scores describe task quality in the publisher’s evaluation. Local inference performance and machine rankings require separate measurements.",
     headings: ["Benchmark", "Reported score", "Harness", "Execution hardware", "Pinned model-card row"],
-    rows: evaluations.map(({ benchmark, version, scorePercent, harness, source, cardUrl, executionHardware }) => [
-      [`${benchmark} v${version}`, source], [`${scorePercent}%`], [harness], [executionHardware ?? "Unknown"], ["Model card", cardUrl],
+    rows: evaluations.map(({ benchmark, version, scorePercent, metric, harness, source, cardUrl, executionHardware }) => [
+      [`${benchmark} v${version}`, source], [`${scorePercent}%${metric ? " " + metric : ""}`],
+      [harness], [executionHardware ?? "Unknown"], ["Model card", cardUrl],
     ]),
   };
 }
@@ -57,7 +58,8 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
       ["Family", family ?? "Family unavailable", familySource],
       ["Repository revision", revision ?? "Revision unavailable", revision && row.source + "/tree/" + revision],
       ["Exact artifact", artifacts.length ? `${artifacts.length} linked files` : "Exact artifact unavailable"],
-      [supplemental ? "Publisher task" : "llmfit snapshot tags", row.detail || "Tags unavailable"],
+      ...(supplemental ? [["Publisher task", supplemental.task ?? row.detail]] : []),
+      ...(!supplemental || supplemental.inUpstream ? [["llmfit snapshot tags", row.detail || "Tags unavailable"]] : []),
       supplemental ? ["Model license", supplemental.licenseName, supplemental.licenseUrl]
         : ["Model license tag", row.license || "Model license unavailable"],
       ...runtimeFields,
@@ -71,6 +73,7 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
           ["Metadata reviewed", supplemental.capturedAt],
           ["Model card SHA-256", supplemental.cardSha256],
           ...(supplemental.licenseSha256 ? [["License file SHA-256", supplemental.licenseSha256]] : []),
+          ...(supplemental.licenseNote ? [["License conditions", supplemental.licenseNote, supplemental.licenseUrl]] : []),
           ["Publisher parameter counts", supplemental.parameters, supplemental.cardUrl],
           ["Input modalities", supplemental.inputs.join(", "), supplemental.cardUrl],
           ["Output modalities", supplemental.outputs.join(", "), supplemental.cardUrl],

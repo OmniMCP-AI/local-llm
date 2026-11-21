@@ -57,6 +57,43 @@
       "parameters": "2.8T total, 104B activated.",
       "inputs": ["Text", "image"],
       "outputs": ["Text"]
+    },
+    {
+      "id": "mistralai/Mistral-Large-4-1T-A52B",
+      "revision": "f12dabdc0c1e99e7f7924461a6f308859b05af4d",
+      "revisionDate": "2026-10-29",
+      "cardSha256": "bd99fb7896a8e8e59f811be20716df569ceff7de4115d9757ede28bf6d17d314",
+      "license": "mistral-ecosystem-open-weight",
+      "licenseName": "Mistral Ecosystem Open-Weight License",
+      "licenseSha256": "d242ebedb53ffd7e26c220e3305665ca47e4e5267fa62ff4cdeb3953b8353c78",
+      "licenseNote": "Model-as-a-Service businesses need a separate commercial license for covered commercial use. The pinned terms define exceptions for internal use and official Mistral products.",
+      "task": "Image and text to text",
+      "parameters": "1T total, 49B active per token, or 52B including embeddings and output layers.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    },
+    {
+      "id": "ibm-granite/granite-4.2-3b",
+      "revision": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
+      "revisionDate": "2026-10-20",
+      "cardSha256": "8f22ddce440f0c15ecb58fc9f8501b882baf5f2b7ab0d13872fe77d88c1ad792",
+      "license": "apache-2.0",
+      "task": "Text generation with reasoning and tool calling",
+      "parameters": "3B dense (IBM’s model-card label).",
+      "inputs": ["Text"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "metric": "pass@1",
+          "scorePercent": 69.71,
+          "harness": "IBM evaluation framework based on the NeMo Evaluator SDK",
+          "source": "https://huggingface.co/blog/ibm-granite/granite-4-2#results",
+          "cardRevision": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
+          "cardLine": 279
+        }
+      ]
     }
   ]
 }
