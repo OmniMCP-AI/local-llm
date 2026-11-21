@@ -14,7 +14,7 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
-function readPublisherEvaluations(rows, id, revision, cardUrl) {
+function readPublisherEvaluations(rows, id, revision, revisionDate, cardUrl, infoUrl) {
   if (!Array.isArray(rows)) throw new Error("Invalid publisher evaluations for " + id);
   return rows.map(({ benchmark, version, metric, scorePercent, harness, source, cardRevision, cardLine }) => {
     if (cardRevision !== revision) throw new Error("Publisher evaluation revision does not match " + id);
@@ -26,7 +26,11 @@ function readPublisherEvaluations(rows, id, revision, cardUrl) {
         !Number.isSafeInteger(cardLine) || cardLine < 1) {
       throw new Error("Invalid publisher evaluation for " + id);
     }
-    return { benchmark, version, ...(metric && { metric }), scorePercent, harness, source, cardUrl: cardUrl + "#L" + cardLine,
+    const rowUrl = cardUrl + "#L" + cardLine;
+    const unknown = { value: null, precision: "unknown", timezone: null, source: rowUrl };
+    return { benchmark, version, ...(metric && { metric }), scorePercent, harness, source, cardUrl: rowUrl,
+      dates: { origin: unknown, publication: unknown,
+        revision: { value: revisionDate, precision: "day", timezone: null, source: infoUrl }, ingestion: unknown },
       evidenceClass: "publisher_reported", executionHardware: null };
   });
 }
@@ -57,7 +61,8 @@ function readSupplement(bytes, source, identities, isPublisherWithdrawn) {
     const source = "https://huggingface.co/" + id;
     const pinned = source + "/blob/" + revision;
     const cardUrl = pinned + "/README.md";
-    const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
+    const infoUrl = "https://huggingface.co/api/models/" + id + "/revision/" + revision;
+    const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, revisionDate, cardUrl, infoUrl);
     const evaluations = reviewed.filter(({ source }) => !isPublisherWithdrawn(source));
     omittedPublisherResult ||= evaluations.length !== reviewed.length;
     const upstreamRow = upstreamRows.get(id);
@@ -68,7 +73,7 @@ function readSupplement(bytes, source, identities, isPublisherWithdrawn) {
         capturedAt, revision, revisionDate, parameters, inputs, outputs,
         cardUrl, cardSha256,
         ...(evaluations.length > 0 && { publisherEvaluations: evaluations }),
-        infoUrl: "https://huggingface.co/api/models/" + id + "/revision/" + revision,
+        infoUrl,
         licenseName: apache ? "Apache License 2.0" : licenseName,
         licenseUrl: apache ? "https://www.apache.org/licenses/LICENSE-2.0" : pinned + "/LICENSE",
         ...(!apache && { licenseSha256 }),
@@ -116,7 +121,7 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
     hardware ?? readHardwareCatalog(directory),
   ]);
   const runtimes = JSON.parse(runtimeBytes);
-  const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes,
+  const digest = sha256(Buffer.concat([Buffer.from("publisher-benchmark-dates-v1"), models.sourceBytes, models.identityBytes, runtimeBytes,
     Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : []),
     ...(models.supplement?.projectionSha256 ? [Buffer.from(models.supplement.projectionSha256, "hex")] : [])]));
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));

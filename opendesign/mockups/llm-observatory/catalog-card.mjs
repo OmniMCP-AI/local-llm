@@ -17,10 +17,12 @@ function publisherEvaluationTable(evaluations) {
   return {
     title: "Publisher-reported benchmark results",
     summary: "These scores describe task quality in the publisher’s evaluation. Local inference performance and machine rankings require separate measurements.",
-    headings: ["Benchmark", "Reported score", "Harness", "Execution hardware", "Pinned model-card row"],
-    rows: evaluations.map(({ benchmark, version, scorePercent, metric, harness, source, cardUrl, executionHardware }) => [
+    headings: ["Benchmark", "Reported score", "Harness", "Execution hardware", "Benchmark run date", "Publication date", "Model-card revision date", "Ingestion date", "Pinned model-card row"],
+    rows: evaluations.map(({ benchmark, version, scorePercent, metric, harness, source, cardUrl, executionHardware, dates }) => [
       [`${benchmark} v${version}`, source], [`${scorePercent}%${metric ? " " + metric : ""}`],
-      [harness], [executionHardware ?? "Unknown"], ["Model card", cardUrl],
+      [harness], [executionHardware ?? "Unknown"],
+      ...["origin", "publication", "revision", "ingestion"].map(key => [dates?.[key]?.value ?? "Unknown", dates?.[key]?.source]),
+      ["Model card", cardUrl],
     ]),
   };
 }
