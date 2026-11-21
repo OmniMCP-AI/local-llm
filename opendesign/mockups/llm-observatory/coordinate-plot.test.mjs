@@ -139,3 +139,43 @@ test("zoom retains a line crossing the visible range even when its endpoints are
   });
   assert.match(chart, /<polyline[^>]+points="-500\.000,1000\.000 1500\.000,0\.000"/);
 });
+
+test("standalone GPU profile plots include independent accessible zoom controls", () => {
+  const html = render(known, false);
+  assert.equal((html.match(/<div data-coordinate-static>/g) ?? []).length, 2);
+  assert.equal((html.match(/<div class="coordinate-zoom" role="group" aria-label="Zoom GPU /g) ?? []).length, 2);
+  assert.match(html, /data-zoom="reset"/);
+  assert.match(html, /data-coordinate-script/);
+  assert.match(html, /Selected GPU: Known GPU/);
+  assert.match(html, /View memory data/);
+});
+
+test("standalone zoom keeps each chart's selection, labels and range independent", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const { standaloneCoordinateScript } = await import("./coordinate-plot.mjs");
+  const chart = {
+    title: "Memory", xAxis: { label: "GPU", categorical: true }, yAxis: { label: "Memory", unit: "GB" },
+    points: ["A", "B", "C", "D"].map((name, i) => ({ id: name, name, x: name, y: i + 1 })), selectedId: "B",
+  };
+  const makeRoot = () => {
+    const handlers = {};
+    const content = { innerHTML: "", addEventListener: (type, handler) => { handlers[type] = handler; },
+      querySelector: () => ({ disabled: false, focus() {} }) };
+    return { content, handlers, querySelector: selector => selector === "[data-coordinate-data]"
+      ? { textContent: JSON.stringify(chart) } : content };
+  };
+  const [first, second] = [makeRoot(), makeRoot()];
+  const source = standaloneCoordinateScript().replace(/^<script[^>]*>/, "").replace(/<\/script>$/, "");
+  runInNewContext(source, { document: { querySelectorAll: () => [first, second] }, Intl });
+  first.handlers.change({ target: { checked: true, matches: () => true } });
+  const click = (root, action) => root.handlers.click({ target: { closest: () => ({ dataset: { zoom: action } }) } });
+  click(first, "in");
+  assert.match(first.content.innerHTML, /type="checkbox" checked/);
+  assert.match(first.content.innerHTML, /data-point-id="B"/);
+  assert.doesNotMatch(first.content.innerHTML, /data-point-id="A"/);
+  assert.match(first.content.innerHTML, /coordinate-selection/);
+  assert.equal(second.content.innerHTML, "");
+  click(first, "reset");
+  assert.match(first.content.innerHTML, /data-point-id="A"/);
+  assert.match(first.content.innerHTML, /type="checkbox" checked/);
+});
