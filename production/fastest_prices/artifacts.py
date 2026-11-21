@@ -6,7 +6,7 @@ from hashlib import sha256
 from html import escape
 import json
 
-from .result import DAY_LABELS, RANGE_LABELS, REFRESH_METHOD
+from .result import CITATION_METHOD, DAY_LABELS, RANGE_LABELS, REFRESH_METHOD
 
 
 ARTIFACT_NAMES = ("prices.md", "prices.html", "prices.json")
@@ -92,6 +92,13 @@ def _summary(result):
     return values
 
 
+def _citation_table(result):
+    return ("Historical price references", ("Observation date (as reported)", "Marketplace", "Original post-coupon price"), [
+        (row["observed_on"], row["marketplace"], f"{row['price']} {result['currency']}")
+        for row in result["references"]
+    ])
+
+
 def _markdown_text(value):
     encoded = escape(str(value), quote=False).replace("|", "&#124;")
     for char in ("\\", "`", "*", "_", "[", "]", "~"):
@@ -147,10 +154,30 @@ def build_artifact(result, name):
 
     title = "Regional price cohort"
     method_description = ""
+    empty_table = "No quotes for this window."
+    source = None
     if result["status"] == "withdrawn":
         message = "This price release has been withdrawn."
         summary = []
         tables = ()
+        chart = ""
+    elif result["method"] == CITATION_METHOD:
+        title = f"{title} · {result['as_of']}"
+        message = "The source reported these post-coupon prices on the dates shown."
+        scope = result["scope"]
+        method_description = (
+            "Seller, checkout link, stock, discount eligibility, tax, shipping and landed price are unknown."
+        )
+        empty_table = "No price references for this window."
+        source = (result["source_name"], result["source_locator"])
+        summary = [
+            ("Market", result["market"]),
+            ("Delivery destination", _value(result["destination"])),
+            ("Condition", _value(result["condition"])),
+            ("Scope", f"{scope['kind']} · {scope['id']} · revision {scope['revision_id']}"),
+            ("Source citation approval", result["authorization_decision_id"]),
+        ]
+        tables = (_citation_table(result),)
         chart = ""
     else:
         title = f"{title} · {result['as_of']}"
@@ -167,11 +194,12 @@ def build_artifact(result, name):
     if name == "prices.md":
         parts = [
             f"# {title}", _markdown_text(identity), message, method_description,
+            f"Source · [{_markdown_text(source[0])}](<{escape(source[1], quote=False)}>)" if source else "",
             "[Typed result](./prices.json) · [HTML](./prices.html)",
             *(f"- **{label}** · {_markdown_text(value)}" for label, value in summary),
         ]
         for label, headers, rows in tables:
-            parts.append(f"## {label}\n\n" + (_markdown_table(headers, rows) if rows else "No quotes for this window."))
+            parts.append(f"## {label}\n\n" + (_markdown_table(headers, rows) if rows else empty_table))
         metadata = {
             "page_id": result["cohort_id"],
             "release": result["release_id"],
@@ -187,9 +215,10 @@ def build_artifact(result, name):
         frontmatter = "\n".join(f"{key}: {json.dumps(value, ensure_ascii=False)}" for key, value in metadata.items())
         return f"---\n{frontmatter}\n---\n\n" + "\n\n".join(filter(None, parts)) + "\n"
 
+    source_link = f'<p>Source · <a href="{escape(source[1])}">{escape(source[0])}</a></p>' if source else ""
     details = "".join(f"<dt>{escape(label)}</dt><dd>{escape(value)}</dd>" for label, value in summary)
     sections = "".join(
-        f"<section><h2>{label}</h2>{_html_table(label, headers, rows) if rows else '<p>No quotes for this window.</p>'}</section>"
+        f"<section><h2>{label}</h2>{_html_table(label, headers, rows) if rows else f'<p>{empty_table}</p>'}</section>"
         for label, headers, rows in tables
     )
     return f"""<!doctype html>
@@ -204,7 +233,7 @@ figure{{margin:1rem 0}} svg{{display:block;width:min(100%,35rem)}}
 </style></head><body><main>
 <h1>{escape(title)}</h1><p>{escape(identity)}</p>
 {f"<p>{escape(message)}</p>" if message else ""}<p><a href="./prices.json">Typed result</a> · <a href="./prices.md">Markdown</a></p>
-{f"<p>{escape(method_description)}</p>" if method_description else ""}
+{f"<p>{escape(method_description)}</p>" if method_description else ""}{source_link}
 <dl>{details}</dl>{chart}{sections}
 </main></body></html>
 """
