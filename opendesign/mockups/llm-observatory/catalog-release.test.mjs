@@ -309,7 +309,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 150);
+  assert.equal(hardware.coverage.cards, 156);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -525,7 +525,7 @@ test("the released tinybox profile separates installed GPU memory and documented
 
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 150], ["machines", 124]]) {
+  for (const [kind, count] of [["cards", 156], ["machines", 124]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -753,7 +753,7 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, imported.snapshotId);
   assert.equal(manifest.hardware.coverage.completeBuilds, 4);
-  assert.equal(manifest.hardware.coverage.cardsWithSpecificVendorSpecs, 121);
+  assert.equal(manifest.hardware.coverage.cardsWithSpecificVendorSpecs, 127);
   for (const [id, source, fact, parent] of [
     ["nvidia-h200-nvl", "https://www.nvidia.com/en-us/data-center/h200/", "Up to 600 W (configurable)", "nvidia-h200"],
     ["intel-arc-a770-8gb", "intel-arc-a770-graphics-8gb/specifications.html", "512 GB/s", "intel-arc-a770"],
