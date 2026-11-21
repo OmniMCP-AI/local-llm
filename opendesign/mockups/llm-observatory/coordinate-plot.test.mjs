@@ -26,16 +26,18 @@ test("GPU pages retain one rated bandwidth cohort and show a measured speed cove
     assert.match(html, /Nominal GPU memory<\/dt><dd>32 GB/);
     assert.match(html, /Rated memory bandwidth<\/dt><dd>576 GB\/s/);
     assert.match(html, /Measured decode speed unavailable/);
-    assert.match(html, /Original schematic/);
+    assert.doesNotMatch(html, /Original schematic|Conceptual GPU and memory layout/);
     assert.doesNotMatch(html, /GPU position by rated graphics power/);
   }
   assert.match(selected, /href="\/Known%20GPU" aria-current="page"/);
+  assert.equal((selected.match(/class="coordinate-point coordinate-selected"/g) ?? []).length, 2);
+  assert.match(selected, /Selected GPU: Known GPU · 32 GB · 576 GB\/s/);
   assert.doesNotMatch(unavailable, /href="\/Known%20GPU" aria-current="page"/);
   assert.match(unavailable, /GPU with missing bandwidth has no unambiguous pair of rated specifications/);
   const markdown = render(known, true);
   assert.match(markdown, /Selected GPU: Known GPU · 32 GB · 576 GB\/s/);
   assert.match(markdown, /Measured decode speed unavailable/);
-  assert.match(markdown, /Original schematic/);
+  assert.doesNotMatch(markdown, /Original schematic|Conceptual GPU and memory layout/);
 });
 
 test("NVIDIA product and architecture sources cover distinct RTX 3090 and RTX 4090 bandwidth values", async () => {
