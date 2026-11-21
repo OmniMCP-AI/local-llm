@@ -157,7 +157,8 @@ function cardRows(left, right) {
     ] : []),
     sourced("Aggregate module memory", "模块显存总量", ["Module memory (aggregate)"]),
     row("Rated memory bandwidth", "标称显存带宽", ...products.map(product =>
-      cell(bareNumber(fact(product, "Memory bandwidth", "Memory bandwidth (GB/s)"), "GB/s"), factSource(product))),
+      cell(bareNumber(fact(product, "Memory bandwidth", "Memory bandwidth (GB/s)"), "GB/s"),
+        product.vendorSpec?.bandwidthSource ?? factSource(product))),
     { factor: ratedDifference(...bandwidth, names, bandwidth.every(value => value?.scope === "upper bound")
       ? "higher peak memory bandwidth" : "higher rated memory bandwidth", "的标称显存带宽高"), differentScope: bandwidth.every(Boolean) && bandwidth[0].scope !== bandwidth[1].scope }),
     sourced("Aggregate module bandwidth", "模块总带宽", ["Module bandwidth (aggregate)"]),
@@ -268,6 +269,7 @@ export const battleScopeNote = ["Different specification scopes", "规格口径�
 export function battleSources(pair, product, { release, prefix, interactive = true }) {
   const modificationSources = new Map((product.modification?.evidence ?? [])
     .map(({ kind, source }) => [https(source), kind]).filter(([href]) => href));
+  const bandwidthSource = https(product.vendorSpec?.bandwidthSource);
   return [
     ...(release ? [{ label: ["Exact catalog profile", "目录中的具体配置"], href: prefix + catalogPath(release, pair.kind, product.id) }] : []),
     ...[...new Set([https(product.vendorSpec?.source ?? product.source), https(product.capture ?? product.source)].filter(Boolean))]
@@ -275,6 +277,7 @@ export function battleSources(pair, product, { release, prefix, interactive = tr
       .map((href, index) => ({
         label: index === 0 && !product.modification ? ["Specification source", "规格来源"] : ["Source record", "原始记录"], href,
       })),
+    ...(bandwidthSource ? [{ label: ["Memory bandwidth source", "显存带宽来源"], href: bandwidthSource }] : []),
     ...[...modificationSources].map(([href, kind]) => ({ href, label: [kind, {
       "Seller listing": "卖家商品页",
       "Seller service": "卖家改装服务",
