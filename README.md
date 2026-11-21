@@ -98,3 +98,15 @@ node verify-evidence-resolution.mjs review-output/review.json "$PAGES_ORIGIN" "$
 The first command prints exact URLs by origin for the approved CDN operator to purge after deploy. Omit the final argument for a Pages-only review. After purging, run the second command against the public origins and retain its result with the review. It checks the reviewed bytes, prior versions or withdrawal notices, and cache headers for ordinary and conditional requests. A linked benchmark also checks the current and historical exports and evidence API. Apply the receipt update to the original D1 database after verification and send the notification through the approved recipient channel.
 
 Future Pages builds should use the resulting `approvals.json` as `FASTEST_RESEARCH_METADATA_APPROVALS` and the deployed `evidence-quarantine.json` as `FASTEST_EVIDENCE_STATE`. Retain the deployed Pages output as an archive. For fresh and in-place builds with correction pins, set `FASTEST_RESEARCH_ARCHIVE` to the root of that approved archive. The build restores the specific research pins recorded in the policy after verifying the manifest and each artifact digest. Withdrawn pins stay quarantined. Disable public access to any earlier Pages deployment aliases or independent project mirrors that bypass the current policy. Previously saved third-party copies require the separate notification.
+
+### Withdraw a publisher-reported model evaluation
+
+Keep the reviewed request outside the build output. Set `action` to `withdraw`, `modelId` to the exact released repository ID, `source` to the evaluation's exact publisher URL, and `issue` to the public project issue documenting the approval. Supply the current Pages output and any retained public catalog archives.
+
+```sh
+node withdraw-publisher-evaluation.mjs REQUEST.json CURRENT_PAGES NEW_POLICY.json [HISTORICAL_PAGES ...]
+```
+
+The command verifies the evaluation in the current catalog and adds the source digest and the affected catalog pins to the existing quarantine. The next Pages build uses `NEW_POLICY.json` as `FASTEST_EVIDENCE_STATE` and publishes the printed notice URL. Import a replacement with the same policy and `npm run build` against the authorized publisher database. The importer removes evaluations tied to the withdrawn source while retaining the repository, identifiers, and other allowed evidence. Use the replacement digest for the read-only production Pages build. A pin containing withdrawn scores fails before the build overwrites published files.
+
+Apply the policy and replacement together. Verify HTTP 410 for prior profile, catalog data, and pinned catalog API reads, including conditional requests. Retain the reviewed decision, identify the earlier exports requiring notification, purge cached copies, and disable any independent mirrors that bypass Pages quarantine.

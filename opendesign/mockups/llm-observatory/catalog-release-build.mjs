@@ -28,7 +28,7 @@ function readPublisherEvaluations(rows, id, revision, cardUrl) {
   });
 }
 
-function readSupplement(bytes, source, identities, discovery) {
+function readSupplement(bytes, source, identities, discovery, isPublisherWithdrawn) {
   const { capturedAt, models } = JSON.parse(bytes);
   const date = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
@@ -40,6 +40,7 @@ function readSupplement(bytes, source, identities, discovery) {
   const hasDigest = value => /^[a-f0-9]{64}$/.test(value);
   const hasModalities = values => Array.isArray(values) && values.length > 0 &&
     values.every(value => typeof value === "string" && value.trim());
+  let omittedPublisherResult = false;
   const supplementalModels = models.map(({ id, revision, revisionDate, cardSha256, license, licenseName,
     licenseSha256, parameters, inputs, outputs, task, publisherEvaluations = [] }) => {
     const apache = license === "apache-2.0";
@@ -54,7 +55,9 @@ function readSupplement(bytes, source, identities, discovery) {
     const source = "https://huggingface.co/" + id;
     const pinned = source + "/blob/" + revision;
     const cardUrl = pinned + "/README.md";
-    const evaluations = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
+    const reviewed = readPublisherEvaluations(publisherEvaluations, id, revision, cardUrl);
+    const evaluations = reviewed.filter(({ source }) => !isPublisherWithdrawn(source));
+    omittedPublisherResult ||= evaluations.length !== reviewed.length;
     return {
       id, name: id, source, license, detail: task,
       supplemental: {
@@ -73,13 +76,14 @@ function readSupplement(bytes, source, identities, discovery) {
   return {
     supplement: {
       capturedAt, sha256: sha256(bytes), repositories: models.length, publisherResults,
+      ...(omittedPublisherResult && { projectionSha256: sha256(JSON.stringify(supplementalModels)) }),
       scope: publisherResults ? "repository-metadata-and-selected-publisher-results" : "repository-metadata-only",
     },
     supplementalModels,
   };
 }
 
-export async function readCatalogModelFiles(directory) {
+export async function readCatalogModelFiles(directory, isPublisherWithdrawn = () => false) {
   const [sourceBytes, identityBytes, discoveryBytes, supplementBytes] = await Promise.all([
     readFile(join(directory, "catalog-models.json")),
     readFile(join(directory, "catalog-identities.json")),
@@ -92,7 +96,7 @@ export async function readCatalogModelFiles(directory) {
   const discovery = JSON.parse(discoveryBytes);
   return {
     sourceBytes, identityBytes, source,
-    identities, discovery, ...readSupplement(supplementBytes, source, identities, discovery),
+    identities, discovery, ...readSupplement(supplementBytes, source, identities, discovery, isPublisherWithdrawn),
     sourceManifest: {
       ...upstream, url: source.upstream, projectionSha256: sha256(sourceBytes),
       license: source.catalogLicense, licenseUrl: source.catalogLicenseUrl,
@@ -108,7 +112,8 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
   ]);
   const runtimes = JSON.parse(runtimeBytes);
   const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes,
-    Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : [])]));
+    Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : []),
+    ...(models.supplement?.projectionSha256 ? [Buffer.from(models.supplement.projectionSha256, "hex")] : [])]));
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
 }
 

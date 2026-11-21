@@ -1,8 +1,9 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { researchReleaseId } from "./research-released-snapshot.mjs";
+import { catalogReleasePattern } from "./catalog-paths.mjs";
+import { digest, readJson, researchReleaseId } from "./research-released-snapshot.mjs";
 
-export const emptyEvidenceState = { paths: [], updates: [], withdrawnSources: [], researchPins: {} };
+export const emptyEvidenceState = { paths: [], updates: [], withdrawnSources: [], researchPins: {}, publisherWithdrawals: [] };
 
 const escape = (text) => text.replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -12,8 +13,17 @@ const projectIssue = /^https:\/\/github\.com\/OmniMCP-AI\/local-llm\/issues\/[1-
 const safeSource = (link) => /^(?:https:\/\/[^\s<>"()]+|#wiki\/[a-z0-9-]+)$/.test(link);
 export const isPublicIssue = (link) => typeof link === "string" && projectIssue.test(link);
 
+export async function readEvidenceState(file = process.env.FASTEST_EVIDENCE_STATE) {
+  return file ? validateEvidenceState(await readJson(file)) : emptyEvidenceState;
+}
+
+export function withdrawnPublisherSource({ publisherWithdrawals }) {
+  const sources = new Set(publisherWithdrawals.map(({ sourceSha256 }) => sourceSha256));
+  return (source) => sources.size > 0 && typeof source === "string" && sources.has(digest(source));
+}
+
 export function validateEvidenceState(state) {
-  const { paths, updates, withdrawnSources = [], researchPins = {} } = state;
+  const { paths, updates, withdrawnSources = [], researchPins = {}, publisherWithdrawals = [] } = state;
   if (!researchPins || Array.isArray(researchPins) || typeof researchPins !== "object" ||
       Object.entries(researchPins).some(([release, hash]) => !researchReleaseId.test(release) || !/^[a-f0-9]{64}$/.test(hash))) {
     throw new Error("Invalid retained research pins");
@@ -34,11 +44,22 @@ export function validateEvidenceState(state) {
     (issue && !isPublicIssue(issue)))) {
     throw new Error("Invalid public evidence update");
   }
-  return { paths, updates, withdrawnSources, researchPins };
+  if (!Array.isArray(publisherWithdrawals) || publisherWithdrawals.some((entry) =>
+    !entry || typeof entry.sourceSha256 !== "string" || !/^[a-f0-9]{64}$/.test(entry.sourceSha256) || !isPublicIssue(entry.issue) ||
+    !Array.isArray(entry.catalogReleases) || !entry.catalogReleases.length ||
+    entry.catalogReleases.some((release) => typeof release !== "string" || !catalogReleasePattern.test(release))) ||
+    new Set(publisherWithdrawals.map(({ sourceSha256 }) => sourceSha256)).size !== publisherWithdrawals.length) {
+    throw new Error("Invalid publisher evaluation withdrawals");
+  }
+  const retired = publisherWithdrawals.flatMap(({ catalogReleases }) => catalogReleases.flatMap((release) =>
+    [`/catalog/${release}/*`, `/catalog-data/${release}/*`]));
+  return { paths: [...new Set([...paths, ...retired])], updates, withdrawnSources, researchPins,
+    publisherWithdrawals: publisherWithdrawals.map(({ sourceSha256, issue, catalogReleases }) =>
+      ({ sourceSha256, issue, catalogReleases: [...new Set(catalogReleases)].sort() })) };
 }
 
 export async function writeEvidenceState(output, state = emptyEvidenceState, isWithdrawn = () => false) {
-  const { paths, updates, withdrawnSources, researchPins } = validateEvidenceState(state);
+  const { paths, updates, withdrawnSources, researchPins, publisherWithdrawals } = validateEvidenceState(state);
   const blocked = new Set(withdrawnSources);
   const publicUpdates = updates.map(({ id, action, research, source, sourceDigest, issue }) => ({
     id, action, research, issue,
@@ -47,13 +68,20 @@ export async function writeEvidenceState(output, state = emptyEvidenceState, isW
   const html = publicUpdates.map(({ id, action, research, source, issue }) => `<section id="${id}">
 <h2>${action === "withdraw" ? "Withdrawn evidence" : "Corrected evidence"}</h2>
 <p><a href="${research}">Updated research release</a>${source ? ` · <a href="${escape(source.startsWith("#") ? "/" + source : source)}">Reviewed source</a>` : ""}${issue ? ` · <a href="${issue}">Public issue</a>` : ""}</p>
-</section>`).join("\n");
+</section>`).concat(publisherWithdrawals.map(({ sourceSha256, issue }) => `<section id="${sourceSha256}">
+<h2>Publisher evaluation withdrawn</h2>
+<p><a href="/#catalog/models">Current model catalog</a> · <a href="${issue}">Public issue</a></p>
+</section>`)).join("\n");
   const markdown = publicUpdates.map(({ id, action, research, source, issue }) =>
     `<a id="${id}"></a>\n\n## ${action === "withdraw" ? "Withdrawn evidence" : "Corrected evidence"}\n\n` +
-    `[Updated research release](${research}.md)${source ? ` · [Reviewed source](${source.startsWith("#") ? "/" + source : source})` : ""}${issue ? ` · [Public issue](${issue})` : ""}\n`).join("\n");
+    `[Updated research release](${research}.md)${source ? ` · [Reviewed source](${source.startsWith("#") ? "/" + source : source})` : ""}${issue ? ` · [Public issue](${issue})` : ""}\n`)
+    .concat(publisherWithdrawals.map(({ sourceSha256, issue }) =>
+      `<a id="${sourceSha256}"></a>\n\n## Publisher evaluation withdrawn\n\n[Current model catalog](/#catalog/models) · [Public issue](${issue})\n`))
+    .join("\n");
   await Promise.all([
     writeFile(join(output, "evidence-quarantine.json"), JSON.stringify({
-      paths: [...new Set(paths)].sort(), updates: publicUpdates, researchPins, withdrawnSources: [...new Set(withdrawnSources)].sort(),
+      paths: paths.slice().sort(), updates: publicUpdates, researchPins, withdrawnSources: [...new Set(withdrawnSources)].sort(),
+      ...(publisherWithdrawals.length && { publisherWithdrawals }),
     }, null, 2) + "\n"),
     writeFile(join(output, "wiki/evidence-updates.html"), `<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

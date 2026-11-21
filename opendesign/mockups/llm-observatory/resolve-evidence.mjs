@@ -101,11 +101,16 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
   try {
     const candidate = join(output, "pages");
     const trackedApprovals = join(output, "approvals.json");
+    const publisherPolicy = priorState.publisherWithdrawals.length ? join(output, "publisher-quarantine.json") : "";
     await writeFile(trackedApprovals, json(approvals), { mode: 0o600 });
+    if (publisherPolicy) {
+      await writeFile(publisherPolicy,
+        json({ ...emptyEvidenceState, publisherWithdrawals: priorState.publisherWithdrawals }), { mode: 0o600 });
+    }
     await run(process.execPath, ["build.mjs", "--pages", ...(catalogPin ? ["--catalog-postgres"] : []), "--output", candidate], {
       cwd: directory,
       env: {
-        ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: trackedApprovals, FASTEST_EVIDENCE_STATE: "",
+        ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: trackedApprovals, FASTEST_EVIDENCE_STATE: publisherPolicy,
         ...(catalogPin && { FASTEST_CATALOG_SNAPSHOT_ID: catalogPin }),
       },
     });
@@ -179,7 +184,7 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
       .map((index) => withdrawnReference(index, approvals));
     const isWithdrawn = (value) => checks.some((check) => check(value));
     await writeEvidenceState(candidate, {
-      paths: [...paths], withdrawnSources, researchPins, updates: [...priorState.updates, update],
+      ...priorState, paths: [...paths], withdrawnSources, researchPins, updates: [...priorState.updates, update],
     }, isWithdrawn);
     for (const path of await publicFiles(candidate)) {
       if (isWithdrawn(await readFile(join(candidate, path), "utf8"))) {

@@ -12,7 +12,7 @@ import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
-import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
+import { readEvidenceState, withdrawnPublisherSource, writeEvidenceState } from "./evidence-state.mjs";
 import { allowedResearchPin, deniedResearchPin, readResearchPin, researchReleaseId, writeResearchPin } from "./research-released-snapshot.mjs";
 import { navigationHref, releaseOrigin } from "./release-origin.mjs";
 import { withPreviewResults } from "./research-preview.mjs";
@@ -76,11 +76,9 @@ for (const [name, expected] of Object.entries(fullGraph.graph.research_inputs)) 
 }
 let researchIndex;
 let approvals = {};
-let evidenceState = emptyEvidenceState;
+const evidenceState = await readEvidenceState();
 if (pages) {
   approvals = await readResearchApprovals(process.env.FASTEST_RESEARCH_METADATA_APPROVALS);
-  const stateFile = process.env.FASTEST_EVIDENCE_STATE;
-  if (stateFile) evidenceState = validateEvidenceState(JSON.parse(await readFile(stateFile, "utf8")));
   const blocked = new Set(Object.keys(approvals).filter((id) => approvals[id].status === "withdrawn")
     .map((id) => createHash("sha256").update(id).digest("hex")));
   if (evidenceState.withdrawnSources?.some((hash) => !blocked.has(hash))) {
@@ -92,10 +90,13 @@ if (pages) {
 const catalogDirectory = fileURLToPath(here("."));
 const withdrawn = Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id);
 const isWithdrawn = withdrawnReference(JSON.parse(researchPayload), approvals);
+const isPublisherWithdrawn = withdrawnPublisherSource(evidenceState);
 const published = catalogPostgres ? (await import("./catalog-pg.mjs")).readPublishedCatalog(catalogDatabase, catalogSnapshot) : null;
-const modelFiles = published ?? await readCatalogModelFiles(catalogDirectory);
+const modelFiles = published ?? await readCatalogModelFiles(catalogDirectory, isPublisherWithdrawn);
 const projection = published && prepareCatalogRelease(published);
 if (projection && ((withdrawn.length && isWithdrawn(JSON.stringify(published))) ||
+    published.supplementalModels.some(({ supplemental }) =>
+      supplemental.publisherEvaluations?.some(({ source }) => isPublisherWithdrawn(source))) ||
     deniedCatalogPin(projection.manifest.release, evidenceState.paths))) {
   throw new Error("PostgreSQL catalog snapshot conflicts with active evidence withdrawals: " + catalogSnapshot);
 }
@@ -143,7 +144,7 @@ let topologyReports = published?.topologies;
 if (!pages) {
   const localOutput = fileURLToPath(here("local-catalog/"));
   const { importLocalCatalog } = await import("./catalog-pg.mjs");
-  const imported = await importLocalCatalog(hardware);
+  const imported = await importLocalCatalog(hardware, undefined, isPublisherWithdrawn);
   topologyReports = imported.topologies;
   console.log(`Imported local PostgreSQL catalog snapshot ${imported.snapshotId}`);
   localCatalogRelease = await writeLocalCatalogProfiles(localOutput, imported, imported.modelLicenseNotice);
