@@ -46,7 +46,7 @@ jobs:
       - run: npm ci
       - name: Prepare the disposable catalog database
         env:
-          FASTEST_TEST_DATABASE_URL: &publisher postgresql://catalog_publisher:ci-publisher@127.0.0.1:${{ job.services.catalog.ports[5432] }}/catalog_ci
+          FASTEST_TEST_DATABASE_URL: &publisher postgresql://catalog_publisher:ci-publisher@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
         run: |
           psql -Xw -v ON_ERROR_STOP=1 "$FASTEST_TEST_DATABASE_URL" -f catalog-pg.sql -f - <<'SQL'
           CREATE ROLE catalog_reader LOGIN PASSWORD 'ci-reader';
@@ -61,7 +61,7 @@ jobs:
         shell: bash
         env:
           FASTEST_TEST_DATABASE_URL: *publisher
-          FASTEST_TEST_CATALOG_READER_URL: postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports[5432] }}/catalog_ci
+          FASTEST_TEST_CATALOG_READER_URL: postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
           NODE_OPTIONS: --test-reporter=tap
         run: |
           results=$(mktemp)
