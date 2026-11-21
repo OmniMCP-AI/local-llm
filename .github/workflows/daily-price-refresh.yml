@@ -1,0 +1,48 @@
+name: Daily authorized price refresh
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-price-refresh
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    # Scheduled workflows run on the default branch. Configure only after the
+    # source and its retention/display rights have been reviewed and registered.
+    if: ${{ vars.FASTEST_PRICE_COHORT_ID != '' && vars.FASTEST_PRICE_WINDOW_START != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Capture and publish the dated window
+        working-directory: production
+        env:
+          FASTEST_DATABASE_URL: ${{ secrets.FASTEST_DATABASE_URL }}
+          FASTEST_PRICE_FEED_TOKEN: ${{ secrets.FASTEST_PRICE_FEED_TOKEN }}
+          PRICE_COHORT_ID: ${{ vars.FASTEST_PRICE_COHORT_ID }}
+          PRICE_WINDOW_START: ${{ vars.FASTEST_PRICE_WINDOW_START }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          if [ -z "$FASTEST_DATABASE_URL" ]; then
+            echo 'FASTEST_DATABASE_URL secret is required' >&2
+            exit 1
+          fi
+          set +e
+          python -m fastest_prices refresh "$PRICE_COHORT_ID"
+          refresh_status=$?
+          set -e
+          # Publish even after a recorded failure so the gap is visible.
+          python -m fastest_prices publish "$PRICE_COHORT_ID" "$PRICE_WINDOW_START" "$(date -u +%F)"
+          exit "$refresh_status"

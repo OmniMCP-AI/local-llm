@@ -1,3 +1,4 @@
+import { verifyCatalogScripts, catalogNavigationLinks } from "./verify-catalog-html.mjs";
 import assert from "node:assert/strict";
 import { verifyReviewCatalog } from "./verify-review-catalog.mjs";
 
@@ -29,7 +30,7 @@ async function verifyHardwareDirectory(catalog, reviewCatalog) {
     read(directory, "text/html", directoryMarkdown), read(directoryMarkdown, "text/markdown", directory),
   ]);
   assert.match(html, /<main>\s*<[^>]+><h1>Hardware catalog<\/h1>/);
-  assert.doesNotMatch(html, /<script\b/i);
+  verifyCatalogScripts(html);
   assert.ok(html.includes(`href="${directoryMarkdown}"`) && markdown.includes(`[HTML directory](${directory})`));
   assert.ok(html.includes(snapshotId) && markdown.includes(`snapshot: ${snapshotId}`));
   for (const [label, value] of [
@@ -64,7 +65,7 @@ async function verifyHardwareDirectory(catalog, reviewCatalog) {
 
   const commonLinks = [directory, directoryMarkdown, root + "/manifest.json", root + "/LICENSE.txt"];
   const htmlRoutes = new Set(["/", directory + "#cards", directory + "#machines",
-    reviewCatalog.models.popular.html, reviewCatalog.runtimes.html, ...commonLinks, ...routes]);
+    reviewCatalog.models.popular.html, reviewCatalog.runtimes.html, ...catalogNavigationLinks, ...commonLinks, ...routes]);
   const markdownRoutes = new Set([...commonLinks, ...routes.map(path => path + ".md")]);
   const htmlText = (value) => value.replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -93,7 +94,7 @@ async function verifyHardwareDirectory(catalog, reviewCatalog) {
         if (htmlRoutes.has(linked)) assert.ok(links.includes(linked) && companionLinks.includes(linked + ".md"), linked);
       }
     }
-    assert.doesNotMatch(page, /<script\b/i, path);
+    verifyCatalogScripts(page, path);
     assert.match(page, /<dt>Runtime-usable (?:GPU )?memory<\/dt><dd>Unknown<\/dd>/, path);
     assert.match(companion, /\*\*Runtime-usable (?:GPU )?memory\*\* — Unknown/, path);
     if (topologyRevision) assert.ok(page.includes(topologyRevision) && companion.includes(topologyRevision), path);

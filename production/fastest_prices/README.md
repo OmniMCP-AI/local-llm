@@ -98,8 +98,29 @@ capture. Use `publish` to pin the reviewed window afterward.
 
 Live requests require a cohort classified as `authorized_observations`.
 The test replays a fictional direct seller through the same capture service
-with a recorded transport. There is no live endpoint or periodic job
-configured in this repository.
+with a recorded transport. There is no live endpoint or provider cohort configured in this repository.
+
+### Daily job
+
+The `Daily authorized price refresh` GitHub Actions workflow is scheduled for
+03:17 UTC and can also be dispatched manually. Scheduled Actions run from the
+default branch; merging this workflow into another branch does not enable it.
+After registering one eligible direct-seller cohort, set repository variables
+`FASTEST_PRICE_COHORT_ID` and `FASTEST_PRICE_WINDOW_START` (an ISO date within
+366 days of the current UTC day), and secret `FASTEST_DATABASE_URL`. Set the
+optional `FASTEST_PRICE_FEED_TOKEN` secret only if the feed requires it. Without
+both variables the job skips; missing database credentials fail the job. Rotate
+the window start as it ages beyond the publisher's 366-day limit.
+
+The job uses the existing refresh limits and records failures and incomplete
+checks in the database. It then publishes the dated window even after a failed
+refresh, so a newly pinned release can expose that gap. Its log reports the
+release ID; configuring a public release pointer remains an operator action.
+The workflow reports a failed capture as a failed job. The scheduler cannot
+record a check when the job never runs or cannot reach the database; those days
+remain `not_checked`. No source becomes approved merely by enabling the job.
+See the [marketplace access review](../../docs/used-gpu-provider-access.md)
+for eBay, Amazon and JD access and retention gaps.
 
 ## Read the history
 
