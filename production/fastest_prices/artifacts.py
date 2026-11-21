@@ -155,9 +155,10 @@ def _chart(result):
         '<text x="337" y="188" text-anchor="middle">Quote date (UTC)</text>'
         f'{"".join(circles)}</svg>'
     )
+    chart = chart_with_labels(svg, left=64, right=610, start=result["start"], end=result["as_of"], date_axis=True)
     return (
         "<figure><figcaption>Comparable observed quotes by UTC day. Exact values and gaps appear below.</figcaption>"
-        f"{chart_with_labels(svg, left=64, right=610, start=result["start"], end=result["as_of"], date_axis=True)}</figure>"
+        f"{chart}</figure>"
     )
 
 
