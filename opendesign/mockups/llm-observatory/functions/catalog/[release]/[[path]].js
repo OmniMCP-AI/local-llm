@@ -1,6 +1,7 @@
 import { hardwareCard, modelCard, renderCard, runtimeCard } from "../../../catalog-card.mjs";
 import { observedAgentTask } from "../../../catalog-agent-task.mjs";
 import { catalogPath, catalogReleasePattern, hardwareIdPattern, modelIdPattern, modelShard, runtimeIdPattern } from "../../../catalog-paths.mjs";
+import { releaseOrigin } from "../../../release-origin.mjs";
 import { runtimeReleaseWatch } from "../../../runtime-release-watch.mjs";
 
 const notFound = () => new Response("Catalog card unavailable", {
@@ -40,6 +41,7 @@ export async function onRequestGet(context) {
   const markdown = extension === "md";
   return new Response(renderCard(card, {
     release, pathname: "/" + catalogPath(release, kind, id, extension), markdown,
+    releaseOrigin: releaseOrigin(context.env.FASTEST_RELEASE_ORIGIN),
   }), {
     headers: {
       "Content-Type": `text/${markdown ? "markdown" : "html"}; charset=utf-8`,

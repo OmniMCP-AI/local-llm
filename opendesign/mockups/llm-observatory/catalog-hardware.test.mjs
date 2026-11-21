@@ -16,11 +16,15 @@ test("GPU profile main navigation matches the home page and links back from deep
     const nav = html.match(/<nav[^>]*aria-label="Main navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     assert.ok(nav, "main navigation is present in the initial HTML");
     const labels = [...nav.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(match => match[1]);
-    assert.deepEqual(labels, ["Explorer", "Compare", "Battles", "Methods", "Costs", "Catalog", "Machines", "Models", "Wiki", "Price watch", "For agents"]);
+    assert.deepEqual(labels, ["Explorer", local ? "Compare demo" : "Compare", "Battles", "Methods", local ? "Costs demo" : "Costs", "Catalog", "Machines", "Models", "Wiki", "Price watch", "For agents"]);
     const home = local ? "../../../../fastest-ai.html" : "/";
     assert.ok(nav.includes(`href="${home}#explorer"`));
     assert.ok(nav.includes(`href="${home}#catalog" aria-current="page"`));
   }
+  const hosted = renderCard(card, { release, pathname: `/catalog/${release}/cards/${card.id}.html`, releaseOrigin: "https://evidence.example" });
+  assert.match(hosted, /href="https:\/\/evidence\.example\/profiles">Explorer/);
+  assert.match(hosted, /href="https:\/\/evidence\.example\/advisor">Guided advisor/);
+  assert.match(hosted, /href="\/wiki\/catalog\/" aria-current="page">Catalog/);
 });
 
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {

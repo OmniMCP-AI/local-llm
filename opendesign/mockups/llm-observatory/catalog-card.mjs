@@ -457,7 +457,7 @@ function cardIllustration(title, capacity) {
 <figcaption>${illustrationCaption}${capacity ? ` · ${capacity} GB nominal` : ""}</figcaption></figure>`;
 }
 
-export function catalogDocument({ title, home = "/", mdLink, release, review, canonical, main, root = `/catalog/${release}` }) {
+export function catalogDocument({ title, home = "/", mdLink, release, review, canonical, main, root = `/catalog/${release}`, local = false, releaseOrigin = null }) {
   const directory = hardwareDirectoryPath(release);
   return `<!doctype html>
 <html lang="en">
@@ -470,9 +470,11 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<l
 <style>${profileStyles}</style>
 </head>
 <body class="profile-document"><div class="profile-shell">
-<header><a class="profile-brand" href="${home}">fastest.ai / localdecode.com</a><nav class="profile-nav" aria-label="Main navigation">${Object.entries(navigationRoutes(null)).map(([label, route]) => {
-    const href = navigationHref(route, false, null, true);
-    return `<a href="${escapeHtml(home + href)}"${route === "catalog" ? ' aria-current="page"' : ""}>${escapeHtml(label)}</a>`;
+<header><a class="profile-brand" href="${home}">fastest.ai / localdecode.com</a><nav class="profile-nav" aria-label="Main navigation">${Object.entries(navigationRoutes(releaseOrigin)).map(([label, route]) => {
+    const href = navigationHref(route, !local, releaseOrigin, true);
+    const destination = href.startsWith("#") ? home + href : href;
+    const displayLabel = local && (label === "Compare" || label === "Costs") ? label + " demo" : label;
+    return `<a href="${escapeHtml(destination)}"${route === "catalog" ? ' aria-current="page"' : ""}>${escapeHtml(displayLabel)}</a>`;
   }).join("")}</nav><nav class="profile-actions" aria-label="Catalog">${review
     ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a><a href="${modelCollectionPath(release)}">Model catalog</a><a href="${runtimeDirectoryPath(release)}">Runtime catalog</a>`
     : `<a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a>`}</nav></header>
@@ -486,7 +488,7 @@ ${main}
 `;
 }
 
-export function renderCard(card, { release, pathname, markdown, local = false, review }) {
+export function renderCard(card, { release, pathname, markdown, local = false, review, releaseOrigin = null }) {
   const depth = pathname.startsWith("catalog/") ? pathname.split("/").length - 3 : 1;
   const root = local ? Array(depth).fill("..").join("/") : `/catalog/${release}`;
   const linksFrom = local ? pathname.split("/").at(-1) : pathname;
@@ -541,7 +543,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
     ].join("\n");
   }
   return catalogDocument({
-    title: card.title, home, mdLink, release, review, root,
+    title: card.title, home, mdLink, release, review, root, local, releaseOrigin,
     canonical: review && review.origin + htmlLink,
     main: renderCardContent(card, { mdLink }),
   });
