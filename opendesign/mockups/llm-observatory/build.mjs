@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
+import { removeHardwareDirectory, writeHardwareDirectory } from "./catalog-pages-review.mjs";
 import { prepareCatalogRelease, readCatalogModelFiles, writeCatalogProjection, writeCatalogRelease } from "./catalog-release-build.mjs";
 import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
@@ -136,10 +137,13 @@ const runtimes = published?.runtimes ?? JSON.parse(await readFile(here("catalog-
   ...row,
   references: (references ?? []).filter(({ href }) => !isWithdrawn(href)),
 }));
+const publicOrigin = process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai";
 let catalogRelease = "";
 if (pages) {
   catalogRelease = projection ? await writeCatalogProjection(output, projection, { catalogApi: !review })
     : await writeCatalogRelease(catalogDirectory, output, hardware, runtimes, modelFiles);
+  if (review) await writeHardwareDirectory(output, projection, publicOrigin);
+  else await removeHardwareDirectory(output, catalogRelease);
 }
 let localCatalogRelease = "";
 let localModelIds = [];
@@ -160,7 +164,7 @@ const origin = pages && !review ? releaseOrigin(process.env.FASTEST_RELEASE_ORIG
 const scalingUrl = origin && origin + "/topology/scaling";
 const wikiRelease = pages ? await writeWikiRelease({
   output,
-  origin: process.env.FASTEST_PUBLIC_ORIGIN ?? "https://fastest.ai",
+  origin: publicOrigin,
   researchRelease: researchIndex.release,
   catalogRelease,
   catalogApi: catalogPostgres && !review,

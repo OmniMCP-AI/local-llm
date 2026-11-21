@@ -429,6 +429,50 @@ test("homepage discovery links the pinned inventory report while its public revi
 
 const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
 const testCatalogReader = process.env.FASTEST_TEST_CATALOG_READER_URL;
+test("the static Pages review links to exact hardware profiles from its pinned PostgreSQL snapshot", {
+  skip: !testDatabase || !testCatalogReader, timeout: 60_000,
+}, async (t) => {
+  const scratch = await mkdtemp(join(tmpdir(), "fastest-pages-hardware-"));
+  t.after(() => rm(scratch, { recursive: true, force: true }));
+  const output = join(scratch, "pages");
+  const hardware = await readHardwareCatalog(here);
+  const id = "apple-mac-mini-m4-24gb-512gb";
+  const name = "Mac mini M4 from the Pages review snapshot";
+  hardware.catalog.machines.find((row) => row.id === id).name = name;
+  const { snapshotId } = await importLocalCatalog(hardware, testDatabase);
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("FASTEST_")));
+  Object.assign(env, {
+    FASTEST_PUBLIC_ORIGIN: origin, FASTEST_CATALOG_DATABASE_URL: testCatalogReader, FASTEST_CATALOG_SNAPSHOT_ID: snapshotId,
+  });
+  await run(process.execPath, ["build.mjs", "--pages", "--catalog-postgres", "--review", "--output", output], {
+    cwd: here, env, signal: t.signal,
+  });
+  const root = "/catalog/v1-" + snapshotId.slice(0, 16);
+  await withLocalPages(output, t.signal, async (address) => {
+    const get = (route) => fetch(address + route, { redirect: "manual", signal: t.signal });
+    const home = await (await get("/")).text();
+    assert.ok(home.includes(`href="${root}/hardware"`));
+    const directory = await (await get(root + "/hardware")).text();
+    const profile = `${root}/machines/${id}`;
+    assert.ok(directory.includes(`href="${profile}">${name}</a>`));
+    const html = await get(profile);
+    assert.equal(html.status, 200);
+    assert.match(html.headers.get("content-type"), /^text\/html/);
+    assert.ok((await html.text()).includes(`<h1>${name}</h1>`));
+    const markdown = await get(profile + ".md");
+    assert.equal(markdown.status, 200);
+    assert.match(markdown.headers.get("content-type"), /^text\/markdown/);
+    assert.ok((await markdown.text()).includes(`snapshot: ${snapshotId}`));
+  }, { staticOnly: true });
+  await run(process.execPath, ["build.mjs", "--pages", "--catalog-postgres", "--output", output], {
+    cwd: here, env, signal: t.signal,
+  });
+  await withLocalPages(output, t.signal, async (address) => {
+    const directory = await fetch(address + root + "/hardware", { signal: t.signal });
+    assert.equal(directory.status, 404);
+  });
+});
+
 test("production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs", {
   skip: !testDatabase || !testCatalogReader, timeout: 90_000,
 }, async (t) => {

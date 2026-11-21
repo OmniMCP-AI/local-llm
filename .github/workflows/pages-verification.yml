@@ -78,11 +78,13 @@ jobs:
           results=$(mktemp)
           trap 'rm -f "$results"' EXIT
           hosted_case='production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs'
+          hardware_review_case='the static Pages review links to exact hardware profiles from its pinned PostgreSQL snapshot'
           feedback_case='hosted Pages acknowledges a feedback receipt persisted in PostgreSQL'
           replay_case='the local PostgreSQL snapshot exports ranked repositories and complete factory profiles'
 
           npm run test:pages | tee "$results"
           grep -qxE "ok [0-9]+ - $hosted_case" "$results"
+          grep -qxE "ok [0-9]+ - $hardware_review_case" "$results"
           grep -qxE "ok [0-9]+ - $feedback_case" "$results"
           node --test --test-name-pattern="^$replay_case$" catalog-release.test.mjs | tee "$results"
           grep -qxE "ok [0-9]+ - $replay_case" "$results"

@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
+import { hardwareDirectoryPath } from "./catalog-paths.mjs";
 import { importLocalCatalog } from "./catalog-pg.mjs";
 import { withLocalPages } from "./pages-test-server.mjs";
 
@@ -62,7 +63,8 @@ try {
       highlights: highlights.map(({ id, href, markdown }) => ({ id, href, markdown })),
     },
     research: { release: researchRelease, manifest: `/research/${researchRelease}/manifest.json` },
-    catalog: { release: catalogRelease, snapshotId, manifest: catalogPath },
+    catalog: { release: catalogRelease, snapshotId, manifest: catalogPath,
+      directory: { html: hardwareDirectoryPath(catalogRelease), markdown: hardwareDirectoryPath(catalogRelease, true) } },
     discoverySha256: discovery,
   };
   await writeFile(join(output, "review-manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
