@@ -72,6 +72,11 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   assert.equal(await releaseDigest(output), await releaseDigest(rebuilt));
   const manifest = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
   assert.deepEqual(manifest.highlights.map(({ id }) => id), ["dual-rtx-2080-ti-nvlink", "open-benchmark-requests"]);
+  const community = await readFile(join(output, "wiki/community/index.html"), "utf8");
+  const issues = "https://github.com/OmniMCP-AI/local-llm/issues/new?template=";
+  for (const template of ["benchmark-request.yml", "result-correction.yml"]) {
+    assert.ok(community.includes('href="' + issues + template + '"'));
+  }
   const research = JSON.parse(await readFile(join(output, "research", manifest.researchRelease, "index.json"), "utf8"));
   const example = research.sources.find(({ id }) => id === "llama-bench-jsonl-example");
   assert.deepEqual(example?.records.map(({ dimension }) => dimension), ["prefill", "generation"]);

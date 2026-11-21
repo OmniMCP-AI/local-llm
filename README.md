@@ -74,6 +74,8 @@ Editors can replay scoped tag suggestions on held-out sources, stage reviewed as
 
 For hosted feedback, apply [the feedback schema](opendesign/mockups/llm-observatory/feedback-schema.sql) to a D1 database and bind it to Pages as `FEEDBACK_DB`. Use separate databases for preview and production. Set the binding before deploying the Pages build. The status link uses an unguessable receipt ID and exposes only review status. Maintainers can review submissions in D1. The standalone build saves notes on the device. [Cloudflare Pages D1 bindings](https://developers.cloudflare.com/pages/functions/bindings/#d1-databases)
 
+Visitors can [request a benchmark on GitHub](https://github.com/OmniMCP-AI/local-llm/issues/new?template=benchmark-request.yml) or [report a result correction on GitHub](https://github.com/OmniMCP-AI/local-llm/issues/new?template=result-correction.yml). The feedback dialog opens the matching form, where visitors enter the details they want to make public. Merge the forms into the repository’s default branch, `main`, before deploying the Pages links. [GitHub issue form configuration](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#creating-issue-forms)
+
 ### Review a correction or rights withdrawal
 
 From the prototype directory, keep an exact copy of the current Pages output, any earlier snapshots and project downloads under `downloads/`. For a correction, rebuild the research index and Graphify from the reviewed revision and approve its new metadata digest. A withdrawal quarantines the entire reviewed research source when a record from that source is reported. Retain the source ID and locator in the private review request.

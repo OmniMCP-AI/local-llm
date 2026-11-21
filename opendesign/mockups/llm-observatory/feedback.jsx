@@ -2,9 +2,9 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, MessageCircle, X } from "lucide-react";
 import { feedbackId, maxFeedbackContextLength, maxFeedbackLength, minFeedbackLength } from "./feedback-policy.mjs";
 import { useLocale } from "./locale";
+import { publicIssueHref } from "./public-issue.mjs";
 
 const storeKey = "fastest-feedback-v1";
-const publicIssue = "https://github.com/OmniMCP-AI/local-llm/issues/new";
 const feedbackEndpoint = "/api/feedback";
 const hosted = __FASTEST_PAGES__ && location.protocol !== "file:";
 const categories = {
@@ -202,7 +202,7 @@ export function FeedbackBubble({ page, entity, release, onCopy }) {
         </div>
       </form>}
       <div className="feedback-public">
-        <a href={publicIssue} target="_blank" rel="noreferrer">{t("Open GitHub issue", "在 GitHub 提交议题")} <ArrowUpRight size={14} aria-hidden="true" /></a>
+        <a href={publicIssueHref(receipt?.note.category ?? category)} target="_blank" rel="noreferrer">{t("Open GitHub issue", "在 GitHub 提交议题")} <ArrowUpRight size={14} aria-hidden="true" /></a>
         <p>{t("GitHub issues are public. Share only the details you want others to see.", "GitHub 议题是公开的，请只分享你愿意公开的内容。")}</p>
       </div>
     </dialog>

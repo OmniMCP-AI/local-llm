@@ -1,0 +1,26 @@
+name: Report a result correction
+description: Point out an error in a published fastest.ai result or its evidence.
+title: "[Result correction] "
+body:
+  - type: markdown
+    attributes:
+      value: This issue will be public. Keep private feedback, receipt links, credentials, and personal information out of it.
+  - type: input
+    id: result
+    attributes:
+      label: Published result
+      description: Paste the public fastest.ai page URL or evidence ID.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: What should change?
+      description: Include what the page shows and what you expect it to show.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Include public source links, the tested configuration, or run conditions if you have them.
