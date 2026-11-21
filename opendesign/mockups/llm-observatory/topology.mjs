@@ -1,6 +1,7 @@
 import hardwareSources from "./catalog-hardware-sources.json" with { type: "json" };
 import identities from "./catalog-identities.json" with { type: "json" };
 import { topologyRevisionPattern } from "./catalog-paths.mjs";
+import { cardRatings } from "./catalog-position.mjs";
 
 export const topologyReports = typeof __FASTEST_TOPOLOGY_REPORTS__ === "undefined"
   ? []
@@ -92,9 +93,11 @@ export function topologyView(report, replacements = {}) {
     if (!replacement) return {
       ...part, slot, memory: part.memory ?? (reportedMemory ? `${reportedMemory} GB` : null), placement: draft ? null : part.placement ?? null,
     };
+    const { capacity } = cardRatings(replacement);
     return {
       slot, card: replacement.id, label: replacement.name,
-      memory: replacement.memory ?? (report === fitScenario && replacement.id === fitCard ? "24 GB (llmfit example)" : null),
+      memory: capacity ? `${capacity} GB (manufacturer-rated)`
+        : replacement.memory ?? (report === fitScenario && replacement.id === fitCard ? "24 GB (llmfit example)" : null),
       photo: photosByCard[replacement.id], placement: null,
     };
   });
