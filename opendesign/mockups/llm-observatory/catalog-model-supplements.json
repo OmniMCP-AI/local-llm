@@ -94,6 +94,72 @@
           "cardLine": 279
         }
       ]
+    },
+    {
+      "id": "google/gemma-4-E2B-it",
+      "revision": "4adf15748de9e1a0097b6274cee9c15836c41c37",
+      "revisionDate": "2026-11-03",
+      "cardSha256": "3e0608a6be80e3eb040a5aa6c76707809503deb85be6360184a118fb6156526c",
+      "license": "apache-2.0",
+      "task": "Text generation from text, image, and audio",
+      "parameters": "Dense model with 2.3B effective parameters and 5.1B total including per-layer embeddings.",
+      "inputs": ["Text", "image", "audio"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "scorePercent": 44,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/google/gemma-4-E2B-it/blob/4adf15748de9e1a0097b6274cee9c15836c41c37/README.md#benchmark-results",
+          "cardRevision": "4adf15748de9e1a0097b6274cee9c15836c41c37",
+          "cardLine": 92
+        }
+      ]
+    },
+    {
+      "id": "google/gemma-4-E4B-it",
+      "revision": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+      "revisionDate": "2026-11-03",
+      "cardSha256": "b21e4f69614ccd77baa2f3797d05311040dee07b989cb9f0d25111aa4b605b2c",
+      "license": "apache-2.0",
+      "task": "Text generation from text, image, and audio",
+      "parameters": "Dense model with 4.5B effective parameters and 8B total including per-layer embeddings.",
+      "inputs": ["Text", "image", "audio"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "scorePercent": 52,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/google/gemma-4-E4B-it/blob/4ecc2ba63bcac23ba4a767fc87025b1450f84c9c/README.md#benchmark-results",
+          "cardRevision": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+          "cardLine": 92
+        }
+      ]
+    },
+    {
+      "id": "NousResearch/Arete-27B",
+      "revision": "108f0afbdcfaa1ceeda4a635004304dfff6d4da2",
+      "revisionDate": "2026-11-06",
+      "cardSha256": "c22421177d0e1f47bc0d9428b672c78b0635778025350ef694f113b2bfb7fef1",
+      "license": "apache-2.0",
+      "task": "Text generation",
+      "parameters": "27B parameter scale. Nous Research post-trained Qwen3.8-27B.",
+      "inputs": ["Text"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "Terminal-Bench",
+          "version": "2.1",
+          "scorePercent": 70,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/NousResearch/Arete-27B/blob/108f0afbdcfaa1ceeda4a635004304dfff6d4da2/README.md#general-and-agentic-capabilities",
+          "cardRevision": "108f0afbdcfaa1ceeda4a635004304dfff6d4da2",
+          "cardLine": 155
+        }
+      ]
     }
   ]
 }
