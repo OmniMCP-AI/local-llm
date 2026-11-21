@@ -18,6 +18,7 @@
 !production/fastest_release_watch/postgres.py
 !production/fastest_release_watch/render.py
 !production/fastest_release_watch/retest.py
+!production/fastest_release_watch/review.py
 !production/fastest_release_watch/store.py
 !production/fastest_agent_task/__init__.py
 !production/fastest_agent_task/__main__.py
