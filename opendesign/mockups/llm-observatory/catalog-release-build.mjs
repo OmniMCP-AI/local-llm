@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { catalogOpenApi } from "./catalog-api.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { modelIdPattern, modelShard } from "./catalog-paths.mjs";
 
@@ -124,7 +125,11 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
   const reviewed = Object.values(identities);
   const manifest = {
     release,
-    ...(snapshotId && { snapshotId, discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length } }),
+    ...(snapshotId && {
+      snapshotId,
+      discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length },
+      modelShardCounts: Object.fromEntries([...shards].map(([key, rows]) => [key, rows.length])),
+    }),
     source: sourceManifest,
     ...(supplement && { supplement }),
     hardware: hardware.manifest,
@@ -160,6 +165,7 @@ export async function writeCatalogProjection(output, { manifest, shards, hardwar
   await Promise.all([
     writeFile(join(target, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
     writeFile(join(target, "LICENSE.txt"), licenseNotice + "\n"),
+    ...(manifest.snapshotId ? [writeFile(join(target, "openapi.json"), JSON.stringify(catalogOpenApi(release), null, 2) + "\n")] : []),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
     writeFile(join(data, "cards.json"), JSON.stringify(hardware.catalog.cards)),
     writeFile(join(data, "machines.json"), JSON.stringify(hardware.catalog.machines)),

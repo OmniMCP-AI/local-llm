@@ -187,6 +187,17 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.match(home, /thinkingmachines\/Inkling-2-Mini/);
     const machines = await (await get(`/catalog-data/${release}/machines.json`)).json();
     assert.match(machines.find(({ id }) => id === machineId).name, /pinned database snapshot/);
+    const response = await get("/api/v1/catalog?kind=machines&q=pinned%20database%20snapshot");
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const results = await response.json();
+    assert.equal(results.revision, release);
+    assert.equal(results.snapshotId, snapshotId);
+    assert.equal(results.kind, "machines");
+    assert.equal(results.pagination.total, 1);
+    assert.equal(results.results[0].id, machineId);
+    assert.equal(results.results[0].name, "Mac mini M4 from the pinned database snapshot");
+    assert.equal(results.results[0].html, `/catalog/${release}/machines/${machineId}.html`);
+    assert.equal(results.results[0].markdown, `/catalog/${release}/machines/${machineId}.md`);
     assert.equal(machines.find(({ id }) => id === machineId).topologyRevision, undefined);
     const { topologyRevision } = machines.find(({ id }) => id === "V021-HP-C001");
     assert.match(topologyRevision, /^topology-[a-f0-9]{64}$/);
@@ -199,6 +210,47 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     const row = models.find(({ id }) => id === modelId);
     assert.equal(row.discovery.popular.rank, 11);
     assert.equal(row.discovery.small.rank, 4);
+
+    const modelSearch = await (await get("/api/v1/catalog?kind=models&q=qwen%2Fqwen2.5-0.5b-instruct")).json();
+    assert.equal(modelSearch.pagination.total, 1);
+    assert.equal(modelSearch.results[0].id, modelId);
+    assert.equal(modelSearch.results[0].source, "https://huggingface.co/" + modelId);
+    assert.equal(modelSearch.results[0].markdown, `/catalog/${release}/models/${modelId}.md`);
+
+    const firstModels = await (await get("/api/v1/catalog?kind=models&limit=2")).json();
+    assert.deepEqual(firstModels.pagination, { limit: 2, offset: 0, total: 19_195, nextOffset: 2 });
+    const nextModels = await (await get(`/api/v1/catalog?kind=models&revision=${firstModels.revision}&limit=2&offset=2`)).json();
+    assert.equal(nextModels.results.length, 2);
+    assert.ok(nextModels.results.every(next => firstModels.results.every(first => next.id !== first.id)));
+
+    const [firstShard, secondShard] = Object.keys(manifest.modelShardCounts).sort();
+    const previousShard = await (await get(`/catalog-data/${release}/${firstShard}.json`)).json();
+    const followingShard = await (await get(`/catalog-data/${release}/${secondShard}.json`)).json();
+    const boundaryOffset = previousShard.length - 1;
+    const joined = await (await get(`/api/v1/catalog?kind=models&revision=${release}&limit=2&offset=${boundaryOffset}`)).json();
+    assert.deepEqual(joined.results.map(({ id }) => id), [previousShard.at(-1).id, followingShard[0].id]);
+
+    const cardSearch = await (await get("/api/v1/catalog?kind=cards&q=nvidia-geforce-rtx-5090")).json();
+    assert.ok(cardSearch.results.some(({ id }) => id === "nvidia-geforce-rtx-5090"));
+    const runtimeSearch = await (await get("/api/v1/catalog?kind=runtimes&q=llama.cpp")).json();
+    assert.equal(runtimeSearch.results.find(({ id }) => id === "llama.cpp").source, "https://github.com/ggml-org/llama.cpp");
+
+    const openapi = await (await get(`/catalog/${release}/openapi.json`)).json();
+    const catalogOperation = openapi.paths["/api/v1/catalog"]?.get;
+    assert.ok(catalogOperation);
+    assert.deepEqual(catalogOperation.parameters.find(({ name }) => name === "kind").schema.enum,
+      ["cards", "machines", "models", "runtimes"]);
+    assert.ok((await (await get("/llms.txt")).text()).includes(`/catalog/${release}/openapi.json`));
+
+    for (const path of ["/wiki/agent-discovery/", "/wiki/agent-discovery.md"]) {
+      assert.ok((await (await get(path)).text()).includes(`/catalog/${release}/openapi.json`));
+    }
+    assert.equal((await fetch(address + `/api/v1/catalog?kind=cards&revision=v1-${"0".repeat(16)}`,
+      { signal: t.signal })).status, 404);
+
+    for (const query of ["kind=models&q=Qwen", "kind=models&offset=2", "kind=models&limit=26", "kind=machines&kind=cards"]) {
+      assert.equal((await fetch(address + "/api/v1/catalog?" + query, { signal: t.signal })).status, 400, query);
+    }
     for (const [path, expected] of [
       [`machines/${machineId}`, /Mac mini M4 from the pinned database snapshot/],
       [`models/${modelId}`, /Popular rank[^\n]{0,20}11/],
@@ -217,6 +269,24 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
       assert.ok((await response.text()).includes(`/#wiki/gpu-topology/${topologyRevision}`));
     }
   });
+
+  const policyFile = join(output, "evidence-quarantine.json");
+  const originalPolicy = await readFile(policyFile, "utf8");
+  const policy = JSON.parse(originalPolicy);
+  try {
+    policy.paths.push(`/catalog-data/${release}/qw.json`);
+    await writeFile(policyFile, JSON.stringify(policy));
+    await withLocalPages(output, t.signal, async (address) => {
+      const withdrawn = await fetch(address + `/api/v1/catalog?kind=models&revision=${release}&q=Qwen%2FQwen2.5-0.5B-Instruct`, {
+        headers: { "If-None-Match": '"old-catalog"' }, signal: t.signal,
+      });
+      assert.equal(withdrawn.status, 410);
+      assert.equal(withdrawn.headers.get("cache-control"), "no-store");
+      assert.doesNotMatch(await withdrawn.text(), /Qwen2\.5/);
+    });
+  } finally {
+    await writeFile(policyFile, originalPolicy);
+  }
 
   await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
     UPDATE fastest_catalog.model_repository SET document = jsonb_set(document, '{supplemental,parameters}', '"Unexpected parameter count"')
