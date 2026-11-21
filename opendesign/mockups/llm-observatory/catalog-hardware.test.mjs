@@ -357,8 +357,10 @@ test("GPU photo galleries publish exact models with photo and license links", as
   assert.equal(manifest.coverage.cardsWithPhotos, photographed.length);
   assert.ok(photographed.every(({ modification }) => !modification));
   const photos = photographed.flatMap(({ photos }) => photos);
-  assert.equal(new Set(photos.map(({ source }) => source)).size, photos.length);
-  assert.equal(new Set(photos.map(({ sha256 }) => sha256)).size, photos.length);
+  for (const { photos: gallery } of photographed) {
+    assert.equal(new Set(gallery.map(({ source }) => source)).size, gallery.length);
+    assert.equal(new Set(gallery.map(({ sha256 }) => sha256)).size, gallery.length);
+  }
   for (const { author, credit, license, licenseUrl } of photos) {
     assert.ok(credit.includes(author) && /resized|converted to JPEG/.test(credit), credit);
     const licensePath = license === "CC0 1.0" ? "publicdomain/zero/1.0/" :
@@ -380,6 +382,17 @@ test("GPU photo galleries publish exact models with photo and license links", as
   const filteredCard = filtered.cards.find(({ id }) => id === card.id);
   assert.deepEqual(filteredCard.photos, card.photos.slice(1));
   assert.deepEqual(filteredCard.vendorSpec.gallery, card.vendorSpec.gallery);
+});
+
+test("a shared board photo is withdrawn from every matching profile", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const ids = ["pny-vcg5060t16dfxpb1-o", "nvidia-geforce-rtx-5060-ti-16gb", "nvidia-geforce-rtx-5060-ti"];
+  const cards = ids.map(id => catalog.cards.find(row => row.id === id));
+  const source = cards[0].photos[0].source;
+  assert.ok(cards.every(card => card.photos.some(photo => photo.source === source)));
+  const { catalog: filtered } = await readHardwareCatalog(here, url => url === source);
+  assert.ok(ids.every(id => filtered.cards.find(row => row.id === id).photos.every(photo => photo.source !== source)));
+  assert.ok(ids.every(id => filtered.cards.find(row => row.id === id).photos.length));
 });
 
 test("a GPU photo stays on the exact board when the catalog also contains other variants", async () => {

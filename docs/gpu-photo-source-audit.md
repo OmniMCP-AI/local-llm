@@ -243,3 +243,136 @@ ORDER BY g.id;
 
 ROLLBACK;
 ```
+
+## Stock photo follow-up — 2026-11-22
+
+Hardware catalog digest `9054401f4c700322ff54a23c7e04ec40ab3c50bd2db757eda97fe0aa823d17f1` has 46 of 168 identities with an approved photo (73 profile placements from 58 distinct sources); 122 identities remain without one. The table above is the earlier baseline, not a live inventory. The new associations cover the generic Arc A770, RTX 2060, RTX 3050, RTX 3060, RTX 3080, RTX 4060 Ti and RTX 5060 Ti identities, plus the RTX 4060 Ti 8 GB and RTX 5060 Ti 16 GB variants. Each family association identifies the pictured example by its exact model and memory; the same file is also retained on its specific variant. RTX 4060 Ti 16 GB and PNY 5060 Ti 8 GB remain gaps.
+
+The RTX 4060 Ti Founders Edition review frame is by 极客湾Geekerwan, published 2023-05-23 and retrieved 2026-11-22 from [the Commons file](https://commons.wikimedia.org/wiki/File:RTX4060TI%E8%AF%84%E6%B5%8B%EF%BC%9A%E5%8F%AA%E6%AF%943060TI%E5%BF%AB10%25_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_15.png), whose reviewed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) grant covers reuse. The [archived source video](https://web.archive.org/web/20240603161103/https://www.youtube.com/watch?v=sPOUiBcbFCw) records the original. Commons file revision uploaded 2024-06-03 16:16:43 UTC is a 3840 × 2160 PNG with SHA-1 `1c832f3f078f6768dfd9c66f3212c02b437e04ba`. The retained 1280 × 720 JPEG was resized and converted without cropping; SHA-256 `45dcdeab7e03b73de8a8299fcbe23bdd24b4ba807a53f1a3843e58891f3d5eab`. The still shows the Founders Edition; [NVIDIA's launch specifications](https://nvidianews.nvidia.com/_gallery/download_pdf/64662208ed6ae54354afc7c9/) specify its 8 GB capacity.
+
+The PNY RTX 5060 Ti 16 GB front and rear photos remain credited to FreeMediaKid! under CC BY-SA 4.0; their [original front file record](https://commons.wikimedia.org/wiki/File:Nvidia_GeForce_RTX_5060_Ti_16GB,_PNY_Overclocked_Dual_Fan,_front.jpg) identifies the exact 16 GB board. The exhibit placard on the ASUS T1 image identifies its 8 GB card. The family gallery labels both distinct examples, while the capacity-specific galleries only use their matching specimen.
+
+Remaining identity IDs for this snapshot:
+
+- `amd-instinct-mi100`
+- `amd-instinct-mi210`
+- `amd-instinct-mi250`
+- `amd-instinct-mi250x`
+- `amd-instinct-mi300`
+- `amd-instinct-mi300x`
+- `amd-radeon-ai-pro-r9700`
+- `amd-radeon-instinct-mi50`
+- `amd-radeon-instinct-mi50-16gb`
+- `amd-radeon-instinct-mi50-32gb`
+- `amd-radeon-pro-w7800`
+- `amd-radeon-pro-w7900`
+- `amd-radeon-rx-5600-xt-modified-16gb`
+- `amd-radeon-rx-6600`
+- `amd-radeon-rx-6700-xt`
+- `amd-radeon-rx-6800`
+- `amd-radeon-rx-6950-xt`
+- `amd-radeon-rx-7600`
+- `amd-radeon-rx-7700-xt`
+- `amd-radeon-rx-7800-xt`
+- `amd-radeon-rx-7900-gre`
+- `amd-radeon-rx-9060-xt`
+- `amd-radeon-rx-9060-xt-16gb`
+- `amd-radeon-rx-9060-xt-8gb`
+- `amd-radeon-rx-9070`
+- `asrock-a770-pg-16go`
+- `asrock-b60-ct-24g`
+- `asus-dual-rtx5060ti-16g`
+- `asus-dual-rx9060xt-16g`
+- `asus-dual-rx9060xt-8g`
+- `asus-prime-rtx5070ti-o16g`
+- `asus-rog-astral-rtx5090d-o32g-gaming`
+- `asus-t1-rtx5060ti-o8g-gaming`
+- `colorful-igame-rtx5060ti-mini-w-oc-8gb`
+- `intel-arc-a770-8gb`
+- `intel-arc-pro-b60`
+- `kinology-radeon-rx-580-2048sp-modified-16gb`
+- `msi-geforce-rtx-5090-32g-suprim-liquid-soc`
+- `msi-geforce-rtx-5090-32g-suprim-oc`
+- `msi-geforce-rtx-5090-32g-suprim-soc`
+- `msi-geforce-rtx-5090-d-32g-vanguard-oc`
+- `msi-geforce-rtx-5090-d-v2-24g-ventus-3x-oc`
+- `nvidia-a10`
+- `nvidia-a100`
+- `nvidia-a100-sxm`
+- `nvidia-a100-sxm-40gb`
+- `nvidia-a100-sxm-80gb`
+- `nvidia-a10g`
+- `nvidia-cmp-170hx`
+- `nvidia-cmp-170hx-hynix`
+- `nvidia-cmp-170hx-modified-80gb`
+- `nvidia-cmp-170hx-samsung`
+- `nvidia-geforce-gtx-1650`
+- `nvidia-geforce-gtx-1650-gddr5`
+- `nvidia-geforce-gtx-1650-gddr6`
+- `nvidia-geforce-gtx-1650-super`
+- `nvidia-geforce-gtx-1660-super`
+- `nvidia-geforce-rtx-2060-12gb`
+- `nvidia-geforce-rtx-2070-modified-16gb`
+- `nvidia-geforce-rtx-2080-super-modified-16gb`
+- `nvidia-geforce-rtx-2080-ti-colorful-modified`
+- `nvidia-geforce-rtx-2080-ti-modified-22gb`
+- `nvidia-geforce-rtx-2080-ti-original-11gb`
+- `nvidia-geforce-rtx-3050-8gb`
+- `nvidia-geforce-rtx-3060-8gb`
+- `nvidia-geforce-rtx-3060-ti`
+- `nvidia-geforce-rtx-3060-ti-gddr6`
+- `nvidia-geforce-rtx-3060-ti-gddr6x`
+- `nvidia-geforce-rtx-3070-modified-16gb`
+- `nvidia-geforce-rtx-3070-ti`
+- `nvidia-geforce-rtx-3080-12gb`
+- `nvidia-geforce-rtx-3080-modified-20gb`
+- `nvidia-geforce-rtx-3080-ti`
+- `nvidia-geforce-rtx-3090-ti`
+- `nvidia-geforce-rtx-4060-ti-16gb`
+- `nvidia-geforce-rtx-4070-gddr6`
+- `nvidia-geforce-rtx-4070-gddr6x`
+- `nvidia-geforce-rtx-4070-ti`
+- `nvidia-geforce-rtx-4070-ti-super`
+- `nvidia-geforce-rtx-4080`
+- `nvidia-geforce-rtx-4080-modified-32gb`
+- `nvidia-geforce-rtx-4080-super-modified-32gb`
+- `nvidia-geforce-rtx-4090-d-modified-48gb`
+- `nvidia-geforce-rtx-4090-modified-48gb`
+- `nvidia-geforce-rtx-5080-modified-32gb`
+- `nvidia-geforce-rtx-5090-d`
+- `nvidia-geforce-rtx-5090-d-32gb`
+- `nvidia-geforce-rtx-5090-d-v2`
+- `nvidia-h100-sxm`
+- `nvidia-h200`
+- `nvidia-h200-nvl`
+- `nvidia-h200-sxm`
+- `nvidia-l4`
+- `nvidia-l40`
+- `nvidia-l40s`
+- `nvidia-rtx-a4000`
+- `nvidia-rtx-a5000`
+- `nvidia-rtx-a6000`
+- `nvidia-rtx-pro-1000-blackwell-laptop-gpu`
+- `nvidia-rtx-pro-5000`
+- `nvidia-rtx-pro-5000-48gb`
+- `nvidia-rtx-pro-5000-72gb`
+- `nvidia-rtx-pro-6000`
+- `nvidia-rtx-pro-6000-blackwell-max-q`
+- `nvidia-rtx-pro-6000-blackwell-server`
+- `nvidia-rtx-pro-6000-blackwell-workstation`
+- `nvidia-tesla-p100`
+- `nvidia-tesla-p100-pcie-12gb`
+- `nvidia-tesla-p100-pcie-16gb`
+- `nvidia-tesla-p100-sxm2-16gb`
+- `nvidia-tesla-t4`
+- `nvidia-tesla-v100`
+- `nvidia-tesla-v100-16gb`
+- `nvidia-tesla-v100-32gb`
+- `nvidia-tesla-v100-pcie-16gb`
+- `nvidia-tesla-v100-pcie-32gb`
+- `nvidia-tesla-v100-sxm`
+- `nvidia-tesla-v100-sxm2`
+- `nvidia-tesla-v100-sxm2-32gb`
+- `pny-vcg5060t8dfxpb1-o`
+- `sparkle-sbp60w-24g`
+- `t10-unresolved`
