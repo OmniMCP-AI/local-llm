@@ -1,0 +1,31 @@
+{
+  "notes": [
+    {
+      "id": "fixture-cuda-offload",
+      "revision_id": "github:ggml-org/llama.cpp:90000001:301e4c99535ccdbb3a8f438525ec50633f9ace64abc4d1ac17d725c24dedaa40",
+      "card_id": "nvidia-geforce-rtx-3060",
+      "source_url": "https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md",
+      "source_label": "llama.cpp build documentation (example locator)",
+      "status": "suggested",
+      "technique": "Try partially offloading layers to the selected GPU.",
+      "prerequisites": "Build with the CUDA backend.",
+      "limits": "The example covers a single 12 GiB board variant.",
+      "failure_modes": "The model may exceed the memory available for offload.",
+      "configuration": {
+        "id": "fixture-3060-12g-ubuntu24-cuda",
+        "variant": "GeForce RTX 3060 12 GiB",
+        "os": "Ubuntu 24.04.1",
+        "driver": "550.120",
+        "backend": "CUDA",
+        "build_sha": "1111111111111111111111111111111111111111",
+        "flags": [
+          "--gpu-layers",
+          "20"
+        ],
+        "workload_id": "solo-decode",
+        "workload_version": 1,
+        "model_artifact": "fixture/model@revision/configured.gguf"
+      }
+    }
+  ]
+}

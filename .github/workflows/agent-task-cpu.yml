@@ -1,0 +1,75 @@
+name: Shared CI CPU inventory agent capture
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/agent-task-cpu.yml"
+      - "production/fastest_agent_task/**"
+      - "production/fastest_release/capture_cpu.py"
+      - "production/fastest_text/plan.json"
+      - "production/tests/test_agent_task_hosted.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: >-
+      github.repository == 'OmniMCP-AI/local-llm' &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: production
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check hosted policy and verification
+        run: python3 -B -m unittest discover -s tests -p test_agent_task_hosted.py -v
+      - name: Acquire pinned inputs and verify the measured comparison
+        run: |
+          umask 077
+          inputs=$(mktemp -d "$RUNNER_TEMP/agent-task-inputs.XXXXXX")
+          cleanup_inputs() {
+            python3 -B -c 'import shutil, sys; shutil.rmtree(sys.argv[1])' "$inputs"
+          }
+          trap cleanup_inputs EXIT
+
+          download() {
+            curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+              --connect-timeout 20 --max-time 600 --retry 2 --retry-max-time 600 "$1" --output "$2"
+          }
+          mapfile -t urls < <(python3 -B -m fastest_agent_task.capture_hosted urls)
+          test "${#urls[@]}" -eq 3
+          download "${urls[0]}" "$inputs/runtime.zip"
+          for url in "${urls[@]:1}"; do
+            download "$url" "$inputs/${url##*/}"
+          done
+
+          packet="$RUNNER_TEMP/agent-task-cpu"
+          python3 -B -m fastest_agent_task.capture_hosted capture "$inputs/runtime.zip" "$inputs" "$packet"
+          python3 -B -m fastest_agent_task.capture_hosted verify "$packet"
+          sha256sum "$packet/receipt.json" | cut -d ' ' -f 1
+      - name: Retain the verifier receipt and unsigned candidates
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-task-cpu-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/agent-task-cpu/receipt.json
+            ${{ runner.temp }}/agent-task-cpu/bundle-candidate.json
+            ${{ runner.temp }}/agent-task-cpu/split-candidate.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Remove the runner's copy of the packet
+        if: always()
+        run: |
+          if [[ -d "$RUNNER_TEMP/agent-task-cpu" ]]; then
+            python3 -B -c 'import shutil, sys; shutil.rmtree(sys.argv[1])' "$RUNNER_TEMP/agent-task-cpu"
+          fi
+          test ! -e "$RUNNER_TEMP/agent-task-cpu"

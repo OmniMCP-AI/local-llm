@@ -1,0 +1,63 @@
+.battle-page { padding-block: clamp(1rem, 4vw, 3rem) 2rem; }
+.battle-heading { margin-block-end: 1.6rem; }
+.battle-heading h1 { font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: 1; text-wrap: balance; }
+.battle-heading p { margin-block-start: .75rem; color: var(--color-ink-2); max-width: 59ch; }
+.battle-kinds { display: flex; gap: .4rem; border-block-end: 1px solid var(--color-rule); margin-block-end: 1.2rem; }
+.battle-kinds a { display: inline-flex; align-items: center; gap: .55rem; min-height: 44px; padding-inline: 1rem; border-block-end: 2px solid transparent; color: var(--color-muted); font-weight: 650; }
+.battle-kinds a:hover, .battle-kinds a[aria-current] { color: var(--color-ink); background: var(--color-paper-2); }
+.battle-kinds a[aria-current] { border-color: var(--color-accent); }
+.battle-layout { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(240px, 1fr); gap: clamp(1rem, 3vw, 2.25rem); align-items: start; }
+.battle-comparison { display: grid; gap: 1.15rem; min-width: 0; }
+.battle-pickers, .battle-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.battle-picker { display: flex; flex-direction: column; gap: .5rem; padding: clamp(.55rem, 2vw, 1rem); background: var(--color-paper-2); border-block-start: 2px solid var(--color-accent); }
+.battle-picker-right { border-color: var(--color-accent-2); }
+.battle-picker > span { color: var(--color-muted); font-size: .8rem; font-weight: 650; }
+.battle-picker select { color: var(--color-ink); background: var(--color-paper); border: 1px solid var(--color-field-edge); padding-inline: .45rem; min-width: 0; min-height: 44px; width: 100%; font-weight: 650; }
+.battle-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
+.battle-actions .btn { min-height: 44px; }
+.battle-actions .btn:active:not(:disabled) { transform: scale(.96); }
+.battle-actions .battle-find { display: none; }
+.battle-record { margin-block-start: -.7rem; color: var(--color-muted); font-size: .8rem; }
+.battle-alert, .battle-decision { padding: clamp(.8rem, 2vw, 1.1rem); background: var(--color-paper-2); border: 1px solid var(--color-rule); }
+.battle-alert { margin-block-end: 1rem; color: var(--color-ink-2); }
+.battle-page h2 { font-size: clamp(1.25rem, 2.2vw, 1.6rem); text-wrap: balance; margin-block-end: .6rem; }
+.battle-decision ul, .battle-sources ul { padding-inline-start: 1.2rem; margin-block: 0 .55rem; }
+.battle-decision li { margin-block-end: .28rem; font-variant-numeric: tabular-nums; }
+.battle-decision li::marker { color: var(--color-accent); }
+.battle-decision p { color: var(--color-ink-2); }
+.battle-decision .battle-evidence { display: flex; align-items: start; gap: .45rem; margin-block-start: .75rem; padding-block-start: .75rem; border-block-start: 1px solid var(--color-rule); color: var(--color-muted); font-size: .85rem; }
+.battle-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .94rem; }
+.battle-table th, .battle-table td { text-align: start; vertical-align: top; border-block-end: 1px solid var(--color-rule); padding: .8rem .55rem; overflow-wrap: anywhere; }
+.battle-table th:first-child { width: 28%; }
+.battle-table thead { background: var(--color-paper-2); }
+.battle-table tbody th { color: var(--color-ink-2); font-weight: 600; }
+.battle-table tbody th small { display: block; color: var(--color-accent-2); margin-block-start: .22rem; }
+.battle-table td { font-variant-numeric: tabular-nums; }
+.battle-table td a { text-decoration: underline; text-decoration-color: var(--color-field-edge); text-underline-offset: .18em; }
+.battle-table td a:hover, .battle-sources a:hover, .battle-archive-link:hover, .battle-title-sources a:hover { color: var(--color-accent); }
+.battle-unavailable { color: var(--color-muted); }
+.battle-sources { margin-block-start: 1rem; }
+.battle-sources section { padding: .8rem; border: 1px solid var(--color-rule); }
+.battle-sources h3 { font-size: 1rem; letter-spacing: 0; }
+.battle-sources ul { list-style: none; padding-inline-start: 0; margin: .3rem 0 0; }
+.battle-sources a, .battle-archive-link, .battle-title-sources a { display: inline-flex; align-items: center; gap: .25rem; min-height: 40px; color: var(--color-accent-2); font-size: .86rem; }
+.battle-discovery { display: grid; gap: 1.1rem; min-width: 0; }
+.battle-discovery section { border-block-start: 2px solid var(--color-rule); padding-block-start: .8rem; }
+.battle-discovery p { color: var(--color-muted); font-size: .86rem; margin-block: -.2rem .5rem; }
+.battle-pair-list { list-style: none; margin: 0; padding: 0; }
+.battle-pair-list li + li { border-block-start: 1px solid var(--color-rule); }
+.battle-pair-link { display: flex; align-items: center; justify-content: space-between; gap: .55rem; padding: .65rem .55rem; min-height: 44px; }
+.battle-pair-link:hover, .battle-pair-link[aria-current] { background: var(--color-paper-2); }
+.battle-pair-link[aria-current] { box-shadow: inset 0 -2px 0 var(--color-accent); }
+.battle-pair-link strong { font-size: .94rem; overflow-wrap: anywhere; }
+.battle-pair-link strong span, .battle-pair-link small { color: var(--color-muted); font-weight: 500; }
+.battle-pair-link small { display: block; margin-block-start: .22rem; font-variant-numeric: tabular-nums; }
+.battle-title-sources { display: flex; flex-wrap: wrap; gap: 0 .65rem; padding-inline: .55rem; }
+.battle-archive-link { justify-self: start; }
+[dir="rtl"] .battle-pair-link > svg { transform: scaleX(-1); }
+@media (max-width: 740px) {
+  .battle-layout { grid-template-columns: minmax(0, 1fr); }
+  .battle-actions .battle-find { display: inline-flex; }
+  .battle-archive-link { grid-column: 1 / -1; }
+  .battle-table th, .battle-table td { padding: .65rem .35rem; font-size: .82rem; }
+}

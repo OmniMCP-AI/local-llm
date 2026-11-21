@@ -1,0 +1,1212 @@
+{
+  "cards": [
+    {
+      "id": "amd-instinct-mi100",
+      "name": "AMD Instinct MI100",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3617"
+    },
+    {
+      "id": "amd-instinct-mi210",
+      "name": "AMD Instinct MI210",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3614"
+    },
+    {
+      "id": "amd-instinct-mi250",
+      "name": "AMD Instinct MI250",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3611"
+    },
+    {
+      "id": "amd-instinct-mi250x",
+      "name": "AMD Instinct MI250X",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3608"
+    },
+    {
+      "id": "amd-instinct-mi300x",
+      "name": "AMD Instinct MI300X",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3602"
+    },
+    {
+      "id": "amd-radeon-ai-pro-r9700",
+      "name": "AMD Radeon AI PRO R9700",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G011.md"
+    },
+    {
+      "id": "amd-radeon-instinct-mi50",
+      "name": "AMD Radeon Instinct MI50",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G009.md"
+    },
+    {
+      "id": "amd-radeon-rx-6600",
+      "name": "AMD Radeon RX 6600",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3597"
+    },
+    {
+      "id": "amd-radeon-rx-6600-xt",
+      "name": "AMD Radeon RX 6600 XT",
+      "detail": "Reported temporary boot and display card",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V019-HP-TEST.md"
+    },
+    {
+      "id": "amd-radeon-rx-6700-xt",
+      "name": "AMD Radeon RX 6700 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3591"
+    },
+    {
+      "id": "amd-radeon-rx-6800",
+      "name": "AMD Radeon RX 6800",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3588"
+    },
+    {
+      "id": "amd-radeon-rx-6800-xt",
+      "name": "AMD Radeon RX 6800 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3585"
+    },
+    {
+      "id": "amd-radeon-rx-6900-xt",
+      "name": "AMD Radeon RX 6900 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3582"
+    },
+    {
+      "id": "amd-radeon-rx-6950-xt",
+      "name": "AMD Radeon RX 6950 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3579"
+    },
+    {
+      "id": "amd-radeon-rx-7700-xt",
+      "name": "AMD Radeon RX 7700 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3571"
+    },
+    {
+      "id": "amd-radeon-rx-7800-xt",
+      "name": "AMD Radeon RX 7800 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3568"
+    },
+    {
+      "id": "amd-radeon-rx-7900-gre",
+      "name": "AMD Radeon RX 7900 GRE",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3565"
+    },
+    {
+      "id": "amd-radeon-rx-7900-xt",
+      "name": "AMD Radeon RX 7900 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3562"
+    },
+    {
+      "id": "amd-radeon-rx-7900-xtx",
+      "name": "AMD Radeon RX 7900 XTX",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G007.md"
+    },
+    {
+      "id": "amd-radeon-rx-9060-xt",
+      "name": "AMD Radeon RX 9060 XT",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G013.md"
+    },
+    {
+      "id": "amd-radeon-rx-9070",
+      "name": "AMD Radeon RX 9070",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G003.md"
+    },
+    {
+      "id": "amd-radeon-rx-9070-xt",
+      "name": "AMD Radeon RX 9070 XT",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3551"
+    },
+    {
+      "id": "intel-arc-a770",
+      "name": "Intel Arc A770",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G001.md"
+    },
+    {
+      "id": "intel-arc-b580",
+      "name": "Intel Arc B580",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-G004.md"
+    },
+    {
+      "id": "intel-arc-pro-b60",
+      "name": "Intel Arc Pro B60",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G010.md"
+    },
+    {
+      "id": "intel-arc-pro-b70",
+      "name": "Intel Arc Pro B70",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G012.md"
+    },
+    {
+      "id": "nvidia-a10",
+      "name": "NVIDIA A10",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3514"
+    },
+    {
+      "id": "nvidia-a100",
+      "name": "NVIDIA A100",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3499"
+    },
+    {
+      "id": "nvidia-a100-sxm",
+      "name": "NVIDIA A100 SXM",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3496"
+    },
+    {
+      "id": "nvidia-a10g",
+      "name": "NVIDIA A10G",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3511"
+    },
+    {
+      "id": "nvidia-cmp-170hx",
+      "name": "NVIDIA CMP 170HX",
+      "detail": "Variant and memory modifications described in the source",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V002-HP-G001.md"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1650",
+      "name": "NVIDIA GeForce GTX 1650",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3482"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1650-super",
+      "name": "NVIDIA GeForce GTX 1650 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3479"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1660",
+      "name": "NVIDIA GeForce GTX 1660",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3476"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1660-super",
+      "name": "NVIDIA GeForce GTX 1660 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3473"
+    },
+    {
+      "id": "nvidia-geforce-gtx-1660-ti",
+      "name": "NVIDIA GeForce GTX 1660 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3470"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2060",
+      "name": "NVIDIA GeForce RTX 2060",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3465"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2060-super",
+      "name": "NVIDIA GeForce RTX 2060 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3462"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2070",
+      "name": "NVIDIA GeForce RTX 2070",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3459"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2070-super",
+      "name": "NVIDIA GeForce RTX 2070 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3456"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080",
+      "name": "NVIDIA GeForce RTX 2080",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-G002.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-super",
+      "name": "NVIDIA GeForce RTX 2080 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3450"
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti",
+      "name": "NVIDIA GeForce RTX 2080 Ti",
+      "detail": "Original card; separate modification described in the research",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G001.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3050",
+      "name": "NVIDIA GeForce RTX 3050",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V014-HP-G002.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060",
+      "name": "NVIDIA GeForce RTX 3060",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V014-HP-TEST.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3060-ti",
+      "name": "NVIDIA GeForce RTX 3060 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3439"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3070",
+      "name": "NVIDIA GeForce RTX 3070",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3436"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3070-ti",
+      "name": "NVIDIA GeForce RTX 3070 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3433"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3080",
+      "name": "NVIDIA GeForce RTX 3080",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3430"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3080-ti",
+      "name": "NVIDIA GeForce RTX 3080 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3427"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3090",
+      "name": "NVIDIA GeForce RTX 3090",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C001.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-3090-ti",
+      "name": "NVIDIA GeForce RTX 3090 Ti",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V006-HP-G001.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4060",
+      "name": "NVIDIA GeForce RTX 4060",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3416"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4060-ti",
+      "name": "NVIDIA GeForce RTX 4060 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3413"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070",
+      "name": "NVIDIA GeForce RTX 4070",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3410"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070-super",
+      "name": "NVIDIA GeForce RTX 4070 Super",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C005.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070-ti",
+      "name": "NVIDIA GeForce RTX 4070 Ti",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3404"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4070-ti-super",
+      "name": "NVIDIA GeForce RTX 4070 Ti Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3401"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4080",
+      "name": "NVIDIA GeForce RTX 4080",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3398"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4080-super",
+      "name": "NVIDIA GeForce RTX 4080 Super",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3395"
+    },
+    {
+      "id": "nvidia-geforce-rtx-4090",
+      "name": "NVIDIA GeForce RTX 4090",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V005-HP-TEST.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5060",
+      "name": "NVIDIA GeForce RTX 5060",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3387"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5060-ti",
+      "name": "NVIDIA GeForce RTX 5060 Ti",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G002.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5070",
+      "name": "NVIDIA GeForce RTX 5070",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G004.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5070-ti",
+      "name": "NVIDIA GeForce RTX 5070 Ti",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G006.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5080",
+      "name": "NVIDIA GeForce RTX 5080",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-G001.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5090",
+      "name": "NVIDIA GeForce RTX 5090",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-C002.md"
+    },
+    {
+      "id": "nvidia-geforce-rtx-5090-d",
+      "name": "NVIDIA GeForce RTX 5090 D",
+      "detail": "Captioned SKU; reported capacity pairing is unverified",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-C001.md"
+    },
+    {
+      "id": "nvidia-h100",
+      "name": "NVIDIA H100",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3490"
+    },
+    {
+      "id": "nvidia-h100-sxm",
+      "name": "NVIDIA H100 SXM",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3487"
+    },
+    {
+      "id": "nvidia-h200",
+      "name": "NVIDIA H200",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-G001.md"
+    },
+    {
+      "id": "nvidia-l4",
+      "name": "NVIDIA L4",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3508"
+    },
+    {
+      "id": "nvidia-l40",
+      "name": "NVIDIA L40",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3505"
+    },
+    {
+      "id": "nvidia-l40s",
+      "name": "NVIDIA L40S",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3502"
+    },
+    {
+      "id": "nvidia-rtx-a4000",
+      "name": "NVIDIA RTX A4000",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3532"
+    },
+    {
+      "id": "nvidia-rtx-a5000",
+      "name": "NVIDIA RTX A5000",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3529"
+    },
+    {
+      "id": "nvidia-rtx-a6000",
+      "name": "NVIDIA RTX A6000",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3526"
+    },
+    {
+      "id": "nvidia-rtx-pro-1000-blackwell-laptop-gpu",
+      "name": "NVIDIA RTX PRO 1000 Blackwell Laptop GPU",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-G003.md"
+    },
+    {
+      "id": "nvidia-rtx-pro-5000",
+      "name": "NVIDIA RTX PRO 5000",
+      "detail": "Reported SKU family; capacity and board variant unverified",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-G002.md"
+    },
+    {
+      "id": "nvidia-rtx-pro-6000",
+      "name": "NVIDIA RTX PRO 6000",
+      "detail": "Reported SKU family; board variant not inferred",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C002.md"
+    },
+    {
+      "id": "nvidia-tesla-p100",
+      "name": "NVIDIA Tesla P100",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-G001.md"
+    },
+    {
+      "id": "nvidia-tesla-p40",
+      "name": "NVIDIA Tesla P40",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G006.md"
+    },
+    {
+      "id": "nvidia-tesla-t4",
+      "name": "NVIDIA Tesla T4",
+      "detail": "llmfit hardware lookup; no research benchmark linked",
+      "source": "https://github.com/AlexsJones/llmfit/blob/26450cccaf3a3f14b1822875f2473847a744a718/llmfit-core/src/hardware.rs#L3517"
+    },
+    {
+      "id": "nvidia-tesla-v100",
+      "name": "NVIDIA Tesla V100",
+      "detail": "Form factor not inferred from this profile",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G007.md"
+    },
+    {
+      "id": "nvidia-tesla-v100-sxm2",
+      "name": "NVIDIA Tesla V100 SXM2",
+      "detail": "Reported component in research notes",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-C002.md"
+    }
+  ],
+  "machines": [
+    {
+      "id": "V001-HP-G001",
+      "name": "Arc A770",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G001.md"
+    },
+    {
+      "id": "V001-HP-G002",
+      "name": "RTX5060Ti",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G002.md"
+    },
+    {
+      "id": "V001-HP-G003",
+      "name": "RX9070",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G003.md"
+    },
+    {
+      "id": "V001-HP-G004",
+      "name": "RTX5070",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G004.md"
+    },
+    {
+      "id": "V001-HP-G005",
+      "name": "RTX3060",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G005.md"
+    },
+    {
+      "id": "V001-HP-G006",
+      "name": "RTX5070Ti",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G006.md"
+    },
+    {
+      "id": "V001-HP-G007",
+      "name": "RX7900XTX",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G007.md"
+    },
+    {
+      "id": "V001-HP-G008",
+      "name": "RTX3090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G008.md"
+    },
+    {
+      "id": "V001-HP-G009",
+      "name": "RTX4090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G009.md"
+    },
+    {
+      "id": "V001-HP-G010",
+      "name": "Arc Pro B60",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G010.md"
+    },
+    {
+      "id": "V001-HP-G011",
+      "name": "R9700",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G011.md"
+    },
+    {
+      "id": "V001-HP-G012",
+      "name": "Arc Pro B70",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G012.md"
+    },
+    {
+      "id": "V001-HP-G013",
+      "name": "RX9060XT",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V001-HP-G013.md"
+    },
+    {
+      "id": "V002-HP-G001",
+      "name": "CMP170HX",
+      "detail": "Creator-reviewed mining GPU;modified/unlocked variants explicitly distinguished / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V002-HP-G001.md"
+    },
+    {
+      "id": "V003-HP-E01",
+      "name": "48GB Macmini comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-E01.md"
+    },
+    {
+      "id": "V003-HP-E02",
+      "name": "StrixHalo128GB comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-E02.md"
+    },
+    {
+      "id": "V003-HP-E03",
+      "name": "DualP100 comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-E03.md"
+    },
+    {
+      "id": "V003-HP-G001",
+      "name": "P100",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-G001.md"
+    },
+    {
+      "id": "V003-HP-G002",
+      "name": "RTX3090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-G002.md"
+    },
+    {
+      "id": "V003-HP-G003",
+      "name": "RTX5090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-G003.md"
+    },
+    {
+      "id": "V003-HP-G004",
+      "name": "R9700",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-G004.md"
+    },
+    {
+      "id": "V005-HP-G002",
+      "name": "owner4090 system",
+      "detail": "Different owner machine report;not the developer host / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V005-HP-G002.md"
+    },
+    {
+      "id": "V005-HP-TEST",
+      "name": "Developer RTX4090 / i7-13700K /64GB host",
+      "detail": "developer test setup as narrated / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V005-HP-TEST.md"
+    },
+    {
+      "id": "V006-HP-E01",
+      "name": "RTX4090 GPUUnlocker tensor-rate report",
+      "detail": "Reported GPU compute experiment,not complete LLM build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V006-HP-E01.md"
+    },
+    {
+      "id": "V006-HP-G001",
+      "name": "RTX3090Ti",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V006-HP-G001.md"
+    },
+    {
+      "id": "V007-HP-C001",
+      "name": "two-cardcomparison / RTX5060Ti",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-C001.md"
+    },
+    {
+      "id": "V007-HP-C002",
+      "name": "single-cardcomparison / RTX5090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-C002.md"
+    },
+    {
+      "id": "V007-HP-E01",
+      "name": "Mixed4070Super+5060Ti comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-E01.md"
+    },
+    {
+      "id": "V007-HP-G002",
+      "name": "RTX4070Super",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-G002.md"
+    },
+    {
+      "id": "V008-HP-C001",
+      "name": "creator desktop / SKU not stated",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V008-HP-C001.md"
+    },
+    {
+      "id": "V009-HP-TEST",
+      "name": "Apple M6 Mac Mini (caption label; not independently verified)",
+      "detail": "creator demonstration machine; RAM and GPU-core count not stated / 0 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V009-HP-TEST.md"
+    },
+    {
+      "id": "V012-HP-C001",
+      "name": "owner comparative machine / RTX5090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-C001.md"
+    },
+    {
+      "id": "V012-HP-E01",
+      "name": "Different Windows11 owner:Ryzen9 5950X/RTX5080/128GB",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-E01.md"
+    },
+    {
+      "id": "V012-HP-G001",
+      "name": "RTX5080",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-G001.md"
+    },
+    {
+      "id": "V012-HP-G002",
+      "name": "RTX5060Ti",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-G002.md"
+    },
+    {
+      "id": "V012-HP-G003",
+      "name": "RTXPro1000Blackwell laptop",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-G003.md"
+    },
+    {
+      "id": "V013-HP-C001",
+      "name": "creator PC / RTX5090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V013-HP-C001.md"
+    },
+    {
+      "id": "V013-HP-C002",
+      "name": "creator MacStudio",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 0 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V013-HP-C002.md"
+    },
+    {
+      "id": "V014-HP-G002",
+      "name": "RTX3050",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V014-HP-G002.md"
+    },
+    {
+      "id": "V014-HP-TEST",
+      "name": "RTX3060",
+      "detail": "creator demonstration GPU; count not expressly confirmed in this record / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V014-HP-TEST.md"
+    },
+    {
+      "id": "V017-HP-C001",
+      "name": "WiCi engineering prototype / RTX5090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V017-HP-C001.md"
+    },
+    {
+      "id": "V018-HP-C001",
+      "name": "sourcebenchmarkbuild / RTX5090D as captioned",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-C001.md"
+    },
+    {
+      "id": "V018-HP-C002",
+      "name": "memory-cappedtest / SKU not stated",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-C002.md"
+    },
+    {
+      "id": "V018-HP-E01",
+      "name": "AppleM2Ultra result",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-E01.md"
+    },
+    {
+      "id": "V018-HP-G002",
+      "name": "RTX4090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-G002.md"
+    },
+    {
+      "id": "V019-HP-E01",
+      "name": "Separate DD24-labelled /5060Ti comparison host",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V019-HP-E01.md"
+    },
+    {
+      "id": "V019-HP-E02",
+      "name": "Suggested V100 alternative,not installed",
+      "detail": "Recommendation only;not tested/owned in this source / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V019-HP-E02.md"
+    },
+    {
+      "id": "V019-HP-TEST",
+      "name": "Creator X99-T8 /128GB DDR3 /singleT10 NAS-analysis server",
+      "detail": "creator built server / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V019-HP-TEST.md"
+    },
+    {
+      "id": "V021-HP-C001",
+      "name": "two3060guideconfiguration / RTX3060",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-C001.md"
+    },
+    {
+      "id": "V021-HP-E01",
+      "name": "Two5060Ti16GB tensor-split configuration",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-E01.md"
+    },
+    {
+      "id": "V021-HP-E02",
+      "name": "TwoP100 long-prompt comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-E02.md"
+    },
+    {
+      "id": "V021-HP-G001",
+      "name": "RTX4090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-G001.md"
+    },
+    {
+      "id": "V021-HP-G002",
+      "name": "RX7900XTX",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-G002.md"
+    },
+    {
+      "id": "V021-HP-G003",
+      "name": "R9700 as captioned97000",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-G003.md"
+    },
+    {
+      "id": "V021-HP-G004",
+      "name": "ArcProB70",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-G004.md"
+    },
+    {
+      "id": "V021-HP-G006",
+      "name": "Tesla V1 32GB as captioned;SKUuncertain",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-G006.md"
+    },
+    {
+      "id": "V022-HP-C001",
+      "name": "developerPC / RTX5070",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C001.md"
+    },
+    {
+      "id": "V022-HP-C002",
+      "name": "different testerPC / RTX3060",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C002.md"
+    },
+    {
+      "id": "V022-HP-C003",
+      "name": "Strata-based engineowner / RTX3090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C003.md"
+    },
+    {
+      "id": "V022-HP-C004",
+      "name": "samepost alternativeRAM / RTX3090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C004.md"
+    },
+    {
+      "id": "V022-HP-C005",
+      "name": "ownerWindows PC / RTX4070Super",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C005.md"
+    },
+    {
+      "id": "V022-HP-C006",
+      "name": "Apple owner / M5Max",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C006.md"
+    },
+    {
+      "id": "V022-HP-G002",
+      "name": "RTX2080",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-G002.md"
+    },
+    {
+      "id": "V022-HP-G004",
+      "name": "ArcB580",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-G004.md"
+    },
+    {
+      "id": "V023-HP-C001",
+      "name": "third-partyfourMaccluster",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V023-HP-C001.md"
+    },
+    {
+      "id": "V024-HP-C001",
+      "name": "creator workstation / captionRTX2080at2:03/RTX2000later;exactSKUuncertain",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V024-HP-C001.md"
+    },
+    {
+      "id": "V024-HP-C002",
+      "name": "secondbenchmarkGPU / RTX5090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V024-HP-C002.md"
+    },
+    {
+      "id": "V025-HP-C001",
+      "name": "modifiedpair / RTX2080Ti",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-C001.md"
+    },
+    {
+      "id": "V025-HP-C002",
+      "name": "SXM2 benchmarkpair / V100SXM2",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-C002.md"
+    },
+    {
+      "id": "V025-HP-E01",
+      "name": "Dual3060 comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E01.md"
+    },
+    {
+      "id": "V025-HP-E02",
+      "name": "Dual5060Ti16GB comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E02.md"
+    },
+    {
+      "id": "V025-HP-E03",
+      "name": "Singlemodified2080Ti22GB",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E03.md"
+    },
+    {
+      "id": "V025-HP-E04",
+      "name": "DualP40 community comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E04.md"
+    },
+    {
+      "id": "V025-HP-E05",
+      "name": "DualP100 community comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E05.md"
+    },
+    {
+      "id": "V025-HP-E06",
+      "name": "DualMI50 16GB community comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E06.md"
+    },
+    {
+      "id": "V025-HP-G001",
+      "name": "RTX2080Ti(original)",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G001.md"
+    },
+    {
+      "id": "V025-HP-G003",
+      "name": "RX7900XTX",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G003.md"
+    },
+    {
+      "id": "V025-HP-G004",
+      "name": "RX970 as captioned;exactSKUuncertain",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G004.md"
+    },
+    {
+      "id": "V025-HP-G005",
+      "name": "ArcProB60",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G005.md"
+    },
+    {
+      "id": "V025-HP-G006",
+      "name": "TeslaP40",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G006.md"
+    },
+    {
+      "id": "V025-HP-G007",
+      "name": "TeslaV100",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G007.md"
+    },
+    {
+      "id": "V025-HP-G008",
+      "name": "TeslaV100",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G008.md"
+    },
+    {
+      "id": "V025-HP-G009",
+      "name": "AMDMI50",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-G009.md"
+    },
+    {
+      "id": "V026-HP-TEST",
+      "name": "Dell PrecisionT5810 /E5-2696v4 /dual3060 /256GB",
+      "detail": "creator demonstration setup / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V026-HP-TEST.md"
+    },
+    {
+      "id": "V027-HP-TEST",
+      "name": "Single3060 12GB /E5-2696v4 /64GB Strata host",
+      "detail": "creator single-GPU demonstration setup / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V027-HP-TEST.md"
+    },
+    {
+      "id": "V028-HP-C001",
+      "name": "DDR4 expert-offloadbuild / RTX3090",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C001.md"
+    },
+    {
+      "id": "V028-HP-C002",
+      "name": "large expert-offloadbuild / RTXPro6000",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C002.md"
+    },
+    {
+      "id": "V028-HP-C003",
+      "name": "singleStrixHalobox",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C003.md"
+    },
+    {
+      "id": "V028-HP-E01",
+      "name": "TwoDGXSpark networked configuration",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E01.md"
+    },
+    {
+      "id": "V028-HP-E02",
+      "name": "TwoStrixHalo comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E02.md"
+    },
+    {
+      "id": "V028-HP-E03",
+      "name": "FourMI50 32GB community preview",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E03.md"
+    },
+    {
+      "id": "V028-HP-E04",
+      "name": "80-coreMac mixed2/3bit case",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E04.md"
+    },
+    {
+      "id": "V028-HP-E05",
+      "name": "64-coreMac MLX case",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E05.md"
+    },
+    {
+      "id": "V028-HP-E06",
+      "name": "FourR9700 Qwenconfiguration",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E06.md"
+    },
+    {
+      "id": "V028-HP-E07",
+      "name": "FourV10016GB Qwenconfiguration",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E07.md"
+    },
+    {
+      "id": "V028-HP-G002",
+      "name": "RTXPro5000",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-G002.md"
+    },
+    {
+      "id": "V028-HP-G003",
+      "name": "V100",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-G003.md"
+    },
+    {
+      "id": "V028-HP-G004",
+      "name": "AMDMI50",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-G004.md"
+    },
+    {
+      "id": "V029-HP-C001",
+      "name": "Purchased Colorful2080Ti22GB modified pair /optionalNVLink",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V029-HP-C001.md"
+    },
+    {
+      "id": "V042-HP-G001",
+      "name": "RTX3090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V042-HP-G001.md"
+    },
+    {
+      "id": "V045-HP-TEST",
+      "name": "4090 (RTX4090 explicitly named at2:04)",
+      "detail": "creator local test setup / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V045-HP-TEST.md"
+    },
+    {
+      "id": "V048-HP-C001",
+      "name": "sameM5comparison",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V048-HP-C001.md"
+    },
+    {
+      "id": "V048-HP-E01",
+      "name": "M3Ultra phase-timing comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V048-HP-E01.md"
+    },
+    {
+      "id": "V048-HP-E02",
+      "name": "NVIDIA small-box phase-timing comparison",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V048-HP-E02.md"
+    },
+    {
+      "id": "V049-HP-E01",
+      "name": "M3Ultra/Qwen7B ANE offload reference",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V049-HP-E01.md"
+    },
+    {
+      "id": "V049-HP-TEST",
+      "name": "Mac mini M4",
+      "detail": "creator embedding experiment;not an LLM generation benchmark / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V049-HP-TEST.md"
+    },
+    {
+      "id": "V052-HP-C001",
+      "name": "recommendedLinuxbuild",
+      "detail": "recommended configuration,not tested measurement / 3 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V052-HP-C001.md"
+    },
+    {
+      "id": "V052-HP-C002",
+      "name": "MacminiM4Pro",
+      "detail": "configuration recommendation/experience,not controlledtest / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V052-HP-C002.md"
+    },
+    {
+      "id": "V052-HP-C003",
+      "name": "MacStudioM3Ultra",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V052-HP-C003.md"
+    },
+    {
+      "id": "V053-HP-C001",
+      "name": "MacBookNeo",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V053-HP-C001.md"
+    },
+    {
+      "id": "V053-HP-C002",
+      "name": "TinyAIPocketLab",
+      "detail": "configuration as explicitly narrated;creator/third-party claim,not independently verified / 2 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V053-HP-C002.md"
+    },
+    {
+      "id": "V053-HP-G001",
+      "name": "RTX5090",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V053-HP-G001.md"
+    },
+    {
+      "id": "V059-HP-E01",
+      "name": "SingleMacStudio baseline",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-E01.md"
+    },
+    {
+      "id": "V059-HP-E02",
+      "name": "TwoMacStudio subset",
+      "detail": "Caption-reported partial configuration /comparison;not a full build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-E02.md"
+    },
+    {
+      "id": "V059-HP-G001",
+      "name": "H200",
+      "detail": "GPU product/configuration reference;not a complete tested build / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-G001.md"
+    },
+    {
+      "id": "V059-HP-TEST",
+      "name": "FourM3Ultra MacStudio cluster /1.5TB aggregate unifiedmemory",
+      "detail": "creator cluster experiment;different network modes must stay distinct / 1 of 6 build fields reported",
+      "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-TEST.md"
+    }
+  ]
+}

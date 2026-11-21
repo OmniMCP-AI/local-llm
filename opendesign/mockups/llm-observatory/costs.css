@@ -1,0 +1,63 @@
+/* Hallmark · v2.0.0 · Rim night · app screen · scenario charts and live ownership readout */
+/* Hallmark · hierarchy: one selected analysis, aligned assumptions, exact-value table */
+.cost-page { font-variant-numeric: tabular-nums; }
+.cost-disclosure, .cost-method-note, .cost-result-text { color: var(--color-muted); font-size: 13px; line-height: 1.5; }
+.cost-readouts { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin: 12px 0 14px; border-block: 1px solid var(--color-rule); }
+.cost-readouts > div { padding: 11px 14px 12px; border-inline-end: 1px solid var(--color-rule); }
+.cost-readouts > div:first-child { padding-inline-start: 0; }
+.cost-readouts > div:last-child { border-inline-end: 0; }
+.cost-readouts dt { color: var(--color-muted); font-size: 12px; }
+.cost-readouts dd { font-size: clamp(20px,3.9vw,40px); font-weight: 650; letter-spacing: -.06em; margin: 3px 0 0; line-height: 1.05; overflow-wrap: anywhere; }
+.cost-readouts > div:last-child dd { color: var(--color-accent); }
+.cost-grid-outer { display: grid; grid-template-columns: minmax(190px,290px) minmax(0,1fr); gap: 13px; align-items: start; }
+.cost-controls, .cost-analysis { border: 1px solid var(--color-rule); background: var(--color-paper-2); padding: 15px; min-width: 0; }
+.cost-control-head, .cost-analysis-head, .cost-playback { display: flex; align-items: center; justify-content: space-between; gap: 11px; }
+.cost-control-head h2, .cost-analysis h2 { font-size: 22px; margin: 0; line-height: 1.12; }
+.cost-control-head { margin-bottom: 10px; }
+.cost-field { display: grid; gap: 4px; margin: 0 0 9px; min-width: 0; font-size: 13px; }
+.cost-field > span:first-child { color: var(--color-ink-2); }
+.cost-field > span:last-child { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 5px; }
+.cost-field input, .cost-field select { min-width: 0; width: 100%; min-height: 37px; padding: 4px 7px; color: var(--color-ink); border: 1px solid var(--color-field-edge); background: var(--color-paper); border-radius: 0; }
+.cost-field small { color: var(--color-muted); }
+.cost-advanced details { border-block-start: 1px solid var(--color-rule); }
+.cost-advanced summary { padding-block: 9px; cursor: pointer; font-size: 13px; }
+.cost-analysis { border-block-start-color: var(--color-accent); }
+.cost-analysis-head { align-items: end; margin-bottom: 13px; }
+.cost-analysis-head .cost-field { min-width: min(245px, 100%); margin: 0; }
+.cost-analysis-head .segmented button { padding-inline: 8px; }
+.cost-result-text { margin-block: 6px; }
+.cost-result-text strong { color: var(--color-ink); margin-inline-start: 6px; }
+.cost-capacity { margin: 8px 0; padding: 7px 9px; border-inline-start: 2px solid var(--color-accent); background: var(--color-chart-inset); font-size: 12px; }
+.cost-capacity p + p { margin-top: 4px; }
+.cost-bars { display: grid; gap: 10px; list-style: none; margin: 14px 0; padding: 0; }
+.cost-bars li > div:first-child { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; }
+.cost-bars strong, .cost-value-table td { font-family: var(--font-numeric); font-size: 12px; }
+.cost-bars small, .cost-value-table small { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; font-weight: 400; }
+.cost-legend [data-series] { --cost-stroke: var(--color-accent); }
+.cost-legend [data-series="apiUsd"] { --cost-stroke: var(--color-accent-2); }
+.cost-legend [data-series="rentalUsd"] { --cost-stroke: var(--color-muted); }
+.cost-legend i { background: var(--cost-stroke); }
+.cost-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; list-style: none; padding: 0; margin: 3px 0 10px; color: var(--color-ink-2); font-size: 12px; }
+.cost-legend i { display: inline-block; width: 15px; height: 2px; margin-inline-end: 4px; vertical-align: middle; }
+.cost-playback { justify-content: start; flex-wrap: wrap; margin-bottom: 8px; }
+.cost-playback label { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; font-size: 12px; }
+.cost-playback input { accent-color: var(--color-accent); }
+.cost-table-wrap { overflow-x: auto; }
+.cost-value-table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.35; margin-top: 8px; }
+.cost-value-table th, .cost-value-table td { text-align: end; border-block-end: 1px solid var(--color-rule); padding: 7px 5px; }
+.cost-value-table th:first-child { text-align: start; }
+.cost-value-table thead { color: var(--color-muted); }
+.cost-method-note { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--color-rule); }
+.cost-method-note a { margin: 4px 12px 0 0; display: inline-flex; align-items: center; gap: 4px; color: var(--color-accent-2); text-decoration: underline; text-underline-offset: 3px; }
+.cost-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 710px) {
+  .cost-grid-outer { grid-template-columns: 1fr; }
+  .cost-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 8px; }
+  .cost-control-head, .cost-advanced { grid-column: 1 / -1; }
+}
+@media (max-width: 430px) {
+  .cost-readouts > div { padding-inline: 6px; }
+  .cost-analysis-head { flex-wrap: wrap; }
+  .cost-controls, .cost-analysis { padding: 9px; }
+  .cost-value-table th, .cost-value-table td { padding-inline: 3px; }
+}

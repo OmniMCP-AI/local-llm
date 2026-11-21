@@ -1,0 +1,133 @@
+import base64
+import json
+from pathlib import Path
+import subprocess
+import uuid
+
+from .artifacts import build_artifacts
+from .validation import InvalidObservation, plain_text, valid_expiry, validate
+
+
+CONTRIBUTOR_RECEIPT_PATH = "/contributors/receipt"
+
+
+class ReleaseNotFound(LookupError):
+    """No release is available at the requested ID."""
+
+
+class ReleaseError(RuntimeError):
+    """PostgreSQL rejected the release operation."""
+
+
+def _sql_text(value):
+    # Base64 carries arbitrary UTF-8 as SQL-safe characters over stdin.
+    encoded = base64.b64encode(value.encode("utf-8")).decode("ascii")
+    return f"convert_from(decode('{encoded}', 'base64'), 'UTF8')"
+
+
+class ReleaseStore:
+    """Write reviewed observation revisions and read their rights-filtered releases."""
+
+    def __init__(self, database_url):
+        self.database_url = database_url
+
+    def _query(self, sql):
+        result = subprocess.run(
+            ["psql", "-XqAtw", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input=sql,
+            encoding="utf-8",
+            capture_output=True,
+            timeout=30,
+        )
+        if result.returncode:
+            raise ReleaseError(result.stderr.strip())
+        return result.stdout.strip()
+
+    def migrate(self):
+        for migration in ("schema.sql", "research.sql", "resolution.sql"):
+            self._query(Path(__file__).with_name(migration).read_text(encoding="utf-8"))
+
+    def publish(self, observation):
+        validate(observation)
+        payload = _sql_text(json.dumps(observation, ensure_ascii=False))
+        return self._query(f"SELECT fastest_release.publish_observation({payload}::jsonb);")
+
+    def publish_agent_task(self, records, expires_at=None):
+        from fastest_agent_task.publication import report_artifacts
+
+        if not records:
+            raise InvalidObservation("Agent task publication requires at least one reviewed record")
+        if expires_at is not None and not valid_expiry(expires_at):
+            raise InvalidObservation("Agent task rights expiry requires a UTC timestamp at second precision")
+        files = report_artifacts(records)
+        dataset = json.loads(files["agent-task.json"])
+        identifiers = ",".join(
+            f"'{uuid.UUID(context['review']['evidence_id'])}'::uuid"
+            for context in dataset["contexts"] if context["review"]
+        )
+        payload = _sql_text(json.dumps(files, ensure_ascii=False))
+        expiry = "NULL" if expires_at is None else _sql_text(expires_at)
+        return self._query(
+            f"SELECT fastest_release.publish_agent_task({payload}::jsonb, "
+            f"ARRAY[{identifiers}], {expiry}::timestamptz);"
+        )
+
+    def read_agent_task_artifact(self, pin, artifact):
+        result = self._query(
+            f"SELECT fastest_release.read_agent_task_artifact({_sql_text(pin)}, {_sql_text(artifact)});"
+        )
+        if not result:
+            raise ReleaseNotFound(pin)
+        return json.loads(result)
+
+    def read(self, release_id=None):
+        requested = "NULL" if release_id in (None, "current") else f"'{uuid.UUID(release_id)}'::uuid"
+        result = self._query(f"SELECT fastest_release.read_release({requested});")
+        if not result:
+            raise ReleaseNotFound(release_id or "current")
+        return json.loads(result)
+
+    def read_evidence(self, evidence_id):
+        """Resolve one evidence ID to its latest rights-filtered release."""
+        identifier = uuid.UUID(evidence_id)
+        result = self._query(f"SELECT fastest_release.read_evidence('{identifier}'::uuid);")
+        if not result:
+            raise ReleaseNotFound(evidence_id)
+        return json.loads(result)
+
+    def read_contributor_receipt(self, receipt_id):
+        identifier = uuid.UUID(receipt_id)
+        result = self._query(f"SELECT fastest_release.read_contributor_receipt('{identifier}'::uuid);")
+        if not result:
+            raise ReleaseNotFound("Contributor receipt")
+        return json.loads(result)
+
+    def read_many(self, release_ids):
+        """Read explicitly pinned observations with one rights snapshot."""
+        if not release_ids:
+            return []
+        identifiers = ",".join(f"'{uuid.UUID(release_id)}'::uuid" for release_id in release_ids)
+        query = f"""
+            SELECT jsonb_agg(coalesce(fastest_release.read_release(id),
+                         jsonb_build_object('release_id', id, 'status', 'unavailable')) ORDER BY id)
+            FROM unnest(ARRAY[{identifiers}]) AS source(id);
+        """
+        return json.loads(self._query(query))
+
+    def artifact(self, release_id, name):
+        try:
+            return build_artifacts(self.read(release_id))[name]
+        except KeyError as error:
+            if error.args == (name,):
+                raise ReleaseNotFound(name) from error
+            raise
+
+    def withdraw(self, evidence_id, reason):
+        if not plain_text(reason):
+            raise InvalidObservation("withdrawal reason must be nonempty, single-line text")
+        evidence = uuid.UUID(evidence_id)
+        result = self._query(
+            f"SELECT fastest_release.withdraw_evidence('{evidence}'::uuid, {_sql_text(reason)});"
+        )
+        if result != "t":
+            raise ReleaseNotFound(evidence_id)

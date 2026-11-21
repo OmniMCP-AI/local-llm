@@ -1,0 +1,69 @@
+name: CPU baseline capture
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cpu-baseline.yml"
+      - "production/fastest_release/capture_cpu.py"
+      - "production/fastest_pilot_capture.py"
+      - "production/fastest_text/capture.py"
+      - "production/fastest_text/intake.py"
+      - "production/tests/test_cpu_baseline.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: >-
+      github.repository == 'OmniMCP-AI/local-llm' &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: production
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check the capture and replay boundary
+        run: python3 -B -m unittest discover -s tests -p test_cpu_baseline.py -v
+      - name: Acquire, check and replay the CPU capture
+        run: |
+          inputs=$(mktemp -d "$RUNNER_TEMP/cpu-baseline-inputs.XXXXXX")
+          cleanup_inputs() {
+            python3 -B -c 'import shutil, sys; shutil.rmtree(sys.argv[1])' "$inputs"
+          }
+          trap cleanup_inputs EXIT
+          export TMPDIR="$inputs"
+
+          download() {
+            curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+              --connect-timeout 15 --max-time 180 --retry 2 --retry-max-time 120 "$1" --output "$2"
+          }
+          runtime_url=$(python3 -B -c 'from fastest_release.capture_cpu import ARCHIVE_URL; print(ARCHIVE_URL)')
+          model_url=$(python3 -B -c 'from fastest_release.capture_cpu import MODEL_URL; print(MODEL_URL)')
+          download "$runtime_url" "$inputs/runtime.zip"
+          download "$model_url" "$inputs/model.gguf"
+          python3 -B -m fastest_release.capture_cpu capture "$inputs/runtime.zip" "$inputs/model.gguf" "$RUNNER_TEMP/cpu-baseline"
+          python3 -B -m fastest_release.capture_cpu verify "$RUNNER_TEMP/cpu-baseline"
+          sha256sum "$RUNNER_TEMP/cpu-baseline/receipt.json"
+      - name: Retain the candidate and measurement evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cpu-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cpu-baseline/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Remove the runner's copy of the packet
+        if: always()
+        run: |
+          if [[ -d "$RUNNER_TEMP/cpu-baseline" ]]; then
+            python3 -B -c 'import shutil, sys; shutil.rmtree(sys.argv[1])' "$RUNNER_TEMP/cpu-baseline"
+          fi
+          test ! -e "$RUNNER_TEMP/cpu-baseline"

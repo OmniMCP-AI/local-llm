@@ -1,0 +1,653 @@
+{
+  "rtx-4090": {
+    "file": "rtx-4090.jpg",
+    "credit": "Benlisquare / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Benlisquare",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Asus_Strix_RTX_4090.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "ASUS ROG Strix GeForce RTX 4090 graphics card"
+  },
+  "rtx-3090": {
+    "file": "rtx-3090.jpg",
+    "credit": "Adam Kapetanakis / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Adam Kapetanakis",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RTX_3090_Founders_Edition.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "NVIDIA GeForce RTX 3090 Founders Edition graphics card"
+  },
+  "rtx-3060": {
+    "file": "rtx-3060.jpg",
+    "credit": "Qurren / Wikimedia Commons (CC BY-SA 4.0; resized)",
+    "author": "Qurren",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Zotac_GeForce_RTX_3060_12GB_VRAM_LHR_video_card.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Zotac GeForce RTX 3060 12 GB LHR graphics card"
+  },
+  "arc-b580": {
+    "file": "arc-b580.jpg",
+    "credit": "Jiahwang / Wikimedia Commons (CC0 1.0; resized)",
+    "author": "Jiahwang",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_Battlemage_B580_Limited_Edition.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Intel Arc B580 Limited Edition graphics card and packaging"
+  },
+  "dgx-spark-front": {
+    "file": "dgx-spark-front.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_front_view_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Front of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "dgx-spark-oblique": {
+    "file": "dgx-spark-oblique.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_Spark_oblique_view_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Three-quarter view of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "dgx-spark-ports": {
+    "file": "dgx-spark-ports.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_Spark_rear_ports_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Rear ports of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-bench": {
+    "file": "cangemi-wrx90-bench.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/bench-assembly.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "WRX90 bench assembly before chassis installation",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-gpu-spacing": {
+    "file": "cangemi-wrx90-gpu-spacing.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/gpu-slot-gap.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "Spacing between the two RTX 3090 Founders Edition cards",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-airflow": {
+    "file": "cangemi-wrx90-airflow.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/airflow-layout.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "Builder-annotated airflow in the completed WRX90 system",
+    "scope": "machine"
+  },
+  "canales-rigup-open": {
+    "file": "canales-rigup-open.jpg",
+    "credit": "Gustavo Canales / GitHub (resized)",
+    "author": "Gustavo Canales",
+    "license": "MIT",
+    "source": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/docs/build/rig-open.jpg",
+    "licenseUrl": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/LICENSE",
+    "noticeFile": "canales-media-notice.txt",
+    "alt": "Fractal Terra build with its panel removed and RTX 3090 visible",
+    "scope": "machine"
+  },
+  "canales-rigup-closed": {
+    "file": "canales-rigup-closed.jpg",
+    "credit": "Gustavo Canales / GitHub (resized)",
+    "author": "Gustavo Canales",
+    "license": "MIT",
+    "source": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/docs/build/rig-closed.jpg",
+    "licenseUrl": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/LICENSE",
+    "noticeFile": "canales-media-notice.txt",
+    "alt": "Fractal Terra build with its side panel installed",
+    "scope": "machine"
+  },
+  "rx-9070-xt-pulse-fans": {
+    "file": "rx-9070-xt-pulse-fans.jpg",
+    "credit": "Chaddy / Wikimedia Commons (resized)",
+    "author": "Chaddy",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sapphire_Pulse_Radeon_RX_9070_XT_-_L%C3%BCfter_1.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Sapphire PULSE Radeon RX 9070 XT fan side",
+    "scope": "gpu"
+  },
+  "rx-9070-xt-pulse-backplate": {
+    "file": "rx-9070-xt-pulse-backplate.jpg",
+    "credit": "Chaddy / Wikimedia Commons (resized)",
+    "author": "Chaddy",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sapphire_Pulse_Radeon_RX_9070_XT_-_Backplate_2.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Sapphire PULSE Radeon RX 9070 XT backplate",
+    "scope": "gpu"
+  },
+  "rx-9070-xt-pulse-side": {
+    "file": "rx-9070-xt-pulse-side.jpg",
+    "credit": "Chaddy / Wikimedia Commons (resized)",
+    "author": "Chaddy",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sapphire_Pulse_Radeon_RX_9070_XT_-_Seitenansicht.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Sapphire PULSE Radeon RX 9070 XT side profile",
+    "scope": "gpu"
+  },
+  "rx-7900-xtx-sapphire": {
+    "file": "rx-7900-xtx-sapphire.jpg",
+    "credit": "Geni / Wikimedia Commons (resized)",
+    "author": "Geni",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sapphire_AMD_Radeon_RX_7900_XTX.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Sapphire AMD Radeon RX 7900 XTX",
+    "scope": "gpu"
+  },
+  "arc-a770-limited-front": {
+    "file": "arc-a770-limited-front.jpg",
+    "credit": "Telaneo / Wikimedia Commons (resized)",
+    "author": "Telaneo",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_A770_front.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Intel Arc A770 16 GB Limited Edition fan side",
+    "scope": "gpu"
+  },
+  "arc-a770-limited-power": {
+    "file": "arc-a770-limited-power.jpg",
+    "credit": "Telaneo / Wikimedia Commons (resized)",
+    "author": "Telaneo",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_A770_side_with_Rubik%27s_Cube.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Intel Arc A770 16 GB Limited Edition power connectors",
+    "scope": "gpu"
+  },
+  "arc-a770-limited-ports": {
+    "file": "arc-a770-limited-ports.jpg",
+    "credit": "Telaneo / Wikimedia Commons (resized)",
+    "author": "Telaneo",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_A770_rear.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Intel Arc A770 16 GB Limited Edition display-output bracket",
+    "scope": "gpu"
+  },
+  "gtx-1660-ti-gigabyte-front": {
+    "file": "gtx-1660-ti-gigabyte-front.jpg",
+    "credit": "Chi Ho Chan from Hong Kong / Wikimedia Commons (resized)",
+    "author": "Chi Ho Chan from Hong Kong",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gigabyte_GTX_1660_Ti_graphics_card_(51993493927).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "alt": "Gigabyte GTX 1660 Ti graphics card",
+    "scope": "gpu"
+  },
+  "rtx-3050-ventus-front": {
+    "file": "rtx-3050-ventus-front.jpg",
+    "credit": "ITEagle Europe - Sebastiaan Broekhoven / Wikimedia Commons (resized)",
+    "author": "ITEagle Europe - Sebastiaan Broekhoven",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:MSI_GeForce_RTX_3050_Ventus_2X_E_6G_OC_-_front_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "MSI GeForce RTX 3050 Ventus 2X E 6G OC fan side",
+    "scope": "gpu"
+  },
+  "rtx-3050-ventus-rear": {
+    "file": "rtx-3050-ventus-rear.jpg",
+    "credit": "ITEagle Europe - Sebastiaan Broekhoven / Wikimedia Commons (resized)",
+    "author": "ITEagle Europe - Sebastiaan Broekhoven",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:MSI_GeForce_RTX_3050_Ventus_2X_E_6G_OC_-_rear_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "MSI GeForce RTX 3050 Ventus 2X E 6G OC rear side",
+    "scope": "gpu"
+  },
+  "rtx-2060-gigabyte-front": {
+    "file": "rtx-2060-gigabyte-front.jpg",
+    "credit": "ITEagle Europe - Sebastiaan Broekhoven / Wikimedia Commons (resized)",
+    "author": "ITEagle Europe - Sebastiaan Broekhoven",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gigabyte_RTX_2060_OC_6G_GV-N2060OC-6GD_rev._2.0_-_front_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Gigabyte GeForce RTX 2060 OC 6G rev. 2.0 fan side",
+    "scope": "gpu"
+  },
+  "rtx-2060-gigabyte-rear": {
+    "file": "rtx-2060-gigabyte-rear.jpg",
+    "credit": "ITEagle Europe - Sebastiaan Broekhoven / Wikimedia Commons (resized)",
+    "author": "ITEagle Europe - Sebastiaan Broekhoven",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gigabyte_RTX_2060_OC_6G_GV-N2060OC-6GD_rev._2.0_-_rear_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Gigabyte GeForce RTX 2060 OC 6G rev. 2.0 rear side",
+    "scope": "gpu"
+  },
+  "rtx-2070-strix-front": {
+    "file": "rtx-2070-strix-front.jpg",
+    "credit": "Michael Wolf / Wikimedia Commons (resized)",
+    "author": "Michael Wolf",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:ASUS_GeForce_RTX_2070_ROG_STRIX_Advanced_-_8GB_GDDR6_1632.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "alt": "Fan side of the ASUS GeForce RTX 2070 ROG STRIX Advanced - 8GB GDDR6",
+    "scope": "gpu"
+  },
+  "rtx-2070-strix-side": {
+    "file": "rtx-2070-strix-side.jpg",
+    "credit": "Michael Wolf / Wikimedia Commons (resized)",
+    "author": "Michael Wolf",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:ASUS_GeForce_RTX_2070_ROG_STRIX_Advanced_-_8GB_GDDR6_1640.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "alt": "Side of the ASUS GeForce RTX 2070 ROG STRIX Advanced - 8GB GDDR6",
+    "scope": "gpu"
+  },
+  "rtx-2070-super-colorful": {
+    "file": "rtx-2070-super-colorful.jpg",
+    "credit": "KMBDENNISTRIDENT / Wikimedia Commons (resized)",
+    "author": "KMBDENNISTRIDENT",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Colorful_Nvidia_GeForce_RTX_2070_Super_in_case.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Colorful GeForce RTX 2070 Super installed in a PC",
+    "scope": "gpu"
+  },
+  "rtx-2080-msi-trio-fans": {
+    "file": "rtx-2080-msi-trio-fans.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_MSI_GeForce_RTX_2080_Gaming_X_Trio_(5).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "MSI GeForce RTX 2080 Gaming X Trio fan side",
+    "scope": "gpu"
+  },
+  "rtx-2080-msi-trio-backplate": {
+    "file": "rtx-2080-msi-trio-backplate.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_MSI_GeForce_RTX_2080_Gaming_X_Trio_(1).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "MSI GeForce RTX 2080 Gaming X Trio backplate",
+    "scope": "gpu"
+  },
+  "rtx-2080-msi-trio-oblique": {
+    "file": "rtx-2080-msi-trio-oblique.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_MSI_GeForce_RTX_2080_Gaming_X_Trio_(3).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "MSI GeForce RTX 2080 Gaming X Trio oblique view",
+    "scope": "gpu"
+  },
+  "rtx-3080-strix-gundam": {
+    "file": "rtx-3080-strix-gundam.jpg",
+    "credit": "Solomon203 / Wikimedia Commons (resized)",
+    "author": "Solomon203",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:ASUS_ROG_STRIX-RTX3080-O10G-Gundam_20210131.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "ASUS ROG Strix GeForce RTX 3080 10 GB Gundam Edition",
+    "scope": "gpu"
+  },
+  "rtx-3090-eagle-front": {
+    "file": "rtx-3090-eagle-front.jpg",
+    "credit": "PantheraLeo1359531 / Wikimedia Commons (resized)",
+    "author": "PantheraLeo1359531",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gigabyte_GeForce_RTX_3090_Eagle_OC_24G,_24576_MiB_GDDR6X_Front_20201114_DSC5880.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Gigabyte GeForce RTX 3090 EAGLE OC 24G fan side",
+    "scope": "gpu"
+  },
+  "rtx-3090-eagle-backplate": {
+    "file": "rtx-3090-eagle-backplate.jpg",
+    "credit": "PantheraLeo1359531 / Wikimedia Commons (resized)",
+    "author": "PantheraLeo1359531",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gigabyte_GeForce_RTX_3090_Eagle_OC_24G,_24576_MiB_GDDR6X_Backplate_20201114_HDR.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Gigabyte GeForce RTX 3090 EAGLE OC 24G backplate",
+    "scope": "gpu"
+  },
+  "rtx-4070-aero-fans": {
+    "file": "rtx-4070-aero-fans.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_Gigabyte_GeForce_RTX_4070_Aero_OC_12GB_(6).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Gigabyte GeForce RTX 4070 AERO OC 12 GB fan side",
+    "scope": "gpu"
+  },
+  "rtx-4070-aero-backplate": {
+    "file": "rtx-4070-aero-backplate.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_Gigabyte_GeForce_RTX_4070_Aero_OC_12GB_(1).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Gigabyte GeForce RTX 4070 AERO OC 12 GB backplate",
+    "scope": "gpu"
+  },
+  "rtx-4070-aero-oblique": {
+    "file": "rtx-4070-aero-oblique.jpg",
+    "credit": "Jacek Halicki / Wikimedia Commons (resized)",
+    "author": "Jacek Halicki",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_Gigabyte_GeForce_RTX_4070_Aero_OC_12GB_(4).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Gigabyte GeForce RTX 4070 AERO OC 12 GB oblique view",
+    "scope": "gpu"
+  },
+  "rtx-4090-strix-underside": {
+    "file": "rtx-4090-strix-underside.jpg",
+    "credit": "Benlisquare / Wikimedia Commons (resized)",
+    "author": "Benlisquare",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Underside_of_Asus_Strix_RTX_4090.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Underside of the ASUS ROG Strix GeForce RTX 4090",
+    "scope": "gpu"
+  },
+  "rtx-4090-strix-installed": {
+    "file": "rtx-4090-strix-installed.jpg",
+    "credit": "Benlisquare / Wikimedia Commons (resized)",
+    "author": "Benlisquare",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Asus_Strix_RTX_4090_operational_corner_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "ASUS ROG Strix GeForce RTX 4090 installed and powered on",
+    "scope": "gpu"
+  },
+  "rtx-5060-pny-dual-fan": {
+    "file": "rtx-5060-pny-dual-fan.jpg",
+    "credit": "4300streetcar / Wikimedia Commons (resized)",
+    "author": "4300streetcar",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:PNY_RTX_5060_at_Computex_2025.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "PNY GeForce RTX 5060 displayed at Computex 2025",
+    "scope": "gpu"
+  },
+  "rtx-5060-pny-short": {
+    "file": "rtx-5060-pny-short.jpg",
+    "credit": "4300streetcar / Wikimedia Commons (resized)",
+    "author": "4300streetcar",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:PNY_short_RTX_5060_at_Computex_2025.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Short PNY GeForce RTX 5060 displayed at Computex 2025",
+    "scope": "gpu"
+  },
+  "rtx-5060-ti-pny-front": {
+    "file": "rtx-5060-ti-pny-front.jpg",
+    "credit": "FreeMediaKid! / Wikimedia Commons (resized)",
+    "author": "FreeMediaKid!",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_GeForce_RTX_5060_Ti_16GB,_PNY_Overclocked_Dual_Fan,_front.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "PNY GeForce RTX 5060 Ti 16 GB Overclocked Dual Fan fan side",
+    "scope": "gpu"
+  },
+  "rtx-5060-ti-pny-backplate": {
+    "file": "rtx-5060-ti-pny-backplate.jpg",
+    "credit": "FreeMediaKid! / Wikimedia Commons (resized)",
+    "author": "FreeMediaKid!",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_GeForce_RTX_5060_Ti_16GB,_PNY_Overclocked_Dual_Fan,_rear.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "PNY GeForce RTX 5060 Ti 16 GB Overclocked Dual Fan backplate",
+    "scope": "gpu"
+  },
+  "rtx-5070-ti-pny": {
+    "file": "rtx-5070-ti-pny.jpg",
+    "credit": "4300streetcar / Wikimedia Commons (resized)",
+    "author": "4300streetcar",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:PNY_RTX_5070_Ti_at_Computex_2025.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "PNY GeForce RTX 5070 Ti displayed at Computex 2025",
+    "scope": "gpu"
+  },
+  "rtx-5080-founders": {
+    "file": "rtx-5080-founders.jpg",
+    "credit": "XD7006 / Wikimedia Commons (converted to JPEG)",
+    "author": "XD7006",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RTX_5080.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "NVIDIA GeForce RTX 5080 Founders Edition",
+    "scope": "gpu"
+  },
+  "rtx-5090-palit-oblique": {
+    "file": "rtx-5090-palit-oblique.jpg",
+    "credit": "PantheraLeo1359531 / Wikimedia Commons (resized and converted to JPEG)",
+    "author": "PantheraLeo1359531",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Palit_GeForce_RTX_5090_Gamerock_20250530_HOF4166_RAW-Export.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Palit GeForce RTX 5090 GameRock from the fan and display-output side",
+    "scope": "gpu"
+  },
+  "rtx-5090-palit-top": {
+    "file": "rtx-5090-palit-top.jpg",
+    "credit": "PantheraLeo1359531 / Wikimedia Commons (resized and converted to JPEG)",
+    "author": "PantheraLeo1359531",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Palit_GeForce_RTX_5090_Gamerock_20250530_HOF4032.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Palit GeForce RTX 5090 GameRock from above",
+    "scope": "gpu"
+  },
+  "rtx-5090-palit-detail": {
+    "file": "rtx-5090-palit-detail.jpg",
+    "credit": "PantheraLeo1359531 / Wikimedia Commons (resized and converted to JPEG)",
+    "author": "PantheraLeo1359531",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Palit_GeForce_RTX_5090_Gamerock_20250530_HOF3973-HDR_RAW-Export.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "Palit GeForce RTX 5090 GameRock close-up",
+    "scope": "gpu"
+  },
+  "h100-pcie-stacked": {
+    "file": "h100-pcie-stacked.jpg",
+    "credit": "极客湾Geekerwan / video still via Wikimedia Commons (resized and converted to JPEG)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_024.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "Four NVIDIA H100 PCIe cards showing their side profiles",
+    "scope": "gpu"
+  },
+  "h100-pcie-brackets": {
+    "file": "h100-pcie-brackets.jpg",
+    "credit": "极客湾Geekerwan / video still via Wikimedia Commons (resized and converted to JPEG)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_029.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "NVIDIA H100 PCIe cards showing their mounting brackets",
+    "scope": "gpu"
+  },
+  "tesla-p40-heatsink-removed": {
+    "file": "tesla-p40-heatsink-removed.jpg",
+    "credit": "Tim Sheerman-Chase / Wikimedia Commons (resized)",
+    "author": "Tim Sheerman-Chase",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_P40_with_Heatsink_Removed.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "NVIDIA Tesla P40 with heatsink removed",
+    "scope": "gpu"
+  },
+  "arc-pro-b70-top": {
+    "file": "arc-pro-b70-top.jpg",
+    "credit": "Biggo Finance / Wikimedia Commons (resized)",
+    "author": "Biggo Finance",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_Pro_B70_-_two_cards_top_view.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Two Intel Arc Pro B70 blower graphics cards viewed from above",
+    "scope": "gpu"
+  },
+  "gtx-1660-asus-tuf-x3": {
+    "file": "gtx-1660-asus-tuf-x3.jpg",
+    "credit": "Solomon203 / Wikimedia Commons (resized)",
+    "author": "Solomon203",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:ASUS_TUF_Gaming_X3_20190601.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "ASUS TUF Gaming X3 GeForce GTX 1660 photographed at Computex 2019",
+    "scope": "gpu"
+  },
+  "rtx-2060-super-installed": {
+    "file": "rtx-2060-super-installed.jpg",
+    "credit": "Keijiro Takahashi / Wikimedia Commons (resized)",
+    "author": "Keijiro Takahashi",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Graphics_Card_Upgrading_-_49259431802.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "GeForce RTX 2060 Super installed in an NFC Skyreach 4 MINI build",
+    "scope": "gpu"
+  },
+  "rtx-2080-super-gigabyte-fans": {
+    "file": "rtx-2080-super-gigabyte-fans.jpg",
+    "credit": "HiyoriX / Wikimedia Commons (resized)",
+    "author": "HiyoriX",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:GeForce_RTX_2080_Super_Gigabyte_Variant_Front.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "alt": "Gigabyte GeForce RTX 2080 Super Gaming OC fan side",
+    "scope": "gpu"
+  },
+  "rtx-2080-ti-closeup": {
+    "file": "rtx-2080-ti-closeup.jpg",
+    "credit": "Iosef Stalin / Wikimedia Commons (resized)",
+    "author": "Iosef Stalin",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RTX-2080Ti.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "GeForce RTX 2080 Ti graphics card close-up",
+    "scope": "gpu"
+  },
+  "rtx-3070-msi-ventus": {
+    "file": "rtx-3070-msi-ventus.jpg",
+    "credit": "TheStriker / Wikimedia Commons (resized)",
+    "author": "TheStriker",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:MSI_GeForce_RTX_3070_VENTUS_3X_OC.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "MSI GeForce RTX 3070 VENTUS 3X OC graphics card",
+    "scope": "gpu"
+  },
+  "rtx-5070-asus-view": {
+    "file": "rtx-5070-asus-view.jpg",
+    "credit": "Striker9498 / Wikimedia Commons (resized)",
+    "author": "Striker9498",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:20260521_%EC%95%84%EC%88%98%EC%8A%A4_RTX5070_%EA%B7%B8%EB%9E%98%ED%94%BD%EC%B9%B4%EB%93%9C.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "ASUS GeForce RTX 5070 graphics card",
+    "scope": "gpu"
+  },
+  "rx-6600-xt-asus-dual": {
+    "file": "rx-6600-xt-asus-dual.jpg",
+    "credit": "Chi Ho Chan from Hong Kong / Wikimedia Commons (resized)",
+    "author": "Chi Ho Chan from Hong Kong",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Asus_AMD_RX_6600_XT_GPU._With_dual_fan._(52000339764).jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "alt": "ASUS Dual Radeon RX 6600 XT dual-fan graphics card",
+    "scope": "gpu"
+  },
+  "rx-6800-xt-reference-front": {
+    "file": "rx-6800-xt-reference-front.jpg",
+    "credit": "Vitaly Zdanevich / Wikimedia Commons (resized)",
+    "author": "Vitaly Zdanevich",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Amd-radeon-rx6800xt-from2020year-front.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "AMD Radeon RX 6800 XT reference graphics card, front view",
+    "scope": "gpu"
+  },
+  "rx-6900-xt-reference": {
+    "file": "rx-6900-xt-reference.jpg",
+    "credit": "Verte95 / Wikimedia Commons (resized)",
+    "author": "Verte95",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:AMD_RX_6900XT_.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "AMD Radeon RX 6900 XT reference graphics card",
+    "scope": "gpu"
+  },
+  "rx-7900-xt-reference": {
+    "file": "rx-7900-xt-reference.jpg",
+    "credit": "Shinobara / Wikimedia Commons (source crop and resized)",
+    "author": "Shinobara",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:RX7900XT_crop.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "alt": "AMD Radeon RX 7900 XT reference graphics card, source crop",
+    "scope": "gpu"
+  },
+  "rtx-4060-review-still": {
+    "file": "rtx-4060-review-still.jpg",
+    "credit": "极客湾Geekerwan / Wikimedia Commons (converted to JPEG and resized)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Video_%C3%BCber_die_GeForce_RTX_4060_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_10.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "ASUS dual-fan GeForce RTX 4060 shown in Geekerwan's review",
+    "scope": "gpu"
+  },
+  "rtx-4070-super-review-still": {
+    "file": "rtx-4070-super-review-still.jpg",
+    "credit": "极客湾Geekerwan / Wikimedia Commons (converted to JPEG and resized)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Video_%C3%BCber_die_RTX_4070_Super_und_Vergleichskarten_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_02.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "GeForce RTX 4070 Super graphics card shown in Geekerwan's review",
+    "scope": "gpu"
+  },
+  "rtx-4080-super-review-still": {
+    "file": "rtx-4080-super-review-still.jpg",
+    "credit": "极客湾Geekerwan / Wikimedia Commons (converted to JPEG and resized)",
+    "author": "极客湾Geekerwan",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Video_%C3%BCber_die_RTX_4080_Super_und_Vergleichskarten_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_07.png",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "GeForce RTX 4080 Super graphics card shown in Geekerwan's review",
+    "scope": "gpu"
+  },
+  "rtx-5060-ti-show-card": {
+    "file": "rtx-5060-ti-show-card.jpg",
+    "credit": "Striker9498 / Wikimedia Commons (resized)",
+    "author": "Striker9498",
+    "license": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:20260521_RTX5060_TI_%EA%B7%B8%EB%9E%98%ED%94%BD%EC%B9%B4%EB%93%9C.jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "ASUS T1 GeForce RTX 5060 Ti OC Edition with its 8 GB exhibit placard",
+    "scope": "gpu"
+  }
+}

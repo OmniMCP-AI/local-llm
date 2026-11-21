@@ -1,0 +1,26 @@
+name: Request a benchmark
+description: Suggest a machine, model, or workload for fastest.ai to measure.
+title: "[Benchmark request] "
+body:
+  - type: markdown
+    attributes:
+      value: This issue will be public. Keep private feedback, receipt links, credentials, and personal information out of it.
+  - type: textarea
+    id: configuration
+    attributes:
+      label: What should we test?
+      description: Include the exact hardware, model revision or quantization, and runtime if known.
+    validations:
+      required: true
+  - type: textarea
+    id: workload
+    attributes:
+      label: Workload and decision
+      description: Describe the workload, the metric you need, and what the result would help you decide.
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Public reference
+      description: Link a relevant fastest.ai page, model, setup, or benchmark if you have one.

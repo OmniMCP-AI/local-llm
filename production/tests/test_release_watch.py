@@ -1,0 +1,945 @@
+from contextlib import closing, redirect_stderr
+from copy import deepcopy
+from io import BytesIO, StringIO
+import json
+import os
+from pathlib import Path
+import shutil
+import signal
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+from uuid import uuid4
+
+from fastest_release import ReleaseStore
+from fastest_release_watch.__main__ import main as watch_main
+from fastest_release_watch.feed import decode
+from fastest_release_watch.postgres import PostgresStore
+from test_public_api import api_client
+
+
+PRODUCTION = Path(__file__).resolve().parents[1]
+REPOSITORY = "ggml-org/llama.cpp"
+DAY_ONE = "2026-11-20T01:00:00Z"
+DAY_TWO = "2026-11-21T01:00:00Z"
+EXPANDED_FEEDS = {
+    "mlx-lm": ("MLX LM", "ml-explore/mlx-lm", "v0.32.2"),
+    "openvino": ("OpenVINO GenAI", "openvinotoolkit/openvino.genai", "2026.4.1.0"),
+    "aiter": ("AMD AITER", "ROCm/aiter", "v0.1.29.post1"),
+}
+
+
+def github_release(release_id, tag, published_at, *, body="Original notes", prerelease=False,
+                   repository=REPOSITORY):
+    return {
+        "id": release_id,
+        "tag_name": tag,
+        "url": f"https://api.github.com/repos/{repository}/releases/{release_id}",
+        "html_url": f"https://github.com/{repository}/releases/tag/{tag}",
+        "name": tag,
+        "published_at": published_at,
+        "draft": False,
+        "prerelease": prerelease,
+        "immutable": False,
+        "target_commitish": "master",
+        "body": body,
+        "assets": [],
+    }
+
+
+class ReleaseWatchScenarios:
+    def setUp(self):
+        self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="release-watch-20-")))
+        self.feed = self.directory / "feed.json"
+
+    def prepare_history(self):
+        pass
+
+    def refresh(self, rows, at, *options, success=True):
+        self.feed.write_text(json.dumps(rows), encoding="utf-8")
+        result = self.invoke("refresh", "--fixture", self.feed, "--observed-at", at, *options)
+        if success:
+            self.assertEqual(result.returncode, 0, result.stderr)
+        else:
+            self.assertNotEqual(result.returncode, 0)
+        return result
+
+    def report(self, as_of=DAY_TWO, *options):
+        result = self.invoke("report", "--as-of", as_of, *options)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_official_feeds_keep_independent_history_and_freshness(self):
+        self.prepare_history()
+        llama = github_release(100, "b100", DAY_ONE)
+        vllm = github_release(100, "v0.34.0", DAY_ONE, repository="vllm-project/vllm")
+        sglang = github_release(100, "v0.5.23", DAY_TWO, repository="sgl-project/sglang")
+        ollama = github_release(100, "v0.40.17", DAY_TWO, repository="ollama/ollama")
+        self.refresh([llama], DAY_ONE)
+        self.refresh([vllm], DAY_ONE, "--source", "vllm")
+        self.refresh([sglang], DAY_TWO, "--source", "sglang")
+        self.refresh([ollama], DAY_TWO, "--source", "ollama")
+        self.refresh([ollama], DAY_TWO, "--source", "vllm", success=False)
+
+        report = self.report("2026-11-21T01:00:01Z")
+        sources = report["sources"]
+        self.assertEqual(sources["vllm"]["last_attempt"], DAY_TWO)
+        self.assertEqual(sources["vllm"]["last_successful_refresh"], DAY_ONE)
+        self.assertIn("official vLLM", sources["vllm"]["last_error"])
+        self.assertTrue(sources["vllm"]["stale"])
+        self.assertIsNone(sources["llama.cpp"]["last_error"])
+        self.assertEqual(report["last_successful_refresh"], DAY_ONE)
+        self.assertFalse(sources["sglang"]["stale"])
+        self.assertFalse(sources["ollama"]["stale"])
+        self.assertCountEqual(
+            [(r["runtime_id"], r["tag"], r["status"], r["applicability"]) for r in report["releases"]],
+            [
+                ("llama.cpp", "b100", "current", []),
+                ("vllm", "v0.34.0", "current", []),
+                ("sglang", "v0.5.23", "current", []),
+                ("ollama", "v0.40.17", "current", []),
+            ],
+        )
+
+    def test_expanded_feeds_keep_existing_history_and_their_own_release_status(self):
+        self.prepare_history()
+        for runtime_id, repository in (
+            ("llama.cpp", REPOSITORY), ("sglang", "sgl-project/sglang"),
+            ("vllm", "vllm-project/vllm"), ("ollama", "ollama/ollama"),
+        ):
+            self.refresh([github_release(100, "fixture-v1", DAY_ONE, repository=repository)],
+                         DAY_ONE, "--source", runtime_id)
+        before = self.report()
+        self.prepare_history()
+        for runtime_id, (_, repository, tag) in EXPANDED_FEEDS.items():
+            release = github_release(100, tag, DAY_ONE, repository=repository)
+            self.refresh([release], DAY_ONE, "--source", runtime_id)
+            self.refresh([release], DAY_ONE, "--source", runtime_id)
+        preview = github_release(101, "preview", DAY_TWO, prerelease=True, repository="ROCm/aiter")
+        self.refresh([preview], DAY_TWO, "--source", "aiter")
+        other_project = github_release(101, "fixture-v2", DAY_TWO, repository="alibaba/MNN")
+        self.refresh([other_project], DAY_TWO, "--source", "openvino", success=False)
+
+        report = self.report("2026-11-21T01:00:01Z")
+        for runtime_id, (name, repository, tag) in EXPANDED_FEEDS.items():
+            with self.subTest(runtime=runtime_id):
+                source = report["sources"][runtime_id]
+                self.assertEqual(source["name"], name)
+                self.assertEqual(source["feed_url"], f"https://api.github.com/repos/{repository}/releases?per_page=10&page=1")
+                expected_refresh = DAY_TWO if runtime_id == "aiter" else DAY_ONE
+                self.assertEqual(source["last_successful_refresh"], expected_refresh)
+                self.assertEqual(source["stale"], runtime_id != "aiter")
+                expected = [(tag, "current", f"https://github.com/{repository}/releases/tag/{tag}", [])]
+                if runtime_id == "aiter":
+                    expected.insert(0, ("preview", "prerelease", "https://github.com/ROCm/aiter/releases/tag/preview", []))
+                self.assertEqual(
+                    [(row["tag"], row["status"], row["source_url"], row["applicability"])
+                     for row in report["releases"] if row["runtime_id"] == runtime_id],
+                    expected,
+                )
+        self.assertEqual(report["sources"]["openvino"]["last_attempt"], DAY_TWO)
+        self.assertIn("official OpenVINO GenAI", report["sources"]["openvino"]["last_error"])
+        for runtime_id in ("llama.cpp", "sglang", "vllm", "ollama"):
+            self.assertEqual(
+                report["sources"][runtime_id],
+                {**before["sources"][runtime_id], "stale": True},
+            )
+        self.assertEqual([row for row in report["releases"] if row["runtime_id"] not in EXPANDED_FEEDS],
+                         before["releases"])
+        self.assertEqual(report["last_successful_refresh"], before["last_successful_refresh"])
+
+    def test_html_report_has_exact_target_for_each_runtime(self):
+        self.prepare_history()
+        rendered = self.invoke("report", "--as-of", DAY_TWO, "--format", "html")
+        self.assertEqual(rendered.returncode, 0, rendered.stderr)
+        for identifier, title in (
+            ("llama.cpp", "llama.cpp"), ("sglang", "SGLang"), ("vllm", "vLLM"), ("ollama", "Ollama"),
+            *((runtime_id, name) for runtime_id, (name, _, _) in EXPANDED_FEEDS.items()),
+        ):
+            self.assertIn(f'<h2 id="runtime-{identifier}">{title}</h2>', rendered.stdout)
+
+    def test_repeat_and_older_replay_preserve_revision_identity_and_last_success(self):
+        self.prepare_history()
+        older = github_release(100, "fixture-b1", "2026-11-19T01:00:00Z")
+        edited = {**older, "body": "<script>raw release text</script>"}
+        newer = github_release(101, "fixture-b2", DAY_TWO)
+        preview = github_release(102, "fixture-b3", DAY_TWO, prerelease=True)
+
+        self.refresh([older], DAY_ONE)
+        original = self.report()["releases"][0]["revision_id"]
+        self.refresh([edited, newer, preview], DAY_TWO)
+        updated = self.report()
+        self.refresh([preview, edited, newer], DAY_TWO)
+        self.refresh([older], DAY_ONE)
+        self.assertEqual(self.report(), updated)
+
+        late_edit_at = "2026-11-20T23:00:00Z"
+        self.refresh([{**older, "body": "Previously unobserved edit"}], late_edit_at)
+        with_late_edit = self.report()
+        self.assertEqual(with_late_edit["last_attempt"], DAY_TWO)
+        self.assertEqual(with_late_edit["last_successful_refresh"], DAY_TWO)
+        self.assertEqual(with_late_edit["releases"][:3], updated["releases"][:3])
+        self.assertEqual(with_late_edit["releases"][-2]["first_seen_at"], late_edit_at)
+        self.assertEqual(with_late_edit["releases"][-2]["status"], "superseded_revision")
+        self.assertEqual(with_late_edit["releases"][-1]["revision_id"], original)
+        self.assertEqual(updated["last_successful_refresh"], DAY_TWO)
+        self.assertEqual(updated["source"]["mode"], "fixture")
+        self.assertEqual(
+            [(r["tag"], r["status"]) for r in updated["releases"]],
+            [("fixture-b3", "prerelease"), ("fixture-b2", "current"),
+             ("fixture-b1", "superseded_release"), ("fixture-b1", "superseded_revision")],
+        )
+        self.assertEqual(updated["releases"][-1]["revision_id"], original)
+        self.assertEqual(updated["releases"][-1]["source_url"],
+                         "https://github.com/ggml-org/llama.cpp/releases/tag/fixture-b1")
+        self.assertNotIn("raw release text", json.dumps(updated))
+
+    def test_bad_feed_attempt_keeps_last_success_and_flags_stale_history(self):
+        self.prepare_history()
+        release = github_release(100, "fixture-b1", DAY_ONE)
+        self.refresh([release], DAY_ONE)
+        first_snapshot = self.report(DAY_ONE)
+        self.assertFalse(first_snapshot["stale"])
+        bad_release = {**github_release(101, "fixture-b2", DAY_TWO), "url": "https://other.example/releases/101"}
+        self.refresh([github_release(102, "fixture-b3", DAY_TWO), bad_release], DAY_TWO, success=False)
+
+        failed = self.report("2026-11-21T01:00:01Z")
+        self.assertEqual(failed["last_successful_refresh"], DAY_ONE)
+        self.assertEqual(failed["last_attempt"], DAY_TWO)
+        self.assertIn("official llama.cpp", failed["last_error"])
+        self.assertTrue(failed["stale"])
+        self.assertEqual(failed["releases"], first_snapshot["releases"])
+
+    def test_authored_note_links_only_the_named_card_configuration_and_revision(self):
+        self.prepare_history()
+        release = github_release(100, "fixture-b1", DAY_ONE)
+        self.refresh([release], DAY_ONE)
+        original = self.report()["releases"][0]["revision_id"]
+        self.refresh([{**release, "body": "Revised notes"}], DAY_TWO)
+        path = self.directory / "notes.json"
+        note = {
+            "id": "fixture-offload",
+            "revision_id": original,
+            "card_id": "nvidia-geforce-rtx-3060",
+            "source_url": "https://github.com/ggml-org/llama.cpp/tree/1111111111111111111111111111111111111111",
+            "source_label": "Synthetic fixture source",
+            "status": "suggested",
+            "technique": "Try <script>alert(1)</script> partial offload",
+            "prerequisites": "Native CUDA build",
+            "limits": "One 12 GiB board variant only",
+            "failure_modes": "Allocation can fail",
+            "configuration": {
+                "id": "fixture-ubuntu24-3060-12gb",
+                "variant": "GeForce RTX 3060 12 GiB",
+                "os": "Ubuntu 24.04.1",
+                "driver": "550.120",
+                "backend": "CUDA",
+                "build_sha": "1111111111111111111111111111111111111111",
+                "flags": ["--gpu-layers", "20"],
+                "workload_id": "solo-decode",
+                "workload_version": 1,
+                "model_artifact": "fixture/model@revision/configured.gguf",
+            },
+        }
+        path.write_text(json.dumps({"notes": [note]}), encoding="utf-8")
+        report = self.report(DAY_TWO, "--notes", path)
+        revised, older = report["releases"]
+        self.assertEqual(revised["applicability"], [])
+        application = older["applicability"][0]
+        self.assertEqual(application["card"]["id"], "nvidia-geforce-rtx-3060")
+        self.assertEqual(application["configuration"], note["configuration"])
+        self.assertEqual(application["status"], "suggested")
+        self.assertEqual(older["status"], "superseded_revision")
+        self.assertEqual(application["source_url"], note["source_url"])
+        self.assertEqual(application["build_url"],
+                         "https://github.com/ggml-org/llama.cpp/commit/1111111111111111111111111111111111111111")
+
+        for format_name in ("html", "markdown"):
+            with self.subTest(format=format_name):
+                rendered = self.invoke("report", "--as-of", DAY_TWO, "--notes", path, "--format", format_name)
+                self.assertEqual(rendered.returncode, 0, rendered.stderr)
+                self.assertIn("NVIDIA GeForce RTX 3060", rendered.stdout)
+                self.assertIn("550.120", rendered.stdout)
+                self.assertIn("Superseded revision", rendered.stdout)
+                self.assertIn("Suggested", rendered.stdout)
+                self.assertNotIn("<script>", rendered.stdout)
+
+        for correction in ({"card_id": "any-rtx"}, {"revision_id": "unknown"}, {"measured_gain": "10%"},
+                           {"status": "fastest_ai_verified"}, {"source_url": "javascript:alert(1)"}):
+            with self.subTest(correction=correction):
+                path.write_text(json.dumps({"notes": [{**note, **correction}]}), encoding="utf-8")
+                rejected = self.invoke("report", "--as-of", DAY_TWO, "--notes", path)
+                self.assertNotEqual(rejected.returncode, 0)
+                self.assertEqual(rejected.stdout, "")
+
+
+class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.database = self.directory / "watch.sqlite3"
+
+    def invoke(self, *options):
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--db", self.database, *options],
+            cwd=PRODUCTION,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+
+    def test_origin_watch_configuration_requires_database_and_explicit_enablement(self):
+        for option, expected in (
+            (["--runtime-release-watch"], "requires FASTEST_DATABASE_URL or --database-url"),
+            (["--runtime-release-watch-notes", "reviewed.json"], "requires --runtime-release-watch"),
+            (["--runtime-release-watch-notes-revision", "0" * 64], "requires --runtime-release-watch"),
+        ):
+            with self.subTest(option=option):
+                result = subprocess.run(
+                    [sys.executable, "-B", "-m", "fastest_release", "--database-url", "",
+                     "serve", *option],
+                    cwd=PRODUCTION, capture_output=True, text=True, timeout=5,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(expected, result.stderr)
+
+    def test_official_request_rejects_redirects_without_following_them(self):
+        from fastest_release_watch.feed import fetch
+
+        with patch("http.client.HTTPSConnection") as transport:
+            connection = transport.return_value
+            connection.getresponse.return_value = BytesIO(b"")
+            connection.getresponse.return_value.status = 302
+            with self.assertRaisesRegex(ValueError, "HTTP 302"):
+                fetch()
+            connection.request.assert_called_once()
+            self.assertEqual(connection.request.call_args.args,
+                             ("GET", "/repos/ggml-org/llama.cpp/releases?per_page=10&page=1"))
+
+    def test_all_live_refreshes_continue_after_feed_failure(self):
+        feeds = {
+            "ggml-org/llama.cpp": "b100",
+            "sgl-project/sglang": "v0.5.23",
+            "vllm-project/vllm": None,
+            "ollama/ollama": "v0.40.17",
+            **{repository: tag for _, repository, tag in EXPANDED_FEEDS.values()},
+        }
+
+        def response(_, path, **kwargs):
+            repository = path.removeprefix("/repos/").split("/releases?")[0]
+            tag = feeds[repository]
+            rows = [github_release(100, tag, DAY_ONE, repository=repository)] if tag else []
+            body = BytesIO(json.dumps(rows).encode())
+            body.status = 200 if tag else 429
+            transport.return_value.getresponse.return_value = body
+
+        argv = ["fastest_release_watch", "--db", str(self.database), "refresh", "--source", "all"]
+        with patch.object(sys, "argv", argv), patch("http.client.HTTPSConnection") as transport, \
+                redirect_stderr(StringIO()) as stderr:
+            transport.return_value.request.side_effect = response
+            with self.assertRaises(SystemExit) as result:
+                watch_main()
+        self.assertEqual(result.exception.code, 1)
+        self.assertIn("vllm: GitHub release feed returned HTTP 429", stderr.getvalue())
+
+        report = self.report()
+        self.assertCountEqual([r["runtime_id"] for r in report["releases"]],
+                              ["llama.cpp", "sglang", "ollama", *EXPANDED_FEEDS])
+        self.assertIsNone(report["sources"]["vllm"]["last_successful_refresh"])
+        self.assertIn("HTTP 429", report["sources"]["vllm"]["last_error"])
+        self.assertIsNotNone(report["sources"]["ollama"]["last_successful_refresh"])
+
+    def test_existing_sqlite_history_remains_readable_and_survives_first_new_source(self):
+        row, = decode(json.dumps([github_release(100, "legacy-b100", DAY_ONE)]).encode())
+        with closing(sqlite3.connect(self.database)) as db, db:
+            db.executescript("""
+                CREATE TABLE source_status (
+                    id INTEGER PRIMARY KEY CHECK (id = 1), mode TEXT NOT NULL,
+                    last_attempt TEXT, last_error TEXT, last_success TEXT
+                );
+                CREATE TABLE release_revision (
+                    revision_id TEXT PRIMARY KEY NOT NULL, release_id INTEGER NOT NULL,
+                    observed_at TEXT NOT NULL, document TEXT NOT NULL
+                );
+            """)
+            db.execute("INSERT INTO source_status VALUES (1, 'fixture', ?, NULL, ?)", (DAY_ONE, DAY_ONE))
+            db.execute("INSERT INTO release_revision VALUES (?, 100, ?, ?)",
+                       (row["revision_id"], DAY_ONE, json.dumps(row)))
+        before = self.report()
+        self.assertEqual(before["releases"][0]["revision_id"], row["revision_id"])
+        self.assertEqual(before["last_successful_refresh"], DAY_ONE)
+        self.refresh([github_release(100, "v0.34.0", DAY_TWO, repository="vllm-project/vllm")],
+                     DAY_TWO, "--source", "vllm")
+        after = self.report()
+        self.assertEqual(after["sources"]["llama.cpp"], before["sources"]["llama.cpp"])
+        self.assertEqual([r for r in after["releases"] if r["runtime_id"] == "llama.cpp"], before["releases"])
+
+    def test_only_measured_retests_with_matching_conditions_are_linked(self):
+        from fastest_release_watch.retest import approved_links
+
+        first_id = "3a76f0db-50f3-40c7-a31e-377fe32361b3"
+        second_id = "39779f33-5941-4d7a-855b-949c4cee3aa9"
+        pair = {"baseline_release_id": first_id, "tuned_release_id": second_id}
+        config = {
+            "id": "config-3060",
+            "os": "Ubuntu 24.04",
+            "driver": "550.120",
+            "backend": "CUDA",
+            "build_sha": "1" * 40,
+            "flags": ["--gpu-layers", "20"],
+            "workload_id": "solo-decode",
+            "workload_version": 1,
+            "model_artifact": "fastest-ai/fixture-model@synthetic-v1/production/fixtures/synthetic-artifact.txt",
+        }
+        note = {"card_id": "nvidia-geforce-rtx-3060", "configuration": config}
+        row = json.loads((PRODUCTION / "fixtures/synthetic-observation.json").read_text(encoding="utf-8"))
+        row["kind"] = "measured"
+        row["fields"] = {
+            key: {"status": "known", "value": value}
+            for key, value in {
+                "card_id": note["card_id"], "configuration_id": config["id"], "os_version": config["os"],
+                "driver_version": config["driver"], "backend": config["backend"],
+                "runtime_build": config["build_sha"], "runtime_id": "llama.cpp",
+                "runtime_flags": '["--gpu-layers", "0"]',
+            }.items()
+        }
+        tuned = deepcopy(row)
+        tuned["evidence_id"] = "8e285620-7a53-4d83-a30e-9fa48a707475"
+        tuned["metric"]["value"] = "43.5"
+        tuned["fields"]["runtime_flags"]["value"] = '["--gpu-layers", "20"]'
+        published = {
+            first_id: {"release_id": first_id, "status": "published", "row": row},
+            second_id: {"release_id": second_id, "status": "published", "row": tuned},
+        }
+        self.assertEqual(
+            approved_links(published.__getitem__, note, pair, "https://benchmark.example"),
+            {
+                "baseline_url": "https://benchmark.example/releases/3a76f0db-50f3-40c7-a31e-377fe32361b3/benchmark.html",
+                "tuned_url": "https://benchmark.example/releases/39779f33-5941-4d7a-855b-949c4cee3aa9/benchmark.html",
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "matched"):
+            approved_links(published.__getitem__, note, pair, "https://benchmark.example", runtime_id="vllm")
+        tuned["fields"]["driver_version"]["value"] = "560.120"
+        with self.assertRaisesRegex(ValueError, "matched"):
+            approved_links(published.__getitem__, note, pair, "https://benchmark.example")
+        published[second_id] = {"release_id": second_id, "status": "withdrawn"}
+        with self.assertRaisesRegex(ValueError, "published measured"):
+            approved_links(published.__getitem__, note, pair, "https://benchmark.example")
+
+
+@unittest.skipUnless(
+    all(shutil.which(tool) for tool in ("initdb", "postgres", "pg_isready", "createdb", "psql")),
+    "PostgreSQL command-line tools required",
+)
+class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        work = Path(cls.enterClassContext(tempfile.TemporaryDirectory(prefix="fastest-release-watch-pg-", dir="/tmp")))
+        data = work / "db"
+        subprocess.run(
+            ["initdb", "-D", data, "--auth=trust", "--encoding=UTF8", "--no-locale"],
+            check=True, capture_output=True, timeout=20,
+        )
+        log = work / "postgres.log"
+        with log.open("w") as output:
+            postgres = subprocess.Popen(
+                ["postgres", "-D", data, "-k", work, "-c", "listen_addresses="],
+                stdout=output, stderr=subprocess.STDOUT,
+            )
+        cls.addClassCleanup(cls.stop_postgres, postgres)
+        cls.socket = work
+        cls.maintenance_url = f"host={work} dbname=postgres"
+        for _ in range(100):
+            ready = subprocess.run(["pg_isready", "-d", cls.maintenance_url], capture_output=True, timeout=3)
+            if ready.returncode == 0:
+                break
+            if postgres.poll() is not None:
+                raise RuntimeError(log.read_text())
+            time.sleep(0.05)
+        else:
+            raise RuntimeError("Watcher test PostgreSQL did not start")
+
+    @staticmethod
+    def stop_postgres(postgres):
+        if postgres.poll() is None:
+            postgres.send_signal(signal.SIGINT)
+            try:
+                postgres.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                postgres.send_signal(signal.SIGQUIT)
+                postgres.wait(timeout=10)
+
+    def setUp(self):
+        super().setUp()
+        database = f"watch_{uuid4().hex}"
+        subprocess.run(
+            ["createdb", "--maintenance-db", self.maintenance_url, database],
+            check=True, capture_output=True, timeout=15,
+        )
+        self.database_url = f"host={self.socket} dbname={database}"
+
+    def invoke(self, *options, read_only=False):
+        env = {**os.environ, "FASTEST_DATABASE_URL": self.database_url}
+        if read_only:
+            env["PGOPTIONS"] = "-c default_transaction_read_only=on"
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--postgres", *options],
+            cwd=PRODUCTION, env=env, capture_output=True, text=True, timeout=15,
+        )
+
+    def prepare_history(self):
+        migrated = self.invoke("migrate")
+        self.assertEqual(migrated.returncode, 0, migrated.stderr)
+
+    def review(self, *notes, as_of=DAY_TWO):
+        path = self.directory / "tracked.json"
+        path.write_text(json.dumps({"notes": notes}), encoding="utf-8")
+        result = self.invoke("review", "--as-of", as_of, "--notes", path, read_only=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def tracked_note(self):
+        note = json.loads((PRODUCTION / "fixtures/release-watch/applicability.json").read_text())["notes"][0]
+        revision = self.report()["releases"][0]["revision_id"]
+        return {**note, "revision_id": revision, "review_line": "cuda-offload", "status": "upstream_documented"}
+
+    def test_ingested_applicability_is_explicitly_pinned_and_preserves_review_identity(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        self.refresh([github_release(101, "fixture-b101", DAY_TWO), original], DAY_TWO)
+        file_review = self.review(note)
+        self.assertEqual(len(file_review["reviews"]), 1)
+        path = self.directory / "tracked.json"
+
+        invalid = {**note, "configuration": {**note["configuration"], "build_sha": "short"}}
+        path.write_text(json.dumps({"notes": [invalid]}), encoding="utf-8")
+        rejected = self.invoke("ingest-notes", "--notes", path)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("full lowercase Git commit SHA", rejected.stderr)
+        self.assertEqual(rejected.stdout, "")
+        self.assertNotIn(str(path), rejected.stderr)
+
+        path.write_text(json.dumps({"notes": [note]}), encoding="utf-8")
+        first = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        pin = first.stdout.strip()
+        self.assertRegex(pin, r"^[a-f0-9]{64}$")
+        path.write_text(json.dumps({"notes": [note]}, sort_keys=True, indent=2), encoding="utf-8")
+        second = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(second.stdout, first.stdout)
+
+        file_report = self.report(DAY_TWO, "--notes", path)
+        self.assertTrue(any(release["applicability"] for release in file_report["releases"]))
+        self.assertTrue(all(not release["applicability"] for release in self.report()["releases"]))
+        self.assertNotIn(str(path), json.dumps(file_report))
+        path.unlink()
+
+        def read(command, revision):
+            return self.invoke(command, "--as-of", DAY_TWO, "--notes-revision", revision, read_only=True)
+
+        for command, expected in (("review", file_review), ("report", file_report)):
+            with self.subTest(command=command):
+                result = read(command, pin)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), expected)
+                unknown = read(command, "0" * 64)
+                self.assertNotEqual(unknown.returncode, 0)
+                self.assertIn("Unknown applicability revision", unknown.stderr)
+                self.assertEqual(unknown.stdout, "")
+
+        path.write_text(json.dumps({"notes": [{**note, "status": "unsupported"}]}), encoding="utf-8")
+        changed = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(changed.returncode, 0, changed.stderr)
+        self.assertNotEqual(changed.stdout, first.stdout)
+        report = read("report", pin)
+        self.assertEqual(report.returncode, 0, report.stderr)
+        self.assertEqual(json.loads(report.stdout), file_report)
+
+    def test_review_flags_changed_official_revision_for_an_exact_tracked_line(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        original_revision = note["revision_id"]
+
+        self.assertEqual(self.review(note)["reviews"], [])
+
+        edited = {**original, "body": "Edited release notes"}
+        preview = github_release(101, "fixture-preview", DAY_TWO, prerelease=True)
+        self.refresh([edited, preview], DAY_TWO)
+        self.refresh([github_release(100, "test-vllm", DAY_TWO, repository="vllm-project/vllm")],
+                     DAY_TWO, "--source", "vllm")
+        changed = next(release for release in self.report()["releases"]
+                       if release["runtime_id"] == "llama.cpp" and release["status"] == "current")
+        untracked = {key: value for key, value in note.items() if key != "review_line"}
+        self.assertEqual(self.review(untracked)["reviews"], [])
+
+        views = self.review(note)
+        due, = views["reviews"]
+        self.assertEqual(due["status"], "review_due")
+        self.assertTrue(due["actionable"])
+        self.assertEqual(due["runtime_id"], "llama.cpp")
+        self.assertEqual(due["card_id"], "nvidia-geforce-rtx-3060")
+        self.assertEqual(due["prior"]["status"], "upstream_documented")
+        self.assertEqual(due["prior"]["configuration"], note["configuration"])
+        self.assertEqual(due["prior"]["release"]["revision_id"], original_revision)
+        self.assertEqual(due["target"]["revision_id"], changed["revision_id"])
+        self.assertEqual(due["target"]["first_seen_at"], DAY_TWO)
+        self.assertEqual(due["target"]["source_url"], original["html_url"])
+        self.assertIsNone(due["assessment"])
+        public = self.report(DAY_TWO, "--notes", self.directory / "tracked.json")["releases"]
+        self.assertEqual(next(release for release in public if release["revision_id"] == changed["revision_id"])
+                         ["applicability"], [])
+        self.assertNotIn("review_line", json.dumps(public))
+
+        self.refresh([preview, edited], DAY_TWO)
+        self.refresh([original], DAY_ONE)
+        self.assertEqual(self.review(note), views)
+
+        decision = {**note, "id": "fixture-new-review", "revision_id": changed["revision_id"],
+                    "status": "unsupported"}
+        other_driver = {**decision, "configuration": {**note["configuration"], "driver": "560.28"}}
+        self.assertEqual(self.review(other_driver, note), views)
+        unsupported, = self.review(decision, note)["reviews"]
+        self.assertEqual(unsupported["review_id"], due["review_id"])
+        self.assertEqual(unsupported["status"], "unsupported")
+        self.assertFalse(unsupported["actionable"])
+        self.assertEqual(unsupported["assessment"]["note_id"], decision["id"])
+        assessed, = self.review(note, {**decision, "status": "upstream_documented"})["reviews"]
+        self.assertEqual(assessed["status"], "assessed")
+        self.assertFalse(assessed["actionable"])
+
+    def test_review_preserves_change_on_source_failure_and_reactivates_after_recovery(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        release = github_release(101, "fixture-b101", DAY_TWO)
+        self.refresh([release, original], DAY_TWO)
+        due, = self.review(note)["reviews"]
+        self.assertTrue(due["actionable"])
+        self.assertEqual(due["target"]["tag"], "fixture-b101")
+
+        failure_at = "2026-11-21T02:00:00Z"
+        stale_at = "2026-11-22T01:00:01Z"
+        wrong_source = github_release(102, "fixture-other", failure_at, repository="vllm-project/vllm")
+        self.refresh([wrong_source], failure_at, success=False)
+        for as_of, stale in ((failure_at, False), (stale_at, True)):
+            failed = self.review(note, as_of=as_of)
+            self.assertEqual(failed["reviews"], [{**due, "actionable": False}])
+            source = failed["sources"]["llama.cpp"]
+            self.assertEqual(source["last_successful_refresh"], DAY_TWO)
+            self.assertEqual(source["last_attempt"], failure_at)
+            self.assertIn("official llama.cpp", source["last_error"])
+            self.assertEqual(source["stale"], stale)
+
+        self.refresh([release], stale_at)
+        recovered = self.review(note, as_of=stale_at)
+        self.assertEqual(recovered["reviews"], [due])
+        self.assertIsNone(recovered["sources"]["llama.cpp"]["last_error"])
+        self.assertFalse(self.review(note, as_of="2026-11-23T01:00:02Z")["reviews"][0]["actionable"])
+
+        decision = {**note, "id": "fixture-unresolved-review", "revision_id": due["target"]["revision_id"],
+                    "status": "unresolved", "configuration": {**note["configuration"], "build_sha": "2" * 40}}
+        unresolved, = self.review(note, decision, as_of=stale_at)["reviews"]
+        self.assertEqual(unresolved["review_id"], due["review_id"])
+        self.assertTrue(unresolved["actionable"])
+        self.assertEqual(unresolved["assessment"]["status"], "unresolved")
+        self.assertEqual(unresolved["assessment"]["configuration"]["build_sha"], "2" * 40)
+
+    def test_review_follows_official_prereleases_for_an_explicitly_tracked_prerelease_note(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b5163", DAY_ONE, prerelease=True)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        self.assertEqual(self.review(note)["reviews"], [])
+
+        release = github_release(101, "fixture-b5164", DAY_TWO, prerelease=True)
+        self.refresh([release, original], DAY_TWO)
+        due, = self.review(note)["reviews"]
+        self.assertEqual(due["status"], "review_due")
+        self.assertEqual(due["target"]["tag"], "fixture-b5164")
+        self.assertEqual(due["target"]["status"], "prerelease")
+
+        stable = github_release(102, "fixture-stable", DAY_TWO)
+        self.refresh([release, stable, original], DAY_TWO)
+        stable_revision = next(row["revision_id"] for row in self.report()["releases"] if row["tag"] == stable["tag_name"])
+        stable_decision = {**note, "id": "fixture-stable-review", "revision_id": stable_revision, "status": "unsupported"}
+        self.assertEqual(self.review(note, stable_decision)["reviews"], [due])
+
+    def test_explicit_migration_enables_read_only_report(self):
+        before = self.invoke("report", "--as-of", DAY_ONE)
+        self.assertNotEqual(before.returncode, 0)
+        self.assertEqual(before.stdout, "")
+        for _ in range(2):
+            migrated = self.invoke("migrate")
+            self.assertEqual(migrated.returncode, 0, migrated.stderr)
+
+        result = self.invoke("report", "--as-of", DAY_ONE, read_only=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        sources = report.pop("sources")
+        self.assertEqual(set(sources), {"llama.cpp", "sglang", "vllm", "ollama", *EXPANDED_FEEDS})
+        self.assertTrue(all(source["stale"] and source["mode"] is None for source in sources.values()))
+        self.assertEqual(report, {
+            "schema": "fastest.ai/runtime-release-watch/v1",
+            "source": {
+                "repository": REPOSITORY,
+                "feed_url": "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1",
+                "page_size": 10,
+                "mode": None,
+            },
+            "last_attempt": None,
+            "last_error": None,
+            "last_successful_refresh": None,
+            "stale": True,
+            "releases": [],
+        })
+
+    def test_existing_postgres_history_survives_idempotent_migration(self):
+        subprocess.run(
+            ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input="""
+                CREATE SCHEMA fastest_release_watch;
+                CREATE TABLE fastest_release_watch.source_status (
+                    id smallint PRIMARY KEY CHECK (id = 1), mode text NOT NULL,
+                    last_attempt timestamptz, last_error text, last_success timestamptz
+                );
+                INSERT INTO fastest_release_watch.source_status
+                VALUES (1, 'fixture', '2026-11-21T01:00:00Z', 'Original failure', '2026-11-20T01:00:00Z');
+                CREATE TABLE fastest_release_watch.release_revision (
+                    revision_id text PRIMARY KEY, release_id bigint NOT NULL,
+                    observed_at timestamptz NOT NULL, ingest_order bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+                    document jsonb NOT NULL
+                );
+                INSERT INTO fastest_release_watch.release_revision (revision_id, release_id, observed_at, document)
+                VALUES ('legacy-revision', 100, '2026-11-20T01:00:00Z',
+                        '{"runtime_id":"llama.cpp","release_id":100,"revision_id":"legacy-revision",
+                          "tag":"b100","published_at":"2026-11-20T01:00:00Z","prerelease":false}'::jsonb);
+            """,
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+        self.prepare_history()
+        self.prepare_history()
+        self.refresh([github_release(100, "v0.5.23", DAY_TWO, repository="sgl-project/sglang")],
+                     DAY_TWO, "--source", "sglang")
+        report = self.report()
+        self.assertEqual(report["last_successful_refresh"], DAY_ONE)
+        self.assertEqual(report["last_attempt"], DAY_TWO)
+        self.assertEqual(report["last_error"], "Original failure")
+        self.assertEqual(report["sources"]["sglang"]["last_successful_refresh"], DAY_TWO)
+        self.assertEqual(
+            [(r["runtime_id"], r["tag"], r["status"]) for r in report["releases"]],
+            [("sglang", "v0.5.23", "current"), ("llama.cpp", "b100", "current")],
+        )
+        self.assertEqual(report["releases"][1]["revision_id"], "legacy-revision")
+        self.assertEqual(report["releases"][1]["first_seen_at"], DAY_ONE)
+
+    def test_origin_exposes_retained_release_history_and_refresh_status(self):
+        self.prepare_history()
+        watch = PostgresStore(self.database_url)
+        first_success = "2001-01-01T01:00:00Z"
+        last_success = "2001-01-02T01:00:00Z"
+        published = github_release(100, "test-b100", first_success)
+        edited = {**published, "body": "Edited release notes"}
+        preview = github_release(101, "test-b101", last_success, prerelease=True)
+        watch.record("live", first_success, decode(json.dumps([published]).encode()))
+        watch.record("live", last_success, decode(json.dumps([edited, preview]).encode()))
+        vllm_release = github_release(100, "test-vllm", last_success, repository="vllm-project/vllm")
+        watch.record("live", last_success, decode(json.dumps([vllm_release]).encode(), runtime_id="vllm"),
+                     runtime_id="vllm")
+        watch.record("live", "2001-01-03T01:00:00Z", error="GitHub release feed timed out")
+        for runtime_id, (_, repository, tag) in EXPANDED_FEEDS.items():
+            row = github_release(100, tag, last_success, repository=repository)
+            releases = decode(json.dumps([row]).encode(), runtime_id=runtime_id)
+            watch.record("live", last_success, releases, runtime_id=runtime_id)
+        subprocess.run(
+            ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input="""
+                CREATE ROLE watch_reader LOGIN;
+                GRANT USAGE ON SCHEMA fastest_release_watch TO watch_reader;
+                GRANT SELECT ON fastest_release_watch.source_status,
+                    fastest_release_watch.release_revision TO watch_reader;
+            """,
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+        store = ReleaseStore(self.database_url)
+
+        with api_client(store) as request:
+            self.assertNotIn('/runtime-releases', request("/", decode=False)[2])
+            self.assertEqual(request("/runtime-releases", decode=False)[0], 404)
+
+        reader_watch = PostgresStore(self.database_url + " user=watch_reader options='-c default_transaction_read_only=on'")
+        with patch("http.client.HTTPSConnection", side_effect=AssertionError("GET must use retained data")), \
+                api_client(store, runtime_watch=reader_watch) as request:
+            index = request("/", decode=False)[2]
+            status, headers, report = request("/runtime-releases.json")
+            canonical = self.invoke("report", read_only=True)
+            self.assertEqual(canonical.returncode, 0, canonical.stderr)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            self.assertEqual(report, json.loads(canonical.stdout))
+            self.assertEqual(report["last_successful_refresh"], last_success)
+            self.assertTrue(report["stale"])
+            self.assertEqual(report["last_error"], "GitHub release feed timed out")
+            self.assertEqual(report["sources"]["vllm"]["last_successful_refresh"], last_success)
+            self.assertIsNone(report["sources"]["vllm"]["last_error"])
+            for runtime_id in EXPANDED_FEEDS:
+                self.assertEqual(report["sources"][runtime_id]["last_successful_refresh"], last_success)
+            self.assertEqual([release["status"] for release in report["releases"] if release["runtime_id"] == "llama.cpp"],
+                             ["prerelease", "current", "superseded_revision"])
+            for path, content_type in [("/runtime-releases", "text/html"),
+                                       ("/runtime-releases.md", "text/markdown")]:
+                with self.subTest(path=path):
+                    self.assertIn(f'href="{path}"', index)
+                    status, headers, body = request(path, decode=False)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(headers.get_content_type(), content_type)
+                    self.assertIn(last_success, body)
+                    self.assertIn("GitHub release feed timed out", body)
+                    self.assertIn("stale", body)
+                    self.assertIn("Superseded revision", body)
+                    self.assertIn("vLLM", body)
+                    self.assertIn("https://github.com/vllm-project/vllm/releases/tag/test-vllm", body)
+                    for name, repository, tag in EXPANDED_FEEDS.values():
+                        self.assertIn(name, body)
+                        self.assertIn(f"https://github.com/{repository}/releases/tag/{tag}", body)
+            self.assertIn('href="/runtime-releases.json"', index)
+            self.assertEqual(request("/runtime-releases", "HEAD", decode=False)[2], "")
+
+    def test_origin_distinguishes_empty_live_history_from_a_service_outage(self):
+        watch = PostgresStore(self.database_url)
+        with api_client(runtime_watch=watch) as request:
+            for path, content_type in (("/runtime-releases", "text/html"), ("/runtime-releases.md", "text/markdown"),
+                                       ("/runtime-releases.json", "application/json")):
+                with self.subTest(path=path):
+                    status, headers, body = request(path, decode=False)
+                    self.assertEqual(status, 503)
+                    self.assertEqual(headers.get_content_type(), content_type)
+                    self.assertIn("Runtime release watch unavailable.", body)
+                    self.assertNotIn("last_successful_refresh", body)
+                    self.assertNotIn("source_status", body)
+
+            self.prepare_history()
+            status, _, report = request("/runtime-releases.json")
+            self.assertEqual(status, 200)
+            self.assertEqual(report["releases"], [])
+            self.assertIsNone(report["last_successful_refresh"])
+            self.assertTrue(report["stale"])
+
+            self.refresh([github_release(100, "test-only-tag", DAY_ONE, repository="vllm-project/vllm")],
+                         DAY_ONE, "--source", "vllm")
+            status, _, body = request("/runtime-releases.json", decode=False)
+            self.assertEqual(status, 503)
+            self.assertNotIn("test-only-tag", body)
+
+    def test_origin_rechecks_matched_retest_rights(self):
+        self.prepare_history()
+        watch = PostgresStore(self.database_url)
+        fixture_directory = PRODUCTION / "fixtures/release-watch"
+        note = json.loads((fixture_directory / "applicability.json").read_text())["notes"][0]
+        upstream = github_release(100, "test-vllm", DAY_ONE, repository="vllm-project/vllm")
+        revision, = decode(json.dumps([upstream]).encode(), runtime_id="vllm")
+        watch.record("live", DAY_ONE, [revision], runtime_id="vllm")
+        note["revision_id"] = revision["revision_id"]
+        fixture = PRODUCTION / "fixtures/synthetic-observation.json"
+        baseline = json.loads(fixture.read_text())
+        artifact = baseline["artifact"]
+        note["configuration"]["model_artifact"] = f"{artifact['repository']}@{artifact['revision']}/{artifact['path']}"
+        config = note["configuration"]
+        baseline["kind"] = "measured"
+        baseline["fields"] = {
+            field: {"status": "known", "value": value, "rights": "allow"}
+            for field, value in {
+                "card_id": note["card_id"], "configuration_id": config["id"], "os_version": config["os"],
+                "driver_version": config["driver"], "backend": config["backend"],
+                "runtime_build": config["build_sha"], "runtime_id": "vllm",
+                "runtime_flags": '["--gpu-layers", "0"]',
+            }.items()
+        }
+        tuned = deepcopy(baseline)
+        tuned["evidence_id"] = str(uuid4())
+        tuned["fields"]["runtime_flags"]["value"] = json.dumps(config["flags"])
+        publisher = ReleaseStore(self.database_url)
+        publisher.migrate()
+        note["status"] = "fastest_ai_verified"
+        baseline_id = publisher.publish(baseline)
+        tuned_id = publisher.publish(tuned)
+        note["retest"] = {"baseline_release_id": baseline_id, "tuned_release_id": tuned_id}
+        notes = self.directory / "reviewed.json"
+        notes.write_text(json.dumps({"notes": [note]}))
+        ingested = self.invoke("ingest-notes", "--notes", notes)
+        self.assertEqual(ingested.returncode, 0, ingested.stderr)
+        pin = ingested.stdout.strip()
+
+        role = f"reader_{uuid4().hex}"
+        subprocess.run(
+            ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input=f"""
+                CREATE ROLE {role} LOGIN;
+                GRANT USAGE ON SCHEMA fastest_release, fastest_release_watch TO {role};
+                GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid) TO {role};
+                GRANT EXECUTE ON FUNCTION fastest_release_watch.read_applicability(text) TO {role};
+                GRANT SELECT ON fastest_release_watch.source_status, fastest_release_watch.release_revision TO {role};
+            """,
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+        reader_url = self.database_url + f" user={role}"
+        reader_store = ReleaseStore(reader_url)
+        reader_watch = PostgresStore(reader_url)
+        paths = ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json")
+        denied = subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--postgres", "ingest-notes", "--notes", notes],
+            cwd=PRODUCTION, env={**os.environ, "FASTEST_DATABASE_URL": reader_url},
+            capture_output=True, text=True, timeout=15,
+        )
+        self.assertNotEqual(denied.returncode, 0)
+        self.assertEqual(denied.stdout, "")
+
+        with (
+            api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes=notes) as from_file,
+            api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes_revision=pin) as from_postgres,
+        ):
+            for path in paths:
+                with self.subTest(path=path):
+                    status, headers, body = from_postgres(path, decode=False)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(headers["Cache-Control"], "no-store")
+                    file_status, _, file_body = from_file(path, decode=False)
+                    self.assertEqual(file_status, 200)
+                    if path.endswith(".json"):
+                        self.assertEqual(json.loads(file_body), json.loads(body))
+                    else:
+                        self.assertEqual(file_body, body)
+                    self.assertIn("550.120", body)
+                    self.assertIn(f"https://github.com/vllm-project/vllm/commit/{config['build_sha']}", body)
+                    self.assertIn(f"/releases/{baseline_id}/benchmark.html", body)
+                    self.assertIn(f"/releases/{tuned_id}/benchmark.html", body)
+                    self.assertNotIn(str(notes), body)
+
+            publisher.withdraw(tuned["evidence_id"], "Private fixture withdrawal reason")
+            for path in paths:
+                with self.subTest(path=path):
+                    status, headers, body = from_postgres(path, decode=False)
+                    self.assertEqual(status, 503)
+                    self.assertEqual(from_file(path, decode=False)[0], 503)
+                    self.assertEqual(headers["Cache-Control"], "no-store")
+                    self.assertNotIn(tuned_id, body)
+                    self.assertNotIn("Private fixture withdrawal reason", body)
+
+        for command in ("report", "review"):
+            result = self.invoke(command, "--notes-revision", pin, read_only=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Retest must cite a published measured release", result.stderr)
+            self.assertEqual(result.stdout, "")
+        with api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes_revision="0" * 64) as request:
+            status, _, body = request("/runtime-releases.json")
+            self.assertEqual(status, 503)
+            self.assertEqual(body, {"error": "Runtime release watch unavailable."})

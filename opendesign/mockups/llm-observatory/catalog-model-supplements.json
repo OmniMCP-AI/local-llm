@@ -1,0 +1,165 @@
+{
+  "capturedAt": "2026-11-21",
+  "models": [
+    {
+      "id": "thinkingmachines/Inkling-2-Mini",
+      "revision": "ed40e7da625f594fc9c4990f5f66be24873c22d7",
+      "revisionDate": "2026-11-20",
+      "cardSha256": "02f4cd9085aebde693ba95bfefca487eb6c098fccce6fe826fd8e90dfac56034",
+      "license": "apache-2.0",
+      "task": "Image and text to text",
+      "parameters": "26.4B total, 3.4B active. The publisher reports 5.4B effective active parameters per token with three passes through the looped layers.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "DeepSWE",
+          "version": "1.1",
+          "scorePercent": 48.2,
+          "harness": "mini-swe-agent v2.4.6",
+          "source": "https://thinkingmachines.ai/news/inkling-2-mini/",
+          "cardRevision": "ed40e7da625f594fc9c4990f5f66be24873c22d7",
+          "cardLine": 124
+        }
+      ]
+    },
+    {
+      "id": "thinkingmachines/Inkling-2-Small",
+      "revision": "885d78bfca61a7e9a498e33cfa7ad35850533b8c",
+      "revisionDate": "2026-11-20",
+      "cardSha256": "1512f8d8ffe1a8622d0f487a9817e8f4c776bfb56a335fc4d6029670b5697723",
+      "license": "apache-2.0",
+      "task": "Image and text to text",
+      "parameters": "594B total, 17B active.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "DeepSWE",
+          "version": "1.1",
+          "scorePercent": 72.1,
+          "harness": "mini-swe-agent v2.4.6",
+          "source": "https://thinkingmachines.ai/news/inkling-2-small/",
+          "cardRevision": "885d78bfca61a7e9a498e33cfa7ad35850533b8c",
+          "cardLine": 124
+        }
+      ]
+    },
+    {
+      "id": "moonshotai/Kimi-K3.1-Pro",
+      "revision": "d9e99b0792a5e93b78ea9bea62a68167e36ddd9e",
+      "revisionDate": "2026-11-05",
+      "cardSha256": "5daa13793292c65cf198b2f4997c69a21378a1688c40c8b3dbdf48a27dd15085",
+      "license": "kimi-k3.1-pro",
+      "licenseName": "Kimi K3.1-Pro License",
+      "licenseSha256": "da05c356f773d22a0e1c6de390f280304d7cee6eb56fa161aa789d30dedba63b",
+      "task": "Image and text to text",
+      "parameters": "2.8T total, 104B activated.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    },
+    {
+      "id": "mistralai/Mistral-Large-4-1T-A52B",
+      "revision": "f12dabdc0c1e99e7f7924461a6f308859b05af4d",
+      "revisionDate": "2026-10-29",
+      "cardSha256": "bd99fb7896a8e8e59f811be20716df569ceff7de4115d9757ede28bf6d17d314",
+      "license": "mistral-ecosystem-open-weight",
+      "licenseName": "Mistral Ecosystem Open-Weight License",
+      "licenseSha256": "d242ebedb53ffd7e26c220e3305665ca47e4e5267fa62ff4cdeb3953b8353c78",
+      "licenseNote": "Model-as-a-Service businesses need a separate commercial license for covered commercial use. The pinned terms define exceptions for internal use and official Mistral products.",
+      "task": "Image and text to text",
+      "parameters": "1T total, 49B active per token, or 52B including embeddings and output layers.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    },
+    {
+      "id": "ibm-granite/granite-4.2-3b",
+      "revision": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
+      "revisionDate": "2026-10-20",
+      "cardSha256": "8f22ddce440f0c15ecb58fc9f8501b882baf5f2b7ab0d13872fe77d88c1ad792",
+      "license": "apache-2.0",
+      "task": "Text generation with reasoning and tool calling",
+      "parameters": "3B dense (IBM’s model-card label).",
+      "inputs": ["Text"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "metric": "pass@1",
+          "scorePercent": 69.71,
+          "harness": "IBM evaluation framework based on the NeMo Evaluator SDK",
+          "source": "https://huggingface.co/blog/ibm-granite/granite-4-2#results",
+          "cardRevision": "4e9c275e232f10211ec88644d106a1f6a1b60e06",
+          "cardLine": 279
+        }
+      ]
+    },
+    {
+      "id": "google/gemma-4-E2B-it",
+      "revision": "4adf15748de9e1a0097b6274cee9c15836c41c37",
+      "revisionDate": "2026-11-03",
+      "cardSha256": "3e0608a6be80e3eb040a5aa6c76707809503deb85be6360184a118fb6156526c",
+      "license": "apache-2.0",
+      "task": "Text generation from text, image, and audio",
+      "parameters": "Dense model with 2.3B effective parameters and 5.1B total including per-layer embeddings.",
+      "inputs": ["Text", "image", "audio"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "scorePercent": 44,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/google/gemma-4-E2B-it/blob/4adf15748de9e1a0097b6274cee9c15836c41c37/README.md#benchmark-results",
+          "cardRevision": "4adf15748de9e1a0097b6274cee9c15836c41c37",
+          "cardLine": 92
+        }
+      ]
+    },
+    {
+      "id": "google/gemma-4-E4B-it",
+      "revision": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+      "revisionDate": "2026-11-03",
+      "cardSha256": "b21e4f69614ccd77baa2f3797d05311040dee07b989cb9f0d25111aa4b605b2c",
+      "license": "apache-2.0",
+      "task": "Text generation from text, image, and audio",
+      "parameters": "Dense model with 4.5B effective parameters and 8B total including per-layer embeddings.",
+      "inputs": ["Text", "image", "audio"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "LiveCodeBench",
+          "version": "6",
+          "scorePercent": 52,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/google/gemma-4-E4B-it/blob/4ecc2ba63bcac23ba4a767fc87025b1450f84c9c/README.md#benchmark-results",
+          "cardRevision": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+          "cardLine": 92
+        }
+      ]
+    },
+    {
+      "id": "NousResearch/Arete-27B",
+      "revision": "108f0afbdcfaa1ceeda4a635004304dfff6d4da2",
+      "revisionDate": "2026-11-06",
+      "cardSha256": "c22421177d0e1f47bc0d9428b672c78b0635778025350ef694f113b2bfb7fef1",
+      "license": "apache-2.0",
+      "task": "Text generation",
+      "parameters": "27B parameter scale. Nous Research post-trained Qwen3.8-27B.",
+      "inputs": ["Text"],
+      "outputs": ["Text"],
+      "publisherEvaluations": [
+        {
+          "benchmark": "Terminal-Bench",
+          "version": "2.1",
+          "scorePercent": 70,
+          "harness": "Unreported in model card",
+          "source": "https://huggingface.co/NousResearch/Arete-27B/blob/108f0afbdcfaa1ceeda4a635004304dfff6d4da2/README.md#general-and-agentic-capabilities",
+          "cardRevision": "108f0afbdcfaa1ceeda4a635004304dfff6d4da2",
+          "cardLine": 155
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,246 @@
+{
+  "2L_RB-XqisE": {
+    "topics": {
+      "hardware-selection": "0:46",
+      "ownership-cost": "14:14"
+    },
+    "context": "A GPU shortlist changes when the buyer prioritizes prompt processing, output speed or the price of an upgrade."
+  },
+  "J58FXpo3L4U": {
+    "topics": {
+      "hardware-selection": "0:28",
+      "ownership-cost": "5:43",
+      "multi-user-serving": "8:08",
+      "model-fit": "8:08"
+    },
+    "context": "The presenter considers cooling and power requirements for a used mining accelerator, then asks how much context it can serve across users."
+  },
+  "FVDEiBqFLBU": {
+    "topics": {
+      "hardware-selection": "1:15",
+      "model-fit": "6:06",
+      "interactive-chat": "20:27",
+      "ownership-cost": "25:19"
+    },
+    "context": "The comparison weighs nearly full dual cards, usable Mac memory and hourly cloud rental for intermittent experiments."
+  },
+  "GW56S3LVb2g": {
+    "topics": {
+      "runtime-tuning": "0:18",
+      "model-fit": "4:09",
+      "model-evaluation": "6:44"
+    },
+    "context": "A runtime fork broadens accelerator support, raising questions about storage spillover and whether faster settings preserve answer quality."
+  },
+  "nRj0iRSBMwc": {
+    "topics": {
+      "runtime-tuning": "1:35",
+      "fine-tuning": "5:21"
+    },
+    "context": "The video discusses claims about GPU tensor throughput, language-model prompt processing and training, with separate workloads behind the claims."
+  },
+  "jEOIQ6Y7X6I": {
+    "topics": {
+      "hardware-selection": "0:51",
+      "distributed-inference": "7:03",
+      "model-fit": "16:48"
+    },
+    "context": "Two consumer cards and a single larger card are compared under different split strategies, including the case where a model exceeds one card’s memory."
+  },
+  "xYY7-0y_ryk": {
+    "topics": {
+      "model-fit": "4:53",
+      "document-processing": "16:52",
+      "private-deployment": "16:52"
+    },
+    "context": "A local browser interface for sensitive documents raises questions about expert loading and the storage bandwidth available during generation."
+  },
+  "8dhcnt-G19M": {
+    "topics": {
+      "interactive-chat": "0:37",
+      "runtime-tuning": "8:32",
+      "coding": "13:49"
+    },
+    "context": "The Mac demonstration changes the reasoning setting for short responses before introducing a repository task."
+  },
+  "wC6jsOU4jII": {
+    "topics": {
+      "runtime-tuning": "0:55",
+      "model-fit": "13:24"
+    },
+    "context": "The runtime comparison discusses device eligibility, compressed model files and optimization settings that can change the work performed."
+  },
+  "YcosZPh-kcI": {
+    "topics": {
+      "model-fit": "0:12",
+      "model-evaluation": "3:08"
+    },
+    "context": "A compact model is assessed through agreement with a reference model, completed tasks, serious errors and unfinished responses."
+  },
+  "ao6B7GR8tQY": {
+    "topics": {
+      "runtime-tuning": "0:22",
+      "model-fit": "3:34",
+      "image-generation": "6:49"
+    },
+    "context": "The tutorial discusses hardware-based model selection and an image-generation comparison alongside separate language-model acceleration claims."
+  },
+  "cFdoXn6yvE4": {
+    "topics": {
+      "distributed-inference": "4:21",
+      "model-fit": "12:04",
+      "multi-user-serving": "19:25"
+    },
+    "context": "A prototype makes a remote accelerator available to an application and raises a separate question about simultaneous users."
+  },
+  "1PJGtLpYGOY": {
+    "topics": {
+      "coding": "0:22",
+      "model-evaluation": "0:22",
+      "model-fit": "1:50",
+      "agent-workflows": "6:41"
+    },
+    "context": "A release roundup discusses coding benchmarks, a memory-footprint claim and a hardware-design agent demonstration."
+  },
+  "mjR-LJmHg_I": {
+    "topics": {
+      "hardware-selection": "0:10",
+      "ownership-cost": "2:23",
+      "document-processing": "4:42",
+      "private-deployment": "4:42"
+    },
+    "context": "A budget workstation uses local network storage for private documents, with the demonstrated model settings and parts estimate reported separately."
+  },
+  "6YMHMU_x4Rc": {
+    "topics": {
+      "hardware-selection": "15:12",
+      "agent-workflows": "7:55",
+      "ownership-cost": "15:12"
+    },
+    "context": "A shopping guide weighs the price of faster prompt processing for long agent requests while the target model specification is still uncertain."
+  },
+  "qW2E2ay47dw": {
+    "topics": {
+      "model-fit": "6:52",
+      "runtime-tuning": "1:19",
+      "agent-workflows": "18:15"
+    },
+    "context": "The source follows model data across GPU memory, system RAM and storage, then considers the accumulated wait during a multistep task."
+  },
+  "Ni7ON0pZtso": {
+    "topics": {
+      "interactive-chat": "0:16",
+      "distributed-inference": "1:26",
+      "private-deployment": "2:44",
+      "model-fit": "3:49"
+    },
+    "context": "A prospective Mac application is discussed in terms of offline chat, cross-machine memory and on-premises data requirements."
+  },
+  "09GB4LtXUok": {
+    "topics": {
+      "coding": "6:45",
+      "retrieval": "3:46",
+      "model-evaluation": "12:34"
+    },
+    "context": "The review places information at several prompt positions and separately checks whether generated interfaces and interactive controls work after revisions."
+  },
+  "kQKCp7PlVxY": {
+    "topics": {
+      "hardware-selection": "7:45",
+      "distributed-inference": "4:23",
+      "runtime-tuning": "14:21"
+    },
+    "context": "A budget shortlist considers card splitting, dual-card warranties and a community-patched Intel runtime."
+  },
+  "GLXGqbNBq9s": {
+    "topics": {
+      "model-fit": "1:41",
+      "coding": "2:50",
+      "model-evaluation": "4:47"
+    },
+    "context": "An older multi-GPU workstation runs compressed models while the creator iterates on a game and an animation."
+  },
+  "WOlXMUKJeuI": {
+    "topics": {
+      "model-fit": "0:23",
+      "document-processing": "3:38",
+      "agent-workflows": "5:18",
+      "coding": "6:46"
+    },
+    "context": "A constrained vision setup attempts handwriting correction, parallel sub-agents and deployment of a codebase."
+  },
+  "JPHT9AvoPSA": {
+    "topics": {
+      "hardware-selection": "0:58",
+      "model-fit": "5:19",
+      "distributed-inference": "9:42",
+      "private-deployment": "23:25"
+    },
+    "context": "The buying discussion compares quantized artifacts, clustered generation and mixed memory tiers for users who need to keep data local."
+  },
+  "1xmOTSUpBL0": {
+    "topics": {
+      "hardware-selection": "0:53",
+      "model-fit": "7:03",
+      "distributed-inference": "10:19",
+      "runtime-tuning": "16:59"
+    },
+    "context": "On two modified cards, context length and runtime flags complicate comparisons of single-stream and multi-stream inference with an optional bridge."
+  },
+  "DEPF8rAprS4": {
+    "topics": {
+      "model-evaluation": "8:46",
+      "runtime-tuning": "12:06"
+    },
+    "context": "The discussion considers compact-model quality on business workflows, repeated output and the availability of draft-assisted generation."
+  },
+  "MhZABCEOUWY": {
+    "topics": {
+      "runtime-tuning": "0:24",
+      "model-fit": "4:02",
+      "interactive-chat": "5:54"
+    },
+    "context": "A long-context run on one consumer GPU illustrates the tradeoff between cold prompt processing and sustained output speed."
+  },
+  "dnk_lPZ0Y-E": {
+    "topics": {
+      "hardware-selection": "6:06",
+      "model-fit": "3:14",
+      "agent-workflows": "0:36"
+    },
+    "context": "For local agents on Macs, the buying question is how unified-memory allocation and input-processing time affect the wait for an answer."
+  },
+  "VKEXWXMlVS0": {
+    "topics": {
+      "retrieval": "0:21",
+      "audio-video": "0:21",
+      "runtime-tuning": "3:06",
+      "image-generation": "4:41"
+    },
+    "context": "A personal video-search pipeline motivates work placement across Mac accelerators, alongside a separate image-generation example."
+  },
+  "P-Fmo_CCIbY": {
+    "topics": {
+      "hardware-selection": "0:33",
+      "model-fit": "3:13",
+      "agent-workflows": "11:15"
+    },
+    "context": "An introductory guide considers entry-level Macs and a Raspberry Pi for daily agent tasks under memory and waiting-time constraints."
+  },
+  "RkzCAaIV_cQ": {
+    "topics": {
+      "hardware-selection": "2:33",
+      "image-generation": "8:18"
+    },
+    "context": "A compact appliance demonstration covers host connections, external power, model downloads and an image-generation attempt."
+  },
+  "4l4UWZGxvoc": {
+    "topics": {
+      "model-fit": "0:54",
+      "private-deployment": "0:54",
+      "distributed-inference": "10:40",
+      "coding": "16:56"
+    },
+    "context": "A Mac cluster is discussed for private inference, with ordinary sharding and an RDMA path considered before a coding interaction."
+  }
+}

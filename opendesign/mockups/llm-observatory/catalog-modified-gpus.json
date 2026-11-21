@@ -1,0 +1,273 @@
+{
+  "reviewedAt": "2026-11-22",
+  "cards": [
+    {
+      "id": "nvidia-geforce-rtx-4090-modified-48gb",
+      "name": "NVIDIA GeForce RTX 4090 modified 48 GB",
+      "parent": "nvidia-geforce-rtx-4090",
+      "stockGb": 24,
+      "capacityGb": 48,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/retrofitted-rtx-4090-48gb",
+          "detail": "BIM Computing lists a retrofitted 48 GB RTX 4090."
+        },
+        {
+          "kind": "Seller service",
+          "source": "https://gpulab.net/",
+          "detail": "GPU Lab advertises both a 24 GB to 48 GB upgrade service and pre-upgraded RTX 4090 boards."
+        },
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=TcRGBeOENLg",
+          "detail": "Gamers Nexus documents Brother Zhang's RTX 4090 48 GB retrofit in a workshop."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-4080-modified-32gb",
+      "name": "NVIDIA GeForce RTX 4080 modified 32 GB",
+      "parent": "nvidia-geforce-rtx-4080",
+      "stockGb": 16,
+      "capacityGb": 32,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/retrofitted-rtx-4080-32gb",
+          "detail": "BIM Computing lists a retrofitted 32 GB RTX 4080."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-3080-modified-20gb",
+      "name": "NVIDIA GeForce RTX 3080 modified 20 GB",
+      "parent": "nvidia-geforce-rtx-3080-10gb",
+      "stockGb": 10,
+      "capacityGb": 20,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/modded-rtx-3080-20gb",
+          "detail": "BIM Computing lists a 20 GB RTX 3080 conversion from the 10 GB version."
+        },
+        {
+          "kind": "Seller service",
+          "source": "https://www.hcit.com.cn/services/gpu-mod-repair/",
+          "detail": "HCIT advertises a retrofit service for RTX 3080 boards."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-2070-modified-16gb",
+      "name": "NVIDIA GeForce RTX 2070 modified 16 GB",
+      "parent": "nvidia-geforce-rtx-2070",
+      "stockGb": 8,
+      "capacityGb": 16,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/modded-rtx-2070-16gb",
+          "detail": "BIM Computing lists a modified 16 GB RTX 2070."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti-modified-22gb",
+      "stockGb": 11,
+      "capacityGb": 22,
+      "capacityScope": "Creator-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=kQKCp7PlVxY",
+          "detail": "The creator distinguishes the modified 22 GB board from the original 11 GB board."
+        },
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/retrofitted-rtx-2080-ti-22gb",
+          "detail": "BIM Computing advertises a separate 22 GB RTX 2080 Ti conversion."
+        },
+        {
+          "kind": "Seller service",
+          "source": "https://www.hcit.com.cn/services/gpu-mod-repair/",
+          "detail": "HCIT advertises a retrofit service for RTX 2080 Ti boards."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-ti-colorful-modified",
+      "stockGb": 11,
+      "capacityScope": "Conflicting creator reports",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=WOlXMUKJeuI",
+          "detail": "The creator identifies the modified Colorful 300 non-A board. Conflicting capacity reports leave the exact variant capacity unresolved."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-cmp-170hx-hynix",
+      "stockGb": 8,
+      "capacityGb": 64,
+      "capacityScope": "Creator-reported upper capacity for Hynix boards",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=46s",
+          "detail": "The creator reports up to 64 GB after modification for the Hynix memory variant."
+        },
+        {
+          "kind": "Seller listing",
+          "source": "https://www.bim-computing.com/products/retrofitted-cmp-170hx-64gb",
+          "detail": "BIM Computing lists a 64 GB CMP 170HX. The listing corroborates the model and capacity."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-cmp-170hx-samsung",
+      "stockGb": 10,
+      "capacityGb": 40,
+      "capacityScope": "Creator-reported stable capacity for the tested Samsung board",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=J58FXpo3L4U&t=46s",
+          "detail": "The creator reports 40 GB stable for the Samsung variant in the demonstrated setup."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-cmp-170hx-modified-80gb",
+      "name": "NVIDIA CMP 170HX modified 80 GB (experimental)",
+      "parent": "nvidia-cmp-170hx",
+      "stockGb": 8,
+      "capacityGb": 80,
+      "capacityScope": "Experiment-exposed framebuffer on tested 80 GB boards",
+      "installedGb": 80,
+      "validatedGb": 80,
+      "evidence": [
+        {
+          "kind": "Lab demonstration",
+          "source": "https://blog.kate.land/posts/using-voltage-glitching-to-unlock-the-a100/",
+          "detail": "The researcher reports nine of ten examined cards had 80 GB of functional framebuffer and one had 64 GB. The cards originally exposed 8 GB. Synthetic memory reads and writes validated the full framebuffer on intact 80 GB specimens. Driver support and stability depend on the individual board and setup."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-4090-d-modified-48gb",
+      "name": "NVIDIA GeForce RTX 4090 D modified 48 GB",
+      "manufacturer": "NVIDIA",
+      "stockGb": 24,
+      "capacityGb": 48,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.alibaba.com/pla/OEM-RTX-4090D-TURBO-48GB-GDDR6X_1601871852514.html",
+          "detail": "A supplier lists a 48 GB RTX 4090 D Turbo board on Alibaba."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-4080-super-modified-32gb",
+      "name": "NVIDIA GeForce RTX 4080 SUPER modified 32 GB",
+      "parent": "nvidia-geforce-rtx-4080-super",
+      "stockGb": 16,
+      "capacityGb": 32,
+      "capacityScope": "Technician-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Technician report",
+          "source": "https://x.com/xingyao74043/status/2088846397579948505",
+          "detail": "A repair provider reports testing three RTX 4080 SUPER boards converted to 32 GB."
+        }
+      ]
+    },
+    {
+      "id": "kinology-radeon-rx-580-2048sp-modified-16gb",
+      "name": "Kinology Radeon RX 580 2048SP modified 16 GB",
+      "manufacturer": "Kinology",
+      "stockGb": 8,
+      "capacityGb": 16,
+      "capacityScope": "Advertised board capacity",
+      "evidence": [
+        {
+          "kind": "Seller listing",
+          "source": "https://www.merlincomputersolutions.ca/product-page/new-kinology-rx-580-16gb-2048sp-graphics-card",
+          "detail": "Merlin Computer Solutions lists a Kinology 16 GB board with the RX 580 2048SP GPU."
+        },
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=WDz1c59NDvU",
+          "detail": "A creator published a hands-on test of the Kinology 16 GB RX 580 2048SP."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-3070-modified-16gb",
+      "name": "NVIDIA GeForce RTX 3070 modified 16 GB",
+      "parent": "nvidia-geforce-rtx-3070",
+      "stockGb": 8,
+      "capacityGb": 16,
+      "capacityScope": "Technician-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Technician report",
+          "source": "https://www.youtube.com/watch?v=W6uaUHBNFOU",
+          "detail": "The technician demonstrates an RTX 3070 memory conversion to 16 GB."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-5080-modified-32gb",
+      "name": "NVIDIA GeForce RTX 5080 modified 32 GB",
+      "parent": "nvidia-geforce-rtx-5080",
+      "stockGb": 16,
+      "capacityGb": 32,
+      "capacityScope": "Technician-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Technician report",
+          "source": "https://www.bilibili.com/video/BV1QyBhBTEXF/",
+          "detail": "A repair technician reports a 32 GB conversion. The direct video was inaccessible during this review."
+        }
+      ]
+    },
+    {
+      "id": "nvidia-geforce-rtx-2080-super-modified-16gb",
+      "name": "NVIDIA GeForce RTX 2080 SUPER modified 16 GB",
+      "parent": "nvidia-geforce-rtx-2080-super",
+      "stockGb": 8,
+      "capacityGb": 16,
+      "capacityScope": "Creator-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=alam8TRoC4I",
+          "detail": "The creator demonstrates an RTX 2080 SUPER with 16 GB."
+        }
+      ]
+    },
+    {
+      "id": "amd-radeon-rx-5600-xt-modified-16gb",
+      "name": "AMD Radeon RX 5600 XT modified 16 GB",
+      "manufacturer": "AMD",
+      "stockGb": 6,
+      "capacityGb": 16,
+      "capacityScope": "Creator-reported board capacity",
+      "evidence": [
+        {
+          "kind": "Creator report",
+          "source": "https://www.youtube.com/watch?v=vR9IwDug5T0",
+          "detail": "The creator demonstrates a one-off Radeon RX 5600 XT with 16 GB."
+        }
+      ]
+    }
+  ]
+}

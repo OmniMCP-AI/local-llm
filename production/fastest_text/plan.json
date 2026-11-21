@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "id": "two-machine-text-pilot-v1",
+  "access_checked_on": "2026-11-21",
+  "artifact": {
+    "repository": "Qwen/Qwen2.5-7B-Instruct-GGUF",
+    "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
+    "quantization": "Q4_K_M",
+    "license": "Apache-2.0",
+    "tokenizer": "Qwen2 BPE vocabulary and special tokens embedded in these exact GGUF shards",
+    "source": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/tree/bb5d59e06d9551d752d08b292a50eb208b07ab1f",
+    "shards": [
+      {
+        "path": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+        "sha256": "dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db",
+        "bytes": 3993201344
+      },
+      {
+        "path": "qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf",
+        "sha256": "539cf93f78e887edea1c04e2d7d8cdaca9d01dae9c9025bcb8accbe29df3d72a",
+        "bytes": 689872288
+      }
+    ]
+  },
+  "runtime": {
+    "name": "llama.cpp llama-bench",
+    "revision": "84a9bf2fc2875205f0806fbbfbb66dc67204094c",
+    "tag": "b5163",
+    "source": "https://github.com/ggml-org/llama.cpp/tree/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/llama-bench"
+  },
+  "protocol": {
+    "id": "llama-bench-solo-empty-kv@1",
+    "warm_samples_per_phase": 20,
+    "settings": {
+      "n_threads": 8,
+      "n_batch": 1024,
+      "n_ubatch": 512,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "no_kv_offload": false,
+      "flash_attn": false,
+      "use_mmap": true,
+      "split_mode": "layer",
+      "main_gpu": 0
+    },
+    "warmup": "Per phase, llama-bench excludes one 1,024-token prefill or one decode token before timed repetitions.",
+    "cache": "Model already loaded at the timing boundary. Clear KV before each repetition. No prefix reuse. OS page cache is uncontrolled.",
+    "load": "One foreground sequence on one active accelerator. Run phases sequentially on an otherwise idle host with no concurrent benchmark requests.",
+    "input": "Runtime-generated token IDs from the pinned GGUF vocabulary. The harness uses platform RNG, so lengths and method match across hosts.",
+    "phases": {
+      "prefill": {
+        "label": "Prefill",
+        "input_tokens": 1024,
+        "output_tokens": 0,
+        "requested_context_tokens": 1024,
+        "boundary": "llama-bench synchronized prompt processing time for 1,024 prompt tokens with empty initial KV."
+      },
+      "decode": {
+        "label": "Decode",
+        "input_tokens": 0,
+        "output_tokens": 128,
+        "requested_context_tokens": 128,
+        "boundary": "llama-bench synchronized time for 128 single-token steps starting at empty KV."
+      }
+    }
+  },
+  "cells": [
+    {
+      "id": "apple-m4",
+      "name": "Apple M4",
+      "backend": "Metal",
+      "blocker": "The pinned model and runtime ran on a 24 GiB Apple M4 under ambient desktop GPU load. A quiet-host run and public release approval are pending."
+    },
+    {
+      "id": "rtx-4090",
+      "name": "GeForce RTX 4090",
+      "backend": "CUDA",
+      "blocker": "No authorized GeForce RTX 4090 host or operator-run evidence was available."
+    }
+  ],
+  "rubric": {
+    "id": "zh-product-copy-review@1",
+    "language": "zh-Hans",
+    "rights": "Original project prompt, fictional product facts and rubric prepared for public release.",
+    "task_id": "zh-copy-brief-01",
+    "prompt": "为虚构品牌「芽杯」写一则简体中文商品卡片。已知事实：售价79元，容量350毫升，杯盖可拆洗；资料未提供材质、密封等级或保温时长。第一行写一个标题，第二行写两句话。语气平实，避免绝对化宣传。内部编码 YA-040 只用于审稿，请勿在文案中显示。",
+    "method": "Use the same pinned GGUF and llama.cpp revision, the embedded chat template, one user message, greedy decoding and a 256-token output cap. Label outputs with opaque IDs. Reviewers score independently without seeing the machine identity or benchmark timings. A reviewed output passes only when every criterion passes for every reviewer. Publish counts, disagreement and the individual ratings.",
+    "criteria": {
+      "facts": "事实保真：售价、容量和杯盖信息准确，并且没有编造材质、密封等级或保温时长。",
+      "instructions": "指令遵循：使用简体中文，第一行为标题，第二行恰好两句话。",
+      "brand": "品牌约束：使用「芽杯」名称，语气平实，避免绝对化宣传。",
+      "leakage": "泄露风险：正文未出现内部编码 YA-040。",
+      "editability": "可编辑性：句意通顺、信息分布清晰，无需结构性重写。"
+    }
+  }
+}

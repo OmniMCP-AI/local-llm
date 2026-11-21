@@ -1,0 +1,265 @@
+{
+  "groups": [
+    {
+      "label": "Hardware",
+      "zh": "硬件",
+      "topics": [
+        {
+          "name": "RTX 5090",
+          "zh": "RTX 5090",
+          "href": "#catalog/cards?q=rtx%205090"
+        },
+        {
+          "name": "RTX 3090",
+          "zh": "RTX 3090",
+          "href": "#catalog/cards?q=rtx%203090"
+        },
+        {
+          "name": "Radeon RX 7900 XTX",
+          "zh": "Radeon RX 7900 XTX",
+          "href": "#catalog/cards?q=7900%20xtx"
+        },
+        {
+          "name": "Radeon PRO W7800",
+          "zh": "Radeon PRO W7800",
+          "href": "#catalog/cards?q=w7800"
+        },
+        {
+          "name": "Radeon PRO W7900",
+          "zh": "Radeon PRO W7900",
+          "href": "#catalog/cards?q=w7900"
+        },
+        {
+          "name": "Intel Arc",
+          "zh": "Intel Arc",
+          "href": "#catalog/cards?q=intel%20arc"
+        },
+        {
+          "name": "DGX Spark",
+          "zh": "DGX Spark",
+          "href": "#catalog/machines?q=dgx%20spark"
+        },
+        {
+          "name": "Apple silicon",
+          "zh": "Apple 芯片",
+          "href": "#catalog/machines?q=apple"
+        },
+        {
+          "name": "Multi-GPU",
+          "zh": "多显卡部署",
+          "href": "#wiki/research?topic=distributed-inference"
+        }
+      ]
+    },
+    {
+      "label": "Workloads",
+      "zh": "工作负载",
+      "topics": [
+        {
+          "name": "Coding",
+          "zh": "编程",
+          "href": "#wiki/research?topic=coding"
+        },
+        {
+          "name": "Agents",
+          "zh": "智能体",
+          "href": "#wiki/research?topic=agent-workflows"
+        },
+        {
+          "name": "Documents and OCR",
+          "zh": "文档与 OCR",
+          "href": "#wiki/research?topic=document-processing"
+        },
+        {
+          "name": "RAG",
+          "zh": "检索增强生成",
+          "href": "#wiki/research?topic=retrieval"
+        },
+        {
+          "name": "Image generation",
+          "zh": "图像生成",
+          "href": "#wiki/research?topic=image-generation"
+        },
+        {
+          "name": "Audio and video",
+          "zh": "音视频",
+          "href": "#wiki/research?topic=audio-video"
+        },
+        {
+          "name": "Fine-tuning",
+          "zh": "微调",
+          "href": "#wiki/research?topic=fine-tuning"
+        },
+        {
+          "name": "Multi-user serving",
+          "zh": "多用户服务",
+          "href": "#wiki/research?topic=multi-user-serving"
+        },
+        {
+          "name": "Privacy and offline use",
+          "zh": "隐私与离线运行",
+          "href": "#wiki/research?topic=private-deployment"
+        }
+      ]
+    },
+    {
+      "label": "Inference tools",
+      "zh": "推理工具",
+      "topics": [
+        {
+          "name": "llama.cpp",
+          "zh": "llama.cpp",
+          "href": "#catalog/runtimes?q=llama.cpp"
+        },
+        {
+          "name": "SGLang",
+          "zh": "SGLang",
+          "href": "#catalog/runtimes?q=sglang"
+        },
+        {
+          "name": "vLLM",
+          "zh": "vLLM",
+          "href": "#catalog/runtimes?q=vllm"
+        },
+        {
+          "name": "Ollama",
+          "zh": "Ollama",
+          "href": "#catalog/runtimes?q=ollama"
+        },
+        {
+          "name": "MLX LM",
+          "zh": "MLX LM",
+          "href": "#catalog/runtimes?q=mlx"
+        },
+        {
+          "name": "TensorRT-LLM",
+          "zh": "TensorRT-LLM",
+          "href": "#catalog/runtimes?q=tensorrt"
+        },
+        {
+          "name": "OpenVINO GenAI",
+          "zh": "OpenVINO GenAI",
+          "href": "#catalog/runtimes?q=openvino"
+        },
+        {
+          "name": "ComfyUI",
+          "zh": "ComfyUI",
+          "href": "#catalog/runtimes?q=comfyui"
+        },
+        {
+          "name": "Quantization and runtime tuning",
+          "zh": "量化与推理调优",
+          "href": "#wiki/research?topic=runtime-tuning"
+        }
+      ]
+    },
+    {
+      "label": "Model discovery",
+      "zh": "模型发现",
+      "topics": [
+        {
+          "name": "Small LLMs ≤4B",
+          "zh": "小模型 ≤40 亿参数",
+          "href": "#catalog/models?view=small"
+        },
+        {
+          "name": "Qwen3 Coder",
+          "zh": "Qwen3 Coder",
+          "href": "#catalog/models?view=all&q=Qwen3-Coder-30B-A3B-Instruct"
+        },
+        {
+          "name": "SmolVLM2",
+          "zh": "SmolVLM2",
+          "href": "#catalog/models?view=all&q=SmolVLM2-2.2B-Instruct"
+        },
+        {
+          "name": "DeepSeek OCR",
+          "zh": "DeepSeek OCR",
+          "href": "#catalog/models?view=all&q=deepseek-ai%2FDeepSeek-OCR"
+        },
+        {
+          "name": "PaddleOCR-VL",
+          "zh": "PaddleOCR-VL",
+          "href": "#catalog/models?view=all&q=PaddlePaddle%2FPaddleOCR-VL"
+        },
+        {
+          "name": "Whisper turbo",
+          "zh": "Whisper turbo",
+          "href": "#catalog/models?view=all&q=openai%2Fwhisper-large-v3-turbo"
+        },
+        {
+          "name": "gpt-oss",
+          "zh": "gpt-oss",
+          "href": "#catalog/models?view=all&q=openai%2Fgpt-oss"
+        },
+        {
+          "name": "Phi mini reasoning",
+          "zh": "Phi mini reasoning",
+          "href": "#catalog/models?view=all&q=Phi-4-mini-reasoning"
+        }
+      ]
+    },
+    {
+      "label": "Measurements",
+      "zh": "测量方式",
+      "topics": [
+        {
+          "name": "Prefill",
+          "zh": "预填充",
+          "href": "#wiki/research?dimension=prefill"
+        },
+        {
+          "name": "Time to first token",
+          "zh": "首 token 延迟",
+          "href": "#wiki/research?dimension=first-token"
+        },
+        {
+          "name": "Throughput",
+          "zh": "生成吞吐量",
+          "href": "#wiki/research?dimension=generation"
+        },
+        {
+          "name": "Power and energy",
+          "zh": "功耗与能耗",
+          "href": "#wiki/research?dimension=energy"
+        },
+        {
+          "name": "Host and peer transfer",
+          "zh": "主机与卡间传输",
+          "href": "#wiki/research?dimension=transport"
+        },
+        {
+          "name": "Cost of ownership",
+          "zh": "持有成本",
+          "href": "#wiki/research?topic=ownership-cost"
+        }
+      ]
+    }
+  ],
+  "refs": [
+    {
+      "label": "抡锤者 · Hardware",
+      "href": "https://lcz.me/hardware"
+    },
+    {
+      "label": "抡锤者 · Tags",
+      "href": "https://lcz.me/tags"
+    },
+    {
+      "label": "localrig · Model comparison",
+      "href": "https://localrig.com/model"
+    },
+    {
+      "label": "The Local Bench · Hardware",
+      "href": "https://thelocalbench.com/hardware"
+    },
+    {
+      "label": "The Local Bench · Models",
+      "href": "https://thelocalbench.com/models"
+    },
+    {
+      "label": "local-bench · Method",
+      "href": "https://local-bench.ai/method"
+    }
+  ]
+}

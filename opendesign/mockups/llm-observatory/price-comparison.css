@@ -1,0 +1,22 @@
+.hosted-prices { padding-block: 24px 48px; }
+.hosted-prices .price-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-block-end: 32px; }
+.hosted-prices .page-heading { margin-block-end: 16px; }
+.hosted-prices .price-example { color: #7a4627; font-weight: 650; }
+.hosted-prices .price-terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.hosted-prices dt { font-weight: 650; }
+.hosted-prices dd { margin-inline-start: 0; overflow-wrap: anywhere; }
+.hosted-prices .price-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+.hosted-prices .price-cohorts { margin-block-end: 1.25rem; }
+.hosted-prices .price-cohorts ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .5rem; list-style: none; padding: 0; margin-block: .5rem 0; }
+.hosted-prices .price-cohorts a { display: grid; gap: .125rem; padding: .625rem .75rem; border: 1px solid var(--line); border-radius: 8px; min-block-size: 44px; height: 100%; overflow-wrap: anywhere; text-decoration: none; }
+.hosted-prices .price-cohorts a[aria-current="page"] { border-color: currentColor; }
+.hosted-prices .price-cohorts a:hover strong, .hosted-prices .price-cohorts a:focus-visible strong { text-decoration: underline; }
+.hosted-prices .price-cohorts time { font-variant-numeric: tabular-nums; }
+.hosted-prices section { margin-block-start: 2rem; }
+.hosted-prices section h2 { margin-block-end: .5rem; }
+.hosted-prices .price-visual { padding: clamp(.75rem, 2vw, 1.25rem); }
+.hosted-prices table { width: 100%; min-width: 44rem; }
+.hosted-prices th, .hosted-prices td { text-align: start; white-space: normal; overflow-wrap: anywhere; }
+.hosted-prices th[scope="row"] { white-space: nowrap; }
+.hosted-prices td.original-quote, .hosted-prices td.display-quote { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hosted-prices footer { margin-block-start: 2.75rem; }

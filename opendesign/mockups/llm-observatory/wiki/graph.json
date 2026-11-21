@@ -1,0 +1,634 @@
+{
+  "nodes": [
+    {
+      "id": "agent-discovery",
+      "title": "Crawler and agent discovery"
+    },
+    {
+      "id": "agents",
+      "title": "For agents"
+    },
+    {
+      "id": "arc-b580",
+      "title": "Intel Arc B580"
+    },
+    {
+      "id": "benchmark-method",
+      "title": "Benchmark method"
+    },
+    {
+      "id": "build-guide",
+      "title": "Plan a local build"
+    },
+    {
+      "id": "catalog",
+      "title": "Source catalog"
+    },
+    {
+      "id": "community",
+      "title": "Help build fastest.ai"
+    },
+    {
+      "id": "comparison-methods",
+      "title": "Comparison methods"
+    },
+    {
+      "id": "evidence-guide",
+      "title": "Read an evidence record"
+    },
+    {
+      "id": "explorer",
+      "title": "Performance vs. price"
+    },
+    {
+      "id": "goals",
+      "title": "Compare by goals"
+    },
+    {
+      "id": "gpu-topology",
+      "title": "GPU topology"
+    },
+    {
+      "id": "index",
+      "title": "awesome-local-llm"
+    },
+    {
+      "id": "inference-frameworks",
+      "title": "Inference frameworks"
+    },
+    {
+      "id": "llama31-8b",
+      "title": "Llama 3.1 8B Instruct"
+    },
+    {
+      "id": "m4-max",
+      "title": "Mac Studio M4 Max"
+    },
+    {
+      "id": "m4-pro",
+      "title": "Mac mini M4 Pro"
+    },
+    {
+      "id": "machines",
+      "title": "Machine profiles"
+    },
+    {
+      "id": "models",
+      "title": "Model library"
+    },
+    {
+      "id": "prices",
+      "title": "Price watch"
+    },
+    {
+      "id": "qwen25-14b",
+      "title": "Qwen2.5 14B Instruct"
+    },
+    {
+      "id": "qwen25-7b",
+      "title": "Qwen2.5 7B Instruct"
+    },
+    {
+      "id": "research",
+      "title": "Research library"
+    },
+    {
+      "id": "rtx-2080-ti-nvlink",
+      "title": "Dual RTX 2080 Ti with optional NVLink"
+    },
+    {
+      "id": "rtx-3060",
+      "title": "GeForce RTX 3060"
+    },
+    {
+      "id": "rtx-3090",
+      "title": "GeForce RTX 3090"
+    },
+    {
+      "id": "rtx-4090",
+      "title": "GeForce RTX 4090"
+    },
+    {
+      "id": "rtx-5090",
+      "title": "GeForce RTX 5090"
+    },
+    {
+      "id": "runtimes",
+      "title": "Inference runtimes and tuning"
+    },
+    {
+      "id": "technology",
+      "title": "Technology in motion"
+    }
+  ],
+  "edges": [
+    {
+      "source": "agent-discovery",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "agent-discovery",
+      "target": "research"
+    },
+    {
+      "source": "agents",
+      "target": "agent-discovery"
+    },
+    {
+      "source": "agents",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "agents",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "arc-b580",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "arc-b580",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "arc-b580",
+      "target": "technology"
+    },
+    {
+      "source": "benchmark-method",
+      "target": "comparison-methods"
+    },
+    {
+      "source": "benchmark-method",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "benchmark-method",
+      "target": "explorer"
+    },
+    {
+      "source": "build-guide",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "build-guide",
+      "target": "m4-pro"
+    },
+    {
+      "source": "build-guide",
+      "target": "prices"
+    },
+    {
+      "source": "build-guide",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "build-guide",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "catalog",
+      "target": "community"
+    },
+    {
+      "source": "catalog",
+      "target": "goals"
+    },
+    {
+      "source": "catalog",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "catalog",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "catalog",
+      "target": "machines"
+    },
+    {
+      "source": "catalog",
+      "target": "models"
+    },
+    {
+      "source": "catalog",
+      "target": "runtimes"
+    },
+    {
+      "source": "community",
+      "target": "catalog"
+    },
+    {
+      "source": "community",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "comparison-methods",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "comparison-methods",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "comparison-methods",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "comparison-methods",
+      "target": "technology"
+    },
+    {
+      "source": "evidence-guide",
+      "target": "agents"
+    },
+    {
+      "source": "evidence-guide",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "explorer",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "explorer",
+      "target": "build-guide"
+    },
+    {
+      "source": "explorer",
+      "target": "prices"
+    },
+    {
+      "source": "explorer",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "goals",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "goals",
+      "target": "catalog"
+    },
+    {
+      "source": "goals",
+      "target": "community"
+    },
+    {
+      "source": "gpu-topology",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "gpu-topology",
+      "target": "runtimes"
+    },
+    {
+      "source": "gpu-topology",
+      "target": "technology"
+    },
+    {
+      "source": "index",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "index",
+      "target": "build-guide"
+    },
+    {
+      "source": "index",
+      "target": "catalog"
+    },
+    {
+      "source": "index",
+      "target": "community"
+    },
+    {
+      "source": "index",
+      "target": "comparison-methods"
+    },
+    {
+      "source": "index",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "index",
+      "target": "explorer"
+    },
+    {
+      "source": "index",
+      "target": "goals"
+    },
+    {
+      "source": "index",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "index",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "index",
+      "target": "llama31-8b"
+    },
+    {
+      "source": "index",
+      "target": "m4-pro"
+    },
+    {
+      "source": "index",
+      "target": "machines"
+    },
+    {
+      "source": "index",
+      "target": "models"
+    },
+    {
+      "source": "index",
+      "target": "prices"
+    },
+    {
+      "source": "index",
+      "target": "qwen25-14b"
+    },
+    {
+      "source": "index",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "index",
+      "target": "research"
+    },
+    {
+      "source": "index",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "index",
+      "target": "runtimes"
+    },
+    {
+      "source": "index",
+      "target": "technology"
+    },
+    {
+      "source": "inference-frameworks",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "inference-frameworks",
+      "target": "runtimes"
+    },
+    {
+      "source": "llama31-8b",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "llama31-8b",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "llama31-8b",
+      "target": "rtx-3060"
+    },
+    {
+      "source": "llama31-8b",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "m4-max",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "m4-max",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "m4-pro",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "m4-pro",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "machines",
+      "target": "build-guide"
+    },
+    {
+      "source": "machines",
+      "target": "m4-pro"
+    },
+    {
+      "source": "machines",
+      "target": "models"
+    },
+    {
+      "source": "machines",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "machines",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "models",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "models",
+      "target": "llama31-8b"
+    },
+    {
+      "source": "models",
+      "target": "machines"
+    },
+    {
+      "source": "models",
+      "target": "qwen25-14b"
+    },
+    {
+      "source": "models",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "prices",
+      "target": "build-guide"
+    },
+    {
+      "source": "prices",
+      "target": "comparison-methods"
+    },
+    {
+      "source": "prices",
+      "target": "explorer"
+    },
+    {
+      "source": "qwen25-14b",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "qwen25-14b",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "qwen25-14b",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "qwen25-14b",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "qwen25-7b",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "qwen25-7b",
+      "target": "m4-pro"
+    },
+    {
+      "source": "qwen25-7b",
+      "target": "qwen25-14b"
+    },
+    {
+      "source": "qwen25-7b",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "qwen25-7b",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "research",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "research",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "rtx-2080-ti-nvlink",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "rtx-3060",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "rtx-3060",
+      "target": "llama31-8b"
+    },
+    {
+      "source": "rtx-3060",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "rtx-3060",
+      "target": "technology"
+    },
+    {
+      "source": "rtx-3090",
+      "target": "build-guide"
+    },
+    {
+      "source": "rtx-3090",
+      "target": "prices"
+    },
+    {
+      "source": "rtx-3090",
+      "target": "qwen25-14b"
+    },
+    {
+      "source": "rtx-3090",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "rtx-3090",
+      "target": "technology"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "build-guide"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "llama31-8b"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "qwen25-14b"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "rtx-4090",
+      "target": "technology"
+    },
+    {
+      "source": "rtx-5090",
+      "target": "build-guide"
+    },
+    {
+      "source": "rtx-5090",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "rtx-5090",
+      "target": "qwen25-7b"
+    },
+    {
+      "source": "runtimes",
+      "target": "arc-b580"
+    },
+    {
+      "source": "runtimes",
+      "target": "catalog"
+    },
+    {
+      "source": "runtimes",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "runtimes",
+      "target": "goals"
+    },
+    {
+      "source": "runtimes",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "runtimes",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "runtimes",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "runtimes",
+      "target": "rtx-4090"
+    },
+    {
+      "source": "technology",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "technology",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "technology",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "technology",
+      "target": "runtimes"
+    }
+  ]
+}

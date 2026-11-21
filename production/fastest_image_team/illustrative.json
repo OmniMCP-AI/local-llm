@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "revision": "fictional-team-comparison-v1",
+  "kind": "illustrative",
+  "currency": "USD",
+  "market": "Fictional market",
+  "price_as_of": "2026-11-21",
+  "months": 12,
+  "workload": {
+    "team_size": 10,
+    "revision": "fictional-workload-v1",
+    "source": {
+      "reference": "Fictional aggregate example",
+      "revision": "example-v1",
+      "kind": "fictional"
+    },
+    "public_aggregate_allowed": true,
+    "workflow": {
+      "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "runtime_revision": "fictional-comfyui-build",
+      "rubric_revision": "fictional-product-image-review-v1"
+    },
+    "monthly_accepted": 1000,
+    "peak_accepted": 120,
+    "deadline_hours": "2",
+    "privacy_requirement": "Fictional products only. Access limited to the team. Delete temporary files within seven days."
+  },
+  "plans": {
+    "local": {
+      "lanes": {
+        "local": {
+          "configuration": "Fictional local workstation",
+          "service": {
+            "scope": {
+              "workflow": {
+                "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "runtime_revision": "fictional-comfyui-build",
+                "rubric_revision": "fictional-product-image-review-v1"
+              },
+              "workload_revision": "fictional-workload-v1",
+              "concurrency": 4,
+              "wave_seconds": "60",
+              "monthly_compute_hours": "20",
+              "peak_queue_hours": "0.25",
+              "accepted_yield": "0.8",
+              "review_minutes_per_attempt": "0.5",
+              "rework_minutes_per_rejected": "1"
+            },
+            "quality": "pass",
+            "privacy": "pass",
+            "commercial_rights": "pass",
+            "privacy_conditions": "Fictional access-controlled local storage and seven-day deletion.",
+            "service_evidence": {
+              "reference": "Fictional scoped service and review record",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          },
+          "cost": {
+            "upfront_cash": "1320",
+            "fixed_monthly_cash": "30",
+            "cash_per_attempt": "0.008",
+            "storage_gb_month": "20",
+            "cash_per_gb_month": "0.2",
+            "transfer_gb": "10",
+            "cash_per_gb": "0.1",
+            "price_evidence": {
+              "reference": "Fictional same-market landed build and operating rates",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          }
+        }
+      },
+      "labor": {
+        "monthly_hours": "120",
+        "peak_reviewers": 4,
+        "loaded_hourly": "50",
+        "cash_hourly": "0",
+        "evidence": {
+          "reference": "Fictional review calendar and labor rates",
+          "revision": "example-v1",
+          "kind": "fictional"
+        }
+      }
+    },
+    "cloud": {
+      "lanes": {
+        "cloud": {
+          "configuration": "Fictional hosted worker pool",
+          "service": {
+            "scope": {
+              "workflow": {
+                "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "runtime_revision": "fictional-comfyui-build",
+                "rubric_revision": "fictional-product-image-review-v1"
+              },
+              "workload_revision": "fictional-workload-v1",
+              "concurrency": 8,
+              "wave_seconds": "60",
+              "monthly_compute_hours": "20",
+              "peak_queue_hours": "0.5",
+              "accepted_yield": "0.8",
+              "review_minutes_per_attempt": "0.5",
+              "rework_minutes_per_rejected": "1"
+            },
+            "quality": "pass",
+            "privacy": "pass",
+            "commercial_rights": "pass",
+            "privacy_conditions": "Fictional private workspace, seven-day deletion and no provider reuse.",
+            "service_evidence": {
+              "reference": "Fictional scoped service and review record",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          },
+          "cost": {
+            "upfront_cash": "0",
+            "fixed_monthly_cash": "10",
+            "cash_per_attempt": "0.2",
+            "storage_gb_month": "20",
+            "cash_per_gb_month": "0.2",
+            "transfer_gb": "10",
+            "cash_per_gb": "0.1",
+            "price_evidence": {
+              "reference": "Fictional same-market landed build and operating rates",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          }
+        }
+      },
+      "labor": {
+        "monthly_hours": "120",
+        "peak_reviewers": 4,
+        "loaded_hourly": "50",
+        "cash_hourly": "0",
+        "evidence": {
+          "reference": "Fictional review calendar and labor rates",
+          "revision": "example-v1",
+          "kind": "fictional"
+        }
+      }
+    },
+    "hybrid": {
+      "local_share": "0.5",
+      "lanes": {
+        "local": {
+          "configuration": "Fictional local workstation",
+          "service": {
+            "scope": {
+              "workflow": {
+                "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "runtime_revision": "fictional-comfyui-build",
+                "rubric_revision": "fictional-product-image-review-v1"
+              },
+              "workload_revision": "fictional-workload-v1",
+              "concurrency": 4,
+              "wave_seconds": "60",
+              "monthly_compute_hours": "20",
+              "peak_queue_hours": "0.25",
+              "accepted_yield": "0.8",
+              "review_minutes_per_attempt": "0.5",
+              "rework_minutes_per_rejected": "1"
+            },
+            "quality": "pass",
+            "privacy": "pass",
+            "commercial_rights": "pass",
+            "privacy_conditions": "Fictional access-controlled local storage and seven-day deletion.",
+            "service_evidence": {
+              "reference": "Fictional scoped service and review record",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          },
+          "cost": {
+            "upfront_cash": "1320",
+            "fixed_monthly_cash": "30",
+            "cash_per_attempt": "0.008",
+            "storage_gb_month": "20",
+            "cash_per_gb_month": "0.2",
+            "transfer_gb": "10",
+            "cash_per_gb": "0.1",
+            "price_evidence": {
+              "reference": "Fictional same-market landed build and operating rates",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          }
+        },
+        "cloud": {
+          "configuration": "Fictional hosted worker pool",
+          "service": {
+            "scope": {
+              "workflow": {
+                "workflow_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "runtime_revision": "fictional-comfyui-build",
+                "rubric_revision": "fictional-product-image-review-v1"
+              },
+              "workload_revision": "fictional-workload-v1",
+              "concurrency": 8,
+              "wave_seconds": "60",
+              "monthly_compute_hours": "20",
+              "peak_queue_hours": "0.5",
+              "accepted_yield": "0.8",
+              "review_minutes_per_attempt": "0.5",
+              "rework_minutes_per_rejected": "1"
+            },
+            "quality": "pass",
+            "privacy": "pass",
+            "commercial_rights": "pass",
+            "privacy_conditions": "Fictional private workspace, seven-day deletion and no provider reuse.",
+            "service_evidence": {
+              "reference": "Fictional scoped service and review record",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          },
+          "cost": {
+            "upfront_cash": "0",
+            "fixed_monthly_cash": "10",
+            "cash_per_attempt": "0.2",
+            "storage_gb_month": "20",
+            "cash_per_gb_month": "0.2",
+            "transfer_gb": "10",
+            "cash_per_gb": "0.1",
+            "price_evidence": {
+              "reference": "Fictional same-market landed build and operating rates",
+              "revision": "example-v1",
+              "kind": "fictional"
+            }
+          }
+        }
+      },
+      "labor": {
+        "monthly_hours": "120",
+        "peak_reviewers": 4,
+        "loaded_hourly": "50",
+        "cash_hourly": "0",
+        "evidence": {
+          "reference": "Fictional review calendar and labor rates",
+          "revision": "example-v1",
+          "kind": "fictional"
+        }
+      }
+    }
+  }
+}

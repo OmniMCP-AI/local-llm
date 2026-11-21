@@ -1,0 +1,718 @@
+{
+  "topics": {
+    "hardware-selection": [
+      "Hardware selection",
+      "硬件选购",
+      "Selección de hardware",
+      "ハードウェア選定",
+      "하드웨어 선택",
+      "Hardwareauswahl",
+      "हार्डवेयर चयन",
+      "Choix du matériel",
+      "اختيار العتاد"
+    ],
+    "model-fit": [
+      "Model fit",
+      "模型适配",
+      "Capacidad del modelo",
+      "モデルの適合性",
+      "모델 적합성",
+      "Modelleignung",
+      "मॉडल अनुकूलता",
+      "Compatibilité du modèle",
+      "ملاءمة النموذج"
+    ],
+    "interactive-chat": [
+      "Interactive chat",
+      "交互对话",
+      "Chat interactivo",
+      "対話チャット",
+      "대화형 채팅",
+      "Interaktiver Chat",
+      "इंटरैक्टिव चैट",
+      "Dialogue interactif",
+      "المحادثة التفاعلية"
+    ],
+    "coding": [
+      "Coding",
+      "编程",
+      "Programación",
+      "コーディング",
+      "코딩",
+      "Programmierung",
+      "कोडिंग",
+      "Programmation",
+      "البرمجة"
+    ],
+    "agent-workflows": [
+      "Agent workflows",
+      "智能体工作流",
+      "Flujos de agentes",
+      "エージェントの処理",
+      "에이전트 작업",
+      "Agentenabläufe",
+      "एजेंट कार्यप्रवाह",
+      "Flux de travail des agents",
+      "مهام الوكلاء"
+    ],
+    "document-processing": [
+      "Document processing",
+      "文档处理",
+      "Procesamiento de documentos",
+      "文書処理",
+      "문서 처리",
+      "Dokumentverarbeitung",
+      "दस्तावेज़ प्रसंस्करण",
+      "Traitement de documents",
+      "معالجة المستندات"
+    ],
+    "retrieval": [
+      "Information retrieval",
+      "信息检索",
+      "Recuperación de información",
+      "情報検索",
+      "정보 검색",
+      "Informationsabruf",
+      "सूचना पुनर्प्राप्ति",
+      "Recherche d’information",
+      "استرجاع المعلومات"
+    ],
+    "image-generation": [
+      "Image generation",
+      "图像生成",
+      "Generación de imágenes",
+      "画像生成",
+      "이미지 생성",
+      "Bildgenerierung",
+      "चित्र निर्माण",
+      "Génération d’images",
+      "توليد الصور"
+    ],
+    "model-evaluation": [
+      "Model evaluation",
+      "模型评估",
+      "Evaluación de modelos",
+      "モデル評価",
+      "모델 평가",
+      "Modellevaluation",
+      "मॉडल मूल्यांकन",
+      "Évaluation de modèles",
+      "تقييم النماذج"
+    ],
+    "runtime-tuning": [
+      "Runtime tuning",
+      "推理框架调优",
+      "Ajuste del motor",
+      "ランタイム調整",
+      "런타임 최적화",
+      "Laufzeitoptimierung",
+      "रनटाइम ट्यूनिंग",
+      "Optimisation du moteur",
+      "ضبط محرك التشغيل"
+    ],
+    "multi-user-serving": [
+      "Multi-user serving",
+      "多用户服务",
+      "Servicio multiusuario",
+      "複数ユーザー配信",
+      "다중 사용자 서빙",
+      "Mehrbenutzerbetrieb",
+      "बहु-उपयोगकर्ता सेवा",
+      "Service multi-utilisateur",
+      "خدمة عدة مستخدمين"
+    ],
+    "ownership-cost": [
+      "Cost of ownership",
+      "拥有成本",
+      "Coste de propiedad",
+      "所有コスト",
+      "소유 비용",
+      "Betrieb und Anschaffung",
+      "स्वामित्व लागत",
+      "Coût de possession",
+      "تكلفة الملكية"
+    ],
+    "distributed-inference": [
+      "Distributed inference",
+      "分布式推理",
+      "Inferencia distribuida",
+      "分散推論",
+      "분산 추론",
+      "Verteilte Inferenz",
+      "वितरित इन्फ़रेंस",
+      "Inférence distribuée",
+      "الاستدلال الموزع"
+    ],
+    "fine-tuning": [
+      "Model fine-tuning",
+      "模型微调",
+      "Ajuste fino del modelo",
+      "モデルの微調整",
+      "모델 미세 조정",
+      "Modell-Fine-Tuning",
+      "मॉडल फ़ाइन-ट्यूनिंग",
+      "Ajustement de modèles",
+      "الضبط الدقيق للنماذج"
+    ],
+    "private-deployment": [
+      "Private deployment",
+      "私有部署",
+      "Despliegue privado",
+      "プライベート環境",
+      "비공개 배포",
+      "Privater Betrieb",
+      "निजी परिनियोजन",
+      "Déploiement privé",
+      "النشر الخاص"
+    ],
+    "audio-video": [
+      "Audio and video",
+      "音频与视频",
+      "Audio y vídeo",
+      "音声・動画",
+      "오디오 및 비디오",
+      "Audio und Video",
+      "ऑडियो और वीडियो",
+      "Audio et vidéo",
+      "الصوت والفيديو"
+    ],
+    "evidence-research": [
+      "Evidence and methods",
+      "证据与方法",
+      "Evidencia y métodos",
+      "根拠と手法",
+      "근거와 방법",
+      "Belege und Methoden",
+      "साक्ष्य और विधियाँ",
+      "Sources et méthodes",
+      "الأدلة والمنهجيات"
+    ],
+    "community-contribution": [
+      "Community contribution",
+      "社区贡献",
+      "Contribución comunitaria",
+      "コミュニティへの貢献",
+      "커뮤니티 기여",
+      "Community-Beiträge",
+      "सामुदायिक योगदान",
+      "Contribution communautaire",
+      "مساهمات المجتمع"
+    ],
+    "agent-integration": [
+      "Agent integration",
+      "智能体集成",
+      "Integración de agentes",
+      "エージェント連携",
+      "에이전트 통합",
+      "Agentenintegration",
+      "एजेंट एकीकरण",
+      "Intégration des agents",
+      "تكامل الوكلاء"
+    ]
+  },
+  "dimensions": {
+    "generation": [
+      "Output generation",
+      "输出生成",
+      "Generación de salida",
+      "出力生成",
+      "출력 생성",
+      "Ausgabegenerierung",
+      "आउटपुट निर्माण",
+      "Génération de sortie",
+      "توليد المخرجات"
+    ],
+    "prefill": [
+      "Prompt processing",
+      "提示词预填充",
+      "Procesamiento de entrada",
+      "プロンプト処理",
+      "프롬프트 처리",
+      "Promptverarbeitung",
+      "प्रॉम्प्ट प्रसंस्करण",
+      "Traitement du prompt",
+      "معالجة المدخلات"
+    ],
+    "first-token": [
+      "First-token latency",
+      "首词元延迟",
+      "Latencia del primer token",
+      "初回トークン遅延",
+      "첫 토큰 지연",
+      "Zeit zum ersten Token",
+      "पहले टोकन का विलंब",
+      "Délai du premier jeton",
+      "زمن أول رمز"
+    ],
+    "memory": [
+      "Memory and fit",
+      "内存与适配",
+      "Memoria y capacidad",
+      "メモリと適合性",
+      "메모리 및 적합성",
+      "Speicher und Kapazität",
+      "मेमोरी और क्षमता",
+      "Mémoire et capacité",
+      "الذاكرة والسعة"
+    ],
+    "projection": [
+      "Estimate or projection",
+      "估算或预测",
+      "Estimación o proyección",
+      "見積もり・予測",
+      "추정 또는 예측",
+      "Schätzung oder Projektion",
+      "अनुमान या प्रक्षेपण",
+      "Estimation ou projection",
+      "تقدير أو إسقاط"
+    ],
+    "serving": [
+      "Concurrent throughput",
+      "并发吞吐量",
+      "Rendimiento concurrente",
+      "同時処理量",
+      "동시 처리량",
+      "Paralleler Durchsatz",
+      "समवर्ती थ्रूपुट",
+      "Débit simultané",
+      "الإنتاجية المتزامنة"
+    ],
+    "other": [
+      "Other reported observations",
+      "其他报告观察",
+      "Otras observaciones",
+      "その他の観測",
+      "기타 관측",
+      "Weitere Beobachtungen",
+      "अन्य अवलोकन",
+      "Autres observations",
+      "ملاحظات أخرى"
+    ],
+    "energy": [
+      "Power and energy",
+      "功率与能耗",
+      "Potencia y energía",
+      "電力とエネルギー",
+      "전력 및 에너지",
+      "Leistung und Energie",
+      "शक्ति और ऊर्जा",
+      "Puissance et énergie",
+      "القدرة والطاقة"
+    ],
+    "elapsed": [
+      "Workflow or phase time",
+      "工作流或阶段耗时",
+      "Tiempo de flujo o fase",
+      "工程・段階の時間",
+      "작업 또는 단계 시간",
+      "Ablauf- oder Phasendauer",
+      "कार्य या चरण समय",
+      "Durée du flux ou de l’étape",
+      "مدة سير العمل أو المرحلة"
+    ],
+    "transport": [
+      "Transfer or auxiliary compute",
+      "传输或辅助计算",
+      "Transferencia o cálculo auxiliar",
+      "転送・補助演算",
+      "전송 또는 보조 연산",
+      "Transport oder Zusatzberechnung",
+      "स्थानांतरण या सहायक गणना",
+      "Transfert ou calcul auxiliaire",
+      "النقل أو الحساب المساعد"
+    ],
+    "quality": [
+      "Task quality and outcomes",
+      "任务质量与结果",
+      "Calidad y resultados",
+      "タスク品質と結果",
+      "작업 품질과 결과",
+      "Aufgabenqualität und Ergebnisse",
+      "कार्य गुणवत्ता और परिणाम",
+      "Qualité et résultats",
+      "جودة المهام ونتائجها"
+    ]
+  },
+  "formats": {
+    "video": [
+      "Video research note",
+      "视频研究笔记",
+      "Nota sobre vídeo",
+      "動画研究ノート",
+      "영상 연구 노트",
+      "Videoforschungsnotiz",
+      "वीडियो शोध नोट",
+      "Note de recherche vidéo",
+      "مذكرة بحث فيديو"
+    ],
+    "guide": [
+      "Wiki guide",
+      "维基指南",
+      "Guía wiki",
+      "Wiki ガイド",
+      "위키 가이드",
+      "Wiki-Leitfaden",
+      "विकी मार्गदर्शिका",
+      "Guide wiki",
+      "دليل الويكي"
+    ],
+    "article": [
+      "Article",
+      "文章",
+      "Artículo",
+      "記事",
+      "기사",
+      "Artikel",
+      "लेख",
+      "Article",
+      "مقال"
+    ],
+    "blog": [
+      "Blog post",
+      "博客文章",
+      "Entrada de blog",
+      "ブログ記事",
+      "블로그 글",
+      "Blogbeitrag",
+      "ब्लॉग पोस्ट",
+      "Billet de blog",
+      "تدوينة"
+    ],
+    "post": [
+      "Forum post",
+      "论坛帖子",
+      "Publicación en foro",
+      "フォーラム投稿",
+      "포럼 게시물",
+      "Forenbeitrag",
+      "फ़ोरम पोस्ट",
+      "Message de forum",
+      "منشور منتدى"
+    ]
+  },
+  "ui": {
+    "library": [
+      "Research library",
+      "研究资料库",
+      "Biblioteca de investigación",
+      "研究ライブラリ",
+      "연구 자료실",
+      "Forschungsbibliothek",
+      "शोध संग्रह",
+      "Bibliothèque de recherche",
+      "مكتبة الأبحاث"
+    ],
+    "format": [
+      "Source type",
+      "资料类型",
+      "Tipo de fuente",
+      "資料の種類",
+      "자료 유형",
+      "Quellentyp",
+      "स्रोत प्रकार",
+      "Type de source",
+      "نوع المصدر"
+    ],
+    "topic": [
+      "Discussed use case",
+      "讨论的使用场景",
+      "Uso tratado",
+      "取り上げた用途",
+      "다룬 사용 사례",
+      "Besprochener Einsatz",
+      "चर्चित उपयोग",
+      "Usage abordé",
+      "حالة الاستخدام المناقشة"
+    ],
+    "task": [
+      "Task in test record",
+      "测试记录中的任务",
+      "Tarea en el registro",
+      "記録されたテストの用途",
+      "시험 기록의 작업",
+      "Aufgabe im Testeintrag",
+      "परीक्षण रिकॉर्ड का कार्य",
+      "Tâche dans le relevé",
+      "المهمة في سجل الاختبار"
+    ],
+    "dimension": [
+      "Test dimension",
+      "测试维度",
+      "Dimensión de prueba",
+      "テストの観点",
+      "시험 항목",
+      "Testdimension",
+      "परीक्षण आयाम",
+      "Dimension du test",
+      "بُعد الاختبار"
+    ],
+    "query": [
+      "Search titles, setups and test conditions",
+      "搜索标题、配置和测试条件",
+      "Buscar títulos, equipos y condiciones",
+      "資料名・構成・条件を検索",
+      "제목·구성·시험 조건 검색",
+      "Titel, Systeme und Testbedingungen suchen",
+      "शीर्षक, सेटअप और शर्तें खोजें",
+      "Rechercher titres, configurations et conditions",
+      "بحث في العناوين والتجهيزات وشروط الاختبار"
+    ],
+    "sort": [
+      "Sort by",
+      "排序方式",
+      "Ordenar por",
+      "並べ替え",
+      "정렬 기준",
+      "Sortieren nach",
+      "क्रमबद्ध करें",
+      "Trier par",
+      "الفرز حسب"
+    ],
+    "newest": [
+      "Newest dated source",
+      "有日期的最新资料",
+      "Fuente fechada más reciente",
+      "日付の新しい順",
+      "날짜가 최신인 자료",
+      "Neueste datierte Quelle",
+      "नवीनतम दिनांकित स्रोत",
+      "Source datée la plus récente",
+      "الأحدث تاريخًا"
+    ],
+    "title": [
+      "Title A–Z",
+      "标题顺序",
+      "Título A–Z",
+      "タイトル順",
+      "제목순",
+      "Titel A–Z",
+      "शीर्षक क्रम",
+      "Titre A–Z",
+      "حسب العنوان"
+    ],
+    "all": [
+      "All",
+      "全部",
+      "Todos",
+      "すべて",
+      "전체",
+      "Alle",
+      "सभी",
+      "Tous",
+      "الكل"
+    ],
+    "reset": [
+      "Clear filters",
+      "清除筛选",
+      "Borrar filtros",
+      "条件をクリア",
+      "필터 지우기",
+      "Filter löschen",
+      "फ़िल्टर हटाएँ",
+      "Effacer les filtres",
+      "مسح عوامل التصفية"
+    ],
+    "sources": [
+      "Sources",
+      "资料",
+      "Fuentes",
+      "資料",
+      "출처",
+      "Quellen",
+      "स्रोत",
+      "Sources",
+      "المصادر"
+    ],
+    "records": [
+      "Matching observations",
+      "匹配的观察记录",
+      "Observaciones coincidentes",
+      "該当する観測記録",
+      "일치하는 관측 기록",
+      "Passende Beobachtungen",
+      "मेल खाते अवलोकन",
+      "Observations correspondantes",
+      "الملاحظات المطابقة"
+    ],
+    "none": [
+      "No sources match these filters.",
+      "没有资料符合这些条件。",
+      "Ninguna fuente coincide.",
+      "該当する資料はありません。",
+      "일치하는 자료가 없습니다.",
+      "Keine passenden Quellen.",
+      "कोई स्रोत नहीं मिला।",
+      "Aucune source correspondante.",
+      "لا توجد مصادر مطابقة."
+    ],
+    "no-records": [
+      "No test records indexed",
+      "尚无已索引的测试记录",
+      "Sin registros de prueba indexados",
+      "登録されたテスト記録なし",
+      "색인된 시험 기록 없음",
+      "Keine Testeinträge indexiert",
+      "कोई परीक्षण रिकॉर्ड अनुक्रमित नहीं",
+      "Aucun relevé de test indexé",
+      "لا سجلات اختبار مفهرسة"
+    ],
+    "undated": [
+      "Publication date unknown",
+      "发布日期未知",
+      "Fecha de publicación desconocida",
+      "公開日不明",
+      "발행일 미상",
+      "Erscheinungsdatum unbekannt",
+      "प्रकाशन तिथि अज्ञात",
+      "Date de publication inconnue",
+      "تاريخ النشر غير معروف"
+    ],
+    "source": [
+      "Open source",
+      "查看来源",
+      "Abrir fuente",
+      "出典を開く",
+      "출처 열기",
+      "Quelle öffnen",
+      "स्रोत खोलें",
+      "Ouvrir la source",
+      "فتح المصدر"
+    ],
+    "conditions": [
+      "Reported conditions",
+      "报告的测试条件",
+      "Condiciones declaradas",
+      "報告された条件",
+      "보고된 조건",
+      "Berichtete Bedingungen",
+      "दर्ज की गई शर्तें",
+      "Conditions rapportées",
+      "الظروف المذكورة"
+    ],
+    "setup": [
+      "Hardware / model / runtime",
+      "硬件 / 模型 / 框架",
+      "Hardware / modelo / motor",
+      "ハードウェア / モデル / ランタイム",
+      "하드웨어 / 모델 / 런타임",
+      "Hardware / Modell / Laufzeit",
+      "हार्डवेयर / मॉडल / रनटाइम",
+      "Matériel / modèle / moteur",
+      "العتاد / النموذج / المحرك"
+    ],
+    "evidence": [
+      "Evidence",
+      "证据",
+      "Evidencia",
+      "根拠",
+      "근거",
+      "Beleg",
+      "साक्ष्य",
+      "Preuve",
+      "الدليل"
+    ],
+    "more": [
+      "Show more",
+      "显示更多",
+      "Mostrar más",
+      "さらに表示",
+      "더 보기",
+      "Mehr anzeigen",
+      "और दिखाएँ",
+      "Afficher plus",
+      "عرض المزيد"
+    ],
+    "intro": [
+      "Browse by the subject of a source, or narrow the results to a task and measurement reported together.",
+      "按资料讨论的主题浏览，也可筛选同一条记录中的任务与测量维度。",
+      "Explora por tema o busca una tarea y una medida en el mismo registro.",
+      "資料の主題、または同じ記録にあるタスクと測定項目で絞り込めます。",
+      "자료의 주제로 찾거나 같은 기록의 작업과 측정 항목으로 좁혀 보세요.",
+      "Nach Thema suchen oder auf Aufgabe und Messgröße im selben Eintrag eingrenzen.",
+      "स्रोत के विषय से खोजें या एक ही रिकॉर्ड में दर्ज कार्य और माप चुनें।",
+      "Cherchez par sujet ou par tâche et mesure figurant dans le même relevé.",
+      "تصفح حسب موضوع المصدر أو ابحث عن مهمة وقياس وردا في السجل نفسه."
+    ],
+    "test-context": [
+      "Test context",
+      "测试上下文",
+      "Contexto de prueba",
+      "テスト条件",
+      "시험 맥락",
+      "Testkontext",
+      "परीक्षण का संदर्भ",
+      "Contexte du test",
+      "سياق الاختبار"
+    ],
+    "in-records": [
+      "Search within matching test records",
+      "搜索匹配的测试记录",
+      "Buscar en los registros coincidentes",
+      "該当する記録内を検索",
+      "일치하는 시험 기록 검색",
+      "Passende Testeinträge durchsuchen",
+      "मेल खाते रिकॉर्ड में खोजें",
+      "Rechercher dans les relevés correspondants",
+      "ابحث ضمن سجلات الاختبار المطابقة"
+    ],
+    "note": [
+      "Research note",
+      "研究笔记",
+      "Nota de investigación",
+      "研究ノート",
+      "연구 노트",
+      "Forschungsnotiz",
+      "शोध नोट",
+      "Note de recherche",
+      "مذكرة البحث"
+    ],
+    "unspecified": [
+      "Task not tagged",
+      "任务尚未标注",
+      "Tarea sin etiquetar",
+      "用途タグなし",
+      "작업 태그 없음",
+      "Aufgabe ohne Tag",
+      "कार्य का टैग नहीं है",
+      "Tâche sans étiquette",
+      "المهمة بلا وسم"
+    ]
+  },
+  "aliases": {
+    "prefill": [
+      "prefill",
+      "prompt processing",
+      "输入预填充"
+    ],
+    "first-token": [
+      "TTFT",
+      "time to first token",
+      "首词元延迟"
+    ],
+    "serving": [
+      "concurrent throughput",
+      "aggregate throughput"
+    ],
+    "generation": [
+      "decode",
+      "output generation"
+    ],
+    "energy": [
+      "power draw",
+      "energy"
+    ],
+    "quality": [
+      "task outcome"
+    ],
+    "fine-tuning": [
+      "finetuning",
+      "fine-tuning"
+    ],
+    "distributed-inference": [
+      "distributed inference"
+    ],
+    "multi-user-serving": [
+      "multi-user serving"
+    ]
+  }
+}

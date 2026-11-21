@@ -1,0 +1,265 @@
+"""An X post card made from the editorial release's exact numeric claim."""
+
+from datetime import datetime, timezone
+from decimal import Decimal
+from hashlib import sha256
+from io import BytesIO
+import re
+from unicodedata import normalize
+from zipfile import ZipFile, ZipInfo
+
+from fastest_editorial import is_shared_cpu_decode
+from fastest_release.validation import plain_text
+
+from .approval import create_approval, decode_sealed, instant, json_bytes, read_sealed, require_window, retain, seal
+from .engagement_link import evidence_link, verified_link
+from .package import require_current_story, retain_package, verify_story
+
+
+ARCHIVE = "x-post.zip"
+POST_COPY = "post.txt"
+PAYLOAD_FILES = (POST_COPY, "chart.png", "chart-alt.txt")
+COPY = {
+    "en": (
+        "Median decode throughput: {value} {unit} ({samples} measurements)",
+        "Correction: ", "Source: ",
+        "Single bar on a scale from 0 to {maximum} {unit}.",
+    ),
+    "zh-CN": (
+        "解码吞吐量中位数：{value} {unit}（{samples} 次测量）",
+        "修订：", "来源：",
+        "单柱图，刻度范围为 0 至 {maximum} {unit}。",
+    ),
+    "zh-TW": (
+        "解碼吞吐量中位數：{value} {unit}（{samples} 次測量）",
+        "修訂：", "來源：",
+        "單柱圖，刻度範圍為 0 至 {maximum} {unit}。",
+    ),
+}
+SHARED_CPU_SCOPE = {
+    "en": "Shared CI runner, 1 CPU thread",
+    "zh-CN": "共享 CI 运行器，单个 CPU 线程",
+    "zh-TW": "共用 CI 執行器，單一 CPU 執行緒",
+}
+CHART_COPY = {
+    "en": ("Median decode throughput", "Measurements: {samples}", "fastest.ai  |  Evidence and attribution in the post"),
+    "zh-CN": ("解码吞吐量中位数", "测量次数：{samples}", "fastest.ai  |  证据与来源见帖子"),
+    "zh-TW": ("解碼吞吐量中位數", "測量次數：{samples}", "fastest.ai  |  證據與來源見貼文"),
+}
+
+
+def _shared_cpu_scope(draft):
+    story = draft["story"]
+    claim, = story["claims"]
+    if is_shared_cpu_decode(claim, story["benchmark_conditions"]["workload"]):
+        return SHARED_CPU_SCOPE[draft["locale"]]
+    return ""
+
+
+def _copy(draft, maximum, scope, engagement_key=None):
+    headline, correction, source_prefix, chart_description = COPY[draft["locale"]]
+    story = draft["story"]
+    claim, = story["claims"]
+    result = headline.format(value=claim["value"], unit=claim["unit"], samples=claim["sample_count"])
+    if story["kind"] == "correction":
+        result = correction + result
+    credit = source_prefix + story["attribution"]["label"]
+    scope_line = f"{scope}\n" if scope else ""
+    copy = normalize("NFC", f"{result}\n{scope_line}{credit}\n")
+    link = evidence_link(draft, engagement_key)
+    # X v3 weights, conservatively counting emoji sequences per code point.
+    single_weight = ((0, 4351), (8192, 8205), (8208, 8223), (8242, 8247))
+    weight = sum(1 if any(low <= ord(char) <= high for low, high in single_weight) else 2 for char in copy)
+    if weight + 23 > 280:
+        raise ValueError("claim and full source attribution exceed X's 280-character limit")
+    punctuation = "." if draft["locale"] == "en" else "。"
+    scope_sentence = f"{scope}{punctuation} " if scope else ""
+    alt = f"{chart_description.format(maximum=maximum, unit=claim['unit'])} {result}. {scope_sentence}{credit}."
+    return f"{copy}{link}\n".encode("utf-8"), f"{normalize('NFC', alt)}\n".encode("utf-8")
+
+
+def _card(draft, maximum, scope, font_file):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError as error:
+        raise ValueError("install Pillow to prepare the X chart") from error
+
+    claim, = draft["story"]["claims"]
+    value, unit = claim["value"], claim["unit"]
+    image = Image.new("RGB", (1000, 500), "#f5f6f2")
+    draw = ImageDraw.Draw(image)
+    title, count, footer = CHART_COPY[draft["locale"] if font_file else "en"]
+    measurements = count.format(samples=claim["sample_count"])
+    if font_file is None:
+        medium = ImageFont.load_default(size=30)
+        small = ImageFont.load_default(size=24)
+    else:
+        medium = ImageFont.truetype(str(font_file), 30)
+        small = ImageFont.truetype(str(font_file), 24)
+        missing = bytes(small.getmask("\uffff"))
+        visible_characters = set(title + measurements + scope + footer) - {" "}
+        if any(bytes(small.getmask(char)) == missing for char in visible_characters):
+            raise ValueError("--font-file must cover the X chart labels for the draft locale")
+    label = f"{value} {unit}"
+    large = ImageFont.load_default(size=64)
+    if large.getlength(label) > 888:
+        large = ImageFont.load_default(size=int(64 * 888 / large.getlength(label)))
+    draw.text((56, 46), title, font=medium, fill="#132927")
+    draw.text((56, 113), label, font=large, fill="#132927")
+    draw.text((56, 214), measurements, font=small, fill="#45615c")
+    if scope:
+        draw.text((56, 246), scope, font=small, fill="#45615c")
+    draw.rectangle((56, 284, 944, 337), fill="#dbe3dd")
+    filled = round(888 * Decimal(value) / Decimal(maximum))
+    if filled:
+        draw.rectangle((56, 284, 56 + filled - 1, 337), fill="#087360")
+    scale_font = ImageFont.load_default(size=24) if font_file else small
+    draw.text((56, 358), "0", font=scale_font, fill="#132927")
+    draw.text((944, 358), f"{maximum} {unit}", font=scale_font, anchor="ra", fill="#132927")
+    draw.text((56, 438), footer, font=small, fill="#45615c")
+    output = BytesIO()
+    image.save(output, format="PNG")
+    return output.getvalue()
+
+
+def prepare(store, draft_path, output_dir, *, font_file=None, engagement_key=None):
+    draft = read_sealed(draft_path, "draft_revision")
+    maximum = verify_story(store, draft)
+    scope = _shared_cpu_scope(draft)
+    localized_chart = bool(scope) and draft["locale"] != "en"
+    if localized_chart and font_file is None:
+        raise ValueError("provide a font with glyphs for the X chart using --font-file")
+    if font_file is not None and not localized_chart:
+        raise ValueError("--font-file for X requires a Chinese shared CI CPU draft")
+    post, alt = _copy(draft, maximum, scope, engagement_key)
+    files = {"post.txt": post, "chart.png": _card(draft, maximum, scope, font_file), "chart-alt.txt": alt}
+    package = seal({
+        "schema_version": 1,
+        "channel": "x",
+        "draft": draft,
+        **({"engagement_key": engagement_key} if engagement_key is not None else {}),
+        "files": {name: sha256(body).hexdigest() for name, body in files.items()},
+    }, "payload_sha256")
+    files["package.json"] = json_bytes(package)
+    return retain_package(output_dir, package["payload_sha256"], files)
+
+
+def _load_package(read):
+    package = decode_sealed(read("package.json"), "payload_sha256", "package.json")
+    if package["schema_version"] != 1 or package["channel"] != "x" or set(package["files"]) != set(PAYLOAD_FILES):
+        raise ValueError("unsupported X package")
+    files = {name: read(name) for name in PAYLOAD_FILES}
+    if any(sha256(body).hexdigest() != package["files"][name] for name, body in files.items()):
+        raise ValueError("package bytes differ from the reviewed payload")
+    return package, files
+
+
+def approve(package_path, approval_dir, *, account, payload_sha256, window_start, window_end,
+            approved_by, rights_reference):
+    if not re.fullmatch(r"@[a-zA-Z0-9_]{1,15}", account):
+        raise ValueError("account must be an X @handle")
+    package, _ = _load_package(lambda name: (package_path / name).read_bytes())
+    if payload_sha256 != package["payload_sha256"]:
+        raise ValueError("reviewed payload digest differs from the requested approval")
+    approval = create_approval(
+        channel="x", account=account.lower(), story_revision=package["draft"]["draft_revision"],
+        payload_sha256=payload_sha256, window_start=window_start, window_end=window_end,
+        approved_by=approved_by, rights_reference=rights_reference,
+    )
+    return retain(approval_dir / f"{approval['approval_id']}.json", json_bytes(approval))
+
+
+def _read_approval(path):
+    approval = read_sealed(path, "approval_id")
+    if approval["channel"] != "x" or not re.fullmatch(r"@[a-z0-9_]{1,15}", approval["account"]):
+        raise ValueError("approval must name an X @handle")
+    expected = create_approval(**{
+        key: approval[key] for key in (
+            "channel", "account", "story_revision", "payload_sha256", "window_start",
+            "window_end", "approved_by", "rights_reference",
+        )
+    })
+    if expected != approval:
+        raise ValueError("invalid X approval")
+    return approval
+
+
+def _receipt_path(directory, approval):
+    path = directory / "receipt.json"
+    try:
+        receipt = read_sealed(path, "receipt_id")
+    except FileNotFoundError:
+        return None
+    if receipt["approval_id"] != approval["approval_id"]:
+        raise ValueError("this story and handle already have a receipt for a different approval")
+    return path.resolve()
+
+
+def export(store, package_path, approval_path, delivery_dir):
+    approval = _read_approval(approval_path)
+    package, files = _load_package(lambda name: (package_path / name).read_bytes())
+    draft = package["draft"]
+    if (
+        package["payload_sha256"] != approval["payload_sha256"]
+        or draft["draft_revision"] != approval["story_revision"]
+    ):
+        raise ValueError("approval does not cover this package")
+    directory = delivery_dir / approval["delivery_id"]
+    confirmed = _receipt_path(directory, approval)
+    if confirmed:
+        return confirmed
+    require_window(approval, datetime.now(timezone.utc))
+    maximum = verify_story(store, draft)
+    if _copy(draft, maximum, _shared_cpu_scope(draft), package.get("engagement_key")) != (files["post.txt"], files["chart-alt.txt"]):
+        raise ValueError("approved text differs from the pinned public evidence")
+
+    output = BytesIO()
+    files.update({"package.json": json_bytes(package), "approval.json": json_bytes(approval)})
+    with ZipFile(output, "w") as archive:
+        for name, body in files.items():
+            archive.writestr(ZipInfo(name), body)
+    require_current_story(store, draft)
+    require_window(approval, datetime.now(timezone.utc))
+    handoff = retain(directory / ARCHIVE, output.getvalue())
+    return _receipt_path(directory, approval) or handoff
+
+
+def record_receipt(approval_path, delivery_dir, *, url, published_at, operator, observed_engagement_url=None):
+    approval = _read_approval(approval_path)
+    account = approval["account"][1:]
+    post = re.fullmatch(
+        rf"https://x\.com/{re.escape(account)}/status/([1-9][0-9]{{0,19}})", url, re.ASCII | re.IGNORECASE,
+    )
+    if not post:
+        raise ValueError("use the canonical X post URL for the approved handle")
+    if not plain_text(operator):
+        raise ValueError("receipt requires the operator who verified the live post")
+    when = instant(published_at)
+    require_window(approval, when)
+    if when > datetime.now(timezone.utc):
+        raise ValueError("publication timestamp is in the future")
+
+    directory = delivery_dir / approval["delivery_id"]
+    with ZipFile(directory / ARCHIVE) as archive:
+        if archive.read("approval.json") != json_bytes(approval):
+            raise ValueError("the recorded handoff used a different approval")
+        package, files = _load_package(archive.read)
+    if package["payload_sha256"] != approval["payload_sha256"] or package["draft"]["draft_revision"] != approval["story_revision"]:
+        raise ValueError("approval does not cover this package")
+    link = verified_link(package, files[POST_COPY], observed_engagement_url)
+    post_id = post[1]
+    receipt = seal({
+        "schema_version": 1,
+        "status": "published",
+        "channel": "x",
+        "account": approval["account"],
+        "delivery_id": approval["delivery_id"],
+        "approval_id": approval["approval_id"],
+        "payload_sha256": approval["payload_sha256"],
+        "operator": operator,
+        "published_at": when.isoformat(),
+        "post_id": post_id,
+        **link,
+        "url": f"https://x.com/{account}/status/{post_id}",
+    }, "receipt_id")
+    return retain(directory / "receipt.json", json_bytes(receipt))

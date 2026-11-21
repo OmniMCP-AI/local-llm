@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "engineVersion": 2,
+  "taxonomyVersion": 1,
+  "languages": ["en", "zh"],
+  "topic": {
+    "coding": ["code execution", "Python challenge", "编程", "程式設計"],
+    "retrieval": ["retrieval", "信息检索", "資訊檢索"],
+    "model-evaluation": ["evaluation method", "coding benchmarks", "pass rate", "模型评估", "模型評估"],
+    "runtime-tuning": ["runtime tuning", "推理框架调优", "推理框架調優", "draft-assisted generation"],
+    "hardware-selection": ["GPU buying", "hardware selection", "硬件选购", "顯示卡選購"],
+    "ownership-cost": ["ownership costs", "cost of ownership", "拥有成本", "持有成本"],
+    "agent-workflows": ["agent workflows", "智能体工作流", "代理工作流程"],
+    "image-generation": ["image generation"]
+  },
+  "task": {
+    "coding": ["Python challenge", "code execution", "编程挑战", "程式設計挑戰"],
+    "retrieval": ["retrieval success", "检索成功", "檢索成功"],
+    "model-evaluation": ["pass rate", "通过率", "通過率"],
+    "interactive-chat": ["conversation reply", "对话回复", "對話回覆"],
+    "multi-user-serving": ["concurrent requests", "并发请求", "並發請求"],
+    "agent-workflows": ["agent turn time", "智能体回合耗时", "代理回合耗時"],
+    "fine-tuning": ["fine-tuning"]
+  },
+  "dimension": {
+    "prefill": ["cached prefill", "uncached prefill", "input processing"],
+    "generation": ["decode", "generation"],
+    "first-token": ["first token latency", "TTFT"],
+    "memory": ["memory usage", "VRAM usage"],
+    "quality": ["pass rate", "retrieval success", "task outcome"],
+    "energy": ["power draw", "aggregate power", "power per node"],
+    "serving": ["concurrent throughput", "aggregate throughput"]
+  },
+  "energyMeasurementAliases": ["wall power", "electrical power", "power draw", "idle power", "prefill power", "decode power"],
+  "projectionMarkers": ["forecast", "theoretical", "creator calculation", "extrapolated", "ceiling", "estimate", "creator expectation", "not measured"]
+}

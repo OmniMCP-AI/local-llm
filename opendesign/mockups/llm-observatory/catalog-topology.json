@@ -1,0 +1,745 @@
+[
+  {
+    "id": "tinybox-red-4x-mi300x-batch-2",
+    "name": "tinybox red 4× MI300X · Batch 2",
+    "count": 4,
+    "group": "multi",
+    "connection": "Four vendor-reported PCIe 5.0 x16 host links",
+    "note": "No xGMI links between accelerators. The vendor does not identify switches, measured transport or runtime peer access. Installed GPU memory totals 768 GB across four separate devices.",
+    "memory": "192 GB each",
+    "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+    "hostModel": "32-core AMD Genoa · 192 GB DDR5 system memory",
+    "hosts": [
+      { "slot": 5, "label": "AMD Genoa host system" }
+    ],
+    "devices": [
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" }
+    ],
+    "links": [
+      { "slots": [5, 1], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 2], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 3], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 4], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" }
+    ]
+  },
+  {
+    "id": "V005-HP-TEST",
+    "name": "Developer RTX4090 / i7-13700K /64GB host",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "24GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V005-HP-TEST.md",
+    "devices": [
+      {
+        "label": "RTX4090",
+        "photo": "rtx-4090",
+        "card": "nvidia-geforce-rtx-4090",
+        "placement": "Active in the reported comparison"
+      }
+    ],
+    "activeCount": 1,
+    "hostModel": "Intel Core i7-13700K · 64 GB system RAM"
+  },
+  {
+    "id": "V026-HP-TEST",
+    "name": "Dell PrecisionT5810 /E5-2696v4 /dual3060 /256GB",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V026-HP-TEST.md",
+    "devices": [
+      {
+        "label": "3060s (as captioned)",
+        "photo": null
+      },
+      {
+        "label": "3060s (as captioned)",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V027-HP-TEST",
+    "name": "Single3060 12GB /E5-2696v4 /64GB Strata host",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "12GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V027-HP-TEST.md",
+    "devices": [
+      {
+        "label": "3060",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V045-HP-TEST",
+    "name": "4090 (RTX4090 explicitly named at2:04)",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "24GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V045-HP-TEST.md",
+    "devices": [
+      {
+        "label": "4090 (RTX4090 explicitly named at2:04)",
+        "photo": "rtx-4090"
+      }
+    ]
+  },
+  {
+    "id": "V059-HP-TEST",
+    "name": "FourM3Ultra MacStudio cluster /1.5TB aggregate unifiedmemory",
+    "count": null,
+    "group": "hosts",
+    "connection": "Thunderbolt5/RDMA experiments versus Ethernet/pipeline modes",
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-TEST.md",
+    "hostCount": 4,
+    "hostModel": "Mac Studio (M3 Ultra)",
+    "devices": []
+  },
+  {
+    "id": "V007-HP-C001",
+    "name": "two-cardcomparison / RTX5060Ti",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GBeach",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      },
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V007-HP-C002",
+    "name": "single-cardcomparison / RTX5090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "32GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-C002.md",
+    "devices": [
+      {
+        "label": "RTX5090",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V012-HP-C001",
+    "name": "owner comparative machine / RTX5090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V012-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5090",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V013-HP-C001",
+    "name": "creator PC / RTX5090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V013-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5090",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V017-HP-C001",
+    "name": "WiCi engineering prototype / RTX5090",
+    "count": 1,
+    "group": "single",
+    "connection": "WiFi host-to-box",
+    "note": null,
+    "memory": "32GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V017-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5090",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V018-HP-C001",
+    "name": "sourcebenchmarkbuild / RTX5090D as captioned",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "24GB as captioned;SKU/capacity pairingunverified",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V018-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5090D as captioned",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V021-HP-C001",
+    "name": "two3060guideconfiguration / RTX3060",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "12GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX3060",
+        "photo": "rtx-3060",
+        "card": "nvidia-geforce-rtx-3060-12gb"
+      },
+      {
+        "label": "RTX3060",
+        "photo": "rtx-3060",
+        "card": "nvidia-geforce-rtx-3060-12gb"
+      }
+    ]
+  },
+  {
+    "id": "V022-HP-C001",
+    "name": "developerPC / RTX5070",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX5070",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V022-HP-C002",
+    "name": "different testerPC / RTX3060",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "12GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C002.md",
+    "devices": [
+      {
+        "label": "RTX3060",
+        "photo": "rtx-3060"
+      }
+    ]
+  },
+  {
+    "id": "V022-HP-C003",
+    "name": "Strata-based engineowner / RTX3090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C003.md",
+    "devices": [
+      {
+        "label": "RTX3090",
+        "photo": "rtx-3090"
+      }
+    ]
+  },
+  {
+    "id": "V022-HP-C004",
+    "name": "samepost alternativeRAM / RTX3090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C004.md",
+    "devices": [
+      {
+        "label": "RTX3090",
+        "photo": "rtx-3090"
+      }
+    ]
+  },
+  {
+    "id": "V022-HP-C005",
+    "name": "ownerWindows PC / RTX4070Super",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "12GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V022-HP-C005.md",
+    "devices": [
+      {
+        "label": "RTX4070Super",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V023-HP-C001",
+    "name": "third-partyfourMaccluster",
+    "count": null,
+    "group": "hosts",
+    "connection": "directMac-to-Maccablingdiscussed",
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V023-HP-C001.md",
+    "hostCount": 4,
+    "hostModel": "Mac",
+    "devices": []
+  },
+  {
+    "id": "V025-HP-C001",
+    "name": "modifiedpair / RTX2080Ti",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": "Tensor split was mentioned. Physical interconnect unspecified.",
+    "memory": "22GB claimedpercard",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX2080Ti",
+        "photo": null
+      },
+      {
+        "label": "RTX2080Ti",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-C002",
+    "name": "SXM2 benchmarkpair / V100SXM2",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-C002.md",
+    "devices": [
+      {
+        "label": "V100SXM2",
+        "photo": null
+      },
+      {
+        "label": "V100SXM2",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V028-HP-C001",
+    "name": "DDR4 expert-offloadbuild / RTX3090",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "24GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C001.md",
+    "devices": [
+      {
+        "label": "RTX3090",
+        "photo": "rtx-3090"
+      }
+    ]
+  },
+  {
+    "id": "V028-HP-C002",
+    "name": "large expert-offloadbuild / RTXPro6000",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "96GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-C002.md",
+    "devices": [
+      {
+        "label": "RTXPro6000",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V029-HP-C001",
+    "name": "Purchased Colorful2080Ti22GB modified pair /optionalNVLink",
+    "count": 2,
+    "group": "multi",
+    "connection": "NVLink optional and explicitly compared with no bridge;bridge nearly400",
+    "note": "The source describes bridge and no-bridge runs and gives conflicting per-card capacities.",
+    "memory": "22GBintro;11GB/24GBotherclausescontradict",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V029-HP-C001.md",
+    "links": [
+      {
+        "slots": [
+          1,
+          2
+        ],
+        "label": "Optional NVLink bridge",
+        "state": "optional",
+        "source": "https://www.youtube.com/watch?v=1xmOTSUpBL0&t=57s"
+      }
+    ],
+    "devices": [
+      {
+        "label": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+        "photo": null,
+        "card": "nvidia-geforce-rtx-2080-ti-colorful-modified"
+      },
+      {
+        "label": "Colorful RTX2080Ti,300(non-A) chip variant as narrated;modified22GB",
+        "photo": null,
+        "card": "nvidia-geforce-rtx-2080-ti-colorful-modified"
+      }
+    ]
+  },
+  {
+    "id": "V003-HP-E03",
+    "name": "DualP100 comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V003-HP-E03.md",
+    "devices": [
+      {
+        "label": "P100",
+        "photo": null
+      },
+      {
+        "label": "P100",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V028-HP-E01",
+    "name": "TwoDGXSpark networked configuration",
+    "count": null,
+    "group": "hosts",
+    "connection": "Two machines;link hardware notspecified",
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E01.md",
+    "hostCount": 2,
+    "hostModel": "DGX Spark",
+    "devices": []
+  },
+  {
+    "id": "V028-HP-E03",
+    "name": "FourMI50 32GB community preview",
+    "count": 4,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "32GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E03.md",
+    "devices": [
+      {
+        "label": "AMDMI50",
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
+      },
+      {
+        "label": "AMDMI50",
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
+      },
+      {
+        "label": "AMDMI50",
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
+      },
+      {
+        "label": "AMDMI50",
+        "photo": null,
+        "card": "amd-radeon-instinct-mi50-32gb"
+      }
+    ]
+  },
+  {
+    "id": "V059-HP-E02",
+    "name": "TwoMacStudio subset",
+    "count": null,
+    "group": "hosts",
+    "connection": "Pipeline/Ethernet versus RDMA modes separately reported",
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V059-HP-E02.md",
+    "hostCount": 2,
+    "hostModel": "Mac Studio",
+    "devices": []
+  },
+  {
+    "id": "V007-HP-E01",
+    "name": "Mixed4070Super+5060Ti comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": "The source mentions a four-lane chipset slot and a separate tensor-split configuration. Endpoints, negotiated width and per-card capacity are unconfirmed.",
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V007-HP-E01.md",
+    "devices": [
+      {
+        "label": "RTX4070Super",
+        "photo": null,
+        "card": "nvidia-geforce-rtx-4070-super"
+      },
+      {
+        "label": "RTX5060Ti",
+        "photo": null,
+        "card": "nvidia-geforce-rtx-5060-ti"
+      }
+    ]
+  },
+  {
+    "id": "V021-HP-E01",
+    "name": "Two5060Ti16GB tensor-split configuration",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GBeach",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-E01.md",
+    "devices": [
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      },
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V021-HP-E02",
+    "name": "TwoP100 long-prompt comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V021-HP-E02.md",
+    "devices": [
+      {
+        "label": "P100",
+        "photo": null
+      },
+      {
+        "label": "P100",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E01",
+    "name": "Dual3060 comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E01.md",
+    "devices": [
+      {
+        "label": "RTX3060",
+        "photo": "rtx-3060"
+      },
+      {
+        "label": "RTX3060",
+        "photo": "rtx-3060"
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E02",
+    "name": "Dual5060Ti16GB comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E02.md",
+    "devices": [
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      },
+      {
+        "label": "RTX5060Ti",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E03",
+    "name": "Singlemodified2080Ti22GB",
+    "count": 1,
+    "group": "single",
+    "connection": null,
+    "note": null,
+    "memory": "22GB",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E03.md",
+    "devices": [
+      {
+        "label": "RTX2080Ti modified",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E04",
+    "name": "DualP40 community comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "24GBeach as product specification in samechapter",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E04.md",
+    "devices": [
+      {
+        "label": "TeslaP40",
+        "photo": null
+      },
+      {
+        "label": "TeslaP40",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E05",
+    "name": "DualP100 community comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E05.md",
+    "devices": [
+      {
+        "label": "P100",
+        "photo": null
+      },
+      {
+        "label": "P100",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V025-HP-E06",
+    "name": "DualMI50 16GB community comparison",
+    "count": 2,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V025-HP-E06.md",
+    "devices": [
+      {
+        "label": "AMDMI50",
+        "photo": null
+      },
+      {
+        "label": "AMDMI50",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V028-HP-E06",
+    "name": "FourR9700 Qwenconfiguration",
+    "count": 4,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": null,
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E06.md",
+    "devices": [
+      {
+        "label": "R9700;captionR19700variantuncertain",
+        "photo": null
+      },
+      {
+        "label": "R9700;captionR19700variantuncertain",
+        "photo": null
+      },
+      {
+        "label": "R9700;captionR19700variantuncertain",
+        "photo": null
+      },
+      {
+        "label": "R9700;captionR19700variantuncertain",
+        "photo": null
+      }
+    ]
+  },
+  {
+    "id": "V028-HP-E07",
+    "name": "FourV10016GB Qwenconfiguration",
+    "count": 4,
+    "group": "multi",
+    "connection": null,
+    "note": null,
+    "memory": "16GB each",
+    "source": "https://github.com/OmniMCP-AI/local-llm/blob/e8202e7dec1634b1529db4c123e7b3bfc2a1072b/docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/hardware-profiles/V028-HP-E07.md",
+    "devices": [
+      {
+        "label": "V100",
+        "photo": null
+      },
+      {
+        "label": "V100",
+        "photo": null
+      },
+      {
+        "label": "V100",
+        "photo": null
+      },
+      {
+        "label": "V100",
+        "photo": null
+      }
+    ]
+  }
+]

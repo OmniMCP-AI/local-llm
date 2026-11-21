@@ -1,0 +1,48 @@
+[
+  {
+    "id": "wiki-release-news",
+    "type": "news",
+    "title": "The fastest.ai wiki has stable links",
+    "titleZh": "fastest.ai 知识库现在提供稳定链接",
+    "summary": "Open articles in HTML or Markdown and cite their release.",
+    "detailZh": "以 HTML 或 Markdown 阅读文章，并引用对应版本。",
+    "page": "agent-discovery",
+    "previewHref": "#wiki/agent-discovery",
+    "source": "wiki/pages/agent-discovery.md",
+    "status": "published",
+    "starts": "2026-11-20",
+    "ends": "2026-12-21",
+    "priority": 30
+  },
+  {
+    "id": "dual-rtx-2080-ti-nvlink",
+    "type": "configuration",
+    "title": "Two RTX 2080 Ti cards and an optional NVLink bridge",
+    "titleZh": "两张 RTX 2080 Ti 与可选的 NVLink 桥接器",
+    "summary": "Inspect the reported setup and its source.",
+    "detailZh": "查看研究中记录的双卡配置及其来源。",
+    "page": "rtx-2080-ti-nvlink",
+    "previewHref": "#wiki/gpu-topology/v029-hp-c001",
+    "source": "youtube/1xmOTSUpBL0",
+    "status": "published",
+    "starts": "2026-11-20",
+    "ends": "2027-01-21",
+    "priority": 20
+  },
+  {
+    "id": "open-benchmark-requests",
+    "type": "research-request",
+    "title": "Help measure the Apple M4 and RTX 4090 text pilot",
+    "titleZh": "协助完成 Apple M4 与 RTX 4090 文本评测",
+    "summary": "The open request pins a shared text artifact and a Chinese task review.",
+    "detailZh": "这项开放请求固定了两台设备共用的文本模型文件，并包含中文任务评审。",
+    "page": "community",
+    "destination": "https://github.com/OmniMCP-AI/local-llm/issues/7",
+    "previewHref": "https://github.com/OmniMCP-AI/local-llm/issues/7",
+    "source": "github/OmniMCP-AI/local-llm#7",
+    "status": "published",
+    "starts": "2026-11-20",
+    "ends": "2027-11-21",
+    "priority": 10
+  }
+]

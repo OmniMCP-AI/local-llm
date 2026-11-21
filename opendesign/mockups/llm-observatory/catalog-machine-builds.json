@@ -1,0 +1,821 @@
+{
+  "reviewedAt": "2026-11-22",
+  "builds": [
+    {
+      "id": "cangemi-wrx90-dual-rtx-3090",
+      "name": "Cangemi’s WRX90 AI server · 2× RTX 3090",
+      "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/README.md#the-system-at-a-glance",
+      "detail": "Threadripper PRO 9955WX · 2× RTX 3090 FE · 128 GB DDR5 ECC",
+      "buildSource": {
+        "platform": "GitHub",
+        "author": "Zachary Cangemi",
+        "locator": "The system at a glance / Build gallery"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "128 GB DDR5 ECC RDIMM",
+        "perDevice": "24 GB",
+        "aggregate": "48 GB across 2 GPUs",
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen Threadripper PRO 9955WX",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "ASUS Pro WS WRX90E-SAGE SE",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090 Founders Edition",
+          "quantity": 2
+        },
+        {
+          "category": "Memory",
+          "part": "16 GB Kingston FURY Renegade Pro DDR5-6400 ECC RDIMM",
+          "quantity": 8
+        },
+        {
+          "category": "Storage",
+          "part": "2 TB Samsung 9100 PRO NVMe",
+          "quantity": 1
+        },
+        {
+          "category": "CPU cooling",
+          "part": "Noctua NH-U14S TR5-SP6 with two NF-A15 fans",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis",
+          "part": "Phanteks Enthoo Pro II Server Edition TG",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis cooling",
+          "part": "Phanteks T30-120",
+          "quantity": 10
+        },
+        {
+          "category": "Power supply",
+          "part": "Corsair AX1600i, 1600 W",
+          "quantity": 1
+        }
+      ],
+      "interconnect": "PCIe 4.0 x16 per installed GPU under load",
+      "gallery": {
+        "label": "See the builder’s full gallery",
+        "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/README.md#build-gallery"
+      }
+    },
+    {
+      "id": "canales-rigup-rtx-3090-terra",
+      "name": "Rigup’s Fractal Terra · RTX 3090",
+      "source": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/README.md#the-reference-build",
+      "detail": "Ryzen 5 9600X · RTX 3090 · 32 GB DDR5",
+      "buildSource": {
+        "platform": "GitHub",
+        "author": "Gustavo Canales",
+        "locator": "The reference build"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "32 GB DDR5",
+        "perDevice": "24 GB",
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen 5 9600X",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "Gigabyte A620I AX",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "EVGA GeForce RTX 3090 FTW3",
+          "quantity": 1
+        },
+        {
+          "category": "Memory",
+          "part": "16 GB TeamGroup DDR5-6000",
+          "quantity": 2
+        },
+        {
+          "category": "Storage",
+          "part": "1 TB Samsung 990 EVO NVMe",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis",
+          "part": "Fractal Design Terra",
+          "quantity": 1
+        },
+        {
+          "category": "Power supply",
+          "part": "750 W SFX power supply",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "keturk-precision-t5820-rtx-3090",
+      "name": "Keturk’s Dell Precision T5820 · RTX 3090",
+      "source": "https://github.com/keturk/llm_on_rtx_3090/blob/53a29fb776d90428212424a93bcd7a14978ff102/README.md",
+      "detail": "Xeon W-2235 · RTX 3090 · 128 GB DDR4 ECC",
+      "buildSource": {
+        "platform": "GitHub",
+        "author": "keturk",
+        "locator": "Reference Hardware (Dell T5820)"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "128 GB DDR4 ECC",
+        "perDevice": "24 GB",
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "Base workstation",
+          "part": "Dell Precision T5820",
+          "quantity": 1
+        },
+        {
+          "category": "CPU",
+          "part": "Intel Xeon W-2235",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 1
+        },
+        {
+          "category": "Memory",
+          "part": "64 GB DDR4 ECC 2666 MHz",
+          "quantity": 2
+        },
+        {
+          "category": "Storage",
+          "part": "128 GB OS SSD",
+          "quantity": 1
+        },
+        {
+          "category": "Storage",
+          "part": "1 TB data NVMe SSD",
+          "quantity": 1
+        },
+        {
+          "category": "Storage",
+          "part": "4 TB model NVMe SSD",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "sanasol-home-llm-rtx-5090-dual-rtx-3090",
+      "name": "Sanasol’s home LLM rig · RTX 5090 + 2× RTX 3090",
+      "source": "https://github.com/sanasol/home-llm/blob/018d6389f17e90cdf0ec752fefae5a4a472588c4/README.md#the-rig-in-one-picture",
+      "detail": "Ryzen 9 9950X · three mixed GPUs · 96 GB DDR5",
+      "buildSource": {
+        "platform": "GitHub",
+        "author": "sanasol",
+        "locator": "The rig, in one picture"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-5090",
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "96 GB DDR5-6000",
+        "perDevice": "32 GB on RTX 5090; 24 GB on each RTX 3090",
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen 9 9950X",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 5090",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 2
+        },
+        {
+          "category": "Memory",
+          "part": "96 GB DDR5-6000",
+          "quantity": null
+        },
+        {
+          "category": "Storage",
+          "part": "2 TB Samsung 990 PRO",
+          "quantity": 1
+        }
+      ],
+      "interconnect": "PCIe 5.0 x8 for RTX 5090; PCIe 3.0 x4 over OCuLink and PCIe 4.0 x8 for the RTX 3090s",
+      "gallery": {
+        "label": "See sanasol’s photo of the assembled rig",
+        "source": "https://github.com/sanasol/home-llm/blob/018d6389f17e90cdf0ec752fefae5a4a472588c4/assets/rig-irl.jpg"
+      }
+    },
+    {
+      "id": "nalthis-epyc-9575f-quad-rtx-3090",
+      "name": "Nalthis · EPYC 9575F + 4× RTX 3090",
+      "source": "https://www.reddit.com/r/LocalLLaMA/comments/1tx9tf2/finally_finished_my_llm_server_epyc_9575f_4_rtx/",
+      "detail": "EPYC 9575F · 4× RTX 3090 · 768 GB DDR5 ECC",
+      "buildSource": {
+        "platform": "Reddit",
+        "author": "C0smo777",
+        "locator": "Original r/LocalLLaMA post / Specs"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "768 GB DDR5-5600 ECC RDIMM",
+        "perDevice": null,
+        "aggregate": "96 GB across 4 GPUs",
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD EPYC 9575F",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "Supermicro H13SSL-N",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 4
+        },
+        {
+          "category": "Memory",
+          "part": "64 GB DDR5-5600 ECC RDIMM",
+          "quantity": 12
+        },
+        {
+          "category": "Storage",
+          "part": "2 TB OS NVMe SSD",
+          "quantity": 1
+        },
+        {
+          "category": "Storage",
+          "part": "3.94 TB data NVMe SSD",
+          "quantity": 2
+        },
+        {
+          "category": "Chassis",
+          "part": "Corsair 9000D",
+          "quantity": 1
+        },
+        {
+          "category": "Power supply",
+          "part": "2050 W ATX 3.1 power supply",
+          "quantity": 1
+        }
+      ],
+      "gallery": {
+        "label": "See the builder’s photo in the original post",
+        "source": "https://www.reddit.com/r/LocalLLaMA/comments/1tx9tf2/finally_finished_my_llm_server_epyc_9575f_4_rtx/"
+      }
+    },
+    {
+      "id": "localllama-ryzen-7700-dual-rtx-3090",
+      "name": "LocalLLaMA Ryzen 7700 build · 2× RTX 3090",
+      "source": "https://www.reddit.com/r/LocalLLaMA/comments/1m5fkts/my_practical_dual_3090_setup_for_local_inference/",
+      "detail": "Ryzen 7 7700 · 2× RTX 3090 · 64 GB DDR5",
+      "buildSource": {
+        "platform": "Reddit",
+        "author": "r/LocalLLaMA contributor",
+        "locator": "Original r/LocalLLaMA post / Key Specs"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "64 GB DDR5 at 6400 MHz",
+        "perDevice": null,
+        "aggregate": "48 GB across 2 GPUs",
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen 7 7700",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "ASUS TUF B650-PLUS",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 2
+        },
+        {
+          "category": "Memory",
+          "part": "64 GB DDR5 at 6400 MHz",
+          "quantity": null
+        },
+        {
+          "category": "Storage",
+          "part": "2 TB NVMe SSD",
+          "quantity": 1
+        },
+        {
+          "category": "Storage",
+          "part": "8 TB WD Purple",
+          "quantity": 3
+        },
+        {
+          "category": "Chassis",
+          "part": "Lian Li LANCOOL 216",
+          "quantity": 1
+        },
+        {
+          "category": "Power supply",
+          "part": "850 W ADATA XPG CORE REACTOR II",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "two-guys-tek-threadripper-triple-rtx-3090",
+      "name": "2GuysTek’s 4U homelab server · 3× RTX 3090",
+      "source": "https://www.youtube.com/watch?v=TRpr_qKydSo",
+      "detail": "Threadripper PRO 3945WX · 3× RTX 3090 · 256 GB DDR4 ECC",
+      "buildSource": {
+        "platform": "YouTube",
+        "author": "2GuysTek",
+        "locator": "Video description / Gear in this build"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "256 GB DDR4 ECC",
+        "perDevice": null,
+        "aggregate": "72 GB across 3 GPUs",
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen Threadripper PRO 3945WX",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "Gigabyte MC62-G40",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "EVGA GeForce RTX 3090 FTW3 Ultra",
+          "quantity": 3
+        },
+        {
+          "category": "Memory",
+          "part": "32 GB DDR4 ECC",
+          "quantity": 8
+        },
+        {
+          "category": "Storage",
+          "part": "500 GB Samsung 980 NVMe SSD",
+          "quantity": 2
+        },
+        {
+          "category": "CPU cooling",
+          "part": "Arctic Liquid Freezer WS360-SP6",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis",
+          "part": "Rosewill RSV-AI01 4U",
+          "quantity": 1
+        },
+        {
+          "category": "Power supply",
+          "part": "be quiet! Dark Power Pro 12, 1500 W",
+          "quantity": 1
+        }
+      ],
+      "video": {
+        "id": "TRpr_qKydSo",
+        "title": "Three RTX 3090s in One Server - Homelab AI Server Build!",
+        "start": 279
+      }
+    },
+    {
+      "id": "tech2wild-5900x-quad-rtx-3090",
+      "name": "Tech2WiLD’s 3090 Beast · 4× RTX 3090",
+      "source": "https://www.youtube.com/watch?v=hLge7d8og9Q",
+      "detail": "Ryzen 9 5900X · 4× RTX 3090 · dual NVLink bridges",
+      "buildSource": {
+        "platform": "YouTube",
+        "author": "Tech2WiLD",
+        "locator": "Video description / 3090 BEAST full specs"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "32 GB DDR4-3600",
+        "perDevice": "24 GB",
+        "aggregate": "96 GB across 4 GPUs",
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen 9 5900X",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "ASUS ROG Crosshair VIII Formula",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 4
+        },
+        {
+          "category": "Memory",
+          "part": "16 GB G.Skill Trident Z Neo DDR4-3600",
+          "quantity": 2
+        },
+        {
+          "category": "Storage",
+          "part": "1 TB Kingston NVMe SSD",
+          "quantity": 1
+        },
+        {
+          "category": "Interconnect",
+          "part": "NVLink bridge",
+          "quantity": 2
+        },
+        {
+          "category": "Power supply",
+          "part": "Power supply, model undisclosed",
+          "quantity": 2
+        }
+      ],
+      "interconnect": "Two pairs bridged by NVLink; two GPUs at PCIe x8 and two at x4",
+      "video": {
+        "id": "hLge7d8og9Q",
+        "title": "4 RTX 3090s + Dual NVLink: My Ultimate Local AI Setup"
+      }
+    },
+    {
+      "id": "geerling-compute-blade-cluster",
+      "name": "Geerling’s 10-node Compute Blade cluster",
+      "source": "https://www.youtube.com/watch?v=8SiB-bNyP5E",
+      "detail": "10× Raspberry Pi CM5 · 16 GB per node · 2.5 GbE",
+      "buildSource": {
+        "platform": "YouTube",
+        "author": "Jeff Geerling",
+        "locator": "Video description / Parts used / AI clustering chapter"
+      },
+      "cardIds": [],
+      "memory": {
+        "system": "16 GB per node across ten separate CM5s",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "Host module",
+          "part": "Raspberry Pi Compute Module 5 Lite, CM5016000 (16 GB)",
+          "quantity": 10
+        },
+        {
+          "category": "Carrier board",
+          "part": "Compute Blade DEV",
+          "quantity": 10
+        },
+        {
+          "category": "Storage",
+          "part": "256 GB Patriot P300 NVMe SSD",
+          "quantity": 10
+        },
+        {
+          "category": "Cooling",
+          "part": "Compute Blade Standard Fan Unit",
+          "quantity": null
+        },
+        {
+          "category": "Cooling",
+          "part": "GLOTRENDS aluminum CM5 heatsink",
+          "quantity": null
+        },
+        {
+          "category": "Networking",
+          "part": "GigaPlus 10-port 2.5 GbE PoE+ switch",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis",
+          "part": "DeskPi RackMate TT with 10-inch Compute Blade rack mount",
+          "quantity": 1
+        }
+      ],
+      "interconnect": "2.5 GbE switch",
+      "video": {
+        "id": "8SiB-bNyP5E",
+        "title": "I regret building a $3000 Pi AI Cluster",
+        "start": 186
+      },
+      "gallery": {
+        "label": "See the builder’s photos and parts list",
+        "source": "https://www.jeffgeerling.com/blog/2025/i-regret-building-3000-pi-ai-cluster/#parts-used"
+      }
+    },
+    {
+      "id": "bernovsky-trx40-triple-rtx-3090",
+      "name": "Bernovsky’s TRX40 mining-frame build · 3× RTX 3090",
+      "source": "https://x.com/_Curious_Human_/status/2031347790828261725",
+      "detail": "Threadripper 3960X · 3× RTX 3090 · 128 GB RAM",
+      "buildSource": {
+        "platform": "X",
+        "author": "Jiri Bernovsky",
+        "locator": "Builder’s March 10, 2026 public post"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "128 GB RAM",
+        "perDevice": null,
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen Threadripper 3960X",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "AORUS TRX40 motherboard, exact SKU undisclosed",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 3
+        },
+        {
+          "category": "Memory",
+          "part": "128 GB system RAM",
+          "quantity": null
+        },
+        {
+          "category": "Chassis",
+          "part": "Mining rig rack",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "atwal-b650e-rtx-3090",
+      "name": "Atwal’s AI server · Ryzen 7800X3D + RTX 3090",
+      "source": "https://harvinderatwal.com/ai-server-build/",
+      "detail": "Ryzen 7 7800X3D · RTX 3090 · 64 GB DDR5",
+      "buildSource": {
+        "platform": "Builder site",
+        "author": "Harvinder Atwal",
+        "locator": "Hardware Selection / final configuration"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "64 GB DDR5",
+        "perDevice": "24 GB",
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen 7 7800X3D",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "ASUS TUF GAMING B650-E WIFI",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 1
+        },
+        {
+          "category": "Memory",
+          "part": "64 GB DDR5",
+          "quantity": null
+        },
+        {
+          "category": "Storage",
+          "part": "2 TB NVMe SSD",
+          "quantity": 1
+        },
+        {
+          "category": "CPU cooling",
+          "part": "be quiet! Pure Rock Pro 3",
+          "quantity": 1
+        },
+        {
+          "category": "Power supply",
+          "part": "Corsair RM850x SHIFT",
+          "quantity": 1
+        },
+        {
+          "category": "Chassis",
+          "part": "Reused case, model undisclosed",
+          "quantity": 1
+        }
+      ],
+      "gallery": {
+        "label": "See the completed machine and installation photos",
+        "source": "https://harvinderatwal.com/ai-server-build/"
+      }
+    },
+    {
+      "id": "ready-ripper-trx40-dual-rtx-3090",
+      "name": "Ready’s Ripper workstation · 2× RTX 3090",
+      "source": "https://jonready.com/blog/posts/local-llm-rig.html",
+      "detail": "Threadripper 3970X · 2× RTX 3090 · 256 GB DDR4",
+      "buildSource": {
+        "platform": "Builder site",
+        "author": "Jonathon Ready",
+        "locator": "The hardware"
+      },
+      "cardIds": [
+        "nvidia-geforce-rtx-3090"
+      ],
+      "memory": {
+        "system": "256 GB DDR4",
+        "perDevice": "24 GB",
+        "aggregate": null,
+        "allocation": null
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "AMD Ryzen Threadripper 3970X",
+          "quantity": 1
+        },
+        {
+          "category": "Motherboard",
+          "part": "MSI TRX40 PRO 10G",
+          "quantity": 1
+        },
+        {
+          "category": "GPU",
+          "part": "NVIDIA GeForce RTX 3090",
+          "quantity": 2
+        },
+        {
+          "category": "Memory",
+          "part": "256 GB DDR4",
+          "quantity": null
+        },
+        {
+          "category": "Interconnect",
+          "part": "NVLink bridge",
+          "quantity": 1
+        }
+      ],
+      "interconnect": "GPU slots wired PCIe x16 and x8; GPUs connected by NVLink",
+      "gallery": {
+        "label": "See the builder’s workstation photo",
+        "source": "https://jonready.com/blog/posts/local-llm-rig.html"
+      }
+    }
+  ],
+  "researchVideos": [
+    {
+      "id": "8dhcnt-G19M",
+      "title": "Splash 1.6.1 is INSANELY FAST! Local AI on M6 Mac Mini",
+      "credit": "Execute Automation",
+      "profiles": ["V009-HP-TEST"]
+    },
+    {
+      "id": "YcosZPh-kcI",
+      "title": "Reddit Says This Small Qwen Is 98% as Good. I Tested It on My Mac Studio",
+      "credit": "The Dark Factory",
+      "profiles": ["V013-HP-C002"]
+    },
+    {
+      "id": "cFdoXn6yvE4",
+      "title": "local AI's biggest problem... they solved it?",
+      "credit": "NetworkChuck",
+      "profiles": ["V017-HP-C001"]
+    },
+    {
+      "id": "mjR-LJmHg_I",
+      "title": "垃圾佬狂喜！不到¥3000自建128G本地AI服务器，本地跑Qwen3.8-Flash-Next（无审查）模型40t/s真香",
+      "credit": "阿雷科技",
+      "profiles": ["V019-HP-TEST"]
+    },
+    {
+      "id": "09GB4LtXUok",
+      "title": "Strata Coder tested - Local LLM setup",
+      "credit": "Luke's Dev Lab",
+      "profiles": ["V024-HP-C001", "V024-HP-C002"]
+    },
+    {
+      "id": "GLXGqbNBq9s",
+      "title": "Project Maya Deepseek V4.1 Flash 1017 + GLM 5.3 Local Ai Review",
+      "credit": "Digital Spaceport",
+      "profiles": ["V026-HP-TEST"]
+    },
+    {
+      "id": "WOlXMUKJeuI",
+      "title": "Testing Strata Local AI on $769 Budget AI Rig",
+      "credit": "Digital Spaceport",
+      "profiles": ["V027-HP-TEST"]
+    },
+    {
+      "id": "1xmOTSUpBL0",
+      "title": "听劝买了两张2080Ti 22G！双卡+NVLink跑AI，这性价比真的无解了",
+      "credit": "司波图",
+      "profiles": ["V029-HP-C001"]
+    },
+    {
+      "id": "MhZABCEOUWY",
+      "title": "NInfer + 千问3.8 27b = 1.5倍速@256K上下文(单张4090 24GB)",
+      "credit": "云八云",
+      "profiles": ["V045-HP-TEST"]
+    },
+    {
+      "id": "VKEXWXMlVS0",
+      "title": "实测很强，用Mac的ANE芯片加速推理80%",
+      "credit": "小天fotos",
+      "profiles": ["V049-HP-TEST"]
+    },
+    {
+      "id": "RkzCAaIV_cQ",
+      "title": "This Shouldn’t Be Able to Run 120B Locally",
+      "credit": "Alex Ziskind",
+      "profiles": ["V053-HP-C001", "V053-HP-C002"]
+    },
+    {
+      "id": "4l4UWZGxvoc",
+      "title": "Apple did what NVIDIA wouldn't - Mac Studio Clustering with Exo",
+      "credit": "jakkuh",
+      "profiles": ["V059-HP-TEST"]
+    }
+  ],
+  "photoIds": {
+    "cangemi-wrx90-dual-rtx-3090": [
+      "cangemi-wrx90-bench",
+      "cangemi-wrx90-gpu-spacing",
+      "cangemi-wrx90-airflow"
+    ],
+    "canales-rigup-rtx-3090-terra": [
+      "canales-rigup-open",
+      "canales-rigup-closed"
+    ],
+    "nvidia-dgx-spark-128gb-4tb": [
+      "dgx-spark-front",
+      "dgx-spark-oblique",
+      "dgx-spark-ports"
+    ]
+  }
+}

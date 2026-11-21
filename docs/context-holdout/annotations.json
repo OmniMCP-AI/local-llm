@@ -1,0 +1,270 @@
+[
+  {
+    "id": "holdout-droid-llm-zh",
+    "publisher": "pisces312 (droid-llm)",
+    "format": "guide",
+    "language": "zh-Hans",
+    "date": "2026-09-30",
+    "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L9-L63",
+    "title": "droid-llm 同一台真机上四引擎实测对比",
+    "context": "在 Android 真机上比较四种推理框架的后端，记录聊天界面的 TTFT 和 Decode。可本地部署并通过 OpenAI 兼容端点接入其他客户端。另有性能评测与 JSON 导出。",
+    "annotation": {
+      "topics": {
+        "runtime-tuning": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L24-L44",
+        "interactive-chat": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L17",
+        "private-deployment": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L20",
+        "evidence-research": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L52-L63"
+      }
+    },
+    "records": [
+      {
+        "id": "droid-39-ttft",
+        "metric": "TTFT (ms)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L39",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。Genie NPU（HTP V81），Qwen3-4B-Instruct-2507 w4a16，49 ms。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-39-decode",
+        "metric": "Decode (tok/s)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L39",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。Genie NPU（HTP V81），Qwen3-4B-Instruct-2507 w4a16，48.3 tok/s。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "generation",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-40-ttft",
+        "metric": "TTFT (ms)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L40",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。llama.cpp CPU，Qwen3-0.6B Q4_K_M，187 ms。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-40-decode",
+        "metric": "Decode (tok/s)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L40",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。llama.cpp CPU，Qwen3-0.6B Q4_K_M，78.6 tok/s。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "generation",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-41-ttft",
+        "metric": "TTFT (ms)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L41",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。LiteRT-LM CPU，Gemma3-1B-IT int4，375 ms。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-41-decode",
+        "metric": "Decode (tok/s)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L41",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。LiteRT-LM CPU，Gemma3-1B-IT int4，38.1 tok/s。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "generation",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-42-ttft",
+        "metric": "TTFT (ms)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L42",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。MNN GPU（OpenCL），Qwen3.5-9B-MNN，2041 ms。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "droid-42-decode",
+        "metric": "Decode (tok/s)",
+        "url": "https://github.com/pisces312/droid-llm/blob/1e995146fc905f944c83873f07237abd9febdf29/README.md#L42",
+        "evidence": "真机会话截图",
+        "conditions": "HONOR BKQ-AN80 / Snapdragon 8 Elite / Android 17。MNN GPU（OpenCL），Qwen3.5-9B-MNN，9.4 tok/s。各引擎使用不同模型。提示词长度、重复次数和完整运行设置未报告。",
+        "annotation": {
+          "dimension": "generation",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "holdout-splitwise-v2",
+    "publisher": "University of Washington and Microsoft (Splitwise authors)",
+    "format": "article",
+    "language": "en",
+    "date": "2024-05-20",
+    "url": "https://arxiv.org/html/2311.18677v2",
+    "title": "Splitwise: Efficient Generative LLM Inference Using Phase Splitting",
+    "context": "The study uses coding and conversation request traces to characterize LLM serving. It evaluates KV-cache transfer and independent batching across machines for prompt processing and token generation, then models cluster size under latency, power and cost constraints.",
+    "annotation": {
+      "topics": {
+        "coding": "https://arxiv.org/html/2311.18677v2#S3.SS1",
+        "interactive-chat": "https://arxiv.org/html/2311.18677v2#S3.SS1",
+        "distributed-inference": "https://arxiv.org/html/2311.18677v2#S4",
+        "runtime-tuning": "https://arxiv.org/html/2311.18677v2#S4.SS2",
+        "multi-user-serving": "https://arxiv.org/html/2311.18677v2#S5.SS2",
+        "evidence-research": "https://arxiv.org/html/2311.18677v2#S5"
+      }
+    },
+    "records": [
+      {
+        "id": "splitwise-coding-ttft",
+        "metric": "P50 TTFT (ms)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.T4",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Table IV, coding trace. Llama-70B with no batching on DGX-A100 vs DGX-H100, 185 ms vs 95 ms. Request lengths match the source trace. Prompt contents are unavailable.",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "coding"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-coding-energy",
+        "metric": "P50 Energy (Whr)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.T4",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Table IV, coding trace. Llama-70B with no batching on DGX-A100 vs DGX-H100, 1.37 Wh vs 1.37 Wh. Request lengths match the source trace. Prompt contents are unavailable.",
+        "annotation": {
+          "dimension": "energy",
+          "topics": [
+            "coding"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-conversation-ttft",
+        "metric": "P50 TTFT (ms)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.T4",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Table IV, conversation trace. Llama-70B with no batching on DGX-A100 vs DGX-H100, 155 ms vs 84 ms. Request lengths match the source trace. Prompt contents are unavailable.",
+        "annotation": {
+          "dimension": "first-token",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-conversation-energy",
+        "metric": "P50 Energy (Whr)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.T4",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Table IV, conversation trace. Llama-70B with no batching on DGX-A100 vs DGX-H100, 7.9 Wh vs 9.4 Wh. Request lengths match the source trace. Prompt contents are unavailable.",
+        "annotation": {
+          "dimension": "energy",
+          "topics": [
+            "interactive-chat"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-prompt-power",
+        "metric": "GPU power draw (prompt phase, % TDP)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.SS6",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Figure 8 shows normalized GPU power across batch sizes. Prompt-phase draw rises as batch size increases. The paper gives the trend in the text. Wall power is unspecified.",
+        "annotation": {
+          "dimension": "energy",
+          "topics": []
+        }
+      },
+      {
+        "id": "splitwise-token-power",
+        "metric": "GPU power draw (token generation phase, % TDP)",
+        "url": "https://arxiv.org/html/2311.18677v2#S3.SS6",
+        "evidence": "Authors’ hardware characterization",
+        "conditions": "Figure 8 shows normalized GPU power across batch sizes. Token-phase draw remains broadly flat as the number of tokens increases. The paper gives the trend in the text. Wall power is unspecified.",
+        "annotation": {
+          "dimension": "energy",
+          "topics": []
+        }
+      },
+      {
+        "id": "splitwise-cache-transfer",
+        "metric": "KV-cache transfer latency (ms)",
+        "url": "https://arxiv.org/html/2311.18677v2#S6.SS1.p1.1",
+        "evidence": "Two-machine prototype experiment",
+        "conditions": "Figure 14. The optimized per-layer transfer has about 8 ms on DGX-A100 and 5 ms on DGX-H100 of latency visible outside the overlapped prompt work. The configurations use different InfiniBand bandwidths.",
+        "annotation": {
+          "dimension": "transport",
+          "topics": []
+        }
+      },
+      {
+        "id": "splitwise-cluster-throughput",
+        "metric": "Cluster throughput (requests per second)",
+        "url": "https://arxiv.org/html/2311.18677v2#S6.SS3.p2.1",
+        "evidence": "Event-driven simulator",
+        "conditions": "Figure 18(b), at equal cost. Splitwise-AA delivers 1.4 times Baseline-H100 throughput in the modeled cluster. Simulator inputs include hardware profiles and request traces. No deployment of the modeled fleet was reported.",
+        "annotation": {
+          "dimension": "projection",
+          "topics": [
+            "multi-user-serving"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-cluster-power",
+        "metric": "Provisioned cluster power",
+        "url": "https://arxiv.org/html/2311.18677v2#S6.SS3.p3.1",
+        "evidence": "Event-driven simulator",
+        "conditions": "Figure 19(a), at equal throughput. Splitwise-HHcap uses 25% less provisioned power than Baseline-H100 in the modeled cluster. Dynamic draw was outside the cluster study.",
+        "annotation": {
+          "dimension": "projection",
+          "topics": [
+            "multi-user-serving"
+          ]
+        }
+      },
+      {
+        "id": "splitwise-future-memory",
+        "metric": "Prompt-phase memory utilization",
+        "url": "https://arxiv.org/html/2311.18677v2#S7.p5.1",
+        "evidence": "Authors’ discussion",
+        "conditions": "The authors suggest that future services may cache conversation context between requests, which could change memory utilization during prompt processing. The authors provide no effect size or test.",
+        "annotation": {
+          "dimension": "projection",
+          "topics": []
+        }
+      }
+    ]
+  }
+]
