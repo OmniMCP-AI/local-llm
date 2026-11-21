@@ -23,6 +23,37 @@ Configure at most one retry with the original `SCHEDULED_AT` and the same pilot 
 
 A new live slot must already be due on the current Asia/Shanghai date. Use `--mode rehearsal` with separate storage for tests or historical fixture dates. The scheduler command only prepares and retains the draft for review.
 
+## Keep scheduled slot history in PostgreSQL
+
+For a PostgreSQL-backed pilot, use a dedicated libpq service for the scheduler and a read-only service for the audit. The release reader still uses `FASTEST_EDITORIAL_DATABASE_URL`. Keep the service settings in a private `PGSERVICEFILE`, the password in `PGPASSFILE`, and use verified TLS for remote PostgreSQL. Use a separate PostgreSQL database and pilot directory for rehearsals.
+
+From `production/`, install the [slot schema](slot-schema.sql) with the private schema owner service.
+
+```sh
+psql -Xw -v ON_ERROR_STOP=1 -d "service=$SLOT_OWNER_SERVICE" -f fastest_delivery/slot-schema.sql
+```
+
+Grant the scheduler and auditor their respective access. Substitute your private role names.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_editorial_slots TO slot_scheduler, slot_auditor;
+GRANT SELECT, INSERT, UPDATE (record) ON fastest_editorial_slots.slot TO slot_scheduler;
+GRANT SELECT ON fastest_editorial_slots.slot TO slot_auditor;
+```
+
+Run each PostgreSQL-backed slot on the same host with the same persistent draft directory. Use `--slot-db-service` for the scheduler ledger.
+
+```sh
+umask 077
+python3 -m fastest_delivery.run_slot \
+  --scheduled-at "$SCHEDULED_AT" --mode rehearsal \
+  --public-origin "$PUBLIC_ORIGIN" --locale en \
+  --draft-dir "$PILOT_ROOT/editorial-drafts" \
+  --slot-db-service "$SLOT_SCHEDULER_SERVICE"
+```
+
+Use the scheduler's original timestamp, mode, origin, locale, and draft directory for retry. For a dry run choose a timestamp with a UTC offset and set `PILOT_START` to its Shanghai date. The command prints a PostgreSQL slot reference. PostgreSQL holds the sealed attempt history, including the exact selected draft while the write is pending. It records a digest of the draft directory to detect changes. Review the finalized draft JSON on disk as usual.
+
 ## Run the audit
 
 Run from `production/` with Python 3.11 or later. Set `PILOT_START` to the first editorial date. Retain the operator log and the first-party engagement export in the private pilot directory.
@@ -36,7 +67,9 @@ python3 -m fastest_delivery.pilot \
   --engagement-export "$ENGAGEMENT_EXPORT" > distribution-audit.json
 ```
 
-The default input directories are `./editorial-drafts`, `./x-approvals`, `./x-deliveries`, `./shorts-approvals`, and `./shorts-deliveries`. Override them with `--draft-dir`, `--x-approvals`, `--x-deliveries`, `--shorts-approvals`, and `--shorts-deliveries`. The audit reads local records. Omit `--operator-log` to see what is already retained and which inputs are still due.
+For a PostgreSQL-backed audit, pass `--slot-db-service "$SLOT_AUDITOR_SERVICE"` in place of `--run-dir`. Leave `runs` empty in the operator log. The audit uses the PostgreSQL reference and sealed run ID for each slot. A started attempt remains `pending` and leaves a schedule gap until reconciled. A recorded `no_story` decision counts as an observed outcome. A date with no PostgreSQL slot records is `missing`.
+
+The default input directories are `./editorial-drafts`, `./x-approvals`, `./x-deliveries`, `./shorts-approvals`, and `./shorts-deliveries`. Override them with `--draft-dir`, `--x-approvals`, `--x-deliveries`, `--shorts-approvals`, and `--shorts-deliveries`. Omit `--operator-log` to see what is already retained and which inputs are still due.
 
 The report lists seven dates, drafts or no-story reasons, scheduled run outcomes, exact claim and evidence references, and each linked approval, delivery receipt and correction. A verified receipt counts toward the pilot only if its publication time falls within both its approved window and the seven Shanghai dates. The report identifies earlier approvals superseded by a retained handoff. An exported package awaiting reconciliation has its own status.
 

@@ -1,8 +1,8 @@
-"""Audit seven Asia/Shanghai editorial days from retained local records."""
+"""Audit seven Asia/Shanghai editorial days from retained records."""
 
 import argparse
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 import json
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
@@ -14,7 +14,7 @@ from fastest_release.validation import plain_text
 from . import engagement, shorts, x_post
 from .approval import decode_sealed, instant, json_bytes, read_sealed, require_window
 from .engagement_link import verified_link
-from .run_slot import scheduled_runs
+from .run_slot import postgres_scheduled_runs, scheduled_runs
 
 
 TIMEZONE = ZoneInfo(EDITORIAL_TIMEZONE)
@@ -131,7 +131,7 @@ def _reference(record):
         raise ValueError("operator records require an evidence reference")
 
 
-def _record_runs(runs, days, drafts):
+def _record_runs(runs, days, drafts, *, canonical):
     slots = set()
     for run in runs:
         _reference(run)
@@ -140,15 +140,28 @@ def _record_runs(runs, days, drafts):
         if day not in days or scheduled_at in slots:
             raise ValueError("scheduled runs must have distinct slots in the pilot dates")
         slots.add(scheduled_at)
+        if canonical and run["status"] == "pending":
+            days[day]["scheduled_runs"].append(run)
+            continue
         if ("draft_revision" in run) == ("error" in run):
             raise ValueError("a scheduled run requires either a retained draft revision or an error")
-        if "draft_revision" in run and drafts[run["draft_revision"]]["editorial_date"] != day:
-            raise ValueError("scheduled run references a draft from another editorial day")
+        if "draft_revision" in run:
+            draft = drafts.get(run["draft_revision"])
+            if draft is None or draft["editorial_date"] != day:
+                raise ValueError("scheduled run requires its retained draft from the same editorial day")
+            if canonical and run["status"] != draft["outcome"]:
+                raise ValueError("scheduled run outcome differs from its retained draft")
         if "error" in run and not plain_text(run["error"]):
             raise ValueError("a failed run requires its observed error")
-        if days[day]["status"] == "missing":
+        if not canonical and days[day]["status"] == "missing":
             days[day]["status"] = "failed"
         days[day]["scheduled_runs"].append(run)
+    if canonical:
+        for day in days.values():
+            observed = {run["status"] for run in day["scheduled_runs"]}
+            day["status"] = next(
+                (status for status in ("story", "no_story", "failed", "pending") if status in observed), "missing",
+            )
 
 
 def _record_exercises(exercises, deliveries, drafts, days):
@@ -228,9 +241,12 @@ def _readiness(records):
             for channel in OUTSTANDING_CHANNELS}
 
 
-def _gaps(mode, days, channels, exercises, effort, metrics, readiness):
+def _gaps(mode, days, channels, exercises, effort, metrics, readiness, *, canonical):
     gaps = [] if mode == "live" else ["live_evidence_required"]
-    gaps.extend(f"scheduled_run_unreported:{day['date']}" for day in days.values() if not day["scheduled_runs"])
+    gaps.extend(
+        f"scheduled_run_unreported:{day['date']}" for day in days.values()
+        if not day["scheduled_runs"] or (canonical and any(run["status"] == "pending" for run in day["scheduled_runs"]))
+    )
     gaps.extend(f"publication_unreported:{channel}" for channel, totals in channels.items()
                 if not totals["published_in_window"])
     demonstrated = {exercise["kind"] for exercise in exercises}
@@ -261,13 +277,22 @@ def load_pilot_records(start, draft_dir, directories):
     return days, drafts, deliveries
 
 
-def audit(start, draft_dir, directories, operator_log=None, run_dir=None, engagement_export=None):
-    runs, mode = scheduled_runs(run_dir, ((start + timedelta(days=offset)).isoformat() for offset in range(7)))
+def audit(start, draft_dir, directories, operator_log=None, run_dir=None, engagement_export=None, *,
+          slot_db_service=None):
     operator = load_operator_log(operator_log, start)
+    canonical = slot_db_service is not None
+    if canonical:
+        if run_dir is not None or operator.get("runs"):
+            raise ValueError("PostgreSQL slot history requires a single scheduler evidence source")
+        first = datetime.combine(start, time.min, TIMEZONE)
+        end = first + timedelta(days=7)
+        runs, mode = postgres_scheduled_runs(slot_db_service, first, end, draft_dir)
+    else:
+        runs, mode = scheduled_runs(run_dir, ((start + timedelta(days=offset)).isoformat() for offset in range(7)))
     if mode and operator_log is not None and mode != operator["mode"]:
         raise ValueError("pilot operator log and scheduler records use different modes")
     days, drafts, deliveries = load_pilot_records(start, draft_dir, directories)
-    _record_runs([*runs, *operator.get("runs", [])], days, drafts)
+    _record_runs([*runs, *operator.get("runs", [])], days, drafts, canonical=canonical)
     exercises = operator.get("exercises", [])
     _record_exercises(exercises, deliveries, drafts, days)
     channels = {}
@@ -290,7 +315,7 @@ def audit(start, draft_dir, directories, operator_log=None, run_dir=None, engage
     engagement_evidence = None
     if engagement_export is not None:
         metrics, engagement_evidence = engagement.aggregate(engagement_export, days, TIMEZONE, mode, deliveries, drafts)
-    gaps = _gaps(mode, days, channels, exercises, effort, metrics, readiness)
+    gaps = _gaps(mode, days, channels, exercises, effort, metrics, readiness, canonical=canonical)
     if mode == "live" and engagement_evidence is None:
         gaps.append("engagement_evidence_unreported")
     return {
@@ -317,16 +342,18 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", required=True, type=date.fromisoformat, help="First pilot date (YYYY-MM-DD).")
     for key in ("draft-dir", "x-approvals", "x-deliveries", "shorts-approvals", "shorts-deliveries", "operator-log",
-                "run-dir", "engagement-export"):
-        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None, "run-dir": None,
-                    "engagement-export": None}
+                "engagement-export"):
+        defaults = {"draft-dir": Path("editorial-drafts"), "operator-log": None, "engagement-export": None}
         parser.add_argument(f"--{key}", type=Path, default=defaults.get(key, Path(key)))
+    retention = parser.add_mutually_exclusive_group()
+    retention.add_argument("--run-dir", type=Path)
+    retention.add_argument("--slot-db-service", help="Private libpq service name for PostgreSQL slot history.")
     args = parser.parse_args(argv)
     try:
         result = audit(args.start, args.draft_dir, {
             "x": (args.x_approvals, args.x_deliveries),
             "youtube-shorts": (args.shorts_approvals, args.shorts_deliveries),
-        }, args.operator_log, args.run_dir, args.engagement_export)
+        }, args.operator_log, args.run_dir, args.engagement_export, slot_db_service=args.slot_db_service)
     except (AttributeError, BadZipFile, OSError, KeyError, TypeError, ValueError, OverflowError) as error:
         parser.exit(1, f"invalid pilot evidence: {error}\n")
     print(json_bytes(result).decode(), end="")
