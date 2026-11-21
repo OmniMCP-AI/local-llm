@@ -7,7 +7,7 @@ from fastest_release import ReleaseNotFound
 from .feed import RUNTIME
 
 
-def approved_links(read_release, note, pair, origin):
+def approved_links(read_release, note, pair, origin, *, runtime_id=RUNTIME):
     if not isinstance(pair, dict) or set(pair) != {"baseline_release_id", "tuned_release_id"}:
         raise ValueError("A retest needs baseline and tuned release IDs")
     baseline_id, tuned_id = (release_id(pair[key]) for key in ("baseline_release_id", "tuned_release_id"))
@@ -19,7 +19,7 @@ def approved_links(read_release, note, pair, origin):
         "os_version": config["os"],
         "driver_version": config["driver"],
         "backend": config["backend"],
-        "runtime_id": RUNTIME,
+        "runtime_id": runtime_id,
         "runtime_build": config["build_sha"],
     }
     for row in (baseline, tuned):

@@ -4,8 +4,8 @@ from subprocess import TimeoutExpired
 
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
-from .feed import json_text
-from .store import build_snapshot
+from .feed import RUNTIME, SOURCES, json_text
+from .store import MODE_ERROR, build_snapshot
 
 
 class WatchStorageError(RuntimeError):
@@ -27,26 +27,31 @@ class PostgresStore:
     def migrate(self):
         self._query(Path(__file__).with_name("schema.sql").read_text(encoding="utf-8"))
 
-    def record(self, mode, observed_at, releases=(), error=None):
-        payload = _sql_text(json_text(list(releases)))
+    def record(self, mode, observed_at, releases=(), error=None, *, runtime_id=RUNTIME):
+        releases = list(releases)
+        if runtime_id not in SOURCES or any(r["runtime_id"] != runtime_id for r in releases):
+            raise ValueError("Releases must belong to the selected source")
+        payload = _sql_text(json_text(releases))
         error_text = "NULL" if error is None else _sql_text(error)
         recorded = self._query(
             f"SELECT fastest_release_watch.record_refresh("
-            f"{_sql_text(mode)}, {_sql_text(observed_at)}::timestamptz, {payload}::jsonb, {error_text});"
+            f"{_sql_text(runtime_id)}, {_sql_text(mode)}, {_sql_text(observed_at)}::timestamptz, "
+            f"{payload}::jsonb, {error_text});"
         )
         if recorded == "f":
-            raise ValueError("Use separate databases for fixture replay and live refresh")
+            raise ValueError(MODE_ERROR)
 
     def snapshot(self, as_of):
         payload = json.loads(self._query("""
             SELECT json_build_object(
-                'status', (
-                    SELECT json_build_array(
+                'statuses', (
+                    SELECT json_agg(json_build_array(
+                        runtime_id,
                         mode,
                         to_char(last_attempt AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
                         last_error,
                         to_char(last_success AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-                    ) FROM fastest_release_watch.source_status
+                    )) FROM fastest_release_watch.source_status
                 ),
                 'revisions', (
                     SELECT json_agg(
@@ -58,4 +63,4 @@ class PostgresStore:
                 )
             );
         """))
-        return build_snapshot(as_of, payload["status"], payload["revisions"] or [])
+        return build_snapshot(as_of, payload["statuses"] or [], payload["revisions"] or [])

@@ -53,7 +53,7 @@ def main(argv=None):
     serve.add_argument("--agent-task-release",
                        help="Use this pinned PostgreSQL agent-task report as the default and enable public API discovery.")
     serve.add_argument("--runtime-release-watch", action="store_true",
-                       help="Serve the retained llama.cpp release history from PostgreSQL.")
+                       help="Serve retained runtime release histories from PostgreSQL.")
     serve.add_argument("--runtime-release-watch-notes", type=Path,
                        help="Read reviewed runtime applicability JSON on each release watch request.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")

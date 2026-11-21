@@ -1,4 +1,5 @@
 from contextlib import closing
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 import http.client
@@ -9,15 +10,33 @@ from urllib.parse import quote
 
 
 RUNTIME = "llama.cpp"
-REPOSITORY = "ggml-org/llama.cpp"
 HOST = "api.github.com"
-RELEASES_PATH = f"/repos/{REPOSITORY}/releases"
 PAGE_SIZE = 10
-FEED_PATH = f"{RELEASES_PATH}?per_page={PAGE_SIZE}&page=1"
-FEED_URL = f"https://{HOST}{FEED_PATH}"
 MAX_BYTES = 4 * 1024 * 1024
 REQUEST_TIMEOUT = 8
 TAG = re.compile(r"[A-Za-z0-9_][A-Za-z0-9._/+~-]{0,127}")
+
+
+@dataclass(frozen=True)
+class Source:
+    name: str
+    repository: str
+
+    @property
+    def releases_path(self):
+        return f"/repos/{self.repository}/releases"
+
+    @property
+    def feed_path(self):
+        return f"{self.releases_path}?per_page={PAGE_SIZE}&page=1"
+
+
+SOURCES = {
+    RUNTIME: Source("llama.cpp", "ggml-org/llama.cpp"),
+    "sglang": Source("SGLang", "sgl-project/sglang"),
+    "vllm": Source("vLLM", "vllm-project/vllm"),
+    "ollama": Source("Ollama", "ollama/ollama"),
+}
 
 
 def utc_now():
@@ -34,7 +53,8 @@ def json_text(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def fetch(token=None):
+def fetch(token=None, *, runtime_id=RUNTIME):
+    source = SOURCES[runtime_id]
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "fastest.ai-release-watch",
@@ -47,7 +67,7 @@ def fetch(token=None):
     deadline = monotonic() + REQUEST_TIMEOUT
     try:
         with closing(http.client.HTTPSConnection(HOST, timeout=REQUEST_TIMEOUT)) as connection:
-            connection.request("GET", FEED_PATH, headers=headers)
+            connection.request("GET", source.feed_path, headers=headers)
             with connection.getresponse() as response:
                 if response.status != 200:
                     raise ValueError(f"GitHub release feed returned HTTP {response.status}")
@@ -66,7 +86,7 @@ def fetch(token=None):
         raise ValueError("Could not read the GitHub release feed over HTTPS") from error
 
 
-def decode(body):
+def decode(body, *, runtime_id=RUNTIME):
     if len(body) > MAX_BYTES:
         raise ValueError("GitHub release feed exceeds the byte limit")
     rows = json.loads(body.decode("utf-8"))
@@ -76,7 +96,7 @@ def decode(body):
     for row in rows:
         if not isinstance(row, dict) or row.get("draft") is not False:
             raise ValueError("Expected a published GitHub release record")
-        release = release_revision(row)
+        release = release_revision(row, runtime_id=runtime_id)
         external_id = release["release_id"]
         if external_id in releases and releases[external_id] != release:
             raise ValueError("GitHub page contains conflicting revisions of the same release")
@@ -84,26 +104,27 @@ def decode(body):
     return releases.values()
 
 
-def release_revision(row):
+def release_revision(row, *, runtime_id=RUNTIME):
+    source = SOURCES[runtime_id]
     release_id = row.get("id")
     tag = row.get("tag_name")
     prerelease = row.get("prerelease")
     published_at = row.get("published_at")
     if type(release_id) is not int or not 0 < release_id < 2**63:
         raise ValueError("Invalid GitHub release ID")
-    api_url = f"https://{HOST}{RELEASES_PATH}/{release_id}"
+    api_url = f"https://{HOST}{source.releases_path}/{release_id}"
     if row.get("url") != api_url or not isinstance(tag, str) or not TAG.fullmatch(tag):
-        raise ValueError("Release does not identify an official llama.cpp record")
+        raise ValueError(f"Release does not identify an official {source.name} record")
     if type(prerelease) is not bool:
         raise ValueError("Expected a prerelease flag")
     timestamp(published_at)
     public = {
         "release_id": release_id,
-        "runtime_id": RUNTIME,
+        "runtime_id": runtime_id,
         "tag": tag,
         "published_at": published_at,
         "prerelease": prerelease,
-        "source_url": f"https://github.com/{REPOSITORY}/releases/tag/{quote(tag, safe='')}",
+        "source_url": f"https://github.com/{source.repository}/releases/tag/{quote(tag, safe='')}",
         "source_api_url": api_url,
     }
     assets = row.get("assets")
@@ -118,4 +139,4 @@ def release_revision(row):
         }) for asset in assets),
     }
     digest = sha256(json_text(fingerprint).encode("utf-8")).hexdigest()
-    return {**public, "revision_id": f"github:{REPOSITORY}:{release_id}:{digest}"}
+    return {**public, "revision_id": f"github:{source.repository}:{release_id}:{digest}"}
