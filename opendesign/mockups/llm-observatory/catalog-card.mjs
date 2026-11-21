@@ -157,7 +157,9 @@ export function hardwareCard(row, release, kind, {
     const modified = row.modification;
     const firstEvidence = modified?.evidence[0].source;
     const reportedCapacity = modified?.capacityGb != null ? `${modified.capacityGb} GB` : null;
-    const vendorFields = Object.entries(vendor?.facts ?? {}).map(([label, value]) => [label, value, vendor.source]);
+    const bandwidthSource = vendor?.bandwidthSource ?? vendor?.source;
+    const vendorFields = Object.entries(vendor?.facts ?? {}).map(([label, value]) =>
+      [label, value, label === "Memory bandwidth" ? bandwidthSource : vendor.source]);
     const memory = vendor?.facts["Memory configuration"] ?? vendor?.facts["Dedicated memory (GB)"];
     const bus = vendor?.facts["Memory bus"] ?? vendor?.facts["Memory bus (bits)"];
     const bandwidth = vendor?.facts["Memory bandwidth"] ?? vendor?.facts["Memory bandwidth (GB/s)"];
@@ -187,7 +189,8 @@ export function hardwareCard(row, release, kind, {
         { title: "On-board memory", graphic: graphic("Nominal capacity", "capacity", "GB"), fields: [
           memoryField,
           withSource("Memory bus", bus),
-          withSource(moduleBandwidth ? "Aggregate module bandwidth" : "Memory bandwidth", moduleBandwidth ?? bandwidth),
+          moduleBandwidth ? withSource("Aggregate module bandwidth", moduleBandwidth)
+            : ["Memory bandwidth", bandwidth ?? "Unknown", bandwidth && bandwidthSource],
         ] },
         { title: "Host and power", graphic: graphic("Rated graphics power", "power", "W"), fields: [
           withSource("Host interface", vendor?.facts["Host interface"]),
@@ -197,6 +200,7 @@ export function hardwareCard(row, release, kind, {
         ] },
       ],
       photos: row.photos ?? [],
+      gallery,
       fields: [
         ...common,
         ["Manufacturer", row.manufacturer],
@@ -231,10 +235,6 @@ export function hardwareCard(row, release, kind, {
             ]
             : [["Source coverage", "No manufacturer specification has been matched to this identity."]],
         },
-        ...(gallery ? [{
-          title: "Product image source",
-          fields: [["Source images", gallery.label, gallery.source], ["Depicted hardware", gallery.scope]],
-        }] : []),
         ...(row.variants.length ? [{
           title: "Distinct related variants",
           fields: row.variants.map(({ id, name }) => ["Variant", name, path("cards", id)]),
@@ -351,6 +351,8 @@ const speedTitle = "Measured GPU decode speed";
 const speedUnavailable = "Measured decode speed unavailable. This release has no matched, reviewed single-GPU cohort for one model, artifact, context and runtime protocol.";
 const illustrationCaption = "Original schematic · conceptual GPU and memory layout";
 const gpuAxis = { label: "GPU", categorical: true };
+const imageSourceTitle = "Product image source";
+const imageSourceFields = gallery => [["Source images", gallery.label, gallery.source], ["Depicted hardware", gallery.scope]];
 
 function evaluationsHtml({ title, summary, headings, rows }, heading) {
   const rowHtml = rows.map((row) => {
@@ -392,7 +394,9 @@ ${renderCoordinatePlot(atlas)}
 <details><summary>View chart data (${points.length} GPUs)</summary><table class="profile-chart-table">
 <thead><tr><th scope="col">GPU</th><th scope="col">${axisTitle(memoryAxis)}</th><th scope="col">${axisTitle(bandwidthAxis)}</th><th scope="col">Source</th></tr></thead><tbody>
 ${points.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
-<td>${point.x}</td><td>${point.y}</td><td><a href="${escapeHtml(point.source)}">Manufacturer</a></td></tr>`).join("")}
+<td>${point.x}</td><td>${point.y}</td><td>${point.bandwidthSource !== point.source
+    ? `<a href="${escapeHtml(point.source)}">Capacity</a> · <a href="${escapeHtml(point.bandwidthSource)}">Bandwidth</a>`
+    : `<a href="${escapeHtml(point.source)}">Manufacturer</a>`}</td></tr>`).join("")}
 </tbody></table></details></section>
 <section class="profile-section"><${heading}>GPU memory capacity</${heading}>
 <p>Manufacturer-rated memory per GPU, ordered by capacity.</p>
@@ -417,7 +421,8 @@ function positionMarkdown({ id, name, points, capacityPoints }) {
     `## ${positionTitle}`, "", positionBasis, "",
     selected ? `Selected GPU: ${name} · ${selected.x} GB · ${selected.y} GB/s` : noPair,
     "", `| GPU | ${axisTitle(memoryAxis)} | ${axisTitle(bandwidthAxis)} | Source |`, "| --- | ---: | ---: | --- |",
-    ...points.map(point => `| ${link(point)} | ${point.x} | ${point.y} | ${source(point)} |`),
+    ...points.map(point => `| ${link(point)} | ${point.x} | ${point.y} | ${point.bandwidthSource !== point.source
+      ? `[Capacity](<${point.source}>) · [Bandwidth](<${point.bandwidthSource}>)` : source(point)} |`),
     "", "## GPU memory capacity", "", "Manufacturer-rated memory per GPU, ordered by capacity.", "",
     capacity ? `Selected GPU: ${name} · ${capacity.y} GB` : `${name} has no unambiguous manufacturer-rated capacity on this scale.`,
     "", `| GPU | ${axisTitle(memoryAxis)} | Source |`, "| --- | ---: | --- |",
@@ -479,6 +484,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   const sections = card.sections ?? [];
   const visuals = card.visuals ?? [];
   const photos = card.photos ?? [];
+  const gallery = card.gallery;
   const position = card.position;
   const evaluations = card.publisherEvaluations;
 
@@ -500,6 +506,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       ]),
       ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
         `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
+      ...(gallery ? [`## ${imageSourceTitle}`, "", ...markdownFields(imageSourceFields(gallery)), ""] : []),
       ...(position ? [illustrationCaption, "", ...positionMarkdown(position)] : []),
       ...markdownFields(card.fields),
       ...sections.flatMap(({ title, fields }) => ["", `## ${escapeMarkdown(title)}`, "", ...markdownFields(fields)]),
@@ -524,7 +531,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
 export function renderCardContent(card, { mdLink, nested = false } = {}) {
   const title = nested ? "h2" : "h1";
   const heading = nested ? "h3" : "h2";
-  const { sections = [], visuals = [], photos = [], position, publisherEvaluations } = card;
+  const { sections = [], visuals = [], photos = [], gallery, position, publisherEvaluations } = card;
   return `<div class="profile-hero"><p class="profile-kicker">${escapeHtml(card.kind)}</p><${title}>${escapeHtml(card.title)}</${title}>
 <p class="profile-evidence">${escapeHtml(card.evidence)}</p>
 <div class="profile-actions">${card.source ? `<a href="${escapeHtml(card.source)}">Open source</a>` : ""}${mdLink ? `<a href="${mdLink}">Markdown</a>` : ""}</div></div>
@@ -536,6 +543,7 @@ ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, sourc
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
   ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}
   </figcaption></figure>`).join("")}</div>` : ""}
+${gallery ? `<section class="profile-section"><${heading}>${imageSourceTitle}</${heading}>${htmlFields(imageSourceFields(gallery))}</section>` : ""}
 ${position ? positionHtml(position, heading) : ""}
 <section class="profile-section"><${heading}>Catalog details</${heading}>${htmlFields(card.fields)}</section>
 ${sections.map(({ title, fields }) => `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${htmlFields(fields)}</section>`).join("\n")}

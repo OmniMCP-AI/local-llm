@@ -1,0 +1,39 @@
+{
+  "checkedOn": "2026-11-22",
+  "cards": {
+    "nvidia-geforce-rtx-3090": {
+      "bandwidth": "936 GB/sec",
+      "bandwidthSource": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf",
+      "gallery": {
+        "label": "Product images on NVIDIA",
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/",
+        "scope": "NVIDIA’s RTX 3090 family gallery includes the RTX 3090 and RTX 3090 Ti Founders Edition designs."
+      }
+    },
+    "nvidia-geforce-rtx-3090-ti": {
+      "bandwidth": "1008 GB/sec",
+      "bandwidthSource": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf#page=30",
+      "gallery": {
+        "label": "Product images on NVIDIA",
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/",
+        "scope": "NVIDIA’s RTX 3090 family gallery includes the RTX 3090 and RTX 3090 Ti Founders Edition designs."
+      }
+    },
+    "nvidia-geforce-rtx-4090": {
+      "bandwidth": "1008 GB/sec",
+      "bandwidthSource": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/#specs",
+      "gallery": {
+        "label": "Product images on NVIDIA",
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
+        "scope": "Three manufacturer views of the NVIDIA GeForce RTX 4090 Founders Edition."
+      }
+    },
+    "nvidia-geforce-rtx-5090": {
+      "gallery": {
+        "label": "Product images on NVIDIA",
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+        "scope": "Four manufacturer views of the NVIDIA GeForce RTX 5090 Founders Edition."
+      }
+    }
+  }
+}

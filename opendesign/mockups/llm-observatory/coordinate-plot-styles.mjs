@@ -68,22 +68,34 @@ export const coordinatePlotStyles = `
 }
 .coordinate-plot:has(input:checked) .coordinate-label, .coordinate-selected .coordinate-label { display: block; }
 .coordinate-selected .coordinate-label { color: var(--chart-accent); z-index: 5; }
-.coordinate-line, .coordinate-bar { position: absolute; pointer-events: none; }
+.coordinate-line, .coordinate-bar-shape { position: absolute; pointer-events: none; }
 .coordinate-line { inset: 0; width: 100%; height: 100%; }
-.coordinate-line polyline { stroke: var(--chart-accent); stroke-width: 2; vector-effect: non-scaling-stroke; fill: none; }
+.coordinate-line polyline { stroke: var(--chart-series, var(--chart-accent)); stroke-width: 2; vector-effect: non-scaling-stroke; fill: none; }
 .coordinate-scatter .coordinate-line polyline { stroke-dasharray: 3 4; }
-.coordinate-point > .coordinate-bar {
-  left: var(--column, 0); top: var(--row, 100%); width: var(--bar-width); height: var(--bar-height);
-  background: var(--chart-peer); translate: -50% 0;
+.coordinate-plot [data-series="0"] { --chart-series: var(--chart-accent); }
+.coordinate-plot [data-series="1"] { --chart-series: var(--color-accent-2, #175a76); }
+.coordinate-plot [data-series="2"] { --chart-series: var(--chart-muted); }
+.coordinate-line polyline[data-series="2"] { stroke-dasharray: 4 3; }
+.coordinate-point[data-series]:not([data-series=""]) .coordinate-mark::after { background: var(--chart-series); }
+.coordinate-bar-shape {
+  left: var(--column); top: var(--bar-top); width: var(--bar-width); height: var(--bar-height);
+  background: var(--chart-series, var(--chart-peer)); translate: -50% 0;
 }
-.coordinate-selected > .coordinate-bar { background: var(--chart-accent); }
+.coordinate-selected > .coordinate-bar-shape { background: var(--chart-accent); }
+.coordinate-bar .coordinate-mark {
+  left: var(--column); top: var(--bar-top); width: max(.65rem, var(--bar-width)); min-height: .9rem;
+  height: var(--bar-height); border-radius: .12rem; translate: -50% 0; outline-offset: 2px;
+}
+.coordinate-bar .coordinate-mark::after { display: none; }
+.coordinate-bar .coordinate-selected .coordinate-mark::after { display: block; position: absolute; top: -.35rem; }
 .coordinate-popup {
   display: none; position: absolute; z-index: 7; pointer-events: none; box-sizing: border-box;
   --popup-width: min(14.5rem, calc(100cqi + 1.5rem));
-  width: var(--popup-width); top: var(--row); left: clamp(-.65rem, calc(var(--column) + .8rem), calc(100% - var(--popup-width) + .65rem));
+  width: var(--popup-width); top: calc(var(--row) + .65rem); left: clamp(-.65rem, calc(var(--column) + .8rem), calc(100% - var(--popup-width) + .65rem));
   padding: .55rem .65rem; border: 1px solid var(--chart-grid); border-radius: .35rem;
   background: var(--chart-surface); color: var(--chart-text); box-shadow: 0 5px 18px #0003; line-height: 1.3;
 }
+.coordinate-popup-above { top: auto; bottom: calc(100% - var(--row) + .65rem); }
 .coordinate-mark:is(:hover,:focus) ~ .coordinate-popup { display: block; }
 .coordinate-grid:has(.coordinate-mark:hover) .coordinate-mark:focus:not(:hover) ~ .coordinate-popup { display: none; }
 .coordinate-popup p { color: var(--chart-muted); margin: .22rem 0; }
@@ -91,8 +103,6 @@ export const coordinatePlotStyles = `
 .coordinate-popup dl > div { display: flex; justify-content: space-between; gap: .55rem; }
 .coordinate-popup dt { color: var(--chart-muted); }
 .coordinate-popup dd { margin: 0; font-weight: 650; text-align: right; }
-.coordinate-selection { display: block; margin-block: .45rem; color: var(--chart-accent); font-weight: 650; }
-.coordinate-selection::before { content: "◆ "; }
 .coordinate-empty { color: var(--chart-muted, inherit); }
 @container (max-width: 24rem) {
   .coordinate-tick-x.coordinate-tick-minor:not(:last-child) span { display: none; }

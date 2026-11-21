@@ -36,3 +36,28 @@ test("GPU pages retain one rated bandwidth cohort and show a measured speed cove
   assert.match(markdown, /Measured decode speed unavailable/);
   assert.match(markdown, /Original schematic/);
 });
+
+test("NVIDIA product and architecture sources cover distinct RTX 3090 and RTX 4090 bandwidth values", async () => {
+  const { fileURLToPath } = await import("node:url");
+  const { readHardwareCatalog } = await import("./catalog-hardware-build.mjs");
+  const here = fileURLToPath(new URL(".", import.meta.url));
+  const { catalog } = await readHardwareCatalog(here);
+  for (const [id, bandwidth, locator] of [
+    ["nvidia-geforce-rtx-3090", "936", "GA102-GPU-Architecture-Whitepaper-V1.pdf"],
+    ["nvidia-geforce-rtx-3090-ti", "1008", "nvidia-ada-gpu-architecture.pdf"],
+    ["nvidia-geforce-rtx-4090", "1008", "rtx-5090/#specs"],
+  ]) {
+    const gpu = catalog.cards.find(card => card.id === id);
+    const output = renderCard(hardwareCard(gpu, "v1-test", "cards", { peers: catalog.cards }), {
+      release: "v1-test", pathname: "card.md", markdown: true,
+    });
+    assert.ok(output.includes(`· ${bandwidth} GB/s`), id);
+    assert.ok(output.includes(locator), id);
+    assert.ok(output.includes("Product images on NVIDIA"), id);
+  }
+  const { catalog: withoutWhitepaper } = await readHardwareCatalog(here, value => value?.includes("GA102-GPU-Architecture-Whitepaper-V1.pdf"));
+  const rtx3090 = withoutWhitepaper.cards.find(card => card.id === "nvidia-geforce-rtx-3090");
+  assert.equal(rtx3090.vendorSpec.facts["Memory bandwidth"], undefined);
+  assert.equal(rtx3090.vendorSpec.facts["Memory configuration"], "24 GB GDDR6X");
+  assert.equal(rtx3090.vendorSpec.gallery.label, "Product images on NVIDIA");
+});

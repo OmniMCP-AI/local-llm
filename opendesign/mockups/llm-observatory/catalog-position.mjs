@@ -30,7 +30,8 @@ export function cardPosition(card, peers, linkTo) {
     return {
       id: row.id, name: row.name,
       short: row.name.replace(/^(NVIDIA (?:GeForce |Tesla )?|AMD (?:Radeon |Instinct )?|Intel )/, ""),
-      capacity, bandwidth, source: row.vendorSpec?.source, href: linkTo(row.id),
+      capacity, bandwidth, source: row.vendorSpec?.source,
+      bandwidthSource: row.vendorSpec?.bandwidthSource ?? row.vendorSpec?.source, href: linkTo(row.id),
     };
   });
   const points = rated.filter(({ capacity, bandwidth }) => capacity && bandwidth)

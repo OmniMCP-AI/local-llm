@@ -339,10 +339,12 @@ function assertProfileFieldsAgree(html, markdown, id) {
   const unescape = (value) => value.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
     .replaceAll("&quot;", '"').replaceAll("&#39;", "'");
   const plainMarkdown = markdown.replace(/\\([\\`*_{}\[\]<>|])/g, "$1");
-  for (const [, label, href, text] of html.matchAll(/<dt>(.*?)<\/dt><dd>(?:<a href="([^"]*)">)?([^<]*)(?:<\/a>)?<\/dd>/g)) {
-    const value = unescape(text);
-    const expected = href ? `[${value}](<${unescape(href)}>)` : value;
-    assert.ok(plainMarkdown.includes(`**${unescape(label)}** — ${expected}\n`), `${id}: ${unescape(label)}`);
+  for (const [, fields] of html.matchAll(/<dl class="profile-fields">([^]*?)<\/dl>/g)) {
+    for (const [, label, href, text] of fields.matchAll(/<dt>(.*?)<\/dt><dd>(?:<a href="([^"]*)">)?([^<]*)(?:<\/a>)?<\/dd>/g)) {
+      const value = unescape(text);
+      const expected = href ? `[${value}](<${unescape(href)}>)` : value;
+      assert.ok(plainMarkdown.includes(`**${unescape(label)}** — ${expected}\n`), `${id}: ${unescape(label)}`);
+    }
   }
 }
 
