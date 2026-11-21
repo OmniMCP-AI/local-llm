@@ -54,7 +54,7 @@ The Pages build publishes a JavaScript-free wiki at `/wiki/` and Markdown compan
 
 ### Review a pull request's Pages output
 
-Download `pages-review-<commit SHA>` from the successful **Pages verification** run. The archive contains the public wiki and research library, static catalog data, and crawler discovery files. The review uses static serving for this scope. Its review manifest identifies the exact commit, PostgreSQL snapshot, release IDs, highlight date, and discovery file hashes.
+Download `pages-review-<commit SHA>` from the successful **Pages verification** run. The archive contains the public wiki and research library, plus HTML and Markdown profiles for hardware, the Popular, Small and Recent Releases model collections, and all pinned runtimes. Exact model lookup uses the archived PostgreSQL projection of the full repository inventory. Its review manifest identifies the exact commit, PostgreSQL snapshot, release IDs, highlight date, and discovery file hashes.
 
 Extract the archive and, from its directory, run `npx wrangler@4.166.0 pages dev . --ip 127.0.0.1 --port 8788`. Open [the local review](http://127.0.0.1:8788/) to inspect the wiki and highlights. Wrangler applies the route redirects and Markdown headers. To rebuild from a clean checkout with the same PostgreSQL 17 test database and reader used by Pages verification, run `node build-pages-review.mjs <new output directory> "$(git rev-parse HEAD)"` from `opendesign/mockups/llm-observatory` after `npm ci`.
 

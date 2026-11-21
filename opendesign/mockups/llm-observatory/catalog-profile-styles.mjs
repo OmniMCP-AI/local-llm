@@ -12,7 +12,7 @@ export const profileStyles = `
 .profile-shell * { box-sizing: border-box; }
 .profile-shell a { color: var(--profile-accent); overflow-wrap: anywhere; }
 .profile-shell a:hover { color: #ffbc91; }
-.profile-shell a:focus-visible, .profile-shell summary:focus-visible { outline: 2px solid #ffc299; outline-offset: 4px; }
+.profile-shell :is(a,summary,input,button):focus-visible { outline: 2px solid #ffc299; outline-offset: 4px; }
 .profile-nav, .profile-actions {
   display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.2rem; font-size: .86rem;
 }
@@ -20,6 +20,12 @@ export const profileStyles = `
 .profile-nav a { color: var(--profile-muted); text-decoration: none; min-height: 2rem; display: inline-flex; align-items: center; }
 .profile-nav a:first-child { color: var(--profile-ink); font-weight: 750; }
 .profile-nav a[aria-current] { color: var(--profile-accent); }
+.profile-actions a[aria-current] { color: var(--profile-ink); font-weight: 750; }
+.profile-lookup { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.profile-lookup label { flex-basis: 100%; }
+.profile-lookup input { max-width: 100%; width: 22rem; }
+.profile-lookup :is(input,button) { font: inherit; padding: .45rem .6rem; border: 1px solid #76716a; border-radius: .2rem; }
+.profile-lookup button { cursor: pointer; }
 .profile-hero { padding: clamp(1.25rem, 4vw, 3rem) 0; border-bottom: 1px solid var(--profile-edge); }
 .profile-kicker { margin: 0 0 .55rem; color: var(--profile-accent); font: 650 .8rem/1.4 ui-monospace, monospace; }
 .profile-shell h1 { margin: 0 0 .6rem; font-size: clamp(2rem, 6vw, 4.15rem); line-height: 1.04; letter-spacing: -.055em; overflow-wrap: anywhere; }

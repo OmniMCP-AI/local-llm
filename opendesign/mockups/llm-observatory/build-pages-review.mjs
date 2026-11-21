@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
-import { hardwareDirectoryPath } from "./catalog-paths.mjs";
+import { hardwareDirectoryPath, modelCollectionPath, modelLookupPath, runtimeDirectoryPath } from "./catalog-paths.mjs";
 import { importLocalCatalog } from "./catalog-pg.mjs";
 import { withLocalPages } from "./pages-test-server.mjs";
 
@@ -51,6 +51,7 @@ try {
   }
   const discovery = Object.fromEntries(await Promise.all(["/robots.txt", "/sitemap.xml", "/llms.txt", "/_redirects"]
     .map(async (path) => [path, createHash("sha256").update(await readFile(join(output, path))).digest("hex")])));
+  const pair = (html) => ({ html, markdown: html + ".md" });
   const manifest = {
     schemaVersion: 1,
     status: "non-production-review",
@@ -64,7 +65,13 @@ try {
     },
     research: { release: researchRelease, manifest: `/research/${researchRelease}/manifest.json` },
     catalog: { release: catalogRelease, snapshotId, manifest: catalogPath,
-      directory: { html: hardwareDirectoryPath(catalogRelease), markdown: hardwareDirectoryPath(catalogRelease, true) } },
+      directory: pair(hardwareDirectoryPath(catalogRelease)),
+      models: Object.fromEntries([
+        ...["popular", "small", "recent"].map(collection => [collection, pair(modelCollectionPath(catalogRelease, collection))]),
+        ["lookup", pair(modelLookupPath(catalogRelease))],
+      ]),
+      runtimes: pair(runtimeDirectoryPath(catalogRelease)),
+    },
     discoverySha256: discovery,
   };
   await writeFile(join(output, "review-manifest.json"), JSON.stringify(manifest, null, 2) + "\n");

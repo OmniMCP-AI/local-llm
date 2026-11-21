@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
-import { removeHardwareDirectory, writeHardwareDirectory } from "./catalog-pages-review.mjs";
+import { removeHardwareDirectory, removeModelRuntimeDirectories, writeHardwareDirectory, writeModelRuntimeDirectories } from "./catalog-pages-review.mjs";
 import { prepareCatalogRelease, readCatalogModelFiles, writeCatalogProjection, writeCatalogRelease } from "./catalog-release-build.mjs";
 import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
@@ -142,8 +142,11 @@ let catalogRelease = "";
 if (pages) {
   catalogRelease = projection ? await writeCatalogProjection(output, projection, { catalogApi: !review })
     : await writeCatalogRelease(catalogDirectory, output, hardware, runtimes, modelFiles);
-  if (review) await writeHardwareDirectory(output, projection, publicOrigin);
-  else await removeHardwareDirectory(output, catalogRelease);
+  if (review) {
+    await Promise.all([writeHardwareDirectory(output, projection, publicOrigin), writeModelRuntimeDirectories(output, projection, publicOrigin)]);
+  } else {
+    await Promise.all([removeHardwareDirectory(output, catalogRelease), removeModelRuntimeDirectories(output, catalogRelease)]);
+  }
 }
 let localCatalogRelease = "";
 let localModelIds = [];

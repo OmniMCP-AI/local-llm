@@ -31,9 +31,12 @@ export function modelCollections(upstream, discovery, supplemental) {
   const ranked = rows => rows.map((row, index) => ({
     ...byId.get(row.id), discovery: { ...row, rank: index + 1 },
   }));
-  const recent = [...supplemental].sort((a, b) =>
+  return { byId, all, recent: recentModels(supplemental), popular: ranked(discovery.popular), small: ranked(discovery.small) };
+}
+
+export function recentModels(rows) {
+  return rows.filter(row => row.supplemental).sort((a, b) =>
     b.supplemental.revisionDate.localeCompare(a.supplemental.revisionDate) || byRepository(a, b));
-  return { byId, all, recent, popular: ranked(discovery.popular), small: ranked(discovery.small) };
 }
 
 export function queryModelCatalog(rows, identities, { query = "", tag = "", license = "", page = 1, pageSize = 30, ranked = false } = {}) {

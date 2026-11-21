@@ -24,6 +24,20 @@ export function hardwareDirectoryPath(release, markdown = false) {
   return `/catalog/${release}/hardware${markdown ? ".md" : ""}`;
 }
 
+export function modelCollectionPath(release, collection = "popular", page = 1) {
+  const root = `/catalog/${release}`;
+  if (collection === "popular" && page === 1) return root + "/models";
+  return `${root}/model-collections/${collection}${page === 1 ? "" : "-" + page}`;
+}
+
+export function runtimeDirectoryPath(release) {
+  return `/catalog/${release}/runtimes`;
+}
+
+export function modelLookupPath(release) {
+  return `/catalog/${release}/model-lookup`;
+}
+
 export function modelShard(id) {
   return id.split("/")[0].slice(0, 2).toLowerCase();
 }
