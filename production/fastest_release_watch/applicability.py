@@ -35,16 +35,23 @@ def https_url(value):
     return value
 
 
-def apply_notes(report, notes_path, read_release=None, origin="", *, include_review_lines=False):
+def read_notes_file(notes_path):
+    if notes_path is None:
+        return {"notes": []}
+    try:
+        return json.loads(Path(notes_path).read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ValueError("Could not read the applicability document") from error
+
+
+def apply_notes(report, authored, read_release=None, origin="", *, include_review_lines=False):
+    if not isinstance(authored, dict) or set(authored) != {"notes"} or not isinstance(authored["notes"], list):
+        raise ValueError("Expected an object with an authored notes list")
     revisions = {row["revision_id"]: row for row in report["releases"]}
     for row in revisions.values():
         row["applicability"] = []
-    if notes_path is None:
+    if not authored["notes"]:
         return report
-    path = Path(notes_path)
-    authored = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(authored, dict) or set(authored) != {"notes"} or not isinstance(authored["notes"], list):
-        raise ValueError("Expected an object with an authored notes list")
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     cards = {card["id"]: card for card in catalog["cards"]}
     seen = set()

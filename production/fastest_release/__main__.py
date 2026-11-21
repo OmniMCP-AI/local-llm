@@ -56,8 +56,11 @@ def main(argv=None):
                        help="Use this pinned PostgreSQL agent-task report as the default and enable public API discovery.")
     serve.add_argument("--runtime-release-watch", action="store_true",
                        help="Serve retained runtime release histories from PostgreSQL.")
-    serve.add_argument("--runtime-release-watch-notes", type=Path,
-                       help="Read reviewed runtime applicability JSON on each release watch request.")
+    watch_notes = serve.add_mutually_exclusive_group()
+    watch_notes.add_argument("--runtime-release-watch-notes", type=Path,
+                             help="Read reviewed runtime applicability JSON on each release watch request.")
+    watch_notes.add_argument("--runtime-release-watch-notes-revision",
+                             help="Read this pinned PostgreSQL applicability revision on each watch request.")
     serve.add_argument("--pilot-engagement-origin",
                        help="Enable private pilot engagement on this exact HTTPS origin.")
     serve.add_argument("--pilot-engagement-mode", choices=("live", "rehearsal"), default="live",
@@ -79,6 +82,8 @@ def main(argv=None):
             parser.error("--runtime-release-watch requires FASTEST_DATABASE_URL or --database-url")
         if args.runtime_release_watch_notes is not None and not args.runtime_release_watch:
             parser.error("--runtime-release-watch-notes requires --runtime-release-watch")
+        if args.runtime_release_watch_notes_revision is not None and not args.runtime_release_watch:
+            parser.error("--runtime-release-watch-notes-revision requires --runtime-release-watch")
     if args.command == "serve" and args.pilot_engagement_origin:
         service = os.environ.get("FASTEST_PILOT_ENGAGEMENT_DBSERVICE")
         key = os.environ.get("FASTEST_PILOT_ENGAGEMENT_SIGNING_KEY", "")
@@ -118,6 +123,7 @@ def main(argv=None):
                              agent_task_release=args.agent_task_release,
                              cost_tariff_references=args.cost_tariff_references, runtime_watch=runtime_watch,
                              runtime_watch_notes=args.runtime_release_watch_notes,
+                             runtime_watch_notes_revision=args.runtime_release_watch_notes_revision,
                              pilot_engagement=pilot_engagement) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
