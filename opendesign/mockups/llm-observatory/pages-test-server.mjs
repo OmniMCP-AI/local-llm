@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 
-export async function withLocalPages(output, signal, verify, { feedbackDatabaseUrl } = {}) {
+export async function withLocalPages(output, signal, verify, { feedbackDatabaseUrl, staticOnly = false } = {}) {
   const scratch = await mkdtemp(join(tmpdir(), "fastest-pages-worker-"));
   let worker;
   let closed;
@@ -20,7 +20,7 @@ export async function withLocalPages(output, signal, verify, { feedbackDatabaseU
   process.once("SIGINT", stopWorker);
   process.once("SIGTERM", stopWorker);
   try {
-    await symlink(join(here, "functions"), join(scratch, "functions"), "dir");
+    if (!staticOnly) await symlink(join(here, "functions"), join(scratch, "functions"), "dir");
     if (feedbackDatabaseUrl) {
       await writeFile(join(scratch, "wrangler.json"), JSON.stringify({
         name: "fastest-pages-test",

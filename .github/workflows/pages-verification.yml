@@ -40,6 +40,9 @@ jobs:
         working-directory: opendesign/mockups/llm-observatory
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version-file: opendesign/mockups/llm-observatory/.node-version
@@ -68,7 +71,7 @@ jobs:
         shell: bash
         env:
           FASTEST_TEST_DATABASE_URL: *publisher
-          FASTEST_TEST_CATALOG_READER_URL: postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
+          FASTEST_TEST_CATALOG_READER_URL: &reader postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
           FASTEST_TEST_FEEDBACK_DATABASE_URL: postgresql://feedback_pages:ci-feedback@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
           NODE_OPTIONS: --test-reporter=tap
         run: |
@@ -83,3 +86,18 @@ jobs:
           grep -qxE "ok [0-9]+ - $feedback_case" "$results"
           node --test --test-name-pattern="^$replay_case$" catalog-release.test.mjs | tee "$results"
           grep -qxE "ok [0-9]+ - $replay_case" "$results"
+      - name: Build and verify the Pages review archive
+        if: github.event_name == 'pull_request'
+        env:
+          FASTEST_TEST_DATABASE_URL: *publisher
+          FASTEST_TEST_CATALOG_READER_URL: *reader
+          PAGES_REVIEW_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node build-pages-review.mjs "$RUNNER_TEMP/pages-review" "$PAGES_REVIEW_HEAD"
+      - name: Upload the Pages review archive
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pages-review-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/pages-review/
+          if-no-files-found: error
+          retention-days: 30

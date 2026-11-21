@@ -190,7 +190,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     runtimes, licenseNotice: source.licenseNotice };
 }
 
-export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }) {
+export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }, { catalogApi = true } = {}) {
   const { release } = manifest;
   const target = join(output, "catalog", release);
   const data = join(output, "catalog-data", release);
@@ -198,7 +198,7 @@ export async function writeCatalogProjection(output, { manifest, shards, hardwar
   await Promise.all([
     writeFile(join(target, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
     writeFile(join(target, "LICENSE.txt"), licenseNotice + "\n"),
-    ...(manifest.snapshotId ? [writeFile(join(target, "openapi.json"), JSON.stringify(catalogOpenApi(release), null, 2) + "\n")] : []),
+    ...(manifest.snapshotId && catalogApi ? [writeFile(join(target, "openapi.json"), JSON.stringify(catalogOpenApi(release), null, 2) + "\n")] : []),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
     writeFile(join(data, "cards.json"), JSON.stringify(hardware.catalog.cards)),
     writeFile(join(data, "machines.json"), JSON.stringify(hardware.catalog.machines)),

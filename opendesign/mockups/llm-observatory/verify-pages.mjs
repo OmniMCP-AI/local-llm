@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 
-const [base, canonical = base] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const review = args.includes("--review");
+const [base, canonical = base] = args.filter((arg) => arg !== "--review");
 if (!base) throw new Error("Usage: node verify-pages.mjs <served origin> [canonical origin]");
 const origin = new URL(canonical).origin;
 const get = (path, options = {}) => fetch(new URL(path, base), {
@@ -84,6 +86,34 @@ assert.doesNotMatch(sitemap + llms, /\/wiki\/agents(?:[./]|<)|\/wiki\/methods(?:
 for (const path of ["/wiki/agents/", "/wiki/agents.md", "/.well-known/api-catalog"]) {
   const response = await get(path);
   assert.ok([404, 410].includes(response.status), path + " returned " + response.status);
+}
+
+if (review) {
+  assert.ok(home.includes("Non-production review"), "Review homepage labels the preview");
+  assert.match(homeMarkdown, /Non-production review/);
+  assert.equal(head.headers.get("x-robots-tag"), "noindex");
+  assert.match(robots, /^Disallow: \/$/m);
+  assert.doesNotMatch(sitemap, /<loc>[^<]+\/prices<\/loc>/);
+  const { catalogRelease, catalogApi } = JSON.parse(await read("/wiki/manifest.json", "application/json"));
+  assert.equal(catalogApi, undefined);
+  const manifest = JSON.parse(await read("/review-manifest.json", "application/json"));
+  assert.equal(manifest.status, "non-production-review");
+  assert.equal(manifest.canonicalOrigin, origin);
+  assert.match(manifest.head, /^[a-f0-9]{40}$/);
+  assert.equal(manifest.wiki.release, release);
+  assert.equal(manifest.research.release, researchRelease);
+  assert.equal(manifest.catalog.release, catalogRelease);
+  const catalog = JSON.parse(await read(manifest.catalog.manifest, "application/json"));
+  assert.match(catalog.snapshotId, /^[a-f0-9]{64}$/);
+  assert.equal(manifest.catalog.snapshotId, catalog.snapshotId);
+  const machines = JSON.parse(await read(`/catalog-data/${catalogRelease}/machines.json`, "application/json"));
+  assert.ok(machines.some(({ topologyRevision }) => topologyRevision));
+  const researchManifest = JSON.parse(await read(manifest.research.manifest, "application/json"));
+  assert.equal(researchManifest.release, researchRelease);
+  assert.doesNotMatch(await read("/wiki/agent-discovery/", "text/html"), /OpenAPI|\/api\//i);
+  for (const path of [`/catalog/${catalogRelease}/openapi.json`, "/api/v1/catalog", "/api/feedback", "/api/runtime-releases", "/prices"]) {
+    assert.equal((await get(path)).status, 404, path);
+  }
 }
 
 console.log("Verified " + release + ", " + pages.length + " wiki pairs and " + highlights.length + " active highlights at " + base);

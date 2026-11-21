@@ -54,12 +54,12 @@ function renderBody(body, resolveLink, format) {
   }).join("\n\n");
 }
 
-export function renderTopologyReference(format, presets, scalingUrl = null) {
-  const interactive = "/#wiki/technology";
+export function renderTopologyReference(format, presets, scalingUrl = null, interactive = true) {
+  const topologyExplorer = "/#wiki/technology";
   const rows = presets.map(({ label, report }) => {
     const view = topologyView(report);
     return {
-      label, report, topology: topologyRevisionHref(report.revision),
+      label, report, topology: interactive && topologyRevisionHref(report.revision),
       summary: `${view.installedCount} ${view.installedCount === 1 ? "card" : "cards"}`,
       active: view.activeCount ?? "Unknown",
       inventory: view.parts.map(({ slot, label: name, memory }) => `${slot}. ${name} · ${memory ?? "VRAM unknown"}`).join(" / "),
@@ -72,9 +72,7 @@ export function renderTopologyReference(format, presets, scalingUrl = null) {
   });
   if (format === "md") return `## Topology reference
 
-[Open interactive topology](${interactive})
-
-${scalingUrl ? `[Open the 1→N GPU scaling report](${scalingUrl})` : scalingUnavailable}
+${interactive ? `[Open interactive topology](${topologyExplorer})\n\n` : ""}${scalingUrl ? `[Open the 1→N GPU scaling report](${scalingUrl})` : scalingUnavailable}
 
 ${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
   `- [${label} · ${report.id}](${report.source})${topology ? ` · [Explore this configuration](${topology})` : ""} · ${summary} · Active cards ${active} · ${markdown(inventory)} · Documented links ${markdown(links)}`).join("\n")}
@@ -84,8 +82,7 @@ ${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
 ${inferenceStages.map(({ title, note }, index) => `${index + 1}. **${title}.** ${note}`).join("\n")}
 `;
   return `<section><h2>Topology reference</h2>
-<p><a href="${interactive}">Open interactive topology</a></p>
-<p>${scalingUrl ? `<a href="${escape(scalingUrl)}">Open the 1→N GPU scaling report</a>` : scalingUnavailable}</p>
+${interactive ? `<p><a href="${topologyExplorer}">Open interactive topology</a></p>\n` : ""}<p>${scalingUrl ? `<a href="${escape(scalingUrl)}">Open the 1→N GPU scaling report</a>` : scalingUnavailable}</p>
 <div style="overflow-x:auto"><table><caption>Source-reported layouts</caption>
 <thead><tr><th scope="col">Layout</th><th scope="col">Installed</th><th scope="col">Active cards</th><th scope="col">Inventory by slot</th><th scope="col">Documented links</th></tr></thead>
 <tbody>${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
@@ -130,7 +127,7 @@ export function activeHighlights(highlights, pages, releaseDate) {
 
 export async function writeWikiRelease({
   output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
-  topologies = [], scalingUrl, advisorUrl, catalogApi = false,
+  topologies = [], scalingUrl, advisorUrl, catalogApi = false, review = false,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
@@ -159,7 +156,7 @@ export async function writeWikiRelease({
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
     const catalogAccess = id === "agent-discovery" && catalogOpenApi;
     const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
-      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl) : "")
+      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl, !review) : "")
       + (catalogAccess ? format === "html"
         ? `\n<p><a href="${catalogOpenApi}">Catalog API (OpenAPI)</a> · <a href="${catalogApiPath}?kind=cards">Browse released card metadata</a></p>`
         : `\n\n[Catalog API (OpenAPI)](${catalogOpenApi}) · [Browse released card metadata](${catalogApiPath}?kind=cards)`
@@ -173,6 +170,7 @@ export async function writeWikiRelease({
     .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName, catalogOpenApi]))
     .digest("hex").slice(0, 16);
   const headers = [
+    ...(review ? ["/*\n  X-Robots-Tag: noindex\n  Cache-Control: no-store"] : []),
     "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
     "/wiki/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
     `${research.html}\n  Link: <${origin + research.md}>; rel="alternate"; type="text/markdown"`,
@@ -218,32 +216,35 @@ ${backlinksHtml}
 
   const home = { origin, route: "/", alternate: "/index.md", release,
     title: "fastest.ai | Local AI benchmark explorer",
-    summary: "Compare local AI hardware, models, and costs. Read the methods and evidence behind each comparison." };
+    summary: review ? "Browse the public wiki, research library, and pinned catalog data."
+      : "Compare local AI hardware, models, and costs. Read the methods and evidence behind each comparison." };
+  const catalogManifest = `/catalog/${catalogRelease}/manifest.json`;
   const homeBody = `<main class="wiki-release release-fallback">
-<h1>fastest.ai</h1><p>Also known as ${alternateName}.</p><p>${home.summary}</p>
+<h1>fastest.ai</h1>${review ? '<p><strong>Non-production review</strong> · <a href="/review-manifest.json">Review manifest</a></p>'
+    : `<p>Also known as ${alternateName}.</p>`}<p>${home.summary}</p>
 <nav aria-label="Released content"><a href="/wiki/">Wiki</a><a href="${research.html}">Research library</a>
-<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
+<a href="/index.md">Markdown</a><a href="/wiki/manifest.json">${release}</a>${review ? `<a href="${catalogManifest}">Catalog manifest</a>` : ""}${advisorUrl ? `<a href="${escape(advisorUrl)}">Guided advisor</a>` : ""}</nav>
 <section data-home-highlights${availableHighlights.length ? "" : " hidden"}><h2>Research highlights</h2><ul>
 ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">${escape(title)}</a> · ${escape(summary)}</li>`).join("\n")}
 </ul></section>
 </main>`;
   files["/index.md"] = frontmatter({
     page: "home", route: "/", locale: "en", status: "published", release, source: "wiki/highlights.json",
-  }) + `\n# fastest.ai\n\nAlso known as ${alternateName}.\n\n${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)\n`
+  }) + `\n# fastest.ai\n\n${review ? "Non-production review · [Review manifest](/review-manifest.json)" : `Also known as ${alternateName}.`}\n\n${home.summary}\n\n[Wiki](/wiki/index.md) · [Research library](${research.md}) · [Release manifest](/wiki/manifest.json)${review ? ` · [Catalog manifest](${catalogManifest})` : ""}\n`
     + (availableHighlights.length ? "\n## Research highlights\n\n" + availableHighlights.map((entry) =>
       `- [${markdown(entry.title)}](${entry.markdown}) · ${markdown(entry.summary)}\n`).join("") : "");
   headers.push(`/\n  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown"`);
 
-  const canonicalRoutes = ["/", "/prices", ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
+  const canonicalRoutes = ["/", ...(review ? [] : ["/prices"]), ...entries.map(({ id }) => wikiHtmlRoute(id)), research.html].sort();
   const citationUrls = [
     `- [Evidence updates](${origin}/wiki/evidence-updates.md)`,
     `- [Current wiki release](${origin}/wiki/manifest.json)`,
     `- [Research library](${origin + research.md}): Approved research references and timestamped methods`,
     `- [Research release manifest](${origin + researchRoot}manifest.json)`,
-    ...(catalogRelease ? [`- [Catalog release manifest](${origin}/catalog/${catalogRelease}/manifest.json)`] : []),
+    ...(catalogRelease ? [`- [Catalog release manifest](${origin + catalogManifest})`] : []),
     ...(catalogOpenApi ? [`- [Catalog search (OpenAPI)](${origin + catalogOpenApi}): Hardware, machines, model repositories, and runtimes from this snapshot`] : []),
   ];
-  files["/robots.txt"] = `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`;
+  files["/robots.txt"] = `User-agent: *\n${review ? "Disallow" : "Allow"}: /\nSitemap: ${origin}/sitemap.xml\n`;
   files["/sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     + canonicalRoutes.map((route) => `  <url><loc>${escape(origin + route)}</loc></url>\n`).join("") + "</urlset>\n";
   files["/llms.txt"] = `# fastest.ai\n\n> ${home.summary}\n\n## Release references\n\n${citationUrls.join("\n")}\n\n## Wiki\n\n${entries.map(({ id, title, summary }) =>
@@ -255,7 +256,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
     highlights: availableHighlights.map(({ id, type, href, markdown, priority, starts, ends, source }) =>
       ({ id, type, href, markdown, priority, starts, ends, source })),
   }, null, 2) + "\n";
-  files["/_routes.json"] = JSON.stringify({
+  if (!review) files["/_routes.json"] = JSON.stringify({
     version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
       "/prices", "/prices/", "/prices.html", "/api/price-comparison", "/api/runtime-releases",
       ...(catalogOpenApi ? [catalogApiPath] : []),

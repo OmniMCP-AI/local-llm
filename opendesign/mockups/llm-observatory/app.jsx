@@ -500,7 +500,7 @@ function App() {
       {showDemoNotice && <p className="demo-notice">{t("Demo prices and benchmark results are illustrative.", "演示价格和评测结果仅供示例。")}</p>}
       {page === "Explorer" && <>
         <Hero onExplore={explore} onMethod={openMethod} catalogLinks={catalogLinks} />
-        <Highlights go={go} />
+        <Highlights go={go} t={t} />
       </>}
       {page === "Explorer" ? !catalogLinks && <>
         <Modes active={state.flow} onChoose={(flow) => { set({ flow }); requestAnimationFrame(explore); }} />
