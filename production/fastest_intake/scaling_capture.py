@@ -106,7 +106,7 @@ def _process(directory, stdout_name):
     else:
         finished = _timestamp(record.get("finished_utc"))
         require(started <= finished, "Process finish precedes its start.")
-        if code is not None or outcome in ("timeout", "interrupted"):
+        if code is not None or outcome == "timeout":
             require(files.keys() == expected_files, "Finalized process receipt must seal both output files.")
     require(code is None or type(code) is int and -(2**31) <= code < 2**31, "Invalid process exit code.")
     timeout = record.get("timeout_seconds")

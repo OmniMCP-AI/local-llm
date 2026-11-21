@@ -747,6 +747,32 @@ for index in range(len(visible)):
             ORDER BY role;
         """).splitlines(), ["complete|20", "unavailable|20"])
 
+    def test_private_scaling_intake_retains_interruption_during_log_creation(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.scaling_capture_packet()
+        manifest = packet / "capture.json"
+        capture = json.loads(manifest.read_bytes())
+        capture.update(status="interrupted", reason="Fixture interruption opening the runner logs")
+        del capture["attempts"]["comparison"]
+        manifest.write_text(json.dumps(capture))
+        comparison = packet / "comparison"
+        receipt_file = comparison / "attempt.json"
+        receipt = json.loads(receipt_file.read_bytes())
+        receipt.update(outcome="interrupted", exit_code=None, reason="Operator interrupted the subprocess.")
+        del receipt["placement_mib"], receipt["samples_ns"], receipt["files"]["stderr.log"]
+        stdout = comparison / "stdout.jsonl"
+        stdout.write_bytes(b"")
+        receipt["files"]["stdout.jsonl"] = sha256(b"").hexdigest()
+        (comparison / "stderr.log").unlink()
+        receipt_file.write_text(json.dumps(receipt))
+
+        result = self.serving_intake("ingest-scaling-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.store._query("""
+            SELECT outcome || '|' || cardinality(samples_ns)
+            FROM fastest_intake.scaling_capture_attempt WHERE role = 'comparison';
+        """), "interrupted|0")
+
     def test_private_serving_capture_intake_preserves_actual_timing_and_raw_digests(self):
         self.serving_intake("migrate").check_returncode()
         packet = self.serving_capture_packet(diagnostic=True)
