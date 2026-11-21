@@ -8,6 +8,7 @@ import { writeCatalogRelease } from "./catalog-release-build.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { importLocalCatalog, readPublishedCatalog } from "./catalog-pg.mjs";
+import { renderTopologyReference } from "./wiki-release.mjs";
 import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
 import { onRequestGet as goToFit } from "./functions/fit.js";
 
@@ -274,9 +275,44 @@ test("released RTX 5060 Ti boards use exact manufacturer sources and stay distin
   assert.ok(family.includes("cards/nvidia-geforce-rtx-5060-ti-16gb.html"));
 });
 
+const tinyboxId = "tinybox-red-4x-mi300x-batch-2";
+const tinyboxSource = "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x";
+
+function assertTinyboxProfile(html, markdown) {
+  assertProfileFieldsAgree(html, markdown, tinyboxId);
+  for (const body of [html, markdown]) {
+    for (const fact of [tinyboxSource, "Batch 2", "192 GB DDR5", "768 GB aggregate installed", "AMD Genoa",
+      "refurbished AMD Instinct MI300X", "custom tiny corp carrier", "PCIe 5.0 x16", "No xGMI", "Untested in this release"]) {
+      assert.ok(body.includes(fact), fact);
+    }
+    assert.match(body, /Runtime-usable GPU memory.*Unknown/);
+    assert.match(body, /Measured system power.*Unavailable/);
+    assert.match(body, /Manufacturer product gallery/);
+    assert.doesNotMatch(body, /None \(integrated GPU|89,000|60,000/);
+  }
+}
+
+test("the released tinybox profile separates installed GPU memory and documented connections from measured evidence", async (t) => {
+  const { request } = await buildFixture(t);
+  const [html, markdown] = await Promise.all(["html", "md"].map(async ext => {
+    const response = await request(`machines/${tinyboxId}.${ext}`);
+    assert.equal(response.status, 200);
+    return response.text();
+  }));
+  assertTinyboxProfile(html, markdown);
+  const gpu = await request("cards/amd-instinct-mi300x.html").then(response => response.text());
+  assert.ok(gpu.includes(`machines/${tinyboxId}.html`));
+
+  const withdrawn = await readHardwareCatalog(here, value => value === tinyboxSource);
+  const filtered = await buildFixture(t, withdrawn);
+  assert.equal((await filtered.request(`machines/${tinyboxId}.html`)).status, 404);
+  const filteredGpu = await filtered.request("cards/amd-instinct-mi300x.html").then(response => response.text());
+  assert.ok(!filteredGpu.includes(tinyboxId));
+});
+
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 114], ["machines", 123]]) {
+  for (const [kind, count] of [["cards", 114], ["machines", 124]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -316,7 +352,7 @@ function assertFactoryProfile(html, markdown, [id, configuration, locator, power
 
 test("released factory profiles show sourced parts and documented power in both formats", async (t) => {
   const { read, request } = await buildFixture(t);
-  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 3);
+  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 4);
   for (const profile of factoryProfiles) {
     const [html, markdown] = await Promise.all(["html", "md"].map(async ext => {
       const response = await request(`machines/${profile[0]}.${ext}`);
@@ -345,7 +381,7 @@ test("a replacement release omits profiles whose required factory evidence was w
   const source = "https://docs.nvidia.com/dgx/dgx-spark/hardware.html";
   const hardware = await readHardwareCatalog(here, value => value === source);
   const { read, readData, request } = await buildFixture(t, hardware);
-  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 2);
+  assert.equal(JSON.parse(await read("manifest.json")).hardware.coverage.completeBuilds, 3);
   const machines = await readData("machines.json");
   assert.ok(!JSON.stringify(machines).includes(source));
   for (const ext of ["html", "md"]) {
@@ -503,7 +539,7 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   const root = join(output, "catalog", release);
   const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, imported.snapshotId);
-  assert.equal(manifest.hardware.coverage.completeBuilds, 3);
+  assert.equal(manifest.hardware.coverage.completeBuilds, 4);
   for (const profile of factoryProfiles) {
     const [html, markdown] = await Promise.all(["html", "md"].map(ext =>
       readFile(join(root, "machines", profile[0] + "." + ext), "utf8")));
@@ -522,6 +558,30 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
   assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
   const published = readPublishedCatalog(testDatabase, imported.snapshotId);
+  const topology = published.topologies.find(({ id }) => id === tinyboxId);
+  assert.match(topology?.revision ?? "", /^topology-[a-f0-9]{64}$/);
+  assert.deepEqual(topology.devices.map(({ slot, card }) => [slot, card]), [1, 2, 3, 4].map(slot => [slot, "amd-instinct-mi300x"]));
+  assert.deepEqual(topology.hosts.map(({ slot }) => slot), [5]);
+  assert.deepEqual(topology.links.map(({ slots, label, source }) => [slots, label, source]),
+    [1, 2, 3, 4].map(slot => [[5, slot], "PCIe 5.0 x16", tinyboxSource]));
+  assert.equal(topology.activeCount, undefined);
+  for (const format of ["html", "md"]) {
+    const staticTopology = renderTopologyReference(format, [{ label: "tinybox", report: topology }]);
+    for (const slot of [1, 2, 3, 4]) {
+      assert.ok(staticTopology.includes(`PCIe 5.0 x16 (Host system ↔ Card ${slot})`));
+    }
+    assert.ok(staticTopology.includes("#wiki/gpu-topology/" + topology.revision));
+  }
+  const tinyboxPair = await Promise.all(["html", "md"].map(ext =>
+    readFile(join(root, "machines", tinyboxId + "." + ext), "utf8")));
+  assertTinyboxProfile(...tinyboxPair);
+  for (const body of tinyboxPair) {
+    assert.ok(body.includes("../../../../fastest-ai.html#wiki/gpu-topology/" + topology.revision));
+  }
+  const filteredHardware = await readHardwareCatalog(here, value => value === tinyboxSource);
+  const filtered = await importLocalCatalog(filteredHardware, testDatabase);
+  assert.ok(!filtered.topologies.some(({ id }) => id === tinyboxId));
+  assert.ok(!filtered.catalog.machines.some(({ id }) => id === tinyboxId));
   for (const { id, designation, source } of exact5060TiBoards) {
     const board = published.hardware.catalog.cards.find(row => row.id === id);
     assert.equal(board?.parent, "nvidia-geforce-rtx-5060-ti");

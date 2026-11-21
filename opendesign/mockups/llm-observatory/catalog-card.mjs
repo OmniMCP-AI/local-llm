@@ -210,14 +210,14 @@ export function hardwareCard(row, release, kind, { local = false, peers = [], to
     title: "Memory",
     fields: [
       ["Installed system memory", row.memory.system ?? "Unknown"],
-      ...(factory ? [
+      ...(factory && !row.cardIds.length ? [
         ["Dedicated VRAM", "None (integrated GPU uses shared memory)"],
         ["Runtime-usable GPU memory", "Unknown"],
       ] : [
         ["Reported nominal VRAM per device", row.memory.perDevice ?? "Unknown"],
         ["Reported aggregate VRAM inventory", row.memory.aggregate ?? "Unknown"],
         ["Reported allocation or limit", row.memory.allocation ?? "Unknown"],
-        ["Runtime-usable memory", "Unknown"],
+        [factory ? "Runtime-usable GPU memory" : "Runtime-usable memory", "Unknown"],
       ]),
       ...(row.sourceMemory?.length ? [["Memory wording in source notes", row.sourceMemory.join(" · "), row.capture]] : []),
     ],
@@ -257,12 +257,13 @@ export function hardwareCard(row, release, kind, { local = false, peers = [], to
       ] : []),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
       ...(topology ? [["Topology revision", "Explore this configuration", topology]] : []),
+      ...(row.gallery ? [["Manufacturer product gallery", row.gallery.label, row.gallery.source]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [
         ["Core build fields disclosed", `${row.coreFieldsReported} of ${row.coreFieldsTotal}`],
         ["Missing core build fields", row.missingCoreFields.join(", ") || "None listed"],
-        ["Interconnect", row.interconnect ?? "Unknown"],
       ] : []),
+      ...(row.interconnect || row.missingCoreFields ? [["Interconnect", row.interconnect ?? "Unknown"]] : []),
       ...row.cardIds.map((id) => ["Linked card reference", id, path("cards", id)]),
       ...(!factory && !row.cardIds.length ? [["Card identity", "No unambiguous discrete-card link in this snapshot"]] : []),
     ],

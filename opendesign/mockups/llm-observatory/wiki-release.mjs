@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
-import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyView } from "./topology.mjs";
+import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyLinkEndpoints, topologyView } from "./topology.mjs";
 import { topologyRevisionHref } from "./catalog-paths.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
@@ -62,8 +62,11 @@ export function renderTopologyReference(format, presets, scalingUrl = null) {
       summary: `${view.installedCount} ${view.installedCount === 1 ? "card" : "cards"}`,
       active: view.activeCount ?? "Unknown",
       inventory: view.parts.map(({ slot, label: name, memory }) => `${slot}. ${name} · ${memory ?? "VRAM unknown"}`).join(" / "),
-      links: view.links.map(({ label: name, slots }) => `${name} (${slots.join(" ↔ ")})`).join(" / ") ||
-        (view.installedCount === 1 ? "Single-card layout" : "Unknown"),
+      links: [
+        view.links.map(({ label: name, slots }) => `${name} (${topologyLinkEndpoints(view, slots)})`).join(" / ") ||
+          (view.installedCount === 1 ? "Single-card layout" : "Unknown"),
+        report.note,
+      ].filter(Boolean).join(" · "),
     };
   });
   if (format === "md") return `## Topology reference
@@ -73,7 +76,7 @@ export function renderTopologyReference(format, presets, scalingUrl = null) {
 ${scalingUrl ? `[Open the 1→N GPU scaling report](${scalingUrl})` : scalingUnavailable}
 
 ${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
-  `- [${label} · ${report.id}](${report.source})${topology ? ` · [Explore this configuration](${topology})` : ""} · ${summary} · Active cards ${active} · ${markdown(inventory)} · Inter-card link ${links}`).join("\n")}
+  `- [${label} · ${report.id}](${report.source})${topology ? ` · [Explore this configuration](${topology})` : ""} · ${summary} · Active cards ${active} · ${markdown(inventory)} · Documented links ${markdown(links)}`).join("\n")}
 
 ## Conceptual inference stages
 
@@ -83,7 +86,7 @@ ${inferenceStages.map(({ title, note }, index) => `${index + 1}. **${title}.** $
 <p><a href="${interactive}">Open interactive topology</a></p>
 <p>${scalingUrl ? `<a href="${escape(scalingUrl)}">Open the 1→N GPU scaling report</a>` : scalingUnavailable}</p>
 <div style="overflow-x:auto"><table><caption>Source-reported layouts</caption>
-<thead><tr><th scope="col">Layout</th><th scope="col">Installed</th><th scope="col">Active cards</th><th scope="col">Inventory by slot</th><th scope="col">Inter-card link</th></tr></thead>
+<thead><tr><th scope="col">Layout</th><th scope="col">Installed</th><th scope="col">Active cards</th><th scope="col">Inventory by slot</th><th scope="col">Documented links</th></tr></thead>
 <tbody>${rows.map(({ label, report, summary, active, inventory, links, topology }) =>
   `<tr><th scope="row"><a href="${escape(report.source)}">${escape(label)} · ${escape(report.id)}</a>${topology ? `<br><a href="${topology}">Explore this configuration</a>` : ""}</th><td>${summary}</td><td>${active}</td><td>${escape(inventory)}</td><td>${escape(links)}</td></tr>`).join("\n")}</tbody></table></div>
 <h2>Conceptual inference stages</h2><ol>${inferenceStages.map(({ title, note }) =>

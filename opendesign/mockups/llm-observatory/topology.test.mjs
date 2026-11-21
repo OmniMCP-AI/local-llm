@@ -11,13 +11,18 @@ const { catalog } = await readHardwareCatalog(fileURLToPath(new URL(".", import.
 const topologyPresets = selectTopologyPresets(reports);
 test("released presets switch slots and preserve per-device memory provenance", () => {
   const layouts = topologyPresets.map(({ report }) => topologyView(report, {}));
-  assert.deepEqual(layouts.map(({ installedCount }) => installedCount), [1, 2, 4, 2]);
-  assert.deepEqual(layouts.map(({ activeCount }) => activeCount), [1, null, null, null]);
+  assert.deepEqual(layouts.map(({ installedCount }) => installedCount), [1, 2, 4, 2, 4]);
+  assert.deepEqual(layouts.map(({ activeCount }) => activeCount), [1, null, null, null, null]);
   assert.deepEqual(layouts[1].parts.map(({ photo, memory }) => [photo, memory]), [["rtx-3060", "12 GB"], ["rtx-3060", "12 GB"]]);
   assert.deepEqual(layouts[2].parts.map(({ memory }) => memory), Array(4).fill("32 GB"));
   assert.equal(layouts[3].mixed, true);
   assert.deepEqual(layouts[3].parts.map(({ memory }) => memory), [null, null]);
-  assert.ok(layouts.every(({ links }) => links.length === 0));
+  assert.ok(layouts.slice(0, 4).every(({ links }) => links.length === 0));
+  assert.deepEqual(layouts[4].parts.map(({ memory }) => memory), Array(4).fill("192 GB"));
+  assert.deepEqual(layouts[4].links.map(({ slots }) => slots), [[5, 1], [5, 2], [5, 3], [5, 4]]);
+  const replacement = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-4090");
+  const draft = topologyView(layouts[4].report, { 2: replacement });
+  assert.deepEqual(draft.links.map(({ slots }) => slots), [[5, 1], [5, 3], [5, 4]]);
 });
 
 test("an exact topology URL selects the revision and rejects a stale revision", () => {

@@ -1,5 +1,31 @@
 [
   {
+    "id": "tinybox-red-4x-mi300x-batch-2",
+    "name": "tinybox red 4× MI300X · Batch 2",
+    "count": 4,
+    "group": "multi",
+    "connection": "Four vendor-reported PCIe 5.0 x16 host links",
+    "note": "No xGMI links between accelerators. The vendor does not identify switches, measured transport or runtime peer access. Installed GPU memory totals 768 GB across four separate devices.",
+    "memory": "192 GB each",
+    "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+    "hostModel": "32-core AMD Genoa · 192 GB DDR5 system memory",
+    "hosts": [
+      { "slot": 5, "label": "AMD Genoa host system" }
+    ],
+    "devices": [
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" },
+      { "label": "Refurbished AMD Instinct MI300X", "card": "amd-instinct-mi300x" }
+    ],
+    "links": [
+      { "slots": [5, 1], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 2], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 3], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" },
+      { "slots": [5, 4], "label": "PCIe 5.0 x16", "state": "reported", "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x" }
+    ]
+  },
+  {
     "id": "V005-HP-TEST",
     "name": "Developer RTX4090 / i7-13700K /64GB host",
     "count": 1,

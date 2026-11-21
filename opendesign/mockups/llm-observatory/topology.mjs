@@ -16,6 +16,7 @@ export function selectTopologyPresets(reports) {
   ["Two cards", "V021-HP-C001"],
   ["Four cards", "V028-HP-E03"],
   ["Mixed cards", "V007-HP-E01"],
+  ["tinybox 4× MI300X", "tinybox-red-4x-mi300x-batch-2"],
 ].map(([label, id]) => ({ label, report: reports.find((row) => row.id === id) }))
     .filter(({ report }) => report);
 }
@@ -110,6 +111,11 @@ export function topologyView(report, replacements = {}) {
     mixed: !isHost && (new Set(parts.map(({ label }) => label)).size > 1
       || new Set(parts.map(({ memory }) => memory).filter(Boolean)).size > 1),
   };
+}
+
+export function topologyLinkEndpoints(view, slots) {
+  return slots.map(slot => !view.isHost && view.report.hosts?.some(host => host.slot === slot)
+    ? "Host system" : `${view.partName} ${slot}`).join(" ↔ ");
 }
 
 export function draftFitRequest(view) {

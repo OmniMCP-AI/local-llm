@@ -132,8 +132,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   assert.equal(manifest.supplement.repositories, 3);
   assert.equal(manifest.discovery.popular, 300);
   assert.equal(manifest.discovery.small, 75);
-  assert.equal(manifest.hardware.coverage.completeBuilds, 3);
-  assert.equal(manifest.coverage.topologyRevisions, 38);
+  assert.equal(manifest.hardware.coverage.completeBuilds, 4);
+  assert.equal(manifest.coverage.topologyRevisions, 39);
 
   const releaseHash = await releaseDigest(output);
   env.FASTEST_CATALOG_SNAPSHOT_ID = "0".repeat(64);
