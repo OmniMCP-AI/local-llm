@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { modelShard } from "./catalog-paths.mjs";
 import { importLocalCatalog } from "./catalog-pg.mjs";
+import { onRequestGet as readCatalogProfile } from "./functions/catalog/[release]/[[path]].js";
 import { withLocalPages } from "./pages-test-server.mjs";
 
 const run = promisify(execFile);
@@ -72,6 +73,11 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   assert.equal(await releaseDigest(output), await releaseDigest(rebuilt));
   const manifest = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
   assert.deepEqual(manifest.highlights.map(({ id }) => id), ["dual-rtx-2080-ti-nvlink", "open-benchmark-requests"]);
+  const community = await readFile(join(output, "wiki/community/index.html"), "utf8");
+  const issues = "https://github.com/OmniMCP-AI/local-llm/issues/new?template=";
+  for (const template of ["benchmark-request.yml", "result-correction.yml"]) {
+    assert.ok(community.includes('href="' + issues + template + '"'));
+  }
   const research = JSON.parse(await readFile(join(output, "research", manifest.researchRelease, "index.json"), "utf8"));
   const example = research.sources.find(({ id }) => id === "llama-bench-jsonl-example");
   assert.deepEqual(example?.records.map(({ dimension }) => dimension), ["prefill", "generation"]);
@@ -99,6 +105,89 @@ test("PostgreSQL Pages visitors enter the released catalog and can explicitly op
   assert.equal(navigationHref("models", true, null, true), "#catalog/models");
   assert.equal(navigationHref("machines", true, origin, true), origin + "/profiles#machines");
   assert.equal(navigationHref("machines", true, null), "#machines");
+});
+
+test("the official Qwen model profile links the observed GGUF inventory benchmark in HTML and Markdown", async (t) => {
+  const origin = "https://release.example.test";
+  const pin = "f".repeat(64);
+  const reportUrl = `${origin}/agent-task/${pin}/agent-task`;
+  const model = "Qwen/Qwen2.5-7B-Instruct";
+  const label = "Observed inventory tool-policy benchmark";
+  const { artifact } = JSON.parse(await readFile(new URL("../../../production/fastest_text/plan.json", import.meta.url)));
+  const catalog = JSON.parse(await readFile(new URL("catalog-models.json", import.meta.url)));
+  const env = {
+    FASTEST_RELEASE_ORIGIN: origin,
+    FASTEST_AGENT_TASK_RELEASE: pin,
+    ASSETS: { fetch: () => Response.json(catalog.models.filter(row => row.id.includes("/Qwen2.5-7B-Instruct"))) },
+  };
+  async function profile(extension, { id = model, bindings = env } = {}) {
+    const release = "v1-" + "a".repeat(16);
+    const path = `models/${id}.${extension}`;
+    const response = await readCatalogProfile({
+      request: new Request(`https://fastest.ai/catalog/${release}/${path}`),
+      params: { release, path: path.split("/") },
+      env: bindings,
+    });
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    if (body.includes(label)) assert.equal(response.headers.get("cache-control"), "no-store");
+    return body;
+  }
+  const report = {
+    schema_version: 1,
+    kind: "measured",
+    conditions: { protocol_id: "inventory-agent-comparison-shared-ci-cpu@1", artifact },
+    environment: { backend: "CPU" },
+    contexts: ["bundle", "split"].map(id => ({ id, review: { decision: "allow" }, attempts: [{}] })),
+  };
+  let getReport = () => Response.json(report);
+  const upstream = t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(String(url), reportUrl + ".json");
+    assert.equal(options.redirect, "manual");
+    assert.equal(options.cache, "no-store");
+    return getReport();
+  });
+  const html = await profile("html");
+  const markdown = await profile("md");
+  assert.ok(html.includes(`href="${reportUrl}.html">${label}</a>`));
+  assert.ok(markdown.includes(`[${label}](<${reportUrl}.html>)`));
+  for (const body of [html, markdown]) {
+    assert.match(body, /Shared CI CPU/);
+    assert.ok(body.includes(artifact.repository));
+    assert.ok(body.includes(artifact.revision));
+    assert.doesNotMatch(body, /Publisher-reported benchmark results/);
+  }
+  assert.equal(upstream.mock.callCount(), 2);
+
+  for (const bindings of [
+    { ...env, FASTEST_RELEASE_ORIGIN: undefined },
+    { ...env, FASTEST_RELEASE_ORIGIN: origin + "/not-an-origin" },
+    { ...env, FASTEST_RELEASE_ORIGIN: "http://release.example.test" },
+    { ...env, FASTEST_AGENT_TASK_RELEASE: undefined },
+    { ...env, FASTEST_AGENT_TASK_RELEASE: "f".repeat(63) },
+  ]) {
+    assert.doesNotMatch(await profile("html", { bindings }), /agent-task|tool-policy benchmark/);
+  }
+  for (const id of [model + "-AWQ", model + "-GPTQ-Int4", model + "-1M", "unsloth/Qwen2.5-7B-Instruct"]) {
+    assert.doesNotMatch(await profile("md", { id }), /agent-task|tool-policy benchmark/);
+  }
+  assert.equal(upstream.mock.callCount(), 2);
+
+  for (const status of [302, 404, 410, 503]) {
+    getReport = () => new Response(null, { status, headers: { Location: reportUrl + ".json" } });
+    assert.doesNotMatch(await profile("html"), /agent-task|tool-policy benchmark/);
+  }
+  for (const invalid of [
+    { ...report, kind: "synthetic" },
+    { ...report, environment: { backend: "Metal" } },
+    { ...report, contexts: [{ ...report.contexts[0], attempts: [] }, report.contexts[1]] },
+    { ...report, conditions: { ...report.conditions, artifact: { ...artifact, revision: "0".repeat(40) } } },
+    { ...report, conditions: { ...report.conditions, artifact: { ...artifact, quantization: "Q5_K_M" } } },
+    { ...report, conditions: { ...report.conditions, artifact: { ...artifact, shards: artifact.shards.slice(0, 1) } } },
+  ]) {
+    getReport = () => Response.json(invalid);
+    assert.doesNotMatch(await profile("md"), /agent-task|tool-policy benchmark/);
+  }
 });
 
 const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;

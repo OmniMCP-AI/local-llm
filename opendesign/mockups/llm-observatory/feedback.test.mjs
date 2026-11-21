@@ -10,6 +10,19 @@ import { onRequestGet, onRequestPost } from "./functions/api/feedback.js";
 const endpoint = "https://fastest.example/api/feedback";
 const note = { category: "correction", message: "Private benchmark correction" };
 
+test("public issue handoff sends only a fixed form selection to GitHub", async () => {
+  const { publicIssueHref } = await import("./public-issue.mjs");
+  const origin = "https://github.com/OmniMCP-AI/local-llm";
+  const templates = new URL("../../../.github/ISSUE_TEMPLATE/", import.meta.url);
+  for (const [category, template] of [["missing", "benchmark-request.yml"], ["correction", "result-correction.yml"]]) {
+    assert.equal(publicIssueHref(category), origin + "/issues/new?template=" + template);
+    assert.match(await readFile(new URL(template, templates), "utf8"), /This issue will be public/);
+  }
+  for (const category of ["", "confusing", "other", "constructor", "?receipt=private&token=private"]) {
+    assert.equal(publicIssueHref(category), origin + "/issues/new/choose");
+  }
+});
+
 function d1(database) {
   return {
     prepare(sql) {

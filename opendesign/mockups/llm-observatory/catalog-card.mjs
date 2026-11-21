@@ -19,7 +19,7 @@ function publisherEvaluationTable(evaluations) {
   };
 }
 
-export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture } = {}) {
+export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, discoveryCapture, agentTask } = {}) {
   const { supplemental } = row;
   const { family, familySource, artifacts = [] } = row.identity ?? {};
   const revision = row.identity?.revision ?? supplemental?.revision;
@@ -89,9 +89,12 @@ export function modelCard(row, release, { runtimeRoot = `/catalog/${release}`, d
         ],
       }] : []),
       ...artifactSections,
+      ...(agentTask ? [agentTask] : []),
     ],
     publisherEvaluations: publisherEvaluationTable(supplemental?.publisherEvaluations),
-    evidence: "Catalog metadata provides discovery. Tested compatibility, fit estimates and eligible local benchmark results are unavailable in this catalog card.",
+    evidence: agentTask
+      ? "Catalog metadata provides discovery. The tool-policy report measures one inventory task under shared CI CPU conditions."
+      : "Catalog metadata provides discovery. Tested compatibility, fit estimates and eligible local benchmark results are unavailable in this catalog card.",
   };
 }
 
