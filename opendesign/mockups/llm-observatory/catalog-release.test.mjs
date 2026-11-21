@@ -236,7 +236,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 114);
+  assert.equal(hardware.coverage.cards, 116);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -315,18 +315,43 @@ const exact5060TiBoards = [
     galleryLabel: "T1 product images on ASUS",
     facts: ["8 GB GDDR7", "269 × 120 × 50 mm", "2662 MHz", "1 × 8-pin"],
   },
+  {
+    id: "pny-vcg5060t8dfxpb1-o",
+    designation: "VCG5060T8DFXPB1-O",
+    source: "https://www.pny.com/File%20Library/Company/Support/Product%20Brochures/GeForce%20Graphics/English/rtx-5060-ti-8gb-dual-fan-oc-brochure.pdf",
+    gallerySource: "https://www.pny.com/geforce-rtx-5060-ti-8gb-models?sku=VCG5060T8DFXPB1-O",
+    galleryLabel: "Product gallery on PNY",
+    facts: ["8 GB GDDR7", "2692 MHz", "751492795652", "245 × 120 × 39.9 mm", "1 × 8-pin", "448 GB/s"],
+    power: "180",
+  },
+  {
+    id: "pny-vcg5060t16dfxpb1-o",
+    designation: "VCG5060T16DFXPB1-O",
+    source: "https://www.pny.com/File%20Library/Company/Support/Product%20Brochures/GeForce%20Graphics/English/rtx-5060-ti-16gb-dual-fan-oc-brochure.pdf",
+    gallerySource: "https://www.pny.com/geforce-rtx-5060-ti-16gb-models?sku=VCG5060T16DFXPB1-O",
+    galleryLabel: "Product gallery on PNY",
+    facts: ["16 GB GDDR7", "2692 MHz", "751492795072", "245 × 120 × 39.9 mm", "1 × 8-pin", "448 GB/s"],
+    parent: "nvidia-geforce-rtx-5060-ti-16gb",
+    power: "180",
+  },
 ];
 
-function assertExact5060TiBoard(html, markdown, { id, designation, source, galleryLabel, facts }) {
+function assertExact5060TiBoard(html, markdown, {
+  id, designation, source, gallerySource, galleryLabel, facts,
+  parent = "nvidia-geforce-rtx-5060-ti", power = "Unknown",
+}) {
   for (const body of [html, markdown]) {
-    for (const value of [designation, source, galleryLabel, "Board-partner SKU", ...facts]) {
+    for (const value of [designation, source, gallerySource, galleryLabel, "Board-partner SKU", ...facts].filter(Boolean)) {
       assert.ok(body.includes(value), `${id} lacks ${value}`);
     }
-    assert.match(body, /cards\/nvidia-geforce-rtx-5060-ti\.html/);
-    assert.doesNotMatch(body, /16 GB GDDR7|DUAL-RTX5060TI-16G/);
+    assert.ok(body.includes(`cards/${parent}.html`));
+    if (parent.endsWith("-16gb")) assert.doesNotMatch(body, /8 GB GDDR7|VCG5060T8DFXPB1-O/);
+    else assert.doesNotMatch(body, /16 GB GDDR7|DUAL-RTX5060TI-16G|VCG5060T16DFXPB1-O/);
+    assert.match(body, /Runtime-usable memory.*Unknown/);
+    assert.match(body, /Untested in this release/);
+    assert.match(body, /No approved observation is available in this catalog snapshot/);
   }
-  assert.match(html, /<dt>Rated graphics power \(W\)<\/dt><dd>Unknown<\/dd>/);
-  assert.match(markdown, /\*\*Rated graphics power \(W\)\*\* — Unknown/);
+  assert.match(html, new RegExp(String.raw`<dt>Rated graphics power \(W\)</dt><dd>(?:<a href="[^"]*">)?${power}(?:</a>)?</dd>`));
   assertProfileFieldsAgree(html, markdown, id);
 }
 
@@ -340,11 +365,26 @@ test("released RTX 5060 Ti boards use exact manufacturer sources and stay distin
     }));
     assertExact5060TiBoard(html, markdown, board);
   }
-  const family = await request("cards/nvidia-geforce-rtx-5060-ti.html").then(response => response.text());
-  for (const { id } of exact5060TiBoards) {
+  for (const { id, parent = "nvidia-geforce-rtx-5060-ti" } of exact5060TiBoards) {
+    const family = await request(`cards/${parent}.html`).then(response => response.text());
     assert.ok(family.includes(`cards/${id}.html`));
   }
+  const family = await request("cards/nvidia-geforce-rtx-5060-ti.html").then(response => response.text());
   assert.ok(family.includes("cards/nvidia-geforce-rtx-5060-ti-16gb.html"));
+});
+
+test("withdrawing the PNY 8 GB brochure removes its exact board from the replacement release", async (t) => {
+  const { id, source } = exact5060TiBoards.find(board => board.id === "pny-vcg5060t8dfxpb1-o");
+  const hardware = await readHardwareCatalog(here, value => value === source);
+  const { readData, request } = await buildFixture(t, hardware);
+  const rows = await readData("cards.json");
+  assert.ok(!rows.some(row => row.id === id));
+  for (const ext of ["html", "md"]) {
+    assert.equal((await request(`cards/${id}.${ext}`)).status, 404);
+    assert.equal((await request(`cards/pny-vcg5060t16dfxpb1-o.${ext}`)).status, 200);
+    const family = await request(`cards/nvidia-geforce-rtx-5060-ti.${ext}`).then(response => response.text());
+    assert.ok(!family.includes(`cards/${id}.html`));
+  }
 });
 
 const tinyboxId = "tinybox-red-4x-mi300x-batch-2";
@@ -384,7 +424,7 @@ test("the released tinybox profile separates installed GPU memory and documented
 
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 114], ["machines", 124]]) {
+  for (const [kind, count] of [["cards", 116], ["machines", 124]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -654,9 +694,10 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   const filtered = await importLocalCatalog(filteredHardware, testDatabase);
   assert.ok(!filtered.topologies.some(({ id }) => id === tinyboxId));
   assert.ok(!filtered.catalog.machines.some(({ id }) => id === tinyboxId));
-  for (const { id, designation, source } of exact5060TiBoards) {
+  for (const { id, designation, source, parent = "nvidia-geforce-rtx-5060-ti" } of exact5060TiBoards) {
     const board = published.hardware.catalog.cards.find(row => row.id === id);
-    assert.equal(board?.parent, "nvidia-geforce-rtx-5060-ti");
+    assert.equal(board?.parent, parent);
+    assert.equal(board.variant, designation);
     assert.equal(board.vendorSpec.designation, designation);
     assert.equal(board.vendorSpec.source, source);
   }
