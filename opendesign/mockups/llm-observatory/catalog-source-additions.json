@@ -447,6 +447,11 @@
         "Host interface": "PCIe 4.0 x16 or PCIe 3.0 x16",
         "Form factor and cooling": "Passive PCIe add-in card",
         "Board power (rated)": "300 W peak"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/content/dam/amd/en/documents/instinct-business-docs/product-briefs/instinct-mi100-brochure.pdf#page=1",
+        "label": "Product image in the AMD brochure",
+        "scope": "AMD Instinct MI100 PCIe accelerator · cover render"
       }
     },
     "amd-instinct-mi210": {
@@ -464,6 +469,11 @@
         "Host interface": "PCIe 4.0 x16",
         "Form factor and cooling": "Passive PCIe add-in card",
         "Board power (rated)": "300 W peak"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/content/dam/amd/en/documents/instinct-business-docs/product-briefs/instinct-mi210-brochure.pdf#page=1",
+        "label": "Product image in the AMD brochure",
+        "scope": "AMD Instinct MI210 PCIe accelerator · cover render"
       }
     },
     "amd-instinct-mi250": {
@@ -481,6 +491,11 @@
         "Host interface": "PCIe 4.0 x16",
         "Form factor and cooling": "Passive OAM module",
         "Board power (rated)": "500 W typical / 560 W peak"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/accelerators/instinct/mi200.html#meet-the-series",
+        "label": "MI250 product image on AMD",
+        "scope": "AMD Instinct MI250 OAM accelerator · MI250 section"
       }
     },
     "amd-instinct-mi250x": {
@@ -498,6 +513,11 @@
         "Host interface": "PCIe 4.0 x16",
         "Form factor and cooling": "Passive OAM module",
         "Board power (rated)": "500 W typical / 560 W peak"
+      },
+      "gallery": {
+        "source": "https://www.amd.com/en/products/accelerators/instinct/mi200.html#meet-the-series",
+        "label": "MI250X product image on AMD",
+        "scope": "AMD Instinct MI250X OAM accelerator · MI250X section"
       }
     },
     "amd-instinct-mi300": {
@@ -1279,6 +1299,11 @@
         "Host interface": "PCIe Gen4",
         "Maximum TDP (W)": "150",
         "Form factor": "Full-height, full-length, single-slot"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a10/pdf/A10-Product-Brief.pdf#page=6",
+        "label": "Product figure in the NVIDIA product brief",
+        "scope": "NVIDIA A10 PCIe · Figure 1 line drawing"
       }
     },
     "nvidia-a100": {
@@ -1399,7 +1424,7 @@
     "nvidia-geforce-rtx-5090-d-32gb": {
       "designation": "NVIDIA GeForce RTX 5090 D 32 GB",
       "source": "https://www.nvidia.cn/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/",
-      "locator": "GeForce RTX 50 Series Graphics Cards · GeForce RTX 5090 D launch specifications",
+      "locator": "January 7, 2025 launch announcement · GeForce RTX 5090 D section",
       "scope": "Exact memory variant",
       "facts": {
         "Architecture": "Blackwell",
@@ -1407,7 +1432,8 @@
         "Memory bandwidth": "1792 GB/s",
         "CUDA cores": "21760",
         "Tensor cores": "680 (5th generation)",
-        "Ray tracing cores": "170 (4th generation)"
+        "Ray tracing cores": "170 (4th generation)",
+        "China launch date": "2025-01-30"
       },
       "gallery": {
         "source": "https://storage-asset.msi.com/datasheet/vga/cn/GeForce-RTX-5090-D-32G-VANGUARD-OC.pdf",
@@ -1520,6 +1546,11 @@
         "Host interface": "PCIe Gen4 x16",
         "Maximum TDP (W)": "72",
         "Form factor": "Low-profile, single-slot"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/l4/PB-11316-001_v01.pdf#page=5",
+        "label": "Product figure in the NVIDIA product brief",
+        "scope": "NVIDIA L4 PCIe · Figure 1 with a full-height bracket"
       }
     },
     "nvidia-l40": {
@@ -1535,6 +1566,11 @@
         "Cooling": "Passive",
         "Form factor": "4.4 in × 10.5 in, dual-slot",
         "Power connectors": "1 × PCIe CEM5 16-pin"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/Solutions/data-center/vgpu-L40-datasheet.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA L40 PCIe · angled product render"
       }
     },
     "nvidia-l40s": {
@@ -1551,6 +1587,11 @@
         "CUDA cores": "18,176",
         "Cooling": "Passive",
         "Form factor": "4.4 in × 10.5 in, dual-slot"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/en-us/data-center/products/ovx/",
+        "label": "L40S product image on NVIDIA",
+        "scope": "NVIDIA L40S PCIe · 3D rendering in the OVX news section"
       }
     },
     "nvidia-rtx-a4000": {
@@ -1735,6 +1776,11 @@
         "Host interface": "PCIe Gen3 x16",
         "Rated graphics power (W)": "70",
         "CUDA cores": "2560"
+      },
+      "gallery": {
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA T4 PCIe accelerator · cover and specification images"
       }
     },
     "nvidia-tesla-v100": {
@@ -2379,6 +2425,11 @@
         "Form factor": "SXM2",
         "Cooling": "Passive",
         "Interconnect": "NVLink"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/tesla/pdf/nvidia-tesla-p100-datasheet.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA Tesla P100 SXM2 16 GB · NVLink module"
       }
     },
     "nvidia-tesla-v100-pcie-16gb": {
@@ -2396,6 +2447,11 @@
         "Form factor": "PCIe",
         "Cooling": "Passive",
         "Host interface": "PCIe Gen 3"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA Tesla V100 PCIe form factor · pictured capacity unspecified"
       }
     },
     "nvidia-tesla-v100-pcie-32gb": {
@@ -2413,6 +2469,11 @@
         "Form factor": "PCIe",
         "Cooling": "Passive",
         "Host interface": "PCIe Gen 3"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA Tesla V100 PCIe form factor · pictured capacity unspecified"
       }
     },
     "nvidia-tesla-v100-sxm2-32gb": {
@@ -2430,6 +2491,11 @@
         "Form factor": "SXM2",
         "Cooling": "Passive",
         "Interconnect": "NVLink 300 GB/s"
+      },
+      "gallery": {
+        "source": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf#page=1",
+        "label": "Product images in the NVIDIA datasheet",
+        "scope": "NVIDIA Tesla V100 SXM2 form factor · pictured capacity unspecified"
       }
     },
     "nvidia-rtx-pro-6000-blackwell-server": {

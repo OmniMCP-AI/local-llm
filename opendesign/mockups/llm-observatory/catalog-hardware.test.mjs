@@ -22,7 +22,7 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.cards, 156);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 149);
   assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 127);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 71);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 84);
   assert.equal(manifest.coverage.boardPartnerCards, 17);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
