@@ -1,3 +1,5 @@
+export const evidenceUpdatesPath = "/wiki/evidence-updates";
+
 // Pages serves staged HTML files at their extensionless public URLs.
 export function pagesFileRoutes(path) {
   if (path === "/index.html") return ["/", "/index", path];

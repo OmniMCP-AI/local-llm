@@ -90,6 +90,8 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   await mkdir(join(previous, "downloads", "earlier-guide"), { recursive: true });
   await writeFile(join(previous, exportPath), markdown);
   await writeFile(join(previous, "downloads/earlier-guide/index.html"), "<h1>Archived export</h1>");
+  const internalBytes = "Deployment configuration outside the public evidence routes";
+  await writeFile(join(previous, "_internal-fixture"), internalBytes);
   await writeFile(requestPath, JSON.stringify({
     action: "withdraw",
     evidenceId,
@@ -129,6 +131,22 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   assert.ok(policy.paths.includes("/research/" + old + "/*"));
   assert.ok(policy.paths.includes("/" + exportPath));
   assert.match(await read("wiki/evidence-updates.md"), /Withdrawn/);
+  const noticePath = "wiki/evidence-updates.json";
+  const notice = JSON.parse(await read(noticePath));
+  assert.equal(notice.version, 1);
+  assert.equal(notice.notices.length, 1);
+  const [entry] = notice.notices;
+  assert.deepEqual(Object.keys(entry).sort(), ["action", "affectedSha256", "resolution"]);
+  assert.equal(entry.action, "withdraw");
+  assert.equal(entry.resolution, report.resolutionPath);
+  assert.ok(entry.affectedSha256.includes(digest(markdown)));
+  assert.ok(entry.affectedSha256.includes(digest("<h1>Archived export</h1>")));
+  assert.ok(!entry.affectedSha256.includes(digest(internalBytes)));
+  assert.deepEqual(entry.affectedSha256, [...new Set(entry.affectedSha256)].sort());
+  assert.ok(entry.affectedSha256.every((hash) => /^[a-f0-9]{64}$/.test(hash)));
+  for (const path of ["wiki/evidence-updates.html", "wiki/evidence-updates.md"]) {
+    assert.ok((await read(path)).includes("/" + noticePath));
+  }
   const verifier = "verify-evidence-resolution.mjs";
   const plan = await run(process.execPath, [verifier, "--purge-plan", join(candidate, "review.json"), "https://fastest.ai"]);
   const urls = new Set(plan.stdout.trim().split("\n"));
@@ -144,6 +162,11 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   await withLocalPages(pages, t.signal, async (origin) => {
     const { stdout } = await run(process.execPath, [verifier, join(candidate, "review.json"), origin], { signal: t.signal });
     assert.match(stdout, /Verified withdrawal/);
+    const response = await fetch(origin + "/" + noticePath, { signal: t.signal });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^application\/json/);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await response.json(), notice);
     const stale = join(root, "stale-review.json");
     const sitemap = report.changes.find(({ path }) => path === "/sitemap.xml");
     sitemap.after = sitemap.before;
@@ -239,9 +262,22 @@ test("a reviewed correction preserves its prior pin and links the revised source
   assert.ok(report.notificationDraft.includes(digest(pinnedBytes)));
 
   const corrected = join(output, "pages");
+  const noticePath = "wiki/evidence-updates.json";
+  const correctedNotice = await readFile(join(corrected, noticePath), "utf8");
+  const [correction] = JSON.parse(correctedNotice).notices;
+  assert.equal(correction.action, "correct");
+  assert.equal(correction.resolution, report.resolutionPath);
+  assert.ok(correction.affectedSha256.includes(digest(pinnedBytes)));
+  const filter = await readFile(join(corrected, "research", earlier.release, "research-filter.mjs"));
+  assert.deepEqual(filter, await readFile(join(corrected, "research", report.candidate.research, "research-filter.mjs")));
+  assert.ok(!correction.affectedSha256.includes(digest(filter)), "unchanged bytes should never match the notice");
+  assert.doesNotMatch(correctedNotice, /Earlier wording|09GB4LtXUok|research-filter\.mjs|github\.com/);
   await withLocalPages(corrected, t.signal, async (origin) => {
     const { stdout } = await run(process.execPath, ["verify-evidence-resolution.mjs", join(output, "review.json"), origin], { signal: t.signal });
     assert.match(stdout, /Verified correction/);
+    const response = await fetch(origin + correction.resolution, { signal: t.signal });
+    assert.equal(response.status, 200);
+    assert.ok((await response.text()).includes(`id="${correction.resolution.split("#")[1]}"`));
   });
   const correctedState = join(corrected, "evidence-quarantine.json");
   const rebuilt = join(root, "fresh-build");
@@ -250,6 +286,7 @@ test("a reviewed correction preserves its prior pin and links the revised source
     FASTEST_RESEARCH_ARCHIVE: corrected,
   } });
   assert.deepEqual(await readFile(join(rebuilt, "research", earlier.release, "library.md")), pinnedBytes);
+  assert.equal(await readFile(join(rebuilt, noticePath), "utf8"), correctedNotice);
 
   await writeFile(pinned, "tampered archive");
   await assert.rejects(run(process.execPath, ["build.mjs", "--pages", "--output", join(root, "tampered-build")], {
@@ -264,9 +301,24 @@ test("a reviewed correction preserves its prior pin and links the revised source
   const withdrawn = join(root, "withdrawn");
   await run(process.execPath, ["resolve-evidence.mjs", request, rebuilt, withdrawn, approvals]);
   const retired = join(withdrawn, "pages");
-  for (const path of ["wiki/evidence-updates.html", "wiki/evidence-updates.md", "evidence-quarantine.json"]) {
+  for (const path of ["wiki/evidence-updates.html", "wiki/evidence-updates.md", "evidence-quarantine.json", noticePath]) {
     assert.doesNotMatch(await readFile(join(retired, path), "utf8"), /09GB4LtXUok|Reviewed source/);
   }
+  const replayedNotice = await readFile(join(retired, noticePath), "utf8");
+  const [earlierNotice, withdrawal] = JSON.parse(replayedNotice).notices;
+  const withdrawnReport = JSON.parse(await readFile(join(withdrawn, "review.json")));
+  assert.deepEqual(earlierNotice, correction);
+  assert.equal(withdrawal.action, "withdraw");
+  assert.equal(withdrawal.resolution, withdrawnReport.resolutionPath);
+  assert.ok(withdrawal.affectedSha256.includes(digest(pinnedBytes)));
+  assert.ok(!withdrawal.affectedSha256.includes(digest(correctedNotice)));
+  const replay = join(root, "replayed");
+  await run(process.execPath, ["build.mjs", "--pages", "--output", replay], { env: {
+    ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: join(withdrawn, "approvals.json"),
+    FASTEST_EVIDENCE_STATE: join(retired, "evidence-quarantine.json"),
+  } });
+  assert.equal(await readFile(join(replay, noticePath), "utf8"), replayedNotice);
+  assert.doesNotMatch(await readFile(join(replay, "wiki/evidence-updates.html"), "utf8"), /09GB4LtXUok|Reviewed source/);
   const state = JSON.parse(await readFile(join(retired, "evidence-quarantine.json")));
   assert.ok(state.paths.includes("/research/" + earlier.release + "/*"));
   await assert.rejects(readFile(join(retired, "research", earlier.release, "library.md")), { code: "ENOENT" });
