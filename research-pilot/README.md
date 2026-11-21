@@ -87,3 +87,21 @@ node --test research-pilot/*.test.mjs
 The report shows each eligible observation and whether its decision changed. The three proposed gates require six supported explanations within 600 seconds, five specific uncertainties resolved, and three concrete follow-up decisions. Each gate has an observed count and a target. Its `met` value stays `null` until exactly eight eligible participants are present. The cohort status is `missing` with zero eligible participants, `incomplete` with one to seven, and `met` or `missed` for a full cohort. Willingness to pay has its own counts and coded responses and has no effect on the gates.
 
 Held observations show the participant code and fields to review. If consent changes, update the observation and use a fresh intake handoff before regenerating the report. Invalid JSON, inconsistent handoff mode, invalid or duplicate participant codes, and more than eight eligible participants stop the report with an error. A fictional rehearsal reports its results under `rehearsal` and leaves the actual status `missing`.
+
+## Store actual records in local PostgreSQL
+
+The research operator can import the reviewed actual intake and buyer observations into the private `fastest_decision_pilot` schema. Use Node.js, `psql`, and a PostgreSQL connection for the authorized operator. The example assumes a local database called `fastest_pilot` and the operator's existing local authentication.
+
+```sh
+export FASTEST_PILOT_DATABASE_URL='postgresql:///fastest_pilot'
+node research-pilot/pilot-pg.mjs init
+node research-pilot/pilot-pg.mjs import-intake < research-pilot/records/intake.json
+node research-pilot/pilot-pg.mjs import-buyers < research-pilot/records/buyer-pilot.json
+node research-pilot/pilot-pg.mjs report
+```
+
+Run `init` as the operator who owns the private schema. Each import accepts an `actual` batch in the format above. Buyer import looks up the currently eligible cases in PostgreSQL, so `caseIntake` may be omitted from the input. Import upserts by coded ID, and omitted rows retain their current state. The full stored buyer cohort has at most eight eligible observations. Use the offline commands for synthetic rehearsals.
+
+The `report` command reads both tables in a single database snapshot and emits the current reports under `caseIntake` and `buyerPilot`. Held rows retain only the coded ID, recognized consent status and fields that prevented eligibility. For withdrawal, import the affected code with `consent` set to `withdrawn`. A withdrawn case also clears the details and case link of each linked buyer observation. A withdrawn code stays held on reimport. Regenerate any private handoff from the current report after a withdrawal and handle prior exports and database backups under the research team's retention process.
+
+`node --test research-pilot/*.test.mjs` runs the reporting tests and, where `initdb`, `pg_ctl` and `psql` are present, starts disposable local PostgreSQL clusters for the import tests.

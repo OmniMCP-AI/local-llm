@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 const requiredTextFields = [
   "task",
@@ -27,7 +28,7 @@ function missingFields({ consent, redactionReviewed, card }) {
   return missing;
 }
 
-function reviewIntake({ mode, interviews }) {
+export function reviewIntake({ mode, interviews }) {
   const caseCards = [];
   const heldCases = [];
   for (const interview of interviews) {
@@ -44,8 +45,13 @@ function reviewIntake({ mode, interviews }) {
     caseCards.push(result);
   }
 
+  return summarizeIntake(mode, caseCards, heldCases);
+}
+
+export function summarizeIntake(mode, caseCards, heldCases) {
+  const interviewCount = caseCards.length + heldCases.length;
   const isActual = mode === "actual";
-  const actualInterviews = isActual ? interviews.length : 0;
+  const actualInterviews = isActual ? interviewCount : 0;
   const actualCases = isActual ? caseCards.length : 0;
   const targetMinimum = 10;
   const targetMaximum = 12;
@@ -53,7 +59,7 @@ function reviewIntake({ mode, interviews }) {
   const review = {
     interviews: {
       actual: actualInterviews,
-      synthetic: isActual ? 0 : interviews.length,
+      synthetic: isActual ? 0 : interviewCount,
       targetMinimum,
       targetMaximum,
       remainingToMinimum: Math.max(0, targetMinimum - actualInterviews),
@@ -68,7 +74,7 @@ function reviewIntake({ mode, interviews }) {
   return { mode, review, caseCards, heldCases };
 }
 
-function validateIntake(intake) {
+export function validateIntake(intake) {
   if (!["actual", "synthetic"].includes(intake?.mode) || !Array.isArray(intake?.interviews)) {
     return 'Use a mode of "actual" or "synthetic" and an interviews array.';
   }
@@ -104,4 +110,6 @@ function main() {
   return 0;
 }
 
-process.exitCode = main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = main();
+}

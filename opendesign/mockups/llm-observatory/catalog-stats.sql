@@ -5,6 +5,6 @@ FROM pg_tables
 WHERE schemaname IN ('fastest_catalog', 'fastest_research', 'fastest_release',
                      'fastest_prices', 'fastest_contributor', 'fastest_intake',
                      'fastest_release_watch', 'fastest_github_intake', 'fastest_feedback',
-                     'fastest_pilot_engagement', 'fastest_discoveries')
+                     'fastest_pilot_engagement', 'fastest_discoveries', 'fastest_decision_pilot')
 ORDER BY schemaname, tablename
 \gexec
