@@ -20,6 +20,10 @@ from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import report_artifacts as image_report_artifacts
 from fastest_pilot_bundle import bundle_manifest, digest
 from fastest_prices import PriceError, PriceReleaseNotFound
+from fastest_release_watch.applicability import apply_notes
+from fastest_release_watch.feed import utc_now
+from fastest_release_watch.postgres import WatchStorageError
+from fastest_release_watch.render import render as render_runtime_watch
 from fastest_text import TEXT_PILOT_ROUTE
 
 from . import CONTRIBUTOR_RECEIPT_PATH, ReleaseError, ReleaseNotFound
@@ -40,6 +44,13 @@ CONTENT_TYPES = {
 RELEASE_ROUTE = re.compile(
     r"/releases/(current|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})/([^/]+)"
 )
+
+
+RUNTIME_WATCH_ROUTES = {
+    "/runtime-releases": ("html", CONTENT_TYPES["benchmark.html"]),
+    "/runtime-releases.md": ("markdown", CONTENT_TYPES["benchmark.md"]),
+    "/runtime-releases.json": ("json", CONTENT_TYPES["table.json"]),
+}
 
 
 PRICE_ROUTE = re.compile(r"/price-releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/prices\.json")
@@ -80,7 +91,7 @@ def render_contributor_receipt(revisions):
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
                 scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None,
-                cost_tariff_references=None):
+                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
     if contributor_receipts and store is None:
         raise ValueError("Contributor receipts require a release reader.")
@@ -175,6 +186,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._price(price_match[1])
             if path in {SCALING_ROUTE, SCALING_ROUTE + ".json", scaling_url, scaling_url + ".json"}:
                 return self._scaling(path)
+            if runtime_watch is not None and path in RUNTIME_WATCH_ROUTES:
+                return self._runtime_watch(path)
             if path in COST_ROUTES:
                 return self._cost(path, query)
             if path == ADVISOR_ROUTE:
@@ -217,6 +230,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<p><a href="/releases/current/benchmark.html">Current benchmark</a></p>'
                     if store is not None else ""
                 )
+                watch_links = (
+                    '<p><a href="/runtime-releases">llama.cpp release watch</a> '
+                    '<a href="/runtime-releases.md">Markdown</a> '
+                    '<a href="/runtime-releases.json">JSON</a></p>'
+                    if runtime_watch is not None else ""
+                )
                 return self._respond(
                     200, '<!doctype html><html lang="en"><meta charset="utf-8">'
                     '<title>fastest.ai</title><h1>fastest.ai</h1>'
@@ -227,7 +246,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     f'<p><a href="{TEXT_PILOT_ROUTE}">Two-machine text pilot</a></p>'
                     f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot</a></p>'
                     f'<p><a href="{AGENT_TASK_ROUTE}">Controlled inventory agent comparison</a></p>'
-                    f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
+                    f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark + watch_links,
                     CONTENT_TYPES["benchmark.html"],
                 )
             match = RELEASE_ROUTE.fullmatch(path)
@@ -249,6 +268,19 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _runtime_watch(self, path):
+            format_name, content_type = RUNTIME_WATCH_ROUTES[path]
+            try:
+                report = runtime_watch.snapshot(utc_now())
+                if report["source"]["mode"] == "fixture":
+                    raise ValueError("Fixture histories are reserved for CLI review.")
+                report = apply_notes(report, runtime_watch_notes, store.read if store is not None else None)
+            except (WatchStorageError, ReleaseError, TimeoutExpired, OSError, ValueError):
+                logging.warning("Cannot read the runtime release watch")
+                report = {"error": "Runtime release watch unavailable."}
+                return self._respond(503, render_runtime_watch(report, format_name), content_type)
+            return self._respond(200, render_runtime_watch(report, format_name), content_type)
 
         def _agent_task(self, pin, artifact):
             try:
