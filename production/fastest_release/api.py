@@ -2,7 +2,7 @@
 
 from collections import deque
 from dataclasses import dataclass
-from json import JSONDecodeError
+import json
 import logging
 import re
 from subprocess import TimeoutExpired
@@ -11,6 +11,7 @@ from time import monotonic
 from typing import Callable
 from urllib.parse import parse_qsl, urlencode
 
+from fastest_agent_task import AGENT_TASK_PIN_PATTERN, AGENT_TASK_ROUTE
 from fastest_cost import CostInputError, DEFAULT_ACCEPTED, DEFAULT_MONTHS, MAX_ACCEPTED, MAX_MONTHS, calculate
 from fastest_goals import (
     ENTRIES, METRICS, NUMBER, PRIVACY_LABELS, SERVING_ENTRY, SERVING_METRICS, GoalEvidenceWithdrawn,
@@ -25,6 +26,7 @@ from .advisor import advise
 
 BASE = "/api/v1"
 ADVISOR_PATH = BASE + "/advisor"
+AGENT_TASK_PATH = BASE + "/comparison/agent-task"
 DESCRIPTION = BASE + "/openapi.json"
 CATALOG = "/.well-known/api-catalog"
 VERSION = "1.0.0"
@@ -35,6 +37,8 @@ PROFILE_REVISION = {"type": "string", "pattern": r"^(?:current|v1-[a-f0-9]{16})$
 KIND = {"type": "string", "enum": ["machines", "models"]}
 UUID_PATTERN = r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}"
 UUID_PARAM = {"type": "string", "pattern": f"^{UUID_PATTERN}$"}
+AGENT_TASK_PIN = {"type": "string", "pattern": f"^{AGENT_TASK_PIN_PATTERN}$", "maxLength": 64,
+                  "description": "SHA-256 of the pinned public report manifest."}
 EVIDENCE_FIELDS = ("profile_cell", "backend", "runtime_revision", "run_id", "artifact_companion_sha256",
                    "workflow_sha256", "driver_version", "comparison_eligibility", "runner_image_version", "wall_power")
 CONTRIBUTOR_FIELDS = ("runtime_revision", "runtime_sha256", "os_driver", "settings", "source_sha256",
@@ -209,7 +213,7 @@ def _rights(document):
 
 class PublicApi:
     def __init__(self, store, profiles, profile_versions, goals, goal_versions, price_reader, *,
-                 cost_reader=calculate, tariff_references_enabled=False):
+                 cost_reader=calculate, tariff_references_enabled=False, agent_task_enabled=False):
         self.price_reader = price_reader
         self.cost_reader = cost_reader
         self.tariff_references_enabled = tariff_references_enabled
@@ -268,6 +272,19 @@ class PublicApi:
                  "kind": {"type": "string", "enum": ["measured", "contributor"]},
                  "metric": MEASUREMENT, "conditions": EVIDENCE_CONDITIONS, "hardware": "object", "artifact": "object",
                  "workload": "object", "citations": "array", "rights": "object", "url": "string"},
+            )
+        if agent_task_enabled:
+            self.operations[AGENT_TASK_PATH] = Operation(
+                self._agent_task, "Read a reviewed inventory agent-task comparison by report manifest digest",
+                {"release": AGENT_TASK_PIN}, {
+                    "pin": AGENT_TASK_PIN, "url": "string", "citations": "array", "rights": "object",
+                    "units": _object({"wall_time": {"type": "string", "const": "ns"}}),
+                    "report": _object({
+                        "schema_version": "integer", "kind": {"type": "string", "const": "measured"},
+                        "notice": "string", "conditions": "object", "environment": "object",
+                        "contexts": "array", "release_id": "string",
+                    }),
+                }, ("release",),
             )
         if price_reader is not None:
             self.operations[BASE + "/historical-offers"] = Operation(
@@ -360,7 +377,7 @@ class PublicApi:
             return 404, {"api_version": VERSION, "error": ERRORS[404]}, JSON
         except GoalEvidenceWithdrawn:
             return 410, {"api_version": VERSION, "error": ERRORS[410], "status": "withdrawn"}, JSON
-        except (CostInputError, GoalRightsUnavailable, ReleaseError, PriceError, OSError, TimeoutExpired, JSONDecodeError):
+        except (CostInputError, GoalRightsUnavailable, ReleaseError, PriceError, OSError, TimeoutExpired, json.JSONDecodeError):
             logging.exception("Canonical public reader failed for %s", path)
             return 503, {"api_version": VERSION, "error": ERRORS[503]}, JSON
         except ValueError as error:
@@ -451,6 +468,26 @@ class PublicApi:
 
     def _advisor(self, parameters):
         return advise(parameters, self._goal_comparison, self._calculator)
+
+    def _agent_task(self, selection):
+        pin = selection["release"]
+        result = self.store.read_agent_task_artifact(pin, "agent-task.json")
+        if result["status"] == "withdrawn":
+            return {"status": "withdrawn"}
+        if result["status"] != "published" or not isinstance(result.get("content"), str):
+            raise ReleaseError("Agent task dataset unavailable.")
+        # Publication validates the report and strips private input before writing this public artifact.
+        report = json.loads(result["content"])
+        if not isinstance(report, dict):
+            raise ReleaseError("Agent task dataset unavailable.")
+        if report.get("kind") != "measured" or report.get("environment") is None:
+            raise ReleaseNotFound(pin)
+        base = f"{AGENT_TASK_ROUTE}/{pin}/"
+        return {
+            "pin": pin, "report": report, "url": base + "agent-task.html",
+            "citations": [{"url": base + "agent-task.json"}, {"url": base + "manifest.json", "sha256": pin}],
+            "rights": {"export_scope": "public-release"}, "units": {"wall_time": "ns"},
+        }
 
     def _calculator(self, parameters):
         revision = parameters.pop("revision", None)

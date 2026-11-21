@@ -55,9 +55,9 @@ The Python interfaces are `ReleaseStore.migrate()`, `publish(observation)`, `rea
 Run `python3 -m fastest_release serve`. The OpenAPI 3.1 description is served at
 `/api/v1/openapi.json`, and `/.well-known/api-catalog` links to it in
 [API catalog format](https://www.rfc-editor.org/rfc/rfc9727). Discovery reflects
-the readers configured on that listener. It includes the evidence operation
-when the observation database is configured and historical offers when a
-price reader is configured.
+the readers configured on that listener. It includes evidence when the
+observation database is configured, historical offers when a price reader is
+configured, and agent-task comparisons when `--agent-task-release` is set.
 
 | GET path | Inputs and result |
 | --- | --- |
@@ -66,6 +66,7 @@ price reader is configured.
 | `/api/v1/evidence` | `evidence_id=<UUID>` resolves the most recent revision of that evidence. Use `release=<UUID>` to replay a specific release. Supplying both verifies the evidence ID in that release. |
 | `/api/v1/comparison` | The same selectors as the goals form, plus optional goals `revision`. Returns comparison values, gates, exclusions and the pinned page URL. |
 | `/api/v1/comparison/profile` | `kind` and profile `id`. Returns the controlled cohort's measurements and exclusions in display order. |
+| `/api/v1/comparison/agent-task` | Required `release`, the 64-character lowercase SHA-256 of the public report manifest. Returns the reviewed report with exact attempt outcomes, wall time in nanoseconds, provenance and pinned citations. |
 | `/api/v1/historical-offers` | Price `release=<UUID>`. Returns reviewed quotes in their original currency, with freshness, eligibility, conditions and citations. |
 | `/api/v1/advisor` | Structured configuration or cost decision with clarification, abstention, or a cited answer. See the [guided advisor](fastest_release/ADVISOR.md). |
 | `/api/v1/calculator` | `scenario`, `monthly_accepted` and `months` match the cost page. An optional `revision` verifies the replayed calculation. Pass `scenario=illustrative` to reproduce the clearly labeled example. |
@@ -91,7 +92,15 @@ the following additional grants where those operations are configured.
 GRANT EXECUTE ON FUNCTION fastest_release.read_evidence(uuid) TO fastest_release_reader;
 GRANT USAGE ON SCHEMA fastest_prices TO fastest_release_reader;
 GRANT EXECUTE ON FUNCTION fastest_prices.read_release(uuid) TO fastest_release_reader;
+GRANT EXECUTE ON FUNCTION fastest_release.read_agent_task_artifact(text, text) TO fastest_release_reader;
 ```
+
+With the release DB configured, start the listener with `python3 -m fastest_release
+serve --agent-task-release "$REPORT_PIN"`. Use the digest returned by
+`publish-agent-task` as `REPORT_PIN`. The API requires a digest on every request.
+The response's `pin` identifies the manifest. Its `report.release_id` identifies
+the enclosed dataset, which matches the public report JSON. Unknown pins return
+404, and releases whose public rights have ended return 410.
 
 Optional `rights.expires_at` on an observation and
 `authorization.expires_at` on a price cohort accept UTC timestamps with
@@ -183,10 +192,12 @@ argument list can use the following command, substituting absolute paths.
 | `v1_evidence` | One evidence ID or release UUID, when the evidence reader is configured |
 | `v1_comparison` | Goals comparison with its release ID and pinned page URL |
 | `v1_profile_comparison` | Reviewed measurements and exclusions from a pinned profile cohort |
+| `v1_agent_task` | Reviewed inventory agent-task comparison by manifest digest, when `--agent-task-release` is set on the public listener |
 | `v1_historical_offers` | Authorized historical quotes, when the price reader is configured |
 | `v1_calculator` | Deterministic cost projection for the same accepted workload |
 | `fastest://v1/catalog` | First page of the public benchmark profile directory with its resolved revision |
 | `fastest://v1/releases/{release_id}/evidence` | Evidence JSON by release UUID, when the evidence reader is configured |
+| `fastest://v1/agent-task/{pin}` | Same reviewed comparison as `v1_agent_task` with `{"release": "<pin>"}` |
 
 Tools publish their supported arguments through `tools/list`. Save the returned
 release or revision along with the selection to replay a comparison. For lists,
@@ -218,7 +229,8 @@ selectors cannot change the destination or run private queries.
 
 The wire tests start disposable listeners and exercise the official client.
 They compare profile evidence, exclusions, withdrawal and exact calculator
-decimals, and check that catalog results equal the Pages API payload.
+decimals, check catalog results against the Pages API payload, and replay hosted
+agent-task attempt outcomes and wall times against the pinned public report.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 uv run --isolated --with-requirements fastest_mcp/requirements.txt python -B -m unittest discover -s tests -k mcp -v

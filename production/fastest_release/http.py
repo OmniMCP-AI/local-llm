@@ -8,7 +8,7 @@ from subprocess import TimeoutExpired
 import re
 from urllib.parse import parse_qs
 
-from fastest_agent_task import AGENT_TASK_ROUTE
+from fastest_agent_task import AGENT_TASK_PIN_PATTERN, AGENT_TASK_ROUTE
 from fastest_agent_task.publication import report_artifacts as agent_task_report_artifacts
 from fastest_cost import CostInputError, PUBLIC_FIELDS as COST_FIELDS, calculate
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
@@ -56,8 +56,8 @@ RUNTIME_WATCH_ROUTES = {
 PRICE_ROUTE = re.compile(r"/price-releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/prices\.json")
 
 
-AGENT_TASK_PIN = re.compile(r"[a-f0-9]{64}")
-AGENT_TASK_ARTIFACT_ROUTE = re.compile(r"/agent-task/([a-f0-9]{64})/([^/]+)")
+AGENT_TASK_PIN = re.compile(AGENT_TASK_PIN_PATTERN)
+AGENT_TASK_ARTIFACT_ROUTE = re.compile(rf"{AGENT_TASK_ROUTE}/({AGENT_TASK_PIN_PATTERN})/([^/]+)")
 
 
 PROFILE_ROUTE = re.compile(r"/profiles/(v1-[a-f0-9]{16})/(machines|models)/([a-z0-9.-]+)\.(html|json|md)")
@@ -145,7 +145,8 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader,
                           tariff_references_path=cost_tariff_references)
     api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader,
-                    cost_reader=cost_reader, tariff_references_enabled=cost_tariff_references is not None)
+                    cost_reader=cost_reader, tariff_references_enabled=cost_tariff_references is not None,
+                    agent_task_enabled=agent_task_release is not None)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
