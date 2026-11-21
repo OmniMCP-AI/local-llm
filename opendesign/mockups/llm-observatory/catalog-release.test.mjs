@@ -133,7 +133,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 111);
+  assert.equal(hardware.coverage.cards, 112);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -170,9 +170,36 @@ function assertProfileFieldsAgree(html, markdown, id) {
   }
 }
 
+test("released RTX 5090 D variants preserve separate evidence and product views", async (t) => {
+  const { request } = await buildFixture(t);
+  for (const format of ["html", "md"]) {
+    const unresolved = await request(`cards/nvidia-geforce-rtx-5090-d.${format}`).then(response => response.text());
+    assert.match(unresolved, /revision and capacity unresolved/);
+    assert.match(unresolved, /No manufacturer specification has been matched to this identity/);
+
+    const original = await request(`cards/nvidia-geforce-rtx-5090-d-32gb.${format}`).then(response => response.text());
+    assert.match(original, /32 GB GDDR7/);
+    assert.match(original, /ASUS ROG Astral GeForce RTX 5090 D 32 GB OC/);
+    assert.match(original, /MSI VANGUARD OC board/);
+
+    const later = await request(`cards/nvidia-geforce-rtx-5090-d-v2.${format}`).then(response => response.text());
+    assert.match(later, /24 GB GDDR7/);
+    assert.match(later, /384-bit/);
+
+    const asus = await request(`cards/asus-rog-astral-rtx5090d-o32g-gaming.${format}`);
+    assert.equal(asus.status, 200);
+    const board = await asus.text();
+    assert.match(board, /ROG-ASTRAL-RTX5090D-O32G-GAMING/);
+    assert.match(board, /512-bit/);
+    assert.match(board, /357\.6 × 149\.3 × 76 mm/);
+    assert.match(board, /Product image source/);
+    assert.match(board, /cards\/nvidia-geforce-rtx-5090-d-32gb\.html/);
+  }
+});
+
 test("every released hardware row resolves in both formats", async (t) => {
   const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 111], ["machines", 123]]) {
+  for (const [kind, count] of [["cards", 112], ["machines", 123]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {

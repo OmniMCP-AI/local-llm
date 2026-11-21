@@ -1,9 +1,9 @@
-import previewReports from "./catalog-topology.json" with { type: "json" };
 import hardwareSources from "./catalog-hardware-sources.json" with { type: "json" };
 import identities from "./catalog-identities.json" with { type: "json" };
+import { topologyRevisionPattern } from "./catalog-paths.mjs";
 
 export const topologyReports = typeof __FASTEST_TOPOLOGY_REPORTS__ === "undefined"
-  ? previewReports
+  ? []
   : __FASTEST_TOPOLOGY_REPORTS__;
 
 export const scalingUnavailable = "No reviewed 1→N GPU pair is available here.";
@@ -20,6 +20,13 @@ export function selectTopologyPresets(reports) {
 }
 
 export const topologyPresets = selectTopologyPresets(topologyReports);
+
+export function selectTopologyReport(reports, focus) {
+  const requested = focus?.toLowerCase();
+  return topologyRevisionPattern.test(requested ?? "")
+    ? reports.find(({ revision }) => revision === requested)
+    : reports.find(({ id }) => id.toLowerCase() === requested);
+}
 
 export const inferenceStages = [
   { title: "Load the model", note: "The host prepares weights, cache and workspace for the devices selected by the runtime." },
@@ -77,10 +84,10 @@ export function topologyView(report, replacements = {}) {
   const partName = isHost ? "Host" : "Card";
   const reportedMemory = /^(\d+)\s*GB(?:\s*each)?$/i.exec(report.memory ?? "")?.[1];
   const sourceParts = isHost
-    ? Array.from({ length: report.hostCount }, () => ({ label: report.hostModel }))
+    ? report.hosts ?? Array.from({ length: report.hostCount }, () => ({ label: report.hostModel }))
     : report.devices;
   const parts = sourceParts.map((part, index) => {
-    const slot = index + 1;
+    const slot = part.slot ?? index + 1;
     const replacement = replacements[slot];
     if (!replacement) return {
       ...part, slot, memory: part.memory ?? (reportedMemory ? `${reportedMemory} GB` : null), placement: draft ? null : part.placement ?? null,

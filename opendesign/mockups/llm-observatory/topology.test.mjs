@@ -4,10 +4,11 @@ import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { fileURLToPath } from "node:url";
 import reports from "./catalog-topology.json" with { type: "json" };
 import hardware from "./catalog-hardware-sources.json" with { type: "json" };
-import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitScenario, topologyPresets, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitScenario, selectTopologyPresets, selectTopologyReport, topologyView } from "./topology.mjs";
 import { renderTopologyReference } from "./wiki-release.mjs";
 
 const { catalog } = await readHardwareCatalog(fileURLToPath(new URL(".", import.meta.url)));
+const topologyPresets = selectTopologyPresets(reports);
 test("released presets switch slots and preserve per-device memory provenance", () => {
   const layouts = topologyPresets.map(({ report }) => topologyView(report, {}));
   assert.deepEqual(layouts.map(({ installedCount }) => installedCount), [1, 2, 4, 2]);
@@ -17,6 +18,13 @@ test("released presets switch slots and preserve per-device memory provenance", 
   assert.equal(layouts[3].mixed, true);
   assert.deepEqual(layouts[3].parts.map(({ memory }) => memory), [null, null]);
   assert.ok(layouts.every(({ links }) => links.length === 0));
+});
+
+test("an exact topology URL selects the revision and rejects a stale revision", () => {
+  const report = { ...topologyPresets[1].report, revision: "topology-" + "a".repeat(64) };
+  assert.equal(selectTopologyReport([report], report.revision), report);
+  assert.equal(selectTopologyReport([report], "topology-" + "b".repeat(64)), undefined);
+  assert.equal(selectTopologyReport([report], "v021-hp-c001"), report);
 });
 
 test("an existing hardware photo link can open its own labeled component example", () => {
@@ -76,20 +84,20 @@ test("draft fit only displays an estimate matching the exact inputs and engine r
 });
 
 test("the canonical technology wiki can render a static topology inventory", () => {
-  const html = renderTopologyReference("html");
+  const html = renderTopologyReference("html", topologyPresets);
   assert.match(html, /Open interactive topology/);
   assert.match(html, /<th[^>]*>Active cards<\/th>/);
   assert.match(html, /4 cards/);
   assert.match(html, /V007-HP-E01/);
   assert.match(html, /Load the model/);
-  assert.match(renderTopologyReference("md"), /V028-HP-E03/);
+  assert.match(renderTopologyReference("md", topologyPresets), /V028-HP-E03/);
 });
 
 test("static topology surfaces link to a configured scaling reader and report missing coverage by default", () => {
   const href = "https://releases.example/topology/scaling";
   assert.match(renderTopologyReference("html", topologyPresets, href), /href="https:\/\/releases\.example\/topology\/scaling"/);
   assert.ok(renderTopologyReference("md", topologyPresets, href).includes(href));
-  assert.match(renderTopologyReference("html"), /No reviewed 1→N GPU pair is available here/);
+  assert.match(renderTopologyReference("html", topologyPresets), /No reviewed 1→N GPU pair is available here/);
 });
 
 test("the Pages fit route forwards only the bounded estimator query to the configured origin", async (t) => {

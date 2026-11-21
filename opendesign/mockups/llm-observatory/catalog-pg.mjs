@@ -1,9 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readCatalogModelFiles } from "./catalog-release-build.mjs";
+import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 
 const project = new URL(".", import.meta.url);
 const docs = new URL("../../../docs/", project);
@@ -22,10 +23,10 @@ function canonicalJson(value) {
 
 function publicCatalogDigest(catalog) {
   const byId = rows => rows.toSorted((a, b) => a.id < b.id ? -1 : Number(a.id > b.id));
-  const { source, hardware, runtimes, identities, discovery, sourceManifest } = catalog;
+  const { source, hardware, runtimes, identities, discovery, sourceManifest, topologies, photos } = catalog;
   return sha256(encode(canonicalJson([
     { ...source, models: byId(source.models) }, hardware.manifest, byId(hardware.catalog.cards),
-    byId(hardware.catalog.machines), byId(runtimes), identities, discovery, sourceManifest,
+    byId(hardware.catalog.machines), byId(runtimes), identities, discovery, sourceManifest, topologies, photos,
   ])));
 }
 
@@ -52,14 +53,61 @@ ${tuples}
 INSERT INTO fastest_catalog.${table} SELECT * FROM temp_${table} ON CONFLICT DO NOTHING;\n`;
 }
 
+function topologyRecords(reports, machines, documents, photos) {
+  const machineById = new Map(machines.map(row => [row.id, row]));
+  const digestByPath = new Map(documents.map(([path, digest]) => [path, digest]));
+  const records = {
+    topology_media: Object.entries(photos).map(([id, photo]) => [id, encode(photo)]),
+    topology_revision: [],
+    topology_node: [],
+    topology_link: [],
+  };
+  const topologies = [];
+  for (const { id, devices, links = [], ...report } of reports) {
+    const machine = machineById.get(id);
+    if (!machine) continue;
+    const sourcePath = relative(fileURLToPath(docs), fileURLToPath(new URL(`hardware-profiles/${id}.md`, seed)));
+    const sourceDigest = digestByPath.get(sourcePath);
+    const isHost = report.group === "hosts";
+    const normalizedDevices = devices.map(({ photo = null, card = null, ...part }, index) => ({
+      ...part, slot: index + 1, photo, card,
+    }));
+    const hosts = isHost ? Array.from({ length: report.hostCount }, (_, index) => ({
+      slot: index + 1, label: report.hostModel,
+    })) : [];
+    const parts = isHost ? hosts : normalizedDevices;
+    if (!sourceDigest || machine.source !== report.source ||
+        (isHost ? !hosts.length || !report.hostModel || devices.length : report.count !== devices.length || !devices.length) ||
+        normalizedDevices.some(({ card, photo }) => (card && !machine.cardIds.includes(card)) || (photo && !photos[photo])) ||
+        links.some(({ slots }) => slots.length !== 2 || slots[0] === slots[1] ||
+          slots.some(slot => !Number.isInteger(slot) || slot < 1 || slot > parts.length))) {
+      throw new Error("Topology lacks a matching research profile, part or link: " + id);
+    }
+    const layout = { id, ...report, sourcePath, sourceDigest, devices: normalizedDevices, hosts, links };
+    const photoIds = [...new Set(normalizedDevices.map(({ photo }) => photo).filter(Boolean))].sort();
+    const revision = "topology-" + sha256(encode(canonicalJson([layout, photoIds.map(photo => photos[photo])])));
+    topologies.push({ ...layout, revision });
+    records.topology_revision.push([id, revision, topologies.length, sourcePath, encode({ ...report, sourceDigest })]);
+    parts.forEach(({ slot, photo, card, ...part }) => {
+      records.topology_node.push([id, revision, slot, isHost ? "host" : "card", card, photo, encode(part)]);
+    });
+    links.forEach(({ slots, ...link }, index) => {
+      records.topology_link.push([id, revision, index + 1, ...slots, encode(link)]);
+    });
+  }
+  return { topologies, records };
+}
+
 export async function importLocalCatalog(hardware, database = process.env.FASTEST_DATABASE_URL ?? "postgresql://localhost/localdecode_catalog") {
-  const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents] = await Promise.all([
+  const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos] = await Promise.all([
     readFile(new URL("catalog-pg.sql", project), "utf8"),
     readCatalogModelFiles(fileURLToPath(project)),
     ...["catalog-runtimes.json", "catalog-topics.json"].map(name => readJson(project, name)),
     ...["inventory.json", "llmfit/research/test-series.json", "llmfit/research/models.json", "llmfit/research/benchmarks.json"]
       .map(name => readJson(seed, name)),
     researchDocuments(),
+    readJson(project, "catalog-topology.json"),
+    readCatalogPhotos(project),
   ]);
   const { source: models, identities, discovery, sourceManifest } = modelFiles;
   const { models: modelRows, ...modelMetadata } = models;
@@ -67,6 +115,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     id, { ...identity, artifacts: identity.artifacts ?? [] },
   ]));
   const { cards, machines } = hardware.catalog;
+  const { topologies, records: topologyTables } = topologyRecords(reports, machines, documents, photos);
   const byPosition = new Map(inventory.map(row => [Number(row.position), row.id]));
   const distinctVideos = new Map();
   for (const row of inventory) if (!distinctVideos.has(row.id)) distinctVideos.set(row.id, row);
@@ -83,8 +132,11 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
       modelLicenseNotice: models.licenseNotice,
       pages: {
         hardware: hardware.manifest, modelMetadata, sourceManifest,
-        projectionDigest: publicCatalogDigest({ source: models, hardware, runtimes, identities: reviewedIdentities, discovery, sourceManifest }),
+        projectionDigest: publicCatalogDigest({
+          source: models, hardware, runtimes, identities: reviewedIdentities, discovery, sourceManifest, topologies, photos,
+        }),
         runtimeProjects: runtimes.length,
+        topologyRevisions: topologies.length,
         popular: popular.length, small: small.length,
       },
     })]],
@@ -94,6 +146,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     machine: machines.map(row => [row.id, encode(row)]),
     machine_gpu: machines.flatMap(row => row.cardIds.map(id => [row.id, id])),
     machine_part: machines.flatMap(row => (row.bom ?? []).map((part, index) => [row.id, index, encode(part)])),
+    ...topologyTables,
     model_repository: modelRows.map(row => {
       const { artifacts, ...identity } = identities[row.id] ?? {};
       return [row.id, encode(identities[row.id] ? { ...row, identity } : row)];
@@ -124,7 +177,8 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     "COMMIT;",
   ].join("\n");
   runCatalogSql(database, id, input, "PostgreSQL catalog import failed", true);
-  const { catalog, runtimes: importedRuntimes, modelManifest, modelLicenseNotice } = readSnapshot(database, id);
+  const { catalog, runtimes: importedRuntimes, modelManifest, modelLicenseNotice,
+    topologies: importedTopologies, photos: importedPhotos } = readSnapshot(database, id);
   if (catalog.cards.length !== cards.length || catalog.machines.length !== machines.length) {
     throw new Error("PostgreSQL catalog coverage differs from the source");
   }
@@ -134,7 +188,8 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     catalog.models.some(row => !expectedModelProfiles.has(row.id))) {
     throw new Error("PostgreSQL model coverage differs from the source");
   }
-  return { ...hardware, catalog, snapshotId: id, runtimes: importedRuntimes, modelManifest, modelLicenseNotice };
+  return { ...hardware, catalog, snapshotId: id, runtimes: importedRuntimes, modelManifest, modelLicenseNotice,
+    topologies: importedTopologies, photos: importedPhotos };
 }
 
 function readSnapshot(database, id, full = false) {
@@ -148,6 +203,38 @@ function readSnapshot(database, id, full = false) {
     SELECT json_build_object(
       'cards', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.gpu WHERE snapshot_id = :'snapshot_id'),
       'machines', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.machine WHERE snapshot_id = :'snapshot_id'),
+      'topologies', (
+        SELECT coalesce(jsonb_agg(revision.document || jsonb_build_object(
+          'id', revision.machine_id,
+          'revision', revision.revision_id,
+          'sourcePath', revision.source_path,
+          'devices', coalesce(nodes.devices, '[]'::jsonb),
+          'hosts', coalesce(nodes.hosts, '[]'::jsonb),
+          'links', coalesce(links.documents, '[]'::jsonb)
+        ) ORDER BY revision.ordinal), '[]'::jsonb)
+        FROM fastest_catalog.topology_revision revision
+        CROSS JOIN LATERAL (
+          SELECT jsonb_agg(node.document || jsonb_build_object('slot', node.slot, 'card', node.gpu_id, 'photo', node.photo_id)
+            ORDER BY node.slot) FILTER (WHERE node.kind = 'card') AS devices,
+            jsonb_agg(node.document || jsonb_build_object('slot', node.slot)
+              ORDER BY node.slot) FILTER (WHERE node.kind = 'host') AS hosts
+          FROM fastest_catalog.topology_node node
+          WHERE (node.snapshot_id, node.machine_id, node.revision_id) =
+            (revision.snapshot_id, revision.machine_id, revision.revision_id)
+        ) nodes
+        CROSS JOIN LATERAL (
+          SELECT jsonb_agg(link.document || jsonb_build_object('slots', jsonb_build_array(link.from_slot, link.to_slot))
+            ORDER BY link.ordinal) AS documents
+          FROM fastest_catalog.topology_link link
+          WHERE (link.snapshot_id, link.machine_id, link.revision_id) =
+            (revision.snapshot_id, revision.machine_id, revision.revision_id)
+        ) links
+        WHERE revision.snapshot_id = :'snapshot_id'
+      ),
+      'photos', (
+        SELECT coalesce(json_object_agg(id, document ORDER BY id COLLATE "C"), '{}'::json)
+        FROM fastest_catalog.topology_media WHERE snapshot_id = :'snapshot_id'
+      ),
       'runtimes', (SELECT json_agg(document ORDER BY id COLLATE "C") FROM fastest_catalog.runtime WHERE snapshot_id = :'snapshot_id'),
       'models', (
         SELECT coalesce(json_agg(repository.document || jsonb_build_object(
@@ -173,8 +260,8 @@ function readSnapshot(database, id, full = false) {
     COMMIT;`;
   const result = runCatalogSql(database, id, input, "PostgreSQL catalog read failed", !full);
   if (!result.trim()) throw new Error("PostgreSQL catalog snapshot was not found: " + id);
-  const { runtimes, modelManifest, modelLicenseNotice, pages, ...catalog } = JSON.parse(result);
-  return { catalog, runtimes, modelManifest, modelLicenseNotice, pages };
+  const { runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos, ...catalog } = JSON.parse(result);
+  return { catalog, runtimes, modelManifest, modelLicenseNotice, pages, topologies, photos };
 }
 
 function runCatalogSql(database, id, input, errorMessage, showDetails) {
@@ -187,15 +274,16 @@ function runCatalogSql(database, id, input, errorMessage, showDetails) {
 }
 
 export function readPublishedCatalog(database, id) {
-  const { catalog, runtimes, modelManifest, pages } = readSnapshot(database, id, true);
+  const { catalog, runtimes, modelManifest, pages, topologies, photos } = readSnapshot(database, id, true);
   if (!pages?.hardware?.coverage || !pages.modelMetadata || !pages.sourceManifest ||
-      !pages.projectionDigest || !modelManifest?.discovery) {
+      !pages.projectionDigest || !modelManifest?.discovery || !Number.isInteger(pages.topologyRevisions)) {
     throw new Error("PostgreSQL catalog snapshot has no Pages publication metadata: " + id);
   }
   const { cards, machines, models: records } = catalog;
   const { cards: cardCount, researchProfiles, upstreamPresets, manufacturerMachines } = pages.hardware.coverage;
   if (cards?.length !== cardCount || machines?.length !== researchProfiles + upstreamPresets + manufacturerMachines ||
-      runtimes?.length !== pages.runtimeProjects || modelManifest.popular !== pages.popular || modelManifest.small !== pages.small) {
+      runtimes?.length !== pages.runtimeProjects || modelManifest.popular !== pages.popular || modelManifest.small !== pages.small ||
+      topologies.length !== pages.topologyRevisions) {
     throw new Error("PostgreSQL catalog snapshot coverage does not match its publication metadata: " + id);
   }
   const identities = Object.create(null);
@@ -213,7 +301,8 @@ export function readPublishedCatalog(database, id) {
   }
   const withoutRank = ({ rank, ...row }) => row;
   const projection = {
-    snapshotId: id, runtimes, identities, source: { ...pages.modelMetadata, models }, sourceManifest: pages.sourceManifest,
+    snapshotId: id, runtimes, identities, topologies, photos,
+    source: { ...pages.modelMetadata, models }, sourceManifest: pages.sourceManifest,
     discovery: { ...modelManifest.discovery, popular: popular.map(withoutRank), small: small.map(withoutRank) },
     hardware: { catalog: { cards, machines }, manifest: pages.hardware },
   };

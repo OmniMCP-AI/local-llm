@@ -62,6 +62,56 @@ CREATE TABLE IF NOT EXISTS fastest_catalog.machine_part (
   FOREIGN KEY (snapshot_id,machine_id) REFERENCES fastest_catalog.machine
 );
 
+CREATE TABLE IF NOT EXISTS fastest_catalog.topology_media (
+  snapshot_id text REFERENCES fastest_catalog.snapshot(id),
+  id text,
+  document jsonb NOT NULL,
+  PRIMARY KEY (snapshot_id,id)
+);
+
+CREATE TABLE IF NOT EXISTS fastest_catalog.topology_revision (
+  snapshot_id text,
+  machine_id text,
+  revision_id text NOT NULL CHECK (revision_id ~ '^topology-[a-f0-9]{64}$'),
+  ordinal integer NOT NULL CHECK (ordinal > 0),
+  source_path text NOT NULL,
+  document jsonb NOT NULL,
+  PRIMARY KEY (snapshot_id,machine_id,revision_id),
+  UNIQUE (snapshot_id,machine_id),
+  UNIQUE (snapshot_id,ordinal),
+  FOREIGN KEY (snapshot_id,machine_id) REFERENCES fastest_catalog.machine,
+  FOREIGN KEY (snapshot_id,source_path) REFERENCES fastest_catalog.seed_document
+);
+
+CREATE TABLE IF NOT EXISTS fastest_catalog.topology_node (
+  snapshot_id text,
+  machine_id text,
+  revision_id text,
+  slot integer CHECK (slot > 0),
+  kind text NOT NULL CHECK (kind IN ('card', 'host')),
+  gpu_id text,
+  photo_id text,
+  document jsonb NOT NULL,
+  CHECK (kind <> 'host' OR (gpu_id IS NULL AND photo_id IS NULL)),
+  PRIMARY KEY (snapshot_id,machine_id,revision_id,slot),
+  FOREIGN KEY (snapshot_id,machine_id,revision_id) REFERENCES fastest_catalog.topology_revision,
+  FOREIGN KEY (snapshot_id,gpu_id) REFERENCES fastest_catalog.gpu,
+  FOREIGN KEY (snapshot_id,photo_id) REFERENCES fastest_catalog.topology_media
+);
+
+CREATE TABLE IF NOT EXISTS fastest_catalog.topology_link (
+  snapshot_id text,
+  machine_id text,
+  revision_id text,
+  ordinal integer CHECK (ordinal > 0),
+  from_slot integer NOT NULL,
+  to_slot integer NOT NULL CHECK (to_slot <> from_slot),
+  document jsonb NOT NULL,
+  PRIMARY KEY (snapshot_id,machine_id,revision_id,ordinal),
+  FOREIGN KEY (snapshot_id,machine_id,revision_id,from_slot) REFERENCES fastest_catalog.topology_node,
+  FOREIGN KEY (snapshot_id,machine_id,revision_id,to_slot) REFERENCES fastest_catalog.topology_node
+);
+
 CREATE TABLE IF NOT EXISTS fastest_catalog.model_repository (
   snapshot_id text REFERENCES fastest_catalog.snapshot(id),
   id text,

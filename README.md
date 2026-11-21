@@ -31,7 +31,7 @@ For Cloudflare Pages, set the project root to the prototype directory and the ou
 
 ### Pin the production Pages catalog
 
-On an authorized publisher checkout, run `npm run build` with `FASTEST_DATABASE_URL` pointing to the catalog database. Review the imported snapshot and take its full SHA-256 digest from `Imported local PostgreSQL catalog snapshot …`. Reimport snapshots created before the Pages publication metadata was added. Set `FASTEST_CATALOG_SNAPSHOT_ID` to the reviewed digest in the production Pages build environment. The build reads that exact pin independently of the database's current snapshot pointer.
+On an authorized publisher checkout, run `npm run build` with `FASTEST_DATABASE_URL` pointing to the catalog database. Review the imported snapshot and take its full SHA-256 digest from `Imported local PostgreSQL catalog snapshot …`. Reimport any snapshot created before topology revisions were added, and update the reader grants below. Set `FASTEST_CATALOG_SNAPSHOT_ID` to the reviewed digest in the production Pages build environment. The build reads that exact pin independently of the database's current snapshot pointer.
 
 Install `psql` on the build host and set `FASTEST_CATALOG_DATABASE_URL` for a dedicated reader login. Keep passwords in the build host's libpq password file. Give the reader schema usage and access only to the public catalog projection tables. For example, with a login named `pages_catalog_reader`:
 
@@ -40,10 +40,11 @@ ALTER ROLE pages_catalog_reader SET default_transaction_read_only = on;
 GRANT USAGE ON SCHEMA fastest_catalog TO pages_catalog_reader;
 GRANT SELECT ON fastest_catalog.snapshot, fastest_catalog.gpu, fastest_catalog.machine,
   fastest_catalog.runtime, fastest_catalog.model_repository, fastest_catalog.model_artifact,
-  fastest_catalog.model_discovery TO pages_catalog_reader;
+  fastest_catalog.model_discovery, fastest_catalog.topology_revision, fastest_catalog.topology_node,
+  fastest_catalog.topology_link, fastest_catalog.topology_media TO pages_catalog_reader;
 ```
 
-The catalog manifest records the full snapshot ID. The directory, ranked model lists, shards and HTML and Markdown profiles use that snapshot. The build checks the public projection digest, current evidence approvals and quarantine state before it writes output. A catalog pin that includes actively withdrawn evidence requires a reviewed replacement snapshot. Successful production builds replace earlier catalog assets in `dist`. Archive `catalog/` and `catalog-data/` together outside `dist` to retain a release.
+The catalog manifest records the full snapshot ID. The directory, ranked model lists, shards, HTML and Markdown profiles, and source-reported topology use that snapshot. A machine with a reported layout links to its exact topology revision. The build checks the public projection digest, current evidence approvals and quarantine state before it writes output. A catalog pin that includes actively withdrawn evidence requires a reviewed replacement snapshot. Successful production builds replace earlier catalog assets in `dist`. Archive `catalog/` and `catalog-data/` together outside `dist` to retain a release.
 
 Set `FASTEST_TEST_DATABASE_URL` to an isolated publisher database and `FASTEST_TEST_CATALOG_READER_URL` to its restricted reader to run the PostgreSQL and Wrangler catalog check with `npm run test:pages`.
 

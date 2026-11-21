@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
+import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 import { prepareCatalogRelease, readCatalogModelFiles, writeCatalogProjection, writeCatalogRelease } from "./catalog-release-build.mjs";
 import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
@@ -15,7 +16,6 @@ import { emptyEvidenceState, validateEvidenceState, writeEvidenceState } from ".
 import { allowedResearchPin, deniedResearchPin, readResearchPin, researchReleaseId, writeResearchPin } from "./research-released-snapshot.mjs";
 import { navigationHref, releaseOrigin } from "./release-origin.mjs";
 import { withPreviewResults } from "./research-preview.mjs";
-import topologyReports from "./catalog-topology.json" with { type: "json" };
 import highlights from "./wiki/highlights.json" with { type: "json" };
 
 const here = (name) => new URL(name, import.meta.url);
@@ -45,13 +45,12 @@ if (pages && (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate) || Number.isNaN(Date.pars
 const openccNotices = await Promise.all(["LICENSE", "THIRD_PARTY_LICENSES.md", "LICENSES/Apache-2.0.txt"]
   .map((name) => readFile(resolve(openccRoot, name), "utf8")));
 const stylesheetNames = ["styles", "knowledge", "goals", "feedback", "catalog", "technology", "methods", "costs", "highlights", "profile-benchmarks", "locale"];
-const [stylesheets, image, wikiNames, graph, fullGraph, mediaIndex] = await Promise.all([
+const [stylesheets, image, wikiNames, graph, fullGraph] = await Promise.all([
   Promise.all(stylesheetNames.map((name) => readFile(here(name + ".css"), "utf8"))),
   readFile(here("hero-gpu.png")),
   readdir(here("wiki/pages/")),
   readFile(here("wiki/graph.json"), "utf8").then(JSON.parse),
   readFile(here("wiki/graphify.json"), "utf8").then(JSON.parse),
-  readFile(here("hardware-assets/assets.json"), "utf8").then(JSON.parse),
 ]);
 const contentHash = createHash("sha256");
 const documents = Object.fromEntries(await Promise.all(wikiNames.filter((name) => name.endsWith(".md")).sort().map(async (name) => {
@@ -101,12 +100,11 @@ if (projection && ((withdrawn.length && isWithdrawn(JSON.stringify(published))) 
   throw new Error("PostgreSQL catalog snapshot conflicts with active evidence withdrawals: " + catalogSnapshot);
 }
 if (pages) researchIndex = await writeResearchRelease(catalogDirectory, output, approvals);
-const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).filter(([, asset]) => !isWithdrawn(asset.source)).map(async ([id, asset]) => {
-  if (!/^[a-z0-9-]+\.jpg$/.test(asset.file)) throw new Error("Invalid hardware photo filename: " + asset.file);
-  const jpeg = await readFile(here("hardware-assets/" + asset.file));
-  return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
-})));
-const publicTopologies = topologyReports.filter(({ source, id }) => !isWithdrawn(source) && !isWithdrawn(id));
+const photos = published?.photos ?? await readCatalogPhotos(here("."));
+const media = Object.fromEntries(Object.entries(photos).filter(([, asset]) => !isWithdrawn(asset.source)));
+const topologyReports = published?.topologies ?? (await import("./catalog-topology.json", { with: { type: "json" } })).default;
+const publicTopologies = topologyReports.filter(({ source, id, links = [] }) =>
+  ![source, id, ...links.map(link => link.source)].some(isWithdrawn));
 const publicDocuments = Object.fromEntries(Object.entries(documents)
   .filter(([, { evidence, status }]) => !isWithdrawn(evidence) && status !== "withdrawn")
   .map(([id, doc]) => {

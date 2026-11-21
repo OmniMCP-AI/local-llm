@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CircuitBoard, Cpu, FileText, GitBranch, Monitor, Search } from "lucide-react";
 import { configurations } from "./scenarios";
 import { ProfileBenchmarks } from "./profile-benchmarks";
-import { topologyReports } from "./topology.mjs";
+import { selectTopologyReport, topologyReports } from "./topology.mjs";
+import { topologyRevisionPattern } from "./catalog-paths.mjs";
 import { TechnologyDiagram } from "./technology";
 import { ResearchLibrary, useResearchLabels } from "./research-library";
 import { quoteCurrency, useLocale } from "./locale";
@@ -277,14 +278,17 @@ function WikiPage({ slug, focus, go, onCopy }) {
 
 function TopologyLens({ initialProfile }) {
   const { t } = useLocale();
-  const opening = topologyReports.find((row) => row.id.toLowerCase() === initialProfile);
+  const opening = selectTopologyReport(topologyReports, initialProfile);
   const [view,setView] = useState(opening?.group ?? "multi");
+  if (!opening && topologyRevisionPattern.test(initialProfile ?? "")) {
+    return <p>{t("This topology revision is unavailable in the current catalog release.", "当前目录版本中没有此拓扑修订版。")}</p>;
+  }
   const options = [["single",t("One card", "单卡")],["multi",t("Multiple cards", "多卡")],["hosts",t("Multi-host", "多主机")]];
   const rows = topologyReports.filter((row) => row.group === view);
   return <section className="detail-section topology-view" aria-labelledby="topology-profile-title">
     <div className="detail-heading"><div><h2 id="topology-profile-title">{t("Reported configurations", "已报道的配置")}</h2><p>{t("The diagram shows documented hardware. Bandwidth and scaling need separate measurements.", "图中显示有来源的硬件信息。带宽及扩展性能需要单独测量。")}</p></div></div>
     <div className="detail-controls" aria-label="Topology classes">{options.map(([id,label]) => <button type="button" key={id} aria-pressed={view === id} className={"btn outline " + (view === id ? "picked" : "")} onClick={() => setView(id)}>{label}</button>)}</div>
-    <TechnologyDiagram key={view} images={pictures} focus={opening?.id ?? "V025-HP-E01"} options={rows} />
+    <TechnologyDiagram key={view} images={pictures} focus={opening?.revision ?? opening?.id ?? "V025-HP-E01"} options={rows} />
     <div className="table-wrap"><table>
       <thead><tr><th scope="col">Profile</th><th scope="col">Reported cards</th><th scope="col">Memory per GPU</th><th scope="col">Reported interconnect</th><th scope="col">Measured link bandwidth</th></tr></thead>
       <tbody>{rows.map((row) => <tr key={row.id}>
