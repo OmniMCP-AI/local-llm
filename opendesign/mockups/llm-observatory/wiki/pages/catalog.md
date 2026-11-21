@@ -11,7 +11,8 @@ The lists represent the published source scope shown in the view. A model reposi
 
 - Use the Hugging Face or GitHub link for model metadata, artifact details and terms.
 - Browse [machine profiles](#machines) for sample build plans and [model examples](#models) for interactive comparisons.
-- [Inference runtimes and tuning](#catalog/runtimes) connects release information and techniques to their intended hardware scope.
+- [Inference frameworks](#wiki/inference-frameworks) groups engines, serving frameworks, and companion tools by role.
+- [Runtime catalog](#catalog/runtimes) lists pinned upstream projects. See [Inference runtimes and tuning](#wiki/runtimes) for card-specific notes.
 
 For comparable measurements, start with [Compare by goals](#goals). Report a missing or incorrect listing through [community feedback](#wiki/community).
 

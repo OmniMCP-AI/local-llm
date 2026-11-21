@@ -318,6 +318,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
       </div>
       <div className="catalog-prototype-links">
         <PrototypeLink href="#catalog/topics" go={go}>{t("Browse topics", "浏览主题")}</PrototypeLink>
+        <PrototypeLink href="#wiki/inference-frameworks" go={go}>{t("Inference frameworks", "推理框架")}</PrototypeLink>
         {hardwareTab && <PrototypeLink href={"#battle/" + active} go={go}>{t("Hardware battles", "硬件对决")}</PrototypeLink>}
         <PrototypeLink href="#machines" go={go}>{t("Detailed prototype machines", "查看整机配置示例")}</PrototypeLink>
         <PrototypeLink href="#models/qwen25-7b" go={go}>{t("Compare a sample model", "比较模型运行表现")}</PrototypeLink>

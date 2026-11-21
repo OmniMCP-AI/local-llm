@@ -45,7 +45,6 @@ function routeFor(slug) {
   const doc = documents[slug];
   if (doc?.kind === "machine") return "#machines/" + slug;
   if (doc?.kind === "model") return "#models/" + slug;
-  if (slug === "runtimes") return "#catalog/runtimes";
   if (["explorer", "prices", "agents", "machines", "models", "catalog", "goals"].includes(slug)) return "#" + slug;
   return slug === "index" ? "#wiki" : "#wiki/" + slug;
 }
@@ -264,7 +263,10 @@ function WikiPage({ slug, focus, go, onCopy }) {
     {doc.use_cases && <nav className="research-topics" aria-label={label("ui","topic")}>
       {doc.use_cases.split(", ").map(id => <Link key={id} to={"#wiki/research?topic=" + id} go={go}>{label("topics",id)}</Link>)}
     </nav>}
-    {slug === "index" && <Link className="btn outline" to="#wiki/research" go={go}><BookOpen size={15} />{label("ui","library")}</Link>}
+    {slug === "index" && <div className="deep-actions">
+      <Link className="btn outline" to="#wiki/inference-frameworks" go={go}>Inference frameworks</Link>
+      <Link className="btn outline" to="#wiki/research" go={go}><BookOpen size={15} />{label("ui","library")}</Link>
+    </div>}
     {slug === "index" && <div className="wiki-directory">
       {(search ? results : guides).map(([id,node]) => <article key={id}><h2><Link to={routeFor(id)} go={go}>{node.title} <ArrowUpRight size={14} aria-hidden="true" /></Link></h2><p>{node.summary}</p></article>)}
       {search && results.length === 0 && <p>No wiki pages match that search.</p>}

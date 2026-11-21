@@ -282,6 +282,13 @@ test("runtime cards cite pinned releases and keep documented support apart from 
     ["mlx-lm", "v0.32.2", "ml-explore/mlx-lm", "MLX"],
     ["strata", "v0.2.17", "Niko1221/Strata", "GGUF"],
     ["project-maya", "v1.1.70", "mw00/project-maya", "GGUF"],
+    ["mnn", "3.6.2", "alibaba/MNN", "MNN"],
+    ["mlx-swift-lm", "3.33.0", "ml-explore/mlx-swift-lm", "MLX"],
+    ["ctranslate2", "v4.9.0", "OpenNMT/CTranslate2", "CTranslate2"],
+    ["whisper.cpp", "v1.9.5", "ggml-org/whisper.cpp", "ggml"],
+    ["open-webui", "v0.13.4", "open-webui/open-webui", "OpenAI-compatible"],
+    ["aiter", "v0.1.29.post1", "ROCm/aiter", "Framework-managed"],
+    ["exo", "v1.0.71", "exo-explore/exo", "MLX"],
   ]) {
     for (const extension of ["html", "md"]) {
       const response = await request(`runtimes/${runtime}.${extension}`);
@@ -773,6 +780,8 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   const root = join(output, "catalog", release);
   const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, imported.snapshotId);
+  const mnn = await readFile(join(root, "runtimes/mnn.md"), "utf8");
+  assert.match(mnn, /https:\/\/github\.com\/alibaba\/MNN\/releases\/tag\/3\.6\.2/);
   assert.equal(manifest.hardware.coverage.completeBuilds, 4);
   assert.equal(manifest.hardware.coverage.cardsWithSpecificVendorSpecs, 127);
   for (const [id, source, fact, parent] of [
