@@ -149,3 +149,50 @@ ORDER BY run.window_started_at, run.capture_sha256, attempt.request_number, atte
 ```
 
 `elapsed_ms` is the collector's original reported latency, capped at the client deadline for timeouts. `observed_elapsed_ns` is the monotonic difference recorded in the trace. The receipt counts accepted output tokens only for accepted requests. The private attempt table also preserves reported token counts from rejected responses.
+
+## Import a private GPU scaling capture
+
+Run from `production` with `FASTEST_DATABASE_URL` set to the intake operator database.
+
+```sh
+python3 -B -m fastest_intake migrate
+python3 -B -m fastest_intake ingest-scaling-capture /path/to/private-scaling-pair
+python3 -B -m fastest_intake stats
+```
+
+Pass the unedited directory from the [scaling collector](../fastest_release/SCALING-EVIDENCE.md#capture-a-pair).
+The importer checks the pinned artifact, runtime and benchmark controls, verifies the build evidence
+and the inventory and runner output digests, and reconciles both attempts with the recorded GPU masks,
+placement, process status, and original runner timing row. Keep the packet in restricted storage.
+PostgreSQL keeps the selected host, protocol, device and placement metadata, file digests, and
+ordered `bigint[]` nanoseconds. Keep raw build evidence, full runner logs, local paths, environment
+values and original trace bytes in the packet for the operator to inspect.
+
+The receipt identifies the capture by the SHA-256 of `capture.json`. Replay preserves the existing
+capture and attempts. Conflicting evidence for an already imported capture or attempt is rejected.
+Finalized failed or interrupted captures retain any verifiable attempt receipts. An unreferenced
+successful runner result stays `unavailable`. Inspect each attempt's `outcome` alongside its
+`samples_ns` array. A failed attempt can report durations if a valid timing row survived the failure.
+An empty array means there was no valid full timing row.
+
+If a sealed [transport attachment](../fastest_release/SCALING-EVIDENCE.md#attach-an-independently-recorded-transfer-trace)
+is available, ingest checks its digests and links against the comparison run and retains the
+structured links, attachment timestamp, and exact receipt and file digests. A capture without an
+attachment starts with transport `unknown`. Replay the same capture after attaching a trace to
+retain that evidence, after which the receipt reports `supplied`. Keep the attached trace available
+for operator review.
+
+Every import stays held for review. A complete collector attempt describes timing availability.
+The operator still reviews the build and physical host provenance, run isolation, accepted quality,
+transport and field-level rights through the existing [scaling release workflow](../fastest_release/SCALING-EVIDENCE.md#review-and-release).
+
+```sql
+SELECT run.capture_sha256, run.capture_status, run.review_status, attempt.role,
+       attempt.outcome, attempt.samples_ns, transport.receipt_sha256 AS transport_receipt_sha256,
+       transport.links
+FROM fastest_intake.scaling_capture_run AS run
+LEFT JOIN fastest_intake.scaling_capture_attempt AS attempt USING (capture_sha256)
+LEFT JOIN fastest_intake.scaling_capture_transport AS transport
+    ON transport.comparison_run_id = attempt.run_id
+ORDER BY run.capture_sha256, attempt.role;
+```
