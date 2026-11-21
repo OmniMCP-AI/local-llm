@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocale } from "./locale";
 import { cardRatings } from "./catalog-position.mjs";
+import { CoordinatePlot } from "./coordinate-plot";
 
 export function CatalogCompare({ kind, chosen, modelStats, clear, remove }) {
   const { locale, t } = useLocale();
@@ -20,6 +21,9 @@ export function CatalogCompare({ kind, chosen, modelStats, clear, remove }) {
     ...(isModel ? modelStats.get(row.id) : cardRatings(row)),
   }));
 
+  const names = new Map(entries.map(({ id, name }) => [id, name]));
+  const profileLabel = isModel ? t("Model", "模型") : t("GPU", "显卡");
+
   return <section className="catalog-comparison" id="catalog-comparison" aria-labelledby="catalog-comparison-title">
     <header>
       <div><h3 id="catalog-comparison-title">{isModel ? t("Compare models", "对比模型") : t("Compare GPUs", "对比显卡")}</h3>
@@ -36,16 +40,23 @@ export function CatalogCompare({ kind, chosen, modelStats, clear, remove }) {
     </ul>
     {entries.length < 2 ? <p>{t("Select one more row to compare.", "再选择一条记录进行对比。")}</p> :
       <div className="catalog-comparison-plots">{metrics.map(([metric, label, unit, formatter]) => {
-        const max = Math.max(1, ...entries.map(row => row[metric] ?? 0));
-        return <figure className="catalog-comparison-plot" key={metric}>
-          <figcaption>{label}{unit && <> <small>{unit}</small></>}</figcaption>
-          <ul>{entries.map((row, index) => {
+        const points = entries.flatMap((row, index) => Number.isFinite(row[metric]) ? [{
+          id: row.id, name: row.name, short: formatter.format(row[metric]), series: index,
+          x: row.id, xText: row.name, y: row[metric],
+          yText: `${number.format(row[metric])}${unit ? " " + unit : ""}`,
+        }] : []);
+        return <figure className="catalog-comparison-plot" aria-label={label} key={metric}>
+          <CoordinatePlot title={label} kind="bar" points={points}
+            xAxis={{ label: profileLabel, categorical: true, formatTick: id => names.get(id) }}
+            yAxis={{ label, unit, formatTick: formatter.format }}
+            labelsLabel={t("Show point labels", "显示数据点标签")}
+            emptyText={label + " · " + t("Unavailable", "暂不可用")} />
+          <ul aria-label={t("Exact comparison values", "比较明细数值")}>{entries.map(row => {
             const value = row[metric];
-            return <li key={row.id} data-series={index + 1}>
-              <div><bdi>{row.name}</bdi><strong title={value == null ? undefined : number.format(value)}>
-                {value == null ? t("Unavailable", "暂不可用") : formatter.format(value)}
+            return <li key={row.id}>
+              <div><bdi>{row.name}</bdi><strong>
+                {value == null ? t("Unavailable", "暂不可用") : number.format(value) + (unit ? " " + unit : "")}
               </strong></div>
-              {value != null && <span className="catalog-bar-track" aria-hidden="true"><i style={{ width: value / max * 100 + "%" }} /></span>}
             </li>;
           })}</ul>
         </figure>;

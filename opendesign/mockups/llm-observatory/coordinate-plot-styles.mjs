@@ -75,6 +75,7 @@ export const coordinatePlotStyles = `
 .coordinate-plot [data-series="0"] { --chart-series: var(--chart-accent); }
 .coordinate-plot [data-series="1"] { --chart-series: var(--color-accent-2, #175a76); }
 .coordinate-plot [data-series="2"] { --chart-series: var(--chart-muted); }
+.coordinate-plot [data-series="3"] { --chart-series: var(--color-accent-3, #648754); }
 .coordinate-line polyline[data-series="2"] { stroke-dasharray: 4 3; }
 .coordinate-point[data-series]:not([data-series=""]) .coordinate-mark::after { background: var(--chart-series); }
 .coordinate-bar-shape {
