@@ -1,0 +1,35 @@
+{
+  "observedOn": "2026-11-21",
+  "videos": [
+    {
+      "id": "H7Wa-WxPiAY",
+      "title": "本地AI显卡性价比盘点，应对DeepSeek等云端AI涨价！Intel/AMD/Nvidia御三家，7900xtx/R9700/3090/4090/RTX Pro 5000等！",
+      "cards": ["amd-radeon-rx-7900-xtx", "nvidia-geforce-rtx-3090", "nvidia-geforce-rtx-4090"]
+    },
+    {
+      "id": "3vdM73WV7BI",
+      "title": "RTX 3090 vs 4090 vs 5090 vs Mac M5 Max: Qwen3.6-35B-A3B Local AI Benchmark using llama.cpp",
+      "cards": ["nvidia-geforce-rtx-3090", "nvidia-geforce-rtx-4090", "nvidia-geforce-rtx-5090"]
+    },
+    {
+      "id": "xzwb94eJ-EE",
+      "title": "3090 vs 4090 Local AI Server LLM Inference Speed Comparison on Ollama",
+      "cards": ["nvidia-geforce-rtx-3090", "nvidia-geforce-rtx-4090"]
+    },
+    {
+      "id": "DBSF9bmPM0g",
+      "title": "Used RTX 4090 vs RTX 5080: Smarter 2026 GPU Buy?",
+      "cards": ["nvidia-geforce-rtx-4090", "nvidia-geforce-rtx-5080"]
+    },
+    {
+      "id": "7TyGIuwYHnA",
+      "title": "RTX 5090 vs 2 RTX 3090 for Local AI: What's Worth It?",
+      "exclusion": "The title explicitly compares one card with a two-card setup."
+    },
+    {
+      "id": "ATdrWX7zYUE",
+      "title": "Is a Mac Mini, DGX Spark, or AMD Halo Worth It for Local AI Programming?",
+      "exclusion": "The title omits the Mac mini generation, AMD chip and exact configurations."
+    }
+  ]
+}
