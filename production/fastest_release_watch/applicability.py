@@ -35,7 +35,7 @@ def https_url(value):
     return value
 
 
-def apply_notes(report, notes_path, read_release=None, origin=""):
+def apply_notes(report, notes_path, read_release=None, origin="", *, include_review_lines=False):
     revisions = {row["revision_id"]: row for row in report["releases"]}
     for row in revisions.values():
         row["applicability"] = []
@@ -57,6 +57,8 @@ def apply_notes(report, notes_path, read_release=None, origin=""):
             applicability["retest"] = approved_links(
                 read_release, note, note["retest"], origin, runtime_id=release["runtime_id"],
             )
+        if not include_review_lines:
+            applicability.pop("review_line", None)
         release["applicability"].append(applicability)
     for row in revisions.values():
         row["applicability"].sort(key=lambda note: note["id"])
@@ -64,13 +66,17 @@ def apply_notes(report, notes_path, read_release=None, origin=""):
 
 
 def validate(note, cards, revisions, seen):
-    if not isinstance(note, dict) or set(note) - {"retest"} != NOTE_KEYS:
+    if not isinstance(note, dict) or set(note) - {"retest", "review_line"} != NOTE_KEYS:
         raise ValueError("Unexpected or missing authored applicability fields")
     if not all(plain_text(note[key]) for key in NOTE_KEYS - {"configuration"}):
         raise ValueError("Applicability fields must be nonempty single-line text")
     if not IDENTIFIER.fullmatch(note["id"]) or note["id"] in seen:
         raise ValueError("Expected a unique authored applicability ID")
     seen.add(note["id"])
+    if "review_line" in note and (
+        not isinstance(note["review_line"], str) or not IDENTIFIER.fullmatch(note["review_line"])
+    ):
+        raise ValueError("Expected a stable review line ID")
     if note["revision_id"] not in revisions or note["card_id"] not in cards:
         raise ValueError("Applicability must name a retained release revision and existing catalog card")
     if note["status"] not in STATUSES:

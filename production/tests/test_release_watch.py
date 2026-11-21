@@ -439,6 +439,130 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         migrated = self.invoke("migrate")
         self.assertEqual(migrated.returncode, 0, migrated.stderr)
 
+    def review(self, *notes, as_of=DAY_TWO):
+        path = self.directory / "tracked.json"
+        path.write_text(json.dumps({"notes": notes}), encoding="utf-8")
+        result = self.invoke("review", "--as-of", as_of, "--notes", path, read_only=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def tracked_note(self):
+        note = json.loads((PRODUCTION / "fixtures/release-watch/applicability.json").read_text())["notes"][0]
+        revision = self.report()["releases"][0]["revision_id"]
+        return {**note, "revision_id": revision, "review_line": "cuda-offload", "status": "upstream_documented"}
+
+    def test_review_flags_changed_official_revision_for_an_exact_tracked_line(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        original_revision = note["revision_id"]
+
+        self.assertEqual(self.review(note)["reviews"], [])
+
+        edited = {**original, "body": "Edited release notes"}
+        preview = github_release(101, "fixture-preview", DAY_TWO, prerelease=True)
+        self.refresh([edited, preview], DAY_TWO)
+        self.refresh([github_release(100, "test-vllm", DAY_TWO, repository="vllm-project/vllm")],
+                     DAY_TWO, "--source", "vllm")
+        changed = next(release for release in self.report()["releases"]
+                       if release["runtime_id"] == "llama.cpp" and release["status"] == "current")
+        untracked = {key: value for key, value in note.items() if key != "review_line"}
+        self.assertEqual(self.review(untracked)["reviews"], [])
+
+        views = self.review(note)
+        due, = views["reviews"]
+        self.assertEqual(due["status"], "review_due")
+        self.assertTrue(due["actionable"])
+        self.assertEqual(due["runtime_id"], "llama.cpp")
+        self.assertEqual(due["card_id"], "nvidia-geforce-rtx-3060")
+        self.assertEqual(due["prior"]["status"], "upstream_documented")
+        self.assertEqual(due["prior"]["configuration"], note["configuration"])
+        self.assertEqual(due["prior"]["release"]["revision_id"], original_revision)
+        self.assertEqual(due["target"]["revision_id"], changed["revision_id"])
+        self.assertEqual(due["target"]["first_seen_at"], DAY_TWO)
+        self.assertEqual(due["target"]["source_url"], original["html_url"])
+        self.assertIsNone(due["assessment"])
+        public = self.report(DAY_TWO, "--notes", self.directory / "tracked.json")["releases"]
+        self.assertEqual(next(release for release in public if release["revision_id"] == changed["revision_id"])
+                         ["applicability"], [])
+        self.assertNotIn("review_line", json.dumps(public))
+
+        self.refresh([preview, edited], DAY_TWO)
+        self.refresh([original], DAY_ONE)
+        self.assertEqual(self.review(note), views)
+
+        decision = {**note, "id": "fixture-new-review", "revision_id": changed["revision_id"],
+                    "status": "unsupported"}
+        other_driver = {**decision, "configuration": {**note["configuration"], "driver": "560.28"}}
+        self.assertEqual(self.review(other_driver, note), views)
+        unsupported, = self.review(decision, note)["reviews"]
+        self.assertEqual(unsupported["review_id"], due["review_id"])
+        self.assertEqual(unsupported["status"], "unsupported")
+        self.assertFalse(unsupported["actionable"])
+        self.assertEqual(unsupported["assessment"]["note_id"], decision["id"])
+        assessed, = self.review(note, {**decision, "status": "upstream_documented"})["reviews"]
+        self.assertEqual(assessed["status"], "assessed")
+        self.assertFalse(assessed["actionable"])
+
+    def test_review_preserves_change_on_source_failure_and_reactivates_after_recovery(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        release = github_release(101, "fixture-b101", DAY_TWO)
+        self.refresh([release, original], DAY_TWO)
+        due, = self.review(note)["reviews"]
+        self.assertTrue(due["actionable"])
+        self.assertEqual(due["target"]["tag"], "fixture-b101")
+
+        failure_at = "2026-11-21T02:00:00Z"
+        stale_at = "2026-11-22T01:00:01Z"
+        wrong_source = github_release(102, "fixture-other", failure_at, repository="vllm-project/vllm")
+        self.refresh([wrong_source], failure_at, success=False)
+        for as_of, stale in ((failure_at, False), (stale_at, True)):
+            failed = self.review(note, as_of=as_of)
+            self.assertEqual(failed["reviews"], [{**due, "actionable": False}])
+            source = failed["sources"]["llama.cpp"]
+            self.assertEqual(source["last_successful_refresh"], DAY_TWO)
+            self.assertEqual(source["last_attempt"], failure_at)
+            self.assertIn("official llama.cpp", source["last_error"])
+            self.assertEqual(source["stale"], stale)
+
+        self.refresh([release], stale_at)
+        recovered = self.review(note, as_of=stale_at)
+        self.assertEqual(recovered["reviews"], [due])
+        self.assertIsNone(recovered["sources"]["llama.cpp"]["last_error"])
+        self.assertFalse(self.review(note, as_of="2026-11-23T01:00:02Z")["reviews"][0]["actionable"])
+
+        decision = {**note, "id": "fixture-unresolved-review", "revision_id": due["target"]["revision_id"],
+                    "status": "unresolved", "configuration": {**note["configuration"], "build_sha": "2" * 40}}
+        unresolved, = self.review(note, decision, as_of=stale_at)["reviews"]
+        self.assertEqual(unresolved["review_id"], due["review_id"])
+        self.assertTrue(unresolved["actionable"])
+        self.assertEqual(unresolved["assessment"]["status"], "unresolved")
+        self.assertEqual(unresolved["assessment"]["configuration"]["build_sha"], "2" * 40)
+
+    def test_review_follows_official_prereleases_for_an_explicitly_tracked_prerelease_note(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b5163", DAY_ONE, prerelease=True)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        self.assertEqual(self.review(note)["reviews"], [])
+
+        release = github_release(101, "fixture-b5164", DAY_TWO, prerelease=True)
+        self.refresh([release, original], DAY_TWO)
+        due, = self.review(note)["reviews"]
+        self.assertEqual(due["status"], "review_due")
+        self.assertEqual(due["target"]["tag"], "fixture-b5164")
+        self.assertEqual(due["target"]["status"], "prerelease")
+
+        stable = github_release(102, "fixture-stable", DAY_TWO)
+        self.refresh([release, stable, original], DAY_TWO)
+        stable_revision = next(row["revision_id"] for row in self.report()["releases"] if row["tag"] == stable["tag_name"])
+        stable_decision = {**note, "id": "fixture-stable-review", "revision_id": stable_revision, "status": "unsupported"}
+        self.assertEqual(self.review(note, stable_decision)["reviews"], [due])
+
     def test_explicit_migration_enables_read_only_report(self):
         before = self.invoke("report", "--as-of", DAY_ONE)
         self.assertNotEqual(before.returncode, 0)
