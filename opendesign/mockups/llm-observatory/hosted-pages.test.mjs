@@ -203,6 +203,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
       [`machines/${machineId}`, /Mac mini M4 from the pinned database snapshot/],
       [`models/${modelId}`, /Popular rank[^\n]{0,20}11/],
       ["models/moonshotai/Kimi-K3.1-Pro", /d9e99b0792a5e93b78ea9bea62a68167e36ddd9e\/LICENSE/],
+      ["models/thinkingmachines/Inkling-2-Mini", /48\.2%/],
+      ["models/thinkingmachines/Inkling-2-Small", /72\.1%/],
       ["models/Corianas/1.3b", /Family unavailable/],
       ["runtimes/llama.cpp", /No fastest\.ai compatibility test is published in this release/],
     ]) {
@@ -219,7 +221,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   });
 
   await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
-    UPDATE fastest_catalog.model_repository SET document = jsonb_set(document, '{supplemental,parameters}', '"Unexpected parameter count"')
+    UPDATE fastest_catalog.model_repository
+    SET document = jsonb_set(document, '{supplemental,publisherEvaluations,0,scorePercent}', '48.3')
     WHERE snapshot_id = '${snapshotId}' AND id = 'thinkingmachines/Inkling-2-Mini'`]);
   delete env.FASTEST_EVIDENCE_STATE;
   await assert.rejects(build(), /PostgreSQL catalog snapshot content does not match its publication digest/);
