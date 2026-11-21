@@ -42,10 +42,16 @@ export async function writeHardwareDirectory(output, { manifest, hardware }, ori
   const title = "Hardware catalog";
   const summary = "Browse exact GPU identities and hardware profiles from this catalog snapshot.";
   const coverage = manifest.hardware.coverage;
+  const modifiedCards = profiles.cards.filter(row => row.modification);
+  const cardSections = [
+    ["GPU cards", profiles.cards.filter(row => !row.modification)],
+    ...(modifiedCards.length ? [["Memory-modified GPUs", modifiedCards, "memory-modified"]] : []),
+  ];
   const fields = [
     ["Hardware snapshot date", manifest.hardware.asOf],
     ["GPU catalog identities", String(profiles.cards.length)],
     ["Unresolved GPU references", String(coverage.unresolvedCardReferences)],
+    ...(modifiedCards.length ? [["Memory-modified GPU references", String(modifiedCards.length)]] : []),
     ["Machine profile records", String(profiles.machines.length)],
     ["Reviewed measured profiles", String(coverage.reviewedMeasuredProfiles)],
     ["Untested machine profiles", String(coverage.untestedProfiles)],
@@ -57,16 +63,18 @@ export async function writeHardwareDirectory(output, { manifest, hardware }, ori
     if (!knownKinds.has(kind)) sections.push([kind, rows]);
   }
   const main = `<div class="profile-hero"><h1>${title}</h1><p class="profile-evidence">${summary}</p>
-<div class="profile-actions"><a href="${mdPath}">Markdown</a></div>${htmlFields(fields)}</div>
-${directoryTable("GPU cards", profiles.cards, row => href("cards", row.id), "cards")}
+<div class="profile-actions"><a href="${mdPath}">Markdown</a>${modifiedCards.length
+    ? '<a href="#memory-modified">Memory-modified GPUs</a>' : ""}</div>${htmlFields(fields)}</div>
+<div id="cards">${cardSections.map(([label, rows, anchor]) => directoryTable(label, rows, row => href("cards", row.id), anchor)).join("\n")}</div>
 <div id="machines">${sections.map(([label, rows]) => directoryTable(escapeHtml(label), rows, row => href("machines", row.id))).join("\n")}</div>`;
   const markdown = [
     "---", `title: ${JSON.stringify(title)}`, `route: ${JSON.stringify(path)}`, `release: ${release}`, `snapshot: ${snapshotId}`, "---",
     "", `# ${title}`, "", summary, "", `[HTML directory](${path}) · [Coverage and source manifest](/catalog/${release}/manifest.json)`, "",
+    ...(modifiedCards.length ? ["[Memory-modified GPUs](#memory-modified)", ""] : []),
     ...markdownFields(fields),
-    ...[["GPU cards", "cards", profiles.cards], ...sections.map(([label, rows]) => [label, "machines", rows])]
-      .flatMap(([label, kind, rows]) => [
-        "", `## ${escapeMarkdown(label)} (${rows.length})`, "",
+    ...[...cardSections.map(([label, rows, anchor]) => [label, "cards", rows, anchor]), ...sections.map(([label, rows]) => [label, "machines", rows])]
+      .flatMap(([label, kind, rows, anchor]) => [
+        "", ...(anchor ? [`<a id="${anchor}"></a>`, ""] : []), `## ${escapeMarkdown(label)} (${rows.length})`, "",
         ...rows.map(row => `- [${escapeMarkdown(row.name)}](${href(kind, row.id, true)}) · \`${row.id}\` · ${escapeMarkdown(row.detail)}`),
       ]),
     "",

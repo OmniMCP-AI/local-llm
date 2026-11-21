@@ -14,6 +14,12 @@ const suggestions = {
     ["nvidia-geforce-rtx-4090", "nvidia-geforce-rtx-3090", "Same nominal capacity", "标称容量相同",
       "Both have 24 GB of nominal VRAM. Compare your workload on each generation and check the condition and warranty of the exact board.",
       "两者标称显存均为 24 GB。用你的工作负载比较两代显卡，并核对具体板卡的成色和保修。"],
+    ["nvidia-geforce-rtx-4090", "nvidia-geforce-rtx-4090-modified-48gb", "Stock and modified RTX 4090", "原厂与改装 RTX 4090",
+      "The stock card is rated at 24 GB. The seller lists 48 GB for the modified board. Runtime-usable capacity, operating limits and warranty depend on the exact board.",
+      "原厂显卡标称 24 GB，卖家标注改装板卡为 48 GB。实际可用显存、运行限制和保修取决于具体板卡。"],
+    ["nvidia-rtx-a6000", "nvidia-geforce-rtx-4090-modified-48gb", "Workstation and modified GeForce", "工作站显卡与改装 GeForce",
+      "The A6000 is rated at 48 GB with ECC. The modified RTX 4090 has a seller-listed capacity of 48 GB. Compare usable memory and stability with the same workload.",
+      "A6000 标称 48 GB 并支持 ECC，改装 RTX 4090 由卖家标注为 48 GB。请用相同工作负载比较可用显存与稳定性。"],
     ["amd-radeon-rx-7900-xtx", "nvidia-geforce-rtx-3090", "Runtime compatibility", "推理框架兼容性",
       "Both have 24 GB of nominal VRAM. Check the runtime, acceleration backend and driver support for the operating system you plan to use.",
       "两者标称显存均为 24 GB。确认目标操作系统支持所用推理框架、加速后端和驱动。"],
@@ -23,6 +29,9 @@ const suggestions = {
     ["nvidia-cmp-170hx-hynix", "nvidia-geforce-rtx-5060-ti-16gb", "Mining card vs. new GeForce", "矿卡与新款 GeForce",
       "The CMP entry contains a creator-reported modification. Verify actual installed and usable memory, display requirements, driver support, and board condition before relying on it.",
       "CMP 记录包含创作者报告的改装。选购前请核对实际安装及可用显存、显示需求、驱动支持和板卡成色。"],
+    ["nvidia-cmp-170hx-hynix", "nvidia-cmp-170hx-modified-80gb", "Two CMP 170HX modifications", "两种 CMP 170HX 显存改装",
+      "The 64 GB claim comes from a creator report. The 80 GB result comes from researcher-tested boards. Check usable memory, driver support and stability for the exact board.",
+      "64 GB 容量来自创作者报告，80 GB 容量来自研究者的样品测试。请核对具体板卡的可用显存、驱动支持及稳定性。"],
     ["nvidia-geforce-rtx-2080-ti-original-11gb", "nvidia-geforce-rtx-5060-ti-16gb", "Older GeForce vs. current GeForce", "老款与现款 GeForce",
       "Check whether 11 GB covers your weights and context. Confirm your runtime and driver still support the older GPU and inspect the board if buying used.",
       "确认 11 GB 能否容纳模型权重和上下文。核对老款显卡的推理框架和驱动支持，购买二手板卡时检查成色。"],
@@ -80,7 +89,8 @@ export const battleEvidence = [
 
 export function battleRecords(catalog) {
   return {
-    cards: catalog.cards.map(({ id, name, memory, vendorSpec, variant, source }) => ({ id, name, memory, vendorSpec, variant, source })),
+    cards: catalog.cards.map(({ id, name, memory, modification, vendorSpec, variant, source }) =>
+      ({ id, name, memory, modification, vendorSpec, variant, source })),
     machines: catalog.machines
       .filter(({ kind }) => kind !== "Component reference" && kind !== "Manufacturer system reference")
       .map(({ id, name, kind, memory, bom, gpu, detail, documentedPower, interconnect, configuration, source, capture,
@@ -124,12 +134,27 @@ function cardRows(left, right) {
     return measurement(bandwidth, "GB/s", /^up to /i.test(value ?? "") ? "upper bound" : "rated");
   });
   const power = ratings.map(({ power }) => measurement(power, "W", "rated graphics power"));
+  const modified = (label, chinese, key, format = value => value, showWhenEmpty = false) => row(label, chinese,
+    ...products.map(({ modification }) => cell(
+      modification?.[key] != null ? format(modification[key]) : null, modification?.evidence[0].source)),
+    { showWhenEmpty });
+  const gb = value => `${value} GB`;
 
   return [
     row("Nominal VRAM", "标称显存", ...products.map(product => cell(
       bareNumber(fact(product, "Memory configuration", "Dedicated memory (GB)"), "GB"), factSource(product))),
     { factor: ratedDifference(...capacity, names, "more nominal VRAM", "的标称显存多") }),
     row("Memory reported by source", "来源报告的显存", ...products.map(product => cell(product.memory, product.source))),
+    ...(products.some(product => product.modification) ? [
+      modified("Stock capacity before modification", "改装前原始显存容量", "stockGb", gb),
+      modified("Reported modified capacity", "报告的改装显存容量", "capacityGb", gb, true),
+      modified("Modified capacity scope", "改装容量口径", "capacityScope"),
+      modified("Reported installed memory", "报告的已安装显存", "installedGb", gb),
+      modified("Reported tested framebuffer", "报告的实测帧缓冲容量", "validatedGb", gb),
+      modified("Runtime-usable VRAM", "推理框架可用显存", "usableGb", gb, true),
+      row("Modification evidence", "改装证据", ...products.map(({ modification }) => cell(
+        modification && [...new Set(modification.evidence.map(({ kind }) => kind))].join(" · "), modification?.evidence[0].source))),
+    ] : []),
     sourced("Aggregate module memory", "模块显存总量", ["Module memory (aggregate)"]),
     row("Rated memory bandwidth", "标称显存带宽", ...products.map(product =>
       cell(bareNumber(fact(product, "Memory bandwidth", "Memory bandwidth (GB/s)"), "GB/s"), factSource(product))),
@@ -217,7 +242,7 @@ export function battlePair(records, kind, leftId, rightId) {
   const right = records[kind].find(record => record.id === rightId);
   if (!left || !right) return null;
   const rows = (kind === "cards" ? cardRows(left, right) : machineRows(left, right))
-    .filter((entry, i) => i === 0 || entry.left || entry.right
+    .filter((entry, i) => i === 0 || entry.left || entry.right || entry.showWhenEmpty
       || (kind === "cards" && ["Rated memory bandwidth", "Rated graphics power", "Board length or dimensions"].includes(entry.label[0]))
       || (kind === "machines" && ["Rated unified memory bandwidth", "Documented power rating", "Processor", "Installed storage", "Interconnect"].includes(entry.label[0])));
   const suggestion = suggestions[kind].find(([a, b]) => (a === leftId && b === rightId) || (b === leftId && a === rightId));
@@ -241,12 +266,22 @@ export function battleHref(kind, pair, release) {
 export const battleScopeNote = ["Different specification scopes", "规格口径不同"];
 
 export function battleSources(pair, product, { release, prefix, interactive = true }) {
+  const modificationSources = new Map((product.modification?.evidence ?? [])
+    .map(({ kind, source }) => [https(source), kind]).filter(([href]) => href));
   return [
     ...(release ? [{ label: ["Exact catalog profile", "目录中的具体配置"], href: prefix + catalogPath(release, pair.kind, product.id) }] : []),
     ...[...new Set([https(product.vendorSpec?.source ?? product.source), https(product.capture ?? product.source)].filter(Boolean))]
+      .filter(href => !modificationSources.has(href))
       .map((href, index) => ({
-        label: index === 0 ? ["Specification source", "规格来源"] : ["Source record", "原始记录"], href,
+        label: index === 0 && !product.modification ? ["Specification source", "规格来源"] : ["Source record", "原始记录"], href,
       })),
+    ...[...modificationSources].map(([href, kind]) => ({ href, label: [kind, {
+      "Seller listing": "卖家商品页",
+      "Seller service": "卖家改装服务",
+      "Creator report": "创作者报告",
+      "Lab demonstration": "实验演示",
+      "Technician report": "维修技师报告",
+    }[kind] ?? kind] })),
     ...(interactive && topologyRevisionHref(product.topologyRevision) ? [{ label: ["Topology revision", "拓扑版本"], href: topologyRevisionHref(product.topologyRevision, prefix === "/" ? "/" : "") }] : []),
   ];
 }

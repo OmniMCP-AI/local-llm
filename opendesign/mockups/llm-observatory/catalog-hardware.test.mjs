@@ -19,7 +19,8 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 124);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
-  assert.equal(manifest.coverage.cards, 156);
+  assert.equal(manifest.coverage.cards, catalog.cards.length);
+  assert.equal(catalog.cards.filter(card => !card.modification || card.relatedProfiles.length).length, 156);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 149);
   assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 127);
   assert.equal(manifest.coverage.cardsWithProductImageLinks, 84);
