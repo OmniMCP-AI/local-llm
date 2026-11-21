@@ -15,13 +15,15 @@ from .retest import evidence_origin
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Watch the official llama.cpp release feed")
+    parser = argparse.ArgumentParser(description="Watch official runtime release feeds")
     storage = parser.add_mutually_exclusive_group(required=True)
     storage.add_argument("--db", type=Path, help="Local SQLite history file")
     storage.add_argument("--postgres", action="store_true", help="PostgreSQL history using FASTEST_DATABASE_URL")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("migrate", help="Initialize PostgreSQL watcher storage")
     refresh = commands.add_parser("refresh")
+    refresh.add_argument("--source", choices=(*feed.SOURCES, "all"), default=feed.RUNTIME,
+                         help="Choose a runtime feed or all live feeds (default: llama.cpp)")
     refresh.add_argument("--fixture", type=Path)
     refresh.add_argument("--observed-at", help="UTC observation time for fixture replay")
     report = commands.add_parser("report")
@@ -51,21 +53,30 @@ def main():
             record = postgres.record if postgres else partial(store.record, args.db)
             if bool(args.fixture) != bool(args.observed_at):
                 raise ValueError("--fixture and --observed-at must be supplied together")
-            observed_at = args.observed_at or feed.utc_now()
-            feed.timestamp(observed_at)
+            if args.fixture and args.source == "all":
+                raise ValueError("Fixture replay requires one source")
             mode = "fixture" if args.fixture else "live"
-            try:
-                if args.fixture:
-                    with args.fixture.open("rb") as fixture:
-                        body = fixture.read(feed.MAX_BYTES + 1)
+            token = os.environ.get("FASTEST_RELEASE_WATCH_GITHUB_TOKEN")
+            runtime_ids = feed.SOURCES if args.source == "all" else (args.source,)
+            failures = []
+            for runtime_id in runtime_ids:
+                observed_at = args.observed_at or feed.utc_now()
+                feed.timestamp(observed_at)
+                try:
+                    if args.fixture:
+                        with args.fixture.open("rb") as fixture:
+                            body = fixture.read(feed.MAX_BYTES + 1)
+                    else:
+                        body = feed.fetch(token, runtime_id=runtime_id)
+                    releases = feed.decode(body, runtime_id=runtime_id)
+                except (OSError, ValueError) as error:
+                    message = "Could not read the fixture" if isinstance(error, OSError) else str(error)
+                    record(mode, observed_at, error=message, runtime_id=runtime_id)
+                    failures.append(f"{runtime_id}: {message}")
                 else:
-                    body = feed.fetch(os.environ.get("FASTEST_RELEASE_WATCH_GITHUB_TOKEN"))
-                releases = feed.decode(body)
-            except (OSError, ValueError) as error:
-                message = "Could not read the fixture" if isinstance(error, OSError) else str(error)
-                record(mode, observed_at, error=message)
-                raise
-            record(mode, observed_at, releases)
+                    record(mode, observed_at, releases, runtime_id=runtime_id)
+            if failures:
+                raise ValueError("\n".join(failures))
     except (ReleaseError, TimeoutExpired):
         parser.exit(1, "Release watch: Could not read the approved benchmark release\n")
     except (OSError, ValueError, sqlite3.Error, WatchStorageError) as error:

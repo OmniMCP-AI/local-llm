@@ -232,7 +232,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     if store is not None else ""
                 )
                 watch_links = (
-                    '<p><a href="/runtime-releases">llama.cpp release watch</a> '
+                    '<p><a href="/runtime-releases">Runtime release watch</a> '
                     '<a href="/runtime-releases.md">Markdown</a> '
                     '<a href="/runtime-releases.json">JSON</a></p>'
                     if runtime_watch is not None else ""
@@ -274,7 +274,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
             format_name, content_type = RUNTIME_WATCH_ROUTES[path]
             try:
                 report = runtime_watch.snapshot(utc_now())
-                if report["source"]["mode"] == "fixture":
+                if any(source["mode"] == "fixture" for source in report["sources"].values()):
                     raise ValueError("Fixture histories are reserved for CLI review.")
                 report = apply_notes(report, runtime_watch_notes, store.read if store is not None else None)
             except (WatchStorageError, ReleaseError, TimeoutExpired, OSError, ValueError):
