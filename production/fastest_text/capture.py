@@ -78,19 +78,26 @@ def effective_placement(stderr, backends):
     }
 
 
-def placement_matches(cell, phase, placement, gpu_info):
+def device_placement_matches(cell, context_tokens, placement):
     device, gpu_names, gpu_buffers = PLACEMENTS[cell["id"]]
     devices = placement["devices"]
-    if (set(devices) != {device} or devices[device] not in gpu_names or gpu_info != devices[device]
-            or cell["backend"] not in placement["registered_backends"]):
-        return False
     buffers = placement["buffers_mib"]
     layers = placement["offloaded_layers"]
     return (
-        any("model" in buffers.get(name, {}) for name in gpu_buffers)
+        set(devices) == {device} and devices[device] in gpu_names
+        and any("model" in buffers.get(name, {}) for name in gpu_buffers)
         and {name for name, kinds in buffers.items() if "kv" in kinds} == {device}
         and len(layers) == 1 and layers[0][0] == layers[0][1] > 0
-        and phase["requested_context_tokens"] in placement["context_tokens"]
+        and context_tokens in placement["context_tokens"]
+    )
+
+
+def placement_matches(cell, phase, placement, gpu_info):
+    device = PLACEMENTS[cell["id"]][0]
+    return (
+        cell["backend"] in placement["registered_backends"]
+        and gpu_info == placement["devices"].get(device)
+        and device_placement_matches(cell, phase["requested_context_tokens"], placement)
     )
 
 

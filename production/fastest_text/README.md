@@ -49,6 +49,23 @@ Inspect `capture.json` for the verified build and artifact, phase outcomes and a
 
 An incomplete capture returns a nonzero status and keeps its evidence. Correct the blocker and use a new output directory for a retry. Keep the capture directory and build evidence private until reviewing the fields intended for release.
 
+## Capture private streaming latency
+
+The Chinese task has a separate latency protocol. On the same authorized quiet host, use the pinned b5163 `llama-server` binary and the same two verified shards. Use a short output path to fit the Unix socket path limit.
+
+```sh
+python3 -B -m fastest_text capture-latency /path/to/private/m4-latency-01 \
+  --cell apple-m4 --server /path/to/b5163/llama-server \
+  --model-dir /path/to/shards --host-revision m4-host-1 \
+  --build-evidence /path/to/private/m4-build.txt --quiet-host
+```
+
+For `--cell rtx-4090`, set the same single-device `CUDA_VISIBLE_DEVICES` mask as for the fixed-token run. The command launches one private server on an owned Unix socket, resolves the embedded chat template through `/apply-template`, then sends the resulting prompt to native `/completion`. It uses greedy decoding with a 256-token cap and records the actual prompt and output token counts reported by the server. It checks for a full accelerator offload, clears slot 0 before each request and disables prefix reuse. One warmup precedes the single timed request. Model loading, template resolution, the warmup and KV resets occur outside the timing boundary.
+
+Time starts immediately before submitting the request. TTFT ends when the client receives a complete SSE event containing the token ID for generated ordinal 1. b5163 can buffer partial UTF-8 before emitting it, so a stream whose first emitted ordinal is higher has no TTFT sample. The first visible answer measurement ends at the first complete frame with printable non-whitespace answer text, before any browser rendering. The HTTP header and control frames supply no token timings. A complete request can yield either, both, or neither measurement. A timeout or missing terminal event can retain observed timestamps but yields zero eligible samples. [Pinned sampling and stream serializer](https://github.com/ggml-org/llama.cpp/blob/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/server/server.cpp)
+
+The private directory keeps `latency.json`, the byte-exact request, raw received SSE lines, the effective template input, startup and runtime verification logs, and SHA-256 hashes. A complete, nonempty answer also produces `response.json` for the existing `review-packet` command. The quality judgment still requires independent reviewers. This operator capture leaves the fixed-token phases, publication workflow and current public results as recorded.
+
 ## Review and ingest runner evidence
 
 Keep the original logs and output under the applicable access rights. Check the reported build commit, each shard digest, the fixed lengths and the runtime settings before reviewing records. Confirm the actual device placement in the run logs. The runner can show timings despite runtime errors, so check stderr before treating timing entries as successful. Record OS, driver, hardware configuration, device placement, backend and binary provenance. Retain incomplete phases as such. When a process stops before producing valid output, capture any identifiable timed failure with its phase, ordinal and reason. The planned total is a target.
