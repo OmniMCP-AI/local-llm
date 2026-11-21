@@ -36,13 +36,19 @@ test("small and popular shelves preserve dated Hub ranks and resolvable reposito
   }
 });
 
-test("recent publisher records are discoverable by their exact ID and source tags", async () => {
+test("recent publisher records supplement existing repositories without duplicating search or changing ranks", async () => {
   const { source, discovery, supplementalModels } = await readCatalogModelFiles(fileURLToPath(new URL(".", import.meta.url)));
   const { all, recent, popular, small } = modelCollections(source.models, discovery, supplementalModels);
-  assert.equal(all.length, 19_195);
+  assert.equal(all.length, 19_196);
   assert.deepEqual(recent.map(({ id }) => id), [
     "thinkingmachines/Inkling-2-Mini", "thinkingmachines/Inkling-2-Small", "moonshotai/Kimi-K3.1-Pro",
+    "mistralai/Mistral-Large-4-1T-A52B", "ibm-granite/granite-4.2-3b",
   ]);
+  const graniteId = "ibm-granite/granite-4.2-3b";
+  const graniteMatches = queryModelCatalog(all, identities, { query: graniteId, tag: "3.7B parameters" });
+  const granite = graniteMatches.rows.filter(({ id }) => id === graniteId);
+  assert.equal(granite.length, 1);
+  assert.equal(granite[0].supplemental.revision, "4e9c275e232f10211ec88644d106a1f6a1b60e06");
   assert.deepEqual(popular.map(({ id }) => id), discovery.popular.map(({ id }) => id));
   assert.deepEqual(small.map(({ id }) => id), discovery.small.map(({ id }) => id));
   assert.deepEqual(queryModelCatalog(all, identities, {

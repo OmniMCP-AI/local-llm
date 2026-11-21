@@ -13,9 +13,21 @@ function byRepository(left, right) {
   return left.id < right.id ? -1 : 1;
 }
 
+export function modelRepositoryMap(upstream, supplemental) {
+  const byId = new Map(upstream.map(row => [row.id, row]));
+  if (byId.size !== upstream.length) throw new Error("Duplicate upstream model repository");
+  for (const row of supplemental) {
+    if (byId.get(row.id)?.supplemental || byId.has(row.id) !== (row.supplemental.inUpstream === true)) {
+      throw new Error("Invalid or duplicate model supplement: " + row.id);
+    }
+    byId.set(row.id, row);
+  }
+  return byId;
+}
+
 export function modelCollections(upstream, discovery, supplemental) {
-  const all = [...upstream, ...supplemental];
-  const byId = new Map(all.map(row => [row.id, row]));
+  const byId = modelRepositoryMap(upstream, supplemental);
+  const all = [...byId.values()];
   const ranked = rows => rows.map((row, index) => ({
     ...byId.get(row.id), discovery: { ...row, rank: index + 1 },
   }));

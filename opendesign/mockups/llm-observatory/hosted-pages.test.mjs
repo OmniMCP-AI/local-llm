@@ -295,7 +295,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   const manifest = JSON.parse(await readFile(join(output, "catalog", release, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, snapshotId);
   assert.equal(manifest.coverage.publishedRows, 19_192);
-  assert.equal(manifest.supplement.repositories, 3);
+  assert.equal(manifest.supplement.repositories, 5);
+  assert.equal(manifest.supplement.publisherResults, 3);
   assert.equal(manifest.discovery.popular, 300);
   assert.equal(manifest.discovery.small, 75);
   assert.equal(manifest.hardware.coverage.completeBuilds, 4);
@@ -384,7 +385,7 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.equal(modelSearch.results[0].markdown, `/catalog/${release}/models/${modelId}.md`);
 
     const firstModels = await (await get("/api/v1/catalog?kind=models&limit=2")).json();
-    assert.deepEqual(firstModels.pagination, { limit: 2, offset: 0, total: 19_195, nextOffset: 2 });
+    assert.deepEqual(firstModels.pagination, { limit: 2, offset: 0, total: 19_196, nextOffset: 2 });
     const nextModels = await (await get(`/api/v1/catalog?kind=models&revision=${firstModels.revision}&limit=2&offset=2`)).json();
     assert.equal(nextModels.results.length, 2);
     assert.ok(nextModels.results.every(next => firstModels.results.every(first => next.id !== first.id)));
@@ -423,6 +424,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
       ["models/moonshotai/Kimi-K3.1-Pro", /d9e99b0792a5e93b78ea9bea62a68167e36ddd9e\/LICENSE/],
       ["models/thinkingmachines/Inkling-2-Mini", /48\.2%/],
       ["models/thinkingmachines/Inkling-2-Small", /72\.1%/],
+      ["models/ibm-granite/granite-4.2-3b", /69\.71% pass@1/],
+      ["models/mistralai/Mistral-Large-4-1T-A52B", /1T total, 49B active per token/],
       ["models/Corianas/1.3b", /Family unavailable/],
       ["runtimes/llama.cpp", /No fastest\.ai compatibility test is published in this release/],
     ]) {
