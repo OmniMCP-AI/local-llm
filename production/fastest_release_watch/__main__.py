@@ -8,7 +8,7 @@ from subprocess import TimeoutExpired
 from fastest_release import ReleaseError, ReleaseStore
 
 from . import feed, store
-from .applicability import apply_notes
+from .applicability import apply_notes, read_notes_file
 from .postgres import PostgresStore, WatchStorageError
 from .render import render
 from .retest import evidence_origin
@@ -22,6 +22,8 @@ def main():
     storage.add_argument("--postgres", action="store_true", help="PostgreSQL history using FASTEST_DATABASE_URL")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("migrate", help="Initialize PostgreSQL watcher storage")
+    ingest_notes = commands.add_parser("ingest-notes", help="Store a reviewed applicability revision in PostgreSQL")
+    ingest_notes.add_argument("--notes", type=Path, required=True, help="Reviewed applicability JSON")
     refresh = commands.add_parser("refresh")
     refresh.add_argument("--source", choices=(*feed.SOURCES, "all"), default=feed.RUNTIME,
                          help="Choose a runtime feed or all live feeds (default: llama.cpp)")
@@ -29,13 +31,21 @@ def main():
     refresh.add_argument("--observed-at", help="UTC observation time for fixture replay")
     report = commands.add_parser("report")
     report.add_argument("--as-of", default=feed.utc_now(), help="UTC time for the freshness check")
-    report.add_argument("--notes", type=Path, help="Authored applicability JSON")
     report.add_argument("--format", choices=("json", "html", "markdown"), default="json")
     report.add_argument("--evidence-origin", type=evidence_origin, help="HTTPS origin for approved benchmark links")
     review = commands.add_parser("review", help="Show exact tracked configurations due for release review")
-    review.add_argument("--notes", type=Path, required=True, help="Authored applicability JSON")
     review.add_argument("--as-of", default=feed.utc_now(), help="UTC time for the freshness check")
+    for reader in (report, review):
+        notes = reader.add_mutually_exclusive_group(required=reader is review)
+        notes.add_argument("--notes", type=Path, help="Authored applicability JSON")
+        notes.add_argument("--notes-revision", help="Pinned PostgreSQL applicability digest")
     args = parser.parse_args()
+
+    if not args.postgres:
+        if args.command in ("migrate", "ingest-notes"):
+            parser.error(f"{args.command} requires --postgres")
+        if args.command in ("report", "review") and args.notes_revision is not None:
+            parser.error("--notes-revision requires --postgres")
 
     try:
         database_url = os.environ.get("FASTEST_DATABASE_URL")
@@ -44,18 +54,22 @@ def main():
         postgres = PostgresStore(database_url) if args.postgres else None
 
         if args.command == "migrate":
-            if postgres is None:
-                parser.error("migrate requires --postgres")
             postgres.migrate()
+        elif args.command == "ingest-notes":
+            print(postgres.ingest_notes(read_notes_file(args.notes)))
         elif args.command in ("report", "review"):
             feed.timestamp(args.as_of)
             read_release = ReleaseStore(database_url).read if database_url else None
             history = postgres.snapshot(args.as_of) if postgres else store.snapshot(args.db, args.as_of)
+            document = (
+                postgres.read_notes(args.notes_revision) if args.notes_revision is not None
+                else read_notes_file(args.notes)
+            )
             if args.command == "review":
-                reviewed = apply_notes(history, args.notes, read_release, include_review_lines=True)
+                reviewed = apply_notes(history, document, read_release, include_review_lines=True)
                 print(render(review_snapshot(reviewed), "json"))
             else:
-                report = apply_notes(history, args.notes, read_release, args.evidence_origin or "")
+                report = apply_notes(history, document, read_release, args.evidence_origin or "")
                 print(render(report, args.format))
         else:
             record = postgres.record if postgres else partial(store.record, args.db)

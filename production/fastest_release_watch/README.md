@@ -38,10 +38,9 @@ python3 -B -m fastest_release_watch --postgres report
 ```
 
 The migration creates or upgrades the `fastest_release_watch` schema and
-preserves existing llama.cpp history. Reports can use a
-read-only login with `USAGE` on the schema and `SELECT` on `source_status` and
-`release_revision`. Use separate databases for PostgreSQL fixture replays and
-live refreshes.
+preserves existing runtime release history. Reports can use the same
+[read-only grants as the release origin](#serve-the-watch). Use separate
+databases for PostgreSQL fixture replays and live refreshes.
 
 Choose a single feed with `--source llama.cpp`, `--source sglang`,
 `--source vllm` or `--source ollama`. The original `refresh` command without
@@ -93,7 +92,11 @@ The example role is `fastest_reader`.
 GRANT USAGE ON SCHEMA fastest_release_watch TO fastest_reader;
 GRANT SELECT ON fastest_release_watch.source_status,
     fastest_release_watch.release_revision TO fastest_reader;
+GRANT EXECUTE ON FUNCTION fastest_release_watch.read_applicability(text) TO fastest_reader;
 ```
+
+The function grant is needed when serving a notes revision. A verified note
+also uses the origin's existing `fastest_release.read_release(uuid)` grant.
 
 From `production/`, start the release origin with the reader connection.
 
@@ -112,18 +115,27 @@ for official feeds with a successful capture. Links on `/wiki/runtimes/`
 and `/wiki/runtimes.md` lead to the matching watch format.
 
 For an origin container, append `--runtime-release-watch` to the deployment
-command. To include reviewed mappings, mount the approval JSON read-only and
-pass `--runtime-release-watch-notes /path/to/reviewed-applicability.json`. The
-origin rereads that file and checks the permissions of cited benchmark
-releases on each request. [Deploy the release origin](../README.md#deploy-the-release-origin)
+command. To include a reviewed PostgreSQL revision, pass its exact digest.
+
+```sh
+FASTEST_DATABASE_URL='service=fastest-reader' \
+  python3 -B -m fastest_release serve --runtime-release-watch \
+    --runtime-release-watch-notes-revision "$NOTES_REVISION"
+```
+
+For existing file-backed deployments, mount the approval JSON read-only and
+pass `--runtime-release-watch-notes /path/to/reviewed-applicability.json` as the
+notes source. The origin reads the configured revision or file and checks the
+permissions of cited benchmark releases on each request.
+[Deploy the release origin](../README.md#deploy-the-release-origin)
 
 The three views use the same stored release history. An upstream refresh
 failure leaves the last successful data and timestamp visible alongside the
 latest error. A missing or stale refresh is shown in all three views.
 Fixture histories are available through the CLI reporter for review.
-An unavailable database or an ineligible configured note yields a 503 in
-the requested format. Keep the origin's `Cache-Control: no-store` header
-through the proxy.
+An unavailable database, unknown applicability revision or ineligible
+configured note yields a 503 in the requested format. Keep the origin's
+`Cache-Control: no-store` header through the proxy.
 
 ## Add reviewed applicability
 
@@ -158,6 +170,28 @@ baseline. The report links the separate baseline and tuned records. The
 benchmark service provides their measurements and handles withdrawal. Re-render
 or remove distributed review copies after an evidence withdrawal.
 
+### Store the reviewed document in PostgreSQL
+
+From `production/`, use the watcher schema owner login after the migration and
+after the cited runtime revisions and benchmark releases are available.
+
+```sh
+NOTES_REVISION=$(FASTEST_DATABASE_URL='service=fastest-publisher' \
+  python3 -B -m fastest_release_watch --postgres ingest-notes \
+    --notes /path/to/reviewed-applicability.json)
+
+FASTEST_DATABASE_URL='service=fastest-reader' \
+  python3 -B -m fastest_release_watch --postgres report --notes-revision "$NOTES_REVISION"
+```
+
+The import checks the notes, tracked review lines and any matched retests
+before writing. It retains the reviewed JSON under the SHA-256 digest of its
+UTF-8 JSON with sorted keys and compact separators. Reimporting the same
+document with different whitespace or object key order yields the same digest.
+Changed contents create another revision. Select its digest explicitly in
+reports, reviews and the origin configuration. Reports without a selection
+contain only feed history.
+
 ## Review a runtime update
 
 To track an exact configuration across releases, add a stable `review_line`
@@ -169,11 +203,15 @@ OS, backend, arguments, workload or model artifact needs its own reviewed
 history. The build SHA can advance when a reviewer records a new observation.
 
 After refreshing the feed, run this read-only command from `production/` using
-the same applicability document and PostgreSQL history.
+the pinned notes and PostgreSQL history.
 
 ```sh
-python3 -B -m fastest_release_watch --postgres review --notes /path/to/reviewed-applicability.json
+FASTEST_DATABASE_URL='service=fastest-reader' \
+  python3 -B -m fastest_release_watch --postgres review --notes-revision "$NOTES_REVISION"
 ```
+
+The CLI also accepts `--notes /path/to/reviewed-applicability.json` for
+file-backed reports and reviews.
 
 The JSON shows each tracked line whose runtime's latest revision is newer
 than a prior authored note in the same release lane. A note pinned to a stable

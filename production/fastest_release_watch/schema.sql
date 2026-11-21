@@ -28,6 +28,42 @@ CREATE TABLE IF NOT EXISTS fastest_release_watch.release_revision (
     document jsonb NOT NULL CHECK (jsonb_typeof(document) = 'object')
 );
 
+CREATE TABLE IF NOT EXISTS fastest_release_watch.applicability_revision (
+    revision_id text PRIMARY KEY CHECK (revision_id ~ '^[a-f0-9]{64}$'),
+    document jsonb NOT NULL CHECK (
+        jsonb_typeof(document) = 'object' AND document ? 'notes'
+        AND jsonb_typeof(document->'notes') = 'array'
+    )
+);
+REVOKE ALL ON TABLE fastest_release_watch.applicability_revision FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION fastest_release_watch.ingest_applicability(input_document text)
+RETURNS text LANGUAGE plpgsql SET search_path = pg_catalog AS $$
+DECLARE
+    input_revision text := encode(sha256(convert_to(input_document, 'UTF8')), 'hex');
+    notes jsonb := input_document::jsonb;
+BEGIN
+    INSERT INTO fastest_release_watch.applicability_revision (revision_id, document)
+    VALUES (input_revision, notes)
+    ON CONFLICT (revision_id) DO NOTHING;
+
+    IF NOT EXISTS (
+        SELECT FROM fastest_release_watch.applicability_revision
+        WHERE revision_id = input_revision AND document = notes
+    ) THEN
+        RAISE EXCEPTION 'Applicability revision has different content';
+    END IF;
+    RETURN input_revision;
+END;
+$$;
+REVOKE ALL ON FUNCTION fastest_release_watch.ingest_applicability(text) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION fastest_release_watch.read_applicability(requested text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog AS $$
+    SELECT document FROM fastest_release_watch.applicability_revision WHERE revision_id = requested;
+$$;
+REVOKE ALL ON FUNCTION fastest_release_watch.read_applicability(text) FROM PUBLIC;
+
 CREATE OR REPLACE FUNCTION fastest_release_watch.record_refresh(
     runtime text, source_mode text, captured_at timestamptz, revisions jsonb, refresh_error text
 )

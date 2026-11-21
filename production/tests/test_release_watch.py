@@ -242,6 +242,7 @@ class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         for option, expected in (
             (["--runtime-release-watch"], "requires FASTEST_DATABASE_URL or --database-url"),
             (["--runtime-release-watch-notes", "reviewed.json"], "requires --runtime-release-watch"),
+            (["--runtime-release-watch-notes-revision", "0" * 64], "requires --runtime-release-watch"),
         ):
             with self.subTest(option=option):
                 result = subprocess.run(
@@ -450,6 +451,61 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         note = json.loads((PRODUCTION / "fixtures/release-watch/applicability.json").read_text())["notes"][0]
         revision = self.report()["releases"][0]["revision_id"]
         return {**note, "revision_id": revision, "review_line": "cuda-offload", "status": "upstream_documented"}
+
+    def test_ingested_applicability_is_explicitly_pinned_and_preserves_review_identity(self):
+        self.prepare_history()
+        original = github_release(100, "fixture-b100", DAY_ONE)
+        self.refresh([original], DAY_ONE)
+        note = self.tracked_note()
+        self.refresh([github_release(101, "fixture-b101", DAY_TWO), original], DAY_TWO)
+        file_review = self.review(note)
+        self.assertEqual(len(file_review["reviews"]), 1)
+        path = self.directory / "tracked.json"
+
+        invalid = {**note, "configuration": {**note["configuration"], "build_sha": "short"}}
+        path.write_text(json.dumps({"notes": [invalid]}), encoding="utf-8")
+        rejected = self.invoke("ingest-notes", "--notes", path)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("full lowercase Git commit SHA", rejected.stderr)
+        self.assertEqual(rejected.stdout, "")
+        self.assertNotIn(str(path), rejected.stderr)
+
+        path.write_text(json.dumps({"notes": [note]}), encoding="utf-8")
+        first = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        pin = first.stdout.strip()
+        self.assertRegex(pin, r"^[a-f0-9]{64}$")
+        path.write_text(json.dumps({"notes": [note]}, sort_keys=True, indent=2), encoding="utf-8")
+        second = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(second.stdout, first.stdout)
+
+        file_report = self.report(DAY_TWO, "--notes", path)
+        self.assertTrue(any(release["applicability"] for release in file_report["releases"]))
+        self.assertTrue(all(not release["applicability"] for release in self.report()["releases"]))
+        self.assertNotIn(str(path), json.dumps(file_report))
+        path.unlink()
+
+        def read(command, revision):
+            return self.invoke(command, "--as-of", DAY_TWO, "--notes-revision", revision, read_only=True)
+
+        for command, expected in (("review", file_review), ("report", file_report)):
+            with self.subTest(command=command):
+                result = read(command, pin)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), expected)
+                unknown = read(command, "0" * 64)
+                self.assertNotEqual(unknown.returncode, 0)
+                self.assertIn("Unknown applicability revision", unknown.stderr)
+                self.assertEqual(unknown.stdout, "")
+
+        path.write_text(json.dumps({"notes": [{**note, "status": "unsupported"}]}), encoding="utf-8")
+        changed = self.invoke("ingest-notes", "--notes", path)
+        self.assertEqual(changed.returncode, 0, changed.stderr)
+        self.assertNotEqual(changed.stdout, first.stdout)
+        report = read("report", pin)
+        self.assertEqual(report.returncode, 0, report.stderr)
+        self.assertEqual(json.loads(report.stdout), file_report)
 
     def test_review_flags_changed_official_revision_for_an_exact_tracked_line(self):
         self.prepare_history()
@@ -745,24 +801,71 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         note["retest"] = {"baseline_release_id": baseline_id, "tuned_release_id": tuned_id}
         notes = self.directory / "reviewed.json"
         notes.write_text(json.dumps({"notes": [note]}))
+        ingested = self.invoke("ingest-notes", "--notes", notes)
+        self.assertEqual(ingested.returncode, 0, ingested.stderr)
+        pin = ingested.stdout.strip()
 
-        reader_url = self.database_url + " options='-c default_transaction_read_only=on'"
-        with api_client(ReleaseStore(reader_url), runtime_watch=PostgresStore(reader_url),
-                        runtime_watch_notes=notes) as request:
-            for path in ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json"):
+        role = f"reader_{uuid4().hex}"
+        subprocess.run(
+            ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input=f"""
+                CREATE ROLE {role} LOGIN;
+                GRANT USAGE ON SCHEMA fastest_release, fastest_release_watch TO {role};
+                GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid) TO {role};
+                GRANT EXECUTE ON FUNCTION fastest_release_watch.read_applicability(text) TO {role};
+                GRANT SELECT ON fastest_release_watch.source_status, fastest_release_watch.release_revision TO {role};
+            """,
+            check=True, capture_output=True, text=True, timeout=15,
+        )
+        reader_url = self.database_url + f" user={role}"
+        reader_store = ReleaseStore(reader_url)
+        reader_watch = PostgresStore(reader_url)
+        paths = ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json")
+        denied = subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--postgres", "ingest-notes", "--notes", notes],
+            cwd=PRODUCTION, env={**os.environ, "FASTEST_DATABASE_URL": reader_url},
+            capture_output=True, text=True, timeout=15,
+        )
+        self.assertNotEqual(denied.returncode, 0)
+        self.assertEqual(denied.stdout, "")
+
+        with (
+            api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes=notes) as from_file,
+            api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes_revision=pin) as from_postgres,
+        ):
+            for path in paths:
                 with self.subTest(path=path):
-                    status, _, body = request(path, decode=False)
+                    status, headers, body = from_postgres(path, decode=False)
                     self.assertEqual(status, 200)
+                    self.assertEqual(headers["Cache-Control"], "no-store")
+                    file_status, _, file_body = from_file(path, decode=False)
+                    self.assertEqual(file_status, 200)
+                    if path.endswith(".json"):
+                        self.assertEqual(json.loads(file_body), json.loads(body))
+                    else:
+                        self.assertEqual(file_body, body)
                     self.assertIn("550.120", body)
                     self.assertIn(f"https://github.com/vllm-project/vllm/commit/{config['build_sha']}", body)
                     self.assertIn(f"/releases/{baseline_id}/benchmark.html", body)
                     self.assertIn(f"/releases/{tuned_id}/benchmark.html", body)
+                    self.assertNotIn(str(notes), body)
 
             publisher.withdraw(tuned["evidence_id"], "Private fixture withdrawal reason")
-            for path in ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json"):
+            for path in paths:
                 with self.subTest(path=path):
-                    status, headers, body = request(path, decode=False)
+                    status, headers, body = from_postgres(path, decode=False)
                     self.assertEqual(status, 503)
+                    self.assertEqual(from_file(path, decode=False)[0], 503)
                     self.assertEqual(headers["Cache-Control"], "no-store")
                     self.assertNotIn(tuned_id, body)
                     self.assertNotIn("Private fixture withdrawal reason", body)
+
+        for command in ("report", "review"):
+            result = self.invoke(command, "--notes-revision", pin, read_only=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Retest must cite a published measured release", result.stderr)
+            self.assertEqual(result.stdout, "")
+        with api_client(reader_store, runtime_watch=reader_watch, runtime_watch_notes_revision="0" * 64) as request:
+            status, _, body = request("/runtime-releases.json")
+            self.assertEqual(status, 503)
+            self.assertEqual(body, {"error": "Runtime release watch unavailable."})

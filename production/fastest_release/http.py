@@ -23,9 +23,9 @@ from fastest_image import IMAGE_PILOT_ROUTE
 from fastest_image.__main__ import report_artifacts as image_report_artifacts
 from fastest_pilot_bundle import bundle_manifest, digest
 from fastest_prices import PriceError, PriceReleaseNotFound
-from fastest_release_watch.applicability import apply_notes
+from fastest_release_watch.applicability import apply_notes, read_notes_file
 from fastest_release_watch.feed import utc_now
-from fastest_release_watch.postgres import WatchStorageError
+from fastest_release_watch.postgres import NOTES_REVISION, WatchStorageError
 from fastest_release_watch.render import render as render_runtime_watch
 from fastest_text import TEXT_PILOT_ROUTE
 
@@ -94,8 +94,14 @@ def render_contributor_receipt(revisions):
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
                 scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None,
-                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None, pilot_engagement=None):
+                cost_tariff_references=None, runtime_watch=None, runtime_watch_notes=None,
+                runtime_watch_notes_revision=None, pilot_engagement=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
+    if runtime_watch_notes_revision is not None and (
+        runtime_watch is None or runtime_watch_notes is not None
+        or not NOTES_REVISION.fullmatch(runtime_watch_notes_revision)
+    ):
+        raise ValueError("A pinned applicability digest requires the PostgreSQL runtime watch as the only notes source.")
     if pilot_engagement is not None and store is None:
         raise ValueError("Pilot engagement requires a release reader.")
     if contributor_receipts and store is None:
@@ -322,7 +328,11 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 report = runtime_watch.snapshot(utc_now())
                 if any(source["mode"] == "fixture" for source in report["sources"].values()):
                     raise ValueError("Fixture histories are reserved for CLI review.")
-                report = apply_notes(report, runtime_watch_notes, store.read if store is not None else None)
+                document = (
+                    runtime_watch.read_notes(runtime_watch_notes_revision) if runtime_watch_notes_revision is not None
+                    else read_notes_file(runtime_watch_notes)
+                )
+                report = apply_notes(report, document, store.read if store is not None else None)
             except (WatchStorageError, ReleaseError, TimeoutExpired, OSError, ValueError):
                 logging.warning("Cannot read the runtime release watch")
                 report = {"error": "Runtime release watch unavailable."}

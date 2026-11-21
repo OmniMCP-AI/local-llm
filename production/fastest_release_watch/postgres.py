@@ -1,11 +1,18 @@
+from hashlib import sha256
 import json
 from pathlib import Path
+import re
 from subprocess import TimeoutExpired
 
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
-from .feed import RUNTIME, SOURCES, json_text
+from .applicability import apply_notes
+from .feed import RUNTIME, SOURCES, json_text, utc_now
+from .review import review_snapshot
 from .store import MODE_ERROR, build_snapshot
+
+
+NOTES_REVISION = re.compile(r"[a-f0-9]{64}")
 
 
 class WatchStorageError(RuntimeError):
@@ -26,6 +33,25 @@ class PostgresStore:
 
     def migrate(self):
         self._query(Path(__file__).with_name("schema.sql").read_text(encoding="utf-8"))
+
+    def ingest_notes(self, document):
+        reviewed = apply_notes(
+            self.snapshot(utc_now()), document, self._postgres.read, include_review_lines=True,
+        )
+        review_snapshot(reviewed)
+        payload = _sql_text(json_text(document))
+        return self._query(f"SELECT fastest_release_watch.ingest_applicability({payload});")
+
+    def read_notes(self, revision):
+        if not NOTES_REVISION.fullmatch(revision):
+            raise ValueError("Expected a lowercase SHA-256 applicability revision")
+        result = self._query(f"SELECT fastest_release_watch.read_applicability({_sql_text(revision)});")
+        if not result:
+            raise ValueError("Unknown applicability revision")
+        document = json.loads(result)
+        if sha256(json_text(document).encode("utf-8")).hexdigest() != revision:
+            raise WatchStorageError("Stored applicability does not match its revision")
+        return document
 
     def record(self, mode, observed_at, releases=(), error=None, *, runtime_id=RUNTIME):
         releases = list(releases)
