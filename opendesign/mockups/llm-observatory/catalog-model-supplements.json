@@ -1,0 +1,40 @@
+{
+  "capturedAt": "2026-11-21",
+  "models": [
+    {
+      "id": "thinkingmachines/Inkling-2-Mini",
+      "revision": "ed40e7da625f594fc9c4990f5f66be24873c22d7",
+      "revisionDate": "2026-11-20",
+      "cardSha256": "02f4cd9085aebde693ba95bfefca487eb6c098fccce6fe826fd8e90dfac56034",
+      "license": "apache-2.0",
+      "task": "Image and text to text",
+      "parameters": "26.4B total, 3.4B active. The publisher reports 5.4B effective active parameters per token with three passes through the looped layers.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    },
+    {
+      "id": "thinkingmachines/Inkling-2-Small",
+      "revision": "885d78bfca61a7e9a498e33cfa7ad35850533b8c",
+      "revisionDate": "2026-11-20",
+      "cardSha256": "1512f8d8ffe1a8622d0f487a9817e8f4c776bfb56a335fc4d6029670b5697723",
+      "license": "apache-2.0",
+      "task": "Image and text to text",
+      "parameters": "594B total, 17B active.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    },
+    {
+      "id": "moonshotai/Kimi-K3.1-Pro",
+      "revision": "d9e99b0792a5e93b78ea9bea62a68167e36ddd9e",
+      "revisionDate": "2026-11-05",
+      "cardSha256": "5daa13793292c65cf198b2f4997c69a21378a1688c40c8b3dbdf48a27dd15085",
+      "license": "kimi-k3.1-pro",
+      "licenseName": "Kimi K3.1-Pro License",
+      "licenseSha256": "da05c356f773d22a0e1c6de390f280304d7cee6eb56fa161aa789d30dedba63b",
+      "task": "Image and text to text",
+      "parameters": "2.8T total, 104B activated.",
+      "inputs": ["Text", "image"],
+      "outputs": ["Text"]
+    }
+  ]
+}

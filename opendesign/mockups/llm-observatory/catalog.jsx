@@ -4,7 +4,7 @@ import topics from "./catalog-topics.json";
 import { catalogPath } from "./catalog-paths.mjs";
 import { modelCard, renderCard } from "./catalog-card.mjs";
 import { CatalogCompare } from "./catalog-compare";
-import { modelTags, queryModelCatalog } from "./catalog-search.mjs";
+import { modelCollections, modelTags, queryModelCatalog } from "./catalog-search.mjs";
 import { useLocale } from "./locale";
 
 const pageSize = 30;
@@ -20,11 +20,8 @@ const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
 const machineKinds = ["Complete factory configuration", "Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
 const runtimeCategories = [...new Set(runtimes.map(row => row.category))].sort();
-const modelById = new Map(modelCatalog.models.map(row => [row.id, row]));
+const { byId: modelById, ...modelViews } = modelCollections(modelCatalog.models, discovery, __FASTEST_SUPPLEMENTAL_MODELS__);
 const modelStats = new Map([...discovery.popular, ...discovery.small].map(row => [row.id, row]));
-const rankedModels = Object.fromEntries(["popular", "small"].map(view => [view, discovery[view].map((row, index) => ({
-  ...modelById.get(row.id), discovery: { ...row, rank: index + 1 },
-}))]));
 
 const tabs = [
   {
@@ -40,10 +37,10 @@ const tabs = [
     descriptionZh: "浏览厂商完整出厂配置、部分配置、部件和整机资料，以及 llmfit 示例配置。",
   },
   {
-    key: "models", title: "Models", icon: List, rows: modelCatalog.models, scope: "Model metadata records",
+    key: "models", title: "Models", icon: List, rows: modelViews.all, scope: "Model metadata records",
     titleZh: "模型", scopeZh: "模型元数据",
-    description: "Search the pinned llmfit snapshot. The originating repositories are the source for model artifacts and their terms.",
-    descriptionZh: "搜索固定版本的 llmfit 目录。模型文件和使用条款请查阅原始仓库。",
+    description: "Search the pinned llmfit snapshot and reviewed publisher metadata. Original repositories provide model files and terms.",
+    descriptionZh: "搜索固定版本的 llmfit 目录和经过审核的发布方元数据。模型文件和使用条款请查阅原始仓库。",
   },
   {
     key: "runtimes", title: "Runtimes", icon: ArrowDownRight, rows: runtimes, scope: "Upstream runtime projects",
@@ -52,7 +49,7 @@ const tabs = [
     descriptionZh: "查看桌面应用、推理引擎、服务器与库的固定上游版本、格式与平台信息。",
   },
 ];
-const licenseTags = Array.from(new Set(modelCatalog.models.map(({ license }) => license).filter(Boolean))).sort();
+const licenseTags = Array.from(new Set(modelViews.all.map(({ license }) => license).filter(Boolean))).sort();
 const validKind = (kind) => tabs.some((tab) => tab.key === kind) ? kind : "cards";
 const sourceLabelsZh = {
   "Complete factory configuration": "完整出厂配置",
@@ -75,7 +72,7 @@ const sourceLabelsZh = {
   "Image to text": "图像转文本",
 };
 
-const taskAndFormatTags = Array.from(new Set(modelCatalog.models
+const taskAndFormatTags = Array.from(new Set(modelViews.all
   .flatMap((row) => modelTags(row, modelIdentities[row.id]))
   .filter((value) => !value.endsWith(" parameters")))).sort();
 const emptyFilters = { query: "", tag: "", license: "", page: 1, view: "popular" };
@@ -89,7 +86,7 @@ function modelFiltersFromLocation() {
     tag: params.get("tag") ?? "",
     license: params.get("license") ?? "",
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
-    view: view === "small" || view === "all" ? view : "popular",
+    view: Object.hasOwn(modelViews, view) ? view : "popular",
   };
 }
 
@@ -246,7 +243,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   }, [active]);
 
   const tab = tabs.find((entry) => entry.key === active);
-  const modelRows = rankedModels[view] ?? modelCatalog.models;
+  const modelRows = modelViews[view];
   const { rows, total: resultCount, pages, current, start } = useMemo(() => {
     if (tab.key === "models") return queryModelCatalog(modelRows, modelIdentities, { ...filters, ranked: view !== "all" });
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
@@ -340,11 +337,15 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           {[
             ["popular", t("Popular", "热门"), discovery.popular.length],
             ["small", t("Small · ≤4B", "小模型 · ≤40 亿参数"), discovery.small.length],
-            ["all", t("All models", "全部模型"), modelCatalog.models.length],
+            ...(modelViews.recent.length ? [["recent", t("Recent releases", "近期发布"), modelViews.recent.length]] : []),
+            ["all", t("All models", "全部模型"), modelViews.all.length],
           ].map(([id, title, count]) => <button key={id} className="catalog-tab" type="button" aria-pressed={view === id}
             onClick={() => updateFilters({ view: id }, true)}>{title}<span className="catalog-tab-count">{number.format(count)}</span></button>)}
         </div>
-        {view !== "all" && <p className="catalog-muted">
+        {view === "recent" && <p className="catalog-muted">
+          {t("Reviewed publisher records, newest repository revisions first.", "经过审核的发布方记录，按仓库版本日期从新到旧排列。")}
+        </p>}
+        {(view === "popular" || view === "small") && <p className="catalog-muted">
           {t("Ranked by Hugging Face Hub downloads. Text-generation repositories with documented SafeTensors size.", "按 Hugging Face Hub 下载量排序。仅包含 SafeTensors 参数量已记录的文本生成仓库。")}{" "}
           <SourceLink href={discovery.source}>{discovery.capturedAt.slice(0, 10)}</SourceLink>
         </p>}
@@ -420,6 +421,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
                   <span>{t("{count} parameters", "{count} 参数", { count: number.format(row.discovery.parameters) })}</span>
                   {row.discovery.gated && <span>{t("Access approval", "需要访问许可")}</span>}
                 </>}
+                {row.supplemental && <span>{t("Revision {date}", "版本日期 {date}", { date: row.supplemental.revisionDate })}</span>}
                 {modelTags(row, modelIdentities[row.id]).map((value) => <span key={value}>{t(value, sourceLabelsZh[value] ?? value)}</span>)}
                 {row.license && <span title={t("Model license metadata from the source catalog", "源目录中的模型许可证元数据")}>{row.license}</span>}
               </div> : <>{row.category && <small>{row.category}</small>}{formatSourceDetail(row, t)}</>}</td>

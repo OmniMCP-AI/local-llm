@@ -11,17 +11,63 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
+function readSupplement(bytes, source, identities, discovery) {
+  const { capturedAt, models } = JSON.parse(bytes);
+  const date = value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  if (!date(capturedAt) || !Array.isArray(models)) throw new Error("Invalid reviewed model supplement");
+  const usedIds = new Set([
+    ...source.models.map(row => row.id), ...Object.keys(identities),
+    ...[...discovery.popular, ...discovery.small].map(row => row.id),
+  ]);
+  const hasDigest = value => /^[a-f0-9]{64}$/.test(value);
+  const hasModalities = values => Array.isArray(values) && values.length > 0 &&
+    values.every(value => typeof value === "string" && value.trim());
+  const supplementalModels = models.map(({ id, revision, revisionDate, cardSha256, license, licenseName,
+    licenseSha256, parameters, inputs, outputs, task }) => {
+    const apache = license === "apache-2.0";
+    if (!modelIdPattern.test(id) || usedIds.has(id) || !/^[a-f0-9]{40}$/.test(revision) ||
+        !date(revisionDate) || revisionDate > capturedAt || !hasDigest(cardSha256) ||
+        !(apache || (license && licenseName && hasDigest(licenseSha256))) ||
+        typeof task !== "string" || !task.trim() || typeof parameters !== "string" || !parameters.trim() ||
+        !hasModalities(inputs) || !hasModalities(outputs)) {
+      throw new Error("Invalid or duplicate reviewed model repository: " + id);
+    }
+    usedIds.add(id);
+    const source = "https://huggingface.co/" + id;
+    const pinned = source + "/blob/" + revision;
+    return {
+      id, name: id, source, license, detail: task,
+      supplemental: {
+        capturedAt, revision, revisionDate, parameters, inputs, outputs,
+        cardUrl: pinned + "/README.md", cardSha256,
+        infoUrl: "https://huggingface.co/api/models/" + id + "/revision/" + revision,
+        licenseName: apache ? "Apache License 2.0" : licenseName,
+        licenseUrl: apache ? "https://www.apache.org/licenses/LICENSE-2.0" : pinned + "/LICENSE",
+        ...(!apache && { licenseSha256 }),
+      },
+    };
+  });
+  return {
+    supplement: { capturedAt, sha256: sha256(bytes), repositories: models.length, scope: "repository-metadata-only" },
+    supplementalModels,
+  };
+}
+
 export async function readCatalogModelFiles(directory) {
-  const [sourceBytes, identityBytes, discoveryBytes] = await Promise.all([
+  const [sourceBytes, identityBytes, discoveryBytes, supplementBytes] = await Promise.all([
     readFile(join(directory, "catalog-models.json")),
     readFile(join(directory, "catalog-identities.json")),
     readFile(join(directory, "model-discovery.json")),
+    readFile(join(directory, "catalog-model-supplements.json")),
   ]);
   const source = JSON.parse(sourceBytes);
   if (source.commit !== upstream.commit) throw new Error("Review the new catalog source and its SHA-256 before publishing");
+  const identities = JSON.parse(identityBytes);
+  const discovery = JSON.parse(discoveryBytes);
   return {
     sourceBytes, identityBytes, source,
-    identities: JSON.parse(identityBytes), discovery: JSON.parse(discoveryBytes),
+    identities, discovery, ...readSupplement(supplementBytes, source, identities, discovery),
     sourceManifest: {
       ...upstream, url: source.upstream, projectionSha256: sha256(sourceBytes),
       license: source.catalogLicense, licenseUrl: source.catalogLicenseUrl,
@@ -36,11 +82,13 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
     hardware ?? readHardwareCatalog(directory),
   ]);
   const runtimes = JSON.parse(runtimeBytes);
-  const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes, Buffer.from(hardwareSource.digest, "hex")]));
+  const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes,
+    Buffer.from(hardwareSource.digest, "hex"), ...(models.supplement ? [Buffer.from(models.supplement.sha256, "hex")] : [])]));
   return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
 }
 
-export function prepareCatalogRelease({ source, identities, discovery, sourceManifest, hardware, runtimes, digest, snapshotId, topologies }) {
+export function prepareCatalogRelease({ source, identities, discovery, sourceManifest, hardware, runtimes, digest,
+  snapshotId, topologies, supplement, supplementalModels = [] }) {
   const release = "v1-" + (snapshotId ?? digest).slice(0, 16);
   const shards = new Map();
   const ids = new Set();
@@ -55,7 +103,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     }
   }
 
-  for (const row of source.models) {
+  for (const row of [...source.models, ...supplementalModels]) {
     if (!modelIdPattern.test(row.id) || new URL(row.source).href !== "https://huggingface.co/" + row.id || ids.has(row.id)) {
       throw new Error("Invalid or duplicate published catalog identity: " + row.id);
     }
@@ -66,7 +114,7 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
       discovery: ranks.get(row.id), discoveryCapture: { capturedAt, source: rankingSource },
     }) });
   }
-  if (source.sourceRows !== ids.size + source.duplicateRows + source.rejectedRows) {
+  if (source.sourceRows !== source.models.length + source.duplicateRows + source.rejectedRows) {
     throw new Error("Model catalog counts do not reconcile");
   }
 
@@ -78,11 +126,12 @@ export function prepareCatalogRelease({ source, identities, discovery, sourceMan
     release,
     ...(snapshotId && { snapshotId, discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length } }),
     source: sourceManifest,
+    ...(supplement && { supplement }),
     hardware: hardware.manifest,
     artifactScope: "Selected upstream artifacts have individually pinned repository revisions and upstream digests. External benchmark caches are excluded.",
     coverage: {
       sourceRows: source.sourceRows,
-      publishedRows: ids.size,
+      publishedRows: source.models.length,
       duplicateRows: source.duplicateRows,
       rejectedRows: source.rejectedRows,
       withoutModelLicense: source.models.filter((row) => !row.license).length,

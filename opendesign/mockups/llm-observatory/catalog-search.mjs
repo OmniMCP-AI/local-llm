@@ -13,6 +13,17 @@ function byRepository(left, right) {
   return left.id < right.id ? -1 : 1;
 }
 
+export function modelCollections(upstream, discovery, supplemental) {
+  const all = [...upstream, ...supplemental];
+  const byId = new Map(all.map(row => [row.id, row]));
+  const ranked = rows => rows.map((row, index) => ({
+    ...byId.get(row.id), discovery: { ...row, rank: index + 1 },
+  }));
+  const recent = [...supplemental].sort((a, b) =>
+    b.supplemental.revisionDate.localeCompare(a.supplemental.revisionDate) || byRepository(a, b));
+  return { byId, all, recent, popular: ranked(discovery.popular), small: ranked(discovery.small) };
+}
+
 export function queryModelCatalog(rows, identities, { query = "", tag = "", license = "", page = 1, pageSize = 30, ranked = false } = {}) {
   const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const matched = rows.filter((row) => {

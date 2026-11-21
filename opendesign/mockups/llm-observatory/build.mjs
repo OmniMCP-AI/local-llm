@@ -189,6 +189,7 @@ const result = await build({
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
     __FASTEST_MODEL_CATALOG__: JSON.stringify(modelFiles.source),
+    __FASTEST_SUPPLEMENTAL_MODELS__: JSON.stringify(modelFiles.supplementalModels),
     __FASTEST_MODEL_IDENTITIES__: JSON.stringify(modelFiles.identities),
     __FASTEST_MODEL_DISCOVERY__: JSON.stringify(modelFiles.discovery),
     __FASTEST_RUNTIMES__: JSON.stringify(runtimes),

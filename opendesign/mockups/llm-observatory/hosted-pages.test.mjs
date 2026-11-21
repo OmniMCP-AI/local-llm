@@ -113,6 +113,7 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
   const manifest = JSON.parse(await readFile(join(output, "catalog", release, "manifest.json"), "utf8"));
   assert.equal(manifest.snapshotId, snapshotId);
   assert.equal(manifest.coverage.publishedRows, 19_192);
+  assert.equal(manifest.supplement.repositories, 3);
   assert.equal(manifest.discovery.popular, 300);
   assert.equal(manifest.discovery.small, 75);
   assert.equal(manifest.hardware.coverage.completeBuilds, 3);
@@ -166,6 +167,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     const home = await (await get("/")).text();
     assert.match(home, /Mac mini M4 from the pinned database snapshot/);
     assert.doesNotMatch(home, /Mac mini M4 from the newer database snapshot/);
+    assert.match(home, /Recent releases/);
+    assert.match(home, /thinkingmachines\/Inkling-2-Mini/);
     const machines = await (await get(`/catalog-data/${release}/machines.json`)).json();
     assert.match(machines.find(({ id }) => id === machineId).name, /pinned database snapshot/);
     assert.equal(machines.find(({ id }) => id === machineId).topologyRevision, undefined);
@@ -183,6 +186,7 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     for (const [path, expected] of [
       [`machines/${machineId}`, /Mac mini M4 from the pinned database snapshot/],
       [`models/${modelId}`, /Popular rank[^\n]{0,20}11/],
+      ["models/moonshotai/Kimi-K3.1-Pro", /d9e99b0792a5e93b78ea9bea62a68167e36ddd9e\/LICENSE/],
       ["models/Corianas/1.3b", /Family unavailable/],
       ["runtimes/llama.cpp", /No fastest\.ai compatibility test is published in this release/],
     ]) {
@@ -197,4 +201,11 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
       assert.ok((await response.text()).includes(`/#wiki/gpu-topology/${topologyRevision}`));
     }
   });
+
+  await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
+    UPDATE fastest_catalog.model_repository SET document = jsonb_set(document, '{supplemental,parameters}', '"Unexpected parameter count"')
+    WHERE snapshot_id = '${snapshotId}' AND id = 'thinkingmachines/Inkling-2-Mini'`]);
+  delete env.FASTEST_EVIDENCE_STATE;
+  await assert.rejects(build(), /PostgreSQL catalog snapshot content does not match its publication digest/);
+  assert.equal(await releaseDigest(output), releaseHash);
 });
