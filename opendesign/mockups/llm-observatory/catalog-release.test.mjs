@@ -9,6 +9,7 @@ import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { importLocalCatalog } from "./catalog-pg.mjs";
 import { onRequestGet } from "./functions/catalog/[release]/[[path]].js";
+import { onRequestGet as goToFit } from "./functions/fit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const host = "https://example.test";
@@ -219,6 +220,20 @@ test("released factory profiles show sourced parts and documented power in both 
       return response.text();
     }));
     assertFactoryProfile(html, markdown, profile);
+    const fitPath = "/fit?machine=" + profile[0];
+    if (profile[0] === "apple-mac-mini-m4-24gb-512gb") {
+      assert.ok(html.includes('href="' + fitPath + '"'));
+      assert.ok(markdown.includes("](<" + fitPath + ">)"));
+      const request = new Request(host + fitPath);
+      const env = { FASTEST_RELEASE_ORIGIN: "https://release.example.test" };
+      const selection = goToFit({ request, env });
+      assert.equal(selection.status, 307);
+      assert.equal(selection.headers.get("location"), env.FASTEST_RELEASE_ORIGIN + fitPath);
+      assert.equal(goToFit({ request, env: {} }).status, 404);
+    } else {
+      assert.ok(!html.includes(fitPath));
+      assert.ok(!markdown.includes(fitPath));
+    }
   }
 });
 

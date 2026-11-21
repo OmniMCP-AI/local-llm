@@ -14,6 +14,7 @@ UPSTREAM = "https://github.com/AlexsJones/llmfit"
 MODEL_DATA = "llmfit-core/data/hf_models.json"
 MODEL_DATA_SHA256 = "298dbdf36913e1071e62dd07033b0bdf2672a208d71838d2e96d1f464fbd723a"
 RTX_PROFILE = "llmfit-nvidia-rtx-4090"
+APPLE_PROFILE = "apple-mac-mini-m4-24gb-512gb"
 RTX_VRAM_GIB = 24
 RTX_SOURCE = "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/"
 PUBLIC_FIELDS = {"machine", "artifact", "runtime", "context", "ram_reserved_gib", "vram_reserved_gib", "cpu_cores"}
@@ -66,6 +67,15 @@ class FitService:
             }
             for key, row in self.presets.items()
         })
+        factory = {
+            row["id"]: row for row in _load("catalog-source-additions.json")["machines"]
+            if row["kind"] == "Complete factory configuration"
+        }
+        self.machines.update({
+            key: {name: row[name] for name in ("id", "name", "source", "kind", "configuration", "locator")}
+            for key, row in factory.items()
+        })
+        self.apple_fit = factory.get(APPLE_PROFILE, {}).get("fit")
         self.artifacts = {
             item["sha256"]: {
                 **item,
@@ -121,12 +131,22 @@ class FitService:
                 if value else None
             )
 
+        machine_id = machine["id"] if machine else None
+        apple = self.apple_fit if machine_id == APPLE_PROFILE else None
+        invalid_vram = apple and assumptions["vram_reserved_gib"] not in (None, 0)
+        invalid_cores = apple and assumptions["cpu_cores"] not in (None, apple["cpu_cores"])
+        if apple:
+            if not invalid_vram:
+                assumptions["vram_reserved_gib"] = None
+            if not invalid_cores:
+                assumptions["cpu_cores"] = apple["cpu_cores"]
+
         inputs = {
             "kind": "fit_estimate",
             "engine": {
                 "name": "llmfit-core",
                 "revision": UPSTREAM_COMMIT,
-                "adapter": "fastest-fit/v1",
+                "adapter": "fastest-fit/v2" if apple else "fastest-fit/v1",
                 "source": upstream_url("llmfit-core/src/fit.rs"),
                 "license": upstream_url("LICENSE"),
             },
@@ -139,29 +159,46 @@ class FitService:
             },
         }
         native = {"status": "insufficient_input", "estimate": None}
-        missing = sorted(field for field in REQUIRED_FIELDS if not selection.get(field))
+        required = REQUIRED_FIELDS - {"vram_reserved_gib"} if apple else REQUIRED_FIELDS
+        missing = sorted(field for field in required if not selection.get(field))
         if missing:
             native.update(qualification="missing_request_inputs", missing=missing)
-        elif machine["id"] != RTX_PROFILE:
+        elif machine_id != RTX_PROFILE and not apple:
             native.update(qualification="machine_fit_inputs_unavailable")
+        elif invalid_vram:
+            native.update(qualification="unified_memory_has_no_vram_reservation")
+        elif invalid_cores:
+            native.update(qualification="factory_cpu_cores_mismatch")
         elif artifact["quantization"] is None:
             native.update(qualification="artifact_quantization_unavailable")
         elif runtime["id"] != "llama.cpp" or artifact["format"] != "GGUF":
             native.update(status="unsupported", qualification="runtime_artifact_unavailable")
-        elif assumptions["ram_reserved_gib"] >= self.presets[RTX_PROFILE]["memoryGb"] or (
-            assumptions["vram_reserved_gib"] >= RTX_VRAM_GIB
+        elif assumptions["ram_reserved_gib"] >= (
+            apple["unified_memory_gib"] if apple else self.presets[RTX_PROFILE]["memoryGb"]
+        ) or (
+            not apple and assumptions["vram_reserved_gib"] >= RTX_VRAM_GIB
         ):
             native.update(qualification="reservation_exhausts_memory")
         else:
-            inputs["sources"]["memory_bandwidth"] = machine["source"]
-            inputs["sources"]["installed_vram"] = RTX_SOURCE
+            if apple:
+                hardware = {key: apple[key] for key in ("unified_memory_gib", "gpu_name", "memory_bandwidth_gbps")}
+                inputs["sources"].update(
+                    memory_bandwidth=apple["chip_source"],
+                    engine_gpu_bandwidth_lookup=upstream_url("llmfit-core/src/hardware.rs"),
+                    metal_backend=apple["metal_source"],
+                    metal_working_set=apple["metal_working_set_source"],
+                    factory_configuration=apple["configuration_snapshot"],
+                )
+            else:
+                hardware = {"vram_capacity_gib": RTX_VRAM_GIB}
+                inputs["sources"].update(memory_bandwidth=machine["source"], installed_vram=RTX_SOURCE)
             try:
                 native = json.loads(self._run(payload={
-                    "machine": machine["id"],
+                    "machine": machine_id,
                     "model": artifact["model"],
                     "quantization": artifact["quantization"],
                     "runtime": runtime["id"],
-                    "vram_capacity_gib": RTX_VRAM_GIB,
+                    **hardware,
                     **assumptions,
                 }))
             except json.JSONDecodeError as error:

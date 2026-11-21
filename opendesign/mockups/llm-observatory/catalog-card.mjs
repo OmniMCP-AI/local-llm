@@ -235,6 +235,9 @@ export function hardwareCard(row, release, kind, { local = false, peers = [] } =
         ["Manufacturer configuration", row.configuration, row.source],
         ["Source locator", row.locator, row.source],
       ] : common),
+      ...(!local && factory && row.fit ? [
+        ["Model fit", "Estimate fit for this configuration", "/fit?machine=" + encodeURIComponent(row.id)],
+      ] : []),
       ...(row.capture ? [["Source disclosure", "Open timestamped source", row.capture]] : []),
       ...(row.gpu ? [["Preset lookup label", row.gpu]] : []),
       ...(row.missingCoreFields ? [

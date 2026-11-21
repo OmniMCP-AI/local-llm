@@ -1336,6 +1336,20 @@
       "configuration": "MCYT4LL/A",
       "source": "https://www.apple.com/education/pricelists/pdfs/Apple_US_Education_Institution_Price_List.pdf",
       "locator": "Apple U.S. Education Price List, April 1, 2026 edition · p. 1 · Mac mini · MCYT4LL/A",
+      "fit": {
+        "unified_memory_gib": 24,
+        "gpu_name": "Apple M4",
+        "cpu_cores": 10,
+        "memory_bandwidth_gbps": 120,
+        "chip_source": "https://support.apple.com/en-us/121555",
+        "metal_source": "https://support.apple.com/en-us/102894",
+        "metal_working_set_source": "https://developer.apple.com/documentation/metal/mtldevice/recommendedmaxworkingsetsize",
+        "configuration_snapshot": {
+          "url": "https://media2store2.blob.core.windows.net/storage/item_spec/24/246010.pdf#page=1",
+          "locator": "Apple U.S. Education Institution Price List, December 2, 2024 edition · p. 1 · Mac mini · MCYT4LL/A",
+          "sha256": "b771079a052ed377d6b345e2834ab41e9c490b23d69e6a59127acd69e19dfa9d"
+        }
+      },
       "cardIds": [],
       "memory": {
         "system": "24 GB unified memory",

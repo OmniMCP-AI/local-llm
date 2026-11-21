@@ -1,5 +1,8 @@
 use llmfit_core::{
-    fit::{CalcConfig, DEFAULT_ESTIMATION_CTX, FitLevel, ModelFit, RunMode, backend_compatible},
+    fit::{
+        CalcConfig, DEFAULT_ESTIMATION_CTX, FitLevel, InferenceRuntime, ModelFit, RunMode,
+        backend_compatible, resolve_gpu_bandwidth,
+    },
     hardware::{GpuBackend, GpuInfo, SystemSpecs},
     hwprofile::HardwareProfile,
     models::{LlmModel, ModelFormat, quant_is_recognized},
@@ -9,7 +12,7 @@ use serde_json::{Value, json};
 use std::{error::Error, io};
 
 const REVISION: &str = env!("FASTEST_LLMFIT_COMMIT");
-const PROFILE: &str = include_str!("../../data/hardware/nvidia-rtx-4090.json");
+const RTX_PROFILE: &str = include_str!("../../data/hardware/nvidia-rtx-4090.json");
 const CATALOG: &str = include_str!("../../data/hf_models.json");
 
 #[derive(Deserialize)]
@@ -21,36 +24,101 @@ struct Request {
     runtime: String,
     context_tokens: u32,
     ram_reserved_gib: f64,
-    vram_reserved_gib: f64,
-    vram_capacity_gib: f64,
+    vram_reserved_gib: Option<f64>,
+    vram_capacity_gib: Option<f64>,
+    unified_memory_gib: Option<f64>,
+    gpu_name: Option<String>,
+    memory_bandwidth_gbps: Option<f64>,
     cpu_cores: Option<usize>,
 }
 
-fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
-    if request.machine != "llmfit-nvidia-rtx-4090" || request.runtime != "llama.cpp" {
-        return Err("unsupported machine or runtime".into());
+struct Machine {
+    gpu_name: String,
+    backend: GpuBackend,
+    installed_ram: f64,
+    installed_vram: Option<f64>,
+    gpu_pool: f64,
+    bandwidth: f64,
+    config: CalcConfig,
+}
+
+fn selected_machine(request: &Request) -> Result<Machine, Box<dyn Error>> {
+    let config = CalcConfig {
+        context_cap: Some(request.context_tokens),
+        ..CalcConfig::default()
+    };
+    match request.machine.as_str() {
+        "llmfit-nvidia-rtx-4090" => {
+            let profile: HardwareProfile = serde_json::from_str(RTX_PROFILE)?;
+            profile.validate_strict()?;
+            let hardware = profile.hardware;
+            let gpu_name = profile
+                .matcher
+                .ok_or("missing GPU identity")?
+                .gpu_name_contains;
+            let ddr = hardware.ddr_bandwidth_gbps.ok_or("missing DDR bandwidth")?;
+            let bandwidth = hardware
+                .gpu_memory_bandwidth_gbps
+                .ok_or("missing GPU bandwidth")?;
+            let vram = request.vram_capacity_gib.ok_or("missing VRAM capacity")?;
+            let reserved = request
+                .vram_reserved_gib
+                .ok_or("missing VRAM reservation")?;
+            if hardware.unified_memory || reserved < 0.0 || !ddr.is_finite() || ddr <= 0.0 {
+                return Err("invalid discrete memory assumptions".into());
+            }
+            Ok(Machine {
+                gpu_name,
+                backend: GpuBackend::Cuda,
+                installed_ram: hardware.total_ram_gb,
+                installed_vram: Some(vram),
+                gpu_pool: vram - reserved,
+                bandwidth,
+                config: CalcConfig {
+                    ddr_bandwidth_gbps: Some(ddr),
+                    gpu_bandwidth_gbps_override: Some(bandwidth),
+                    gpu_compute_tflops_fp16: hardware.gpu_compute_tflops_fp16,
+                    ..config
+                },
+            })
+        }
+        "apple-mac-mini-m4-24gb-512gb" => {
+            let ram = request
+                .unified_memory_gib
+                .ok_or("missing unified memory capacity")?;
+            if request.vram_capacity_gib.is_some()
+                || request.vram_reserved_gib.is_some()
+                || request.cpu_cores.is_none()
+            {
+                return Err("invalid unified memory assumptions".into());
+            }
+            Ok(Machine {
+                gpu_name: request.gpu_name.clone().ok_or("missing GPU identity")?,
+                backend: GpuBackend::Metal,
+                installed_ram: ram,
+                installed_vram: None,
+                gpu_pool: ram - request.ram_reserved_gib,
+                bandwidth: request
+                    .memory_bandwidth_gbps
+                    .ok_or("missing memory bandwidth")?,
+                config,
+            })
+        }
+        _ => Err("unsupported machine".into()),
     }
-    let profile: HardwareProfile = serde_json::from_str(PROFILE)?;
-    profile.validate_strict()?;
-    let hardware = profile.hardware;
-    let gpu_name = profile
-        .matcher
-        .ok_or("missing GPU identity")?
-        .gpu_name_contains;
-    let ddr = hardware.ddr_bandwidth_gbps.ok_or("missing DDR bandwidth")?;
-    let gpu_bandwidth = hardware
-        .gpu_memory_bandwidth_gbps
-        .ok_or("missing GPU bandwidth")?;
-    let ram = hardware.total_ram_gb - request.ram_reserved_gib;
-    let vram = request.vram_capacity_gib - request.vram_reserved_gib;
-    if hardware.unified_memory
-        || request.ram_reserved_gib < 0.0
-        || request.vram_reserved_gib < 0.0
-        || !(ram > 0.0 && vram > 0.0)
-        || !ddr.is_finite()
-        || ddr <= 0.0
-        || !gpu_bandwidth.is_finite()
-        || gpu_bandwidth <= 0.0
+}
+
+fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
+    if request.runtime != "llama.cpp" {
+        return Err("unsupported runtime".into());
+    }
+    let machine = selected_machine(&request)?;
+    let unified = machine.installed_vram.is_none();
+    let ram = machine.installed_ram - request.ram_reserved_gib;
+    if request.ram_reserved_gib < 0.0
+        || !(ram > 0.0 && machine.gpu_pool > 0.0)
+        || !machine.bandwidth.is_finite()
+        || machine.bandwidth <= 0.0
     {
         return Err("invalid memory assumptions".into());
     }
@@ -78,29 +146,32 @@ fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
     }
     model.quantization = request.quantization;
 
-    // Both capacity fields must use the effective budget. llmfit's fit walk
-    // reads total GPU VRAM while its speed model also consults free VRAM.
+    // llmfit's GPU capacity fields take the effective budget. For Metal they
+    // represent the same shared pool as available RAM, and we have no
+    // separately observed GPU memory or Metal working-set limit.
+    let gpu_pool = Some(machine.gpu_pool);
+    let free_vram = machine.installed_vram.and(gpu_pool);
     let system = SystemSpecs {
-        total_ram_gb: hardware.total_ram_gb,
+        total_ram_gb: machine.installed_ram,
         available_ram_gb: ram,
         total_cpu_cores: request.cpu_cores.unwrap_or(0),
         cpu_name: String::new(),
         has_gpu: true,
-        gpu_vram_gb: Some(vram),
-        total_gpu_vram_gb: Some(vram),
-        gpu_available_gb: Some(vram),
-        gpu_name: Some(gpu_name.clone()),
+        gpu_vram_gb: gpu_pool,
+        total_gpu_vram_gb: gpu_pool,
+        gpu_available_gb: free_vram,
+        gpu_name: Some(machine.gpu_name.clone()),
         gpu_count: 1,
-        unified_memory: false,
-        backend: GpuBackend::Cuda,
+        unified_memory: unified,
+        backend: machine.backend,
         gpus: vec![GpuInfo {
-            name: gpu_name,
-            vram_gb: Some(vram),
-            backend: GpuBackend::Cuda,
+            name: machine.gpu_name,
+            vram_gb: gpu_pool,
+            backend: machine.backend,
             count: 1,
-            unified_memory: false,
-            free_vram_gb: Some(vram),
-            free_vram_per_card_gb: vec![vram],
+            unified_memory: unified,
+            free_vram_gb: free_vram,
+            free_vram_per_card_gb: free_vram.into_iter().collect(),
             pcie_links: Vec::new(),
         }],
         cluster_mode: false,
@@ -111,14 +182,23 @@ fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
             "status": "unsupported", "qualification": "backend_incompatible", "estimate": null,
         }));
     }
-    let config = CalcConfig {
-        context_cap: Some(request.context_tokens),
-        ddr_bandwidth_gbps: Some(ddr),
-        gpu_bandwidth_gbps_override: Some(gpu_bandwidth),
-        gpu_compute_tflops_fp16: hardware.gpu_compute_tflops_fp16,
-        ..CalcConfig::default()
+    let config = machine.config;
+    let fit = if unified {
+        // The pinned forced-runtime method uses the built-in GPU bandwidth
+        // lookup. Check it against Apple's reviewed rating before estimation.
+        // Dense GPU-only fit on a shared pool does not consult DDR bandwidth.
+        if resolve_gpu_bandwidth(&system, &config) != Some(machine.bandwidth) {
+            return Err("pinned GPU bandwidth disagrees with factory rating".into());
+        }
+        ModelFit::analyze_with_forced_runtime(
+            &model,
+            &system,
+            config.context_cap,
+            Some(InferenceRuntime::LlamaCpp),
+        )
+    } else {
+        ModelFit::analyze_with_config(&model, &system, config.clone())
     };
-    let fit = ModelFit::analyze_with_config(&model, &system, config.clone());
     let exact_memory = model.estimate_memory_gb(&model.quantization, request.context_tokens);
 
     let qualification = if fit.runtime.label() != request.runtime {
@@ -152,6 +232,23 @@ fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
         "ttft_ms": speed_available.then_some(fit.ttft_ms).flatten(),
         "decode_basis": (speed_available && !decode_capped).then_some(fit.estimate_basis),
     }));
+    let mut calculation = json!({
+        "config": config,
+        "backend": system.backend,
+        "gpu_count": system.gpu_count,
+        "kv_cache_quantization": "FP16",
+    });
+    if unified {
+        calculation["installed_unified_memory_gib"] = json!(system.total_ram_gb);
+        calculation["available_unified_memory_gib"] = json!(ram);
+        calculation["unified_memory_bandwidth_gbps"] = json!(machine.bandwidth);
+        calculation["metal_working_set_limit_gib"] = Value::Null;
+    } else {
+        calculation["installed_ram_gib"] = json!(system.total_ram_gb);
+        calculation["installed_vram_gib"] = json!(machine.installed_vram);
+        calculation["available_ram_gib"] = json!(ram);
+        calculation["available_vram_gib"] = json!(machine.gpu_pool);
+    }
     Ok(json!({
         "status": if qualification.is_some() { "qualified" } else { "estimated" },
         "qualification": qualification,
@@ -160,16 +257,7 @@ fn analyze(request: Request) -> Result<Value, Box<dyn Error>> {
         "engine_suggested_quantization": fit.best_quant,
         "engine_selected_runtime": fit.runtime.label(),
         "estimate": estimate,
-        "calculation": {
-            "config": config,
-            "backend": system.backend,
-            "gpu_count": system.gpu_count,
-            "installed_ram_gib": system.total_ram_gb,
-            "installed_vram_gib": request.vram_capacity_gib,
-            "available_ram_gib": ram,
-            "available_vram_gib": vram,
-            "kv_cache_quantization": "FP16",
-        },
+        "calculation": calculation,
     }))
 }
 

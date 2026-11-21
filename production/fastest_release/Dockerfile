@@ -23,7 +23,9 @@ COPY production/fastest_prices/__init__.py production/fastest_prices/artifacts.p
 COPY production/fastest_text/*.py production/fastest_text/plan.json ./fastest_text/
 COPY production/fastest_serving/__init__.py ./fastest_serving/
 COPY production/fastest_pilot_bundle.py ./
-COPY opendesign/mockups/llm-observatory/catalog-hardware-sources.json opendesign/mockups/llm-observatory/catalog-hardware.json opendesign/mockups/llm-observatory/catalog-identities.json opendesign/mockups/llm-observatory/catalog-runtimes.json /opt/fastest/opendesign/mockups/llm-observatory/
+COPY opendesign/mockups/llm-observatory/catalog-hardware-sources.json opendesign/mockups/llm-observatory/catalog-hardware.json \
+     opendesign/mockups/llm-observatory/catalog-identities.json opendesign/mockups/llm-observatory/catalog-runtimes.json \
+     opendesign/mockups/llm-observatory/catalog-source-additions.json /opt/fastest/opendesign/mockups/llm-observatory/
 
 USER 10001:10001
 EXPOSE 8000
