@@ -3,6 +3,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { markdownBlocks, markdownInline } from "./wiki-markdown.mjs";
 import { inferenceStages, scalingUnavailable, selectTopologyPresets, topologyView } from "./topology.mjs";
+import { catalogApiPath } from "./catalog-api.mjs";
 import { topologyRevisionHref } from "./catalog-paths.mjs";
 
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
@@ -126,12 +127,13 @@ export function activeHighlights(highlights, pages, releaseDate) {
 
 export async function writeWikiRelease({
   output, origin, researchRelease, catalogRelease, documents, edges, highlights, releaseDate, withdrawn = [],
-  topologies = [], scalingUrl, advisorUrl,
+  topologies = [], scalingUrl, advisorUrl, catalogApi = false,
 }) {
   const originUrl = new URL(origin);
   if (originUrl.origin !== origin || !["https:", "http:"].includes(originUrl.protocol)) {
     throw new Error("FASTEST_PUBLIC_ORIGIN must be an origin without a trailing slash");
   }
+  const catalogOpenApi = catalogApi ? `/catalog/${catalogRelease}/openapi.json` : null;
   const excluded = new Set(withdrawn);
   const pages = Object.fromEntries(Object.entries(documents).filter(([, doc]) =>
     doc.status === "published" && !excluded.has(doc.evidence)));
@@ -152,15 +154,20 @@ export async function writeWikiRelease({
     const neighbors = [...new Set(edges.flatMap(({ source, target }) =>
       source === id ? [target] : target === id ? [source] : []))]
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
+    const catalogAccess = id === "agent-discovery" && catalogOpenApi;
     const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
-      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl) : "");
+      + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl) : "")
+      + (catalogAccess ? format === "html"
+        ? `\n<p><a href="${catalogOpenApi}">Catalog API (OpenAPI)</a> · <a href="${catalogApiPath}?kind=cards">Browse released card metadata</a></p>`
+        : `\n\n[Catalog API (OpenAPI)](${catalogOpenApi}) · [Browse released card metadata](${catalogApiPath}?kind=cards)`
+        : "");
     const { title, kind, summary, entity, evidence, methods, media } = doc;
     return { id, source: "wiki/pages/" + id + ".md", title, kind, summary, entity, evidence, methods, media,
       aliases, neighbors, html: body("html"), md: body("md") };
   });
   const alternateName = "localdecode.com";
   const release = "wiki-" + createHash("sha256")
-    .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName]))
+    .update(JSON.stringify([entries, availableHighlights, researchRelease, catalogRelease, alternateName, catalogOpenApi]))
     .digest("hex").slice(0, 16);
   const headers = [
     "/research/*\n  Cache-Control: no-store\n  X-Content-Type-Options: nosniff",
@@ -231,6 +238,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
     `- [Research library](${origin + research.md}): Approved research references and timestamped methods`,
     `- [Research release manifest](${origin + researchRoot}manifest.json)`,
     ...(catalogRelease ? [`- [Catalog release manifest](${origin}/catalog/${catalogRelease}/manifest.json)`] : []),
+    ...(catalogOpenApi ? [`- [Catalog search (OpenAPI)](${origin + catalogOpenApi}): Hardware, machines, model repositories, and runtimes from this snapshot`] : []),
   ];
   files["/robots.txt"] = `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`;
   files["/sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -239,6 +247,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
     `- [${markdown(title)}](${origin + mdRoute(id)}): ${markdown(summary)}`).join("\n")}\n`;
   files["/wiki/manifest.json"] = JSON.stringify({
     release, locale: "en", researchRelease, catalogRelease,
+    ...(catalogOpenApi && { catalogApi: { endpoint: catalogApiPath, openapi: catalogOpenApi } }),
     pages: entries.map(({ id, source, entity, evidence }) => ({ id, source, entity, evidence, html: wikiHtmlRoute(id), markdown: mdRoute(id) })),
     highlights: availableHighlights.map(({ id, type, href, markdown, priority, starts, ends, source }) =>
       ({ id, type, href, markdown, priority, starts, ends, source })),
@@ -246,6 +255,7 @@ ${availableHighlights.map(({ href, title, summary }) => `<li><a href="${href}">$
   files["/_routes.json"] = JSON.stringify({
     version: 1, include: ["/", "/index", "/index.html", "/index.md", "/api/feedback",
       "/prices", "/prices/", "/prices.html", "/api/price-comparison",
+      ...(catalogOpenApi ? [catalogApiPath] : []),
       "/research/*", "/wiki/*", "/catalog/*", "/catalog-data/*", "/downloads/*",
       "/robots.txt", "/sitemap.xml", "/llms.txt", "/evidence-quarantine.json"], exclude: [],
   }, null, 2) + "\n";
