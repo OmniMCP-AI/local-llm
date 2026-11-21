@@ -36,10 +36,11 @@ function categoricalAxis(values) {
 }
 
 function axisMarkup(ticks, at, axis, direction) {
-  const step = Math.max(1, Math.ceil(ticks.length / 8));
-  return ticks.filter((_, index) => index % step === 0 || index === ticks.length - 1).map((value, index) => {
-    return `<span class="coordinate-tick coordinate-tick-${direction}${index % 2 ? " coordinate-tick-minor" : ""}" style="--at:${percent(at(value))}"><span>${escape(tickText(axis, value))}</span></span>`;
-  }).join("");
+  const count = Math.min(ticks.length, 5);
+  const shown = count === 1 ? ticks : Array.from({ length: count }, (_, index) => ticks[Math.round(index * (ticks.length - 1) / (count - 1))]);
+  return shown.map((value, index) =>
+    `<span class="coordinate-tick coordinate-tick-${direction}${index % 2 ? " coordinate-tick-minor" : ""}" style="--at:${percent(at(value))}"><span>${escape(tickText(axis, value))}</span></span>`
+  ).join("");
 }
 
 function markMarkup(point, xAxis, yAxis, selection, actionable, kind, baseline, width) {
@@ -59,8 +60,7 @@ function markMarkup(point, xAxis, yAxis, selection, actionable, kind, baseline, 
   const bar = kind === "bar" ? `<i class="coordinate-bar-shape" style="${location};${barStyle}" aria-hidden="true"></i>` : "";
   const mark = `<${tag} class="coordinate-mark" ${attributes} data-point-id="${escape(point.id)}" aria-label="${name}, ${xLabel} ${xValue}, ${yLabel} ${yValue}${detail ? ", " + detail : ""}" style="${location}${kind === "bar" ? ";" + barStyle : ""}"></${tag}>`;
   return `<div class="coordinate-point${selected ? " coordinate-selected" : ""}${point.highlighted ? " coordinate-highlighted" : ""}${point.context ? " coordinate-context" : ""}" data-series="${escape(point.series ?? "")}">${bar}${mark}
-<span aria-hidden="true" class="coordinate-label" style="${location}">${escape(point.short ?? point.name)}</span>
-<div aria-hidden="true" class="coordinate-popup${point.top > .52 ? " coordinate-popup-above" : ""}" style="${location}"><strong>${name}</strong>${detail ? `<p>${detail}</p>` : ""}
+<div aria-hidden="true" class="coordinate-popup" style="${location}"><strong>${name}</strong>${detail ? `<p>${detail}</p>` : ""}
 <dl><div><dt>${xLabel}</dt><dd>${xValue}</dd></div><div><dt>${yLabel}</dt><dd>${yValue}</dd></div></dl></div></div>`;
 }
 
@@ -102,14 +102,20 @@ export function renderCoordinatePlot({
   const areaHeight = targetArea && topFor(targetArea.y);
   const area = targetArea ? `<div class="coordinate-target-area" style="--area-width:${percent(x.at(targetArea.x))};--area-height:${percent(areaHeight)};top:0"></div>` : "";
   const width = `min(3.5rem, ${percent(.58 / Math.max(1, x.ticks.length))})`;
+  const pointText = point => `${escape(point.name)} · ${escape(point.xLabel ?? xAxis.label)}: ${escape(point.xText ?? valueText(xAxis, point.x))} · ${escape(point.yLabel ?? yAxis.label)}: ${escape(point.yText ?? valueText(yAxis, point.y))}${point.detail ? " · " + escape(point.detail) : ""}`;
+  const selected = valid.find(point => point.id === selectedId);
+  const labelList = valid.map(point => `<li>${pointText(point)}</li>`).join("");
   return `<div class="coordinate-plot coordinate-${kind}" role="group" aria-label="${escape(title)}" dir="ltr">
 <div class="coordinate-heading"><strong>${escape(axisTitle(yAxis))}</strong><label><input type="checkbox"${showLabels ? " checked" : ""}> ${escape(labelsLabel)}</label></div>
-<div class="coordinate-grid">
+<div class="coordinate-viewport" tabindex="0"><div class="coordinate-canvas"><div class="coordinate-grid">
   ${area}
   <div aria-hidden="true">${axisMarkup(x.ticks, x.at, xAxis, "x")}${axisMarkup(y.ticks, topFor, yAxis, "y")}</div>
   ${paths ? `<svg class="coordinate-line" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>` : ""}
-  ${guides.map(guide => `<span class="coordinate-guide coordinate-guide-${guide.axis}" style="--at:${percent(guide.axis === "x" ? x.at(guide.value) : topFor(guide.value))}"><span>${escape(guide.label)}</span></span>`).join("")}
+  ${guides.map(guide => `<span class="coordinate-guide coordinate-guide-${guide.axis}" style="--at:${percent(guide.axis === "x" ? x.at(guide.value) : topFor(guide.value))}" aria-hidden="true"></span>`).join("")}
   ${pointsAt.map(point => markMarkup(point, xAxis, yAxis, selectedId, Boolean(onSelect), kind, baseline, width)).join("")}
 </div>
-<div class="coordinate-x-title">${escape(axisTitle(xAxis))}</div></div>`;
+<div class="coordinate-x-title">${escape(axisTitle(xAxis))}</div></div></div>
+${guides.length ? `<p class="coordinate-guide-key">${guides.map(guide => `${escape(guide.label)}: ${escape(valueText(guide.axis === "x" ? xAxis : yAxis, guide.value))}`).join(" · ")}</p>` : ""}
+${selected ? `<p class="coordinate-selection">${pointText(selected)}</p>` : ""}
+<ul class="coordinate-label-list" tabindex="0">${labelList}</ul></div>`;
 }

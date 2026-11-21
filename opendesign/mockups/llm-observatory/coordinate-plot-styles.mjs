@@ -18,10 +18,12 @@ export const coordinatePlotStyles = `
 .coordinate-heading strong, .coordinate-x-title { font-weight: 650; }
 .coordinate-heading label { display: inline-flex; align-items: center; gap: .35rem; color: var(--chart-muted); cursor: pointer; }
 .coordinate-heading input { accent-color: var(--chart-accent); margin: 0; }
+.coordinate-viewport { overflow-x: auto; overscroll-behavior-x: contain; }
+.coordinate-canvas { min-width: 36rem; }
 .coordinate-grid {
   position: relative;
   height: clamp(12rem, 30vw, 19rem);
-  margin: 1.3rem 1rem 2rem var(--chart-inset);
+  margin: 1.3rem 3rem 2rem var(--chart-inset);
   border-left: 1px solid var(--chart-grid);
   border-bottom: 1px solid var(--chart-grid);
   container-type: inline-size;
@@ -31,18 +33,15 @@ export const coordinatePlotStyles = `
 .coordinate-tick-x { top: 0; bottom: 0; left: var(--at); border-left: 1px solid var(--chart-grid); }
 .coordinate-tick-y { left: 0; right: 0; top: var(--at); border-top: 1px solid var(--chart-grid); }
 .coordinate-tick span, .coordinate-guide span { position: absolute; white-space: nowrap; }
-.coordinate-tick-x span { top: calc(100% + .37rem); translate: -50% 0; }
-.coordinate-tick-y span { right: calc(100% + .4rem); translate: 0 -50%; }
+.coordinate-tick-x span { top: calc(100% + .37rem); translate: -50% 0; max-width: 5rem; overflow: hidden; text-overflow: ellipsis; }
+.coordinate-tick-y span { right: calc(100% + .4rem); translate: 0 -50%; max-width: calc(var(--chart-inset) - .6rem); overflow: hidden; text-overflow: ellipsis; }
 .coordinate-bar .coordinate-tick-x { border: 0; }
 .coordinate-bar .coordinate-tick-x span { max-width: 5.4rem; overflow: hidden; text-overflow: ellipsis; }
 .coordinate-guide { z-index: 1; color: var(--chart-text); font-weight: 650; }
-.coordinate-guide span { background: var(--chart-surface); padding-inline: .17rem; }
 .coordinate-guide-x { top: 0; bottom: 0; left: var(--at); border-left: 1px dashed var(--chart-focus); }
-.coordinate-guide-x span { bottom: calc(100% + 1px); translate: -50% 0; }
 .coordinate-guide-y { left: 0; right: 0; top: var(--at); border-top: 1px dashed var(--chart-focus); }
-.coordinate-guide-y span { right: 0; bottom: 0; }
 .coordinate-target-area { position: absolute; left: 0; width: var(--area-width); height: var(--area-height); background: var(--color-chart-inset, #738e861e); pointer-events: none; }
-.coordinate-mark, .coordinate-label { position: absolute; left: var(--column); top: var(--row); }
+.coordinate-mark { position: absolute; left: var(--column); top: var(--row); }
 .coordinate-mark {
   display: grid; place-items: center; width: 1.35rem; height: 1.35rem; margin: 0; padding: 0; border: 0;
   border-radius: 50%; outline-offset: 1px; background: transparent; translate: -50% -50%; z-index: 2; color: inherit;
@@ -60,16 +59,12 @@ export const coordinatePlotStyles = `
   outline: 1px solid var(--chart-accent); outline-offset: 3px;
 }
 .coordinate-mark:is(:hover,:focus-visible) { z-index: 6; outline: 2px solid var(--chart-focus); }
-.coordinate-label {
-  display: none; z-index: 4; pointer-events: none; white-space: nowrap; translate: 0 calc(-100% - .55rem);
-  transform: translateX(-50%); font-size: .75rem; line-height: 1; font-weight: 650;
-  text-shadow: 1px 1px var(--chart-surface), -1px 1px var(--chart-surface), 1px -1px var(--chart-surface), -1px -1px var(--chart-surface);
-  max-width: min(60%, 13rem); overflow: hidden; text-overflow: ellipsis;
-}
-.coordinate-plot:has(input:checked) .coordinate-label, .coordinate-selected .coordinate-label { display: block; }
-.coordinate-selected .coordinate-label { color: var(--chart-accent); z-index: 5; }
-.coordinate-line, .coordinate-bar-shape { position: absolute; pointer-events: none; }
-.coordinate-line { inset: 0; width: 100%; height: 100%; }
+.coordinate-label-list { display: none; max-height: 12rem; overflow: auto; margin: .75rem 0 0; padding: 0 0 0 1.5rem; }
+.coordinate-label-list li { margin-block: .25rem; overflow-wrap: anywhere; }
+.coordinate-plot:has(input:checked) .coordinate-label-list { display: block; }
+.coordinate-selection, .coordinate-guide-key { margin: .5rem 0 0; overflow-wrap: anywhere; }
+svg.coordinate-line, .coordinate-bar-shape { position: absolute; pointer-events: none; }
+svg.coordinate-line { inset: 0; width: 100%; height: 100%; }
 .coordinate-line polyline { stroke: var(--chart-series, var(--chart-accent)); stroke-width: 2; vector-effect: non-scaling-stroke; fill: none; }
 .coordinate-scatter .coordinate-line polyline { stroke-dasharray: 3 4; }
 .coordinate-plot [data-series="0"] { --chart-series: var(--chart-accent); }
@@ -90,15 +85,17 @@ export const coordinatePlotStyles = `
 .coordinate-bar .coordinate-mark::after { display: none; }
 .coordinate-bar .coordinate-selected .coordinate-mark::after { display: block; position: absolute; top: -.35rem; }
 .coordinate-popup {
-  display: none; position: absolute; z-index: 7; pointer-events: none; box-sizing: border-box;
-  --popup-width: min(14.5rem, calc(100cqi + 1.5rem));
-  width: var(--popup-width); top: calc(var(--row) + .65rem); left: clamp(-.65rem, calc(var(--column) + .8rem), calc(100% - var(--popup-width) + .65rem));
+  display: none; position: absolute; z-index: 7; pointer-events: auto; box-sizing: border-box;
+  --popup-width: min(14.5rem, 100cqi);
+  width: var(--popup-width); max-height: 9rem; overflow: auto; overflow-wrap: anywhere;
+  top: clamp(0px, calc(var(--row) + .65rem), max(0px, 100% - 9rem)); left: clamp(0px, calc(var(--column) + .8rem), calc(100% - var(--popup-width)));
   padding: .55rem .65rem; border: 1px solid var(--chart-grid); border-radius: .35rem;
   background: var(--chart-surface); color: var(--chart-text); box-shadow: 0 5px 18px #0003; line-height: 1.3;
 }
-.coordinate-popup-above { top: auto; bottom: calc(100% - var(--row) + .65rem); }
-.coordinate-mark:is(:hover,:focus) ~ .coordinate-popup { display: block; }
-.coordinate-grid:has(.coordinate-mark:hover) .coordinate-mark:focus:not(:hover) ~ .coordinate-popup { display: none; }
+
+.coordinate-mark:is(:hover,:focus) ~ .coordinate-popup,
+.coordinate-point:has(.coordinate-popup:hover) .coordinate-popup { display: block; }
+.coordinate-grid:has(.coordinate-mark:focus-visible) .coordinate-mark:hover:not(:focus-visible) ~ .coordinate-popup { display: none; }
 .coordinate-popup p { color: var(--chart-muted); margin: .22rem 0; }
 .coordinate-popup dl { display: grid; gap: .3rem; margin: .4rem 0 0; }
 .coordinate-popup dl > div { display: flex; justify-content: space-between; gap: .55rem; }
