@@ -210,9 +210,13 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   const componentReferences = machines.filter((row) => row.kind === "Component reference").length;
   const upstreamOnly = [...cards.values()].filter((card) => card.lookupSource && !card.relatedProfiles.length).length;
   const researchOnly = [...cards.values()].filter(row => !row.lookupSource && row.relatedProfiles.length).length;
-  const manufacturerMachines = additions.machines.filter(({ id, source, bom = [], documentedPower }) =>
+  const manufacturerMachines = additions.machines.filter(({ id, source, cardIds, bom = [], documentedPower }) =>
     // A factory build needs all of its component and configuration evidence.
-    ![id, source, ...bom.map(part => part.source), documentedPower?.source].some(isWithdrawn));
+    cardIds.every(card => cards.has(card)) &&
+    ![id, source, ...bom.map(part => part.source), documentedPower?.source].some(isWithdrawn))
+    .map(({ gallery, ...machine }) => ({
+      ...machine, ...(gallery && !isWithdrawn(gallery.source) ? { gallery } : {}),
+    }));
   const machineRows = [...machines, ...presets, ...manufacturerMachines];
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({

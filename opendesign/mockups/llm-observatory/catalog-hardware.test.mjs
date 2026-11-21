@@ -14,11 +14,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.researchComponentReferences, 46);
   assert.equal(manifest.coverage.partialMachines, 70);
   assert.equal(manifest.coverage.upstreamPresets, 3);
-  assert.equal(manifest.coverage.completeBuilds, 3);
+  assert.equal(manifest.coverage.completeBuilds, 4);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 123);
-  assert.equal(manifest.coverage.manufacturerMachines, 4);
+  assert.equal(catalog.machines.length, 124);
+  assert.equal(manifest.coverage.manufacturerMachines, 5);
   assert.equal(manifest.coverage.cards, 114);
   assert.equal(manifest.coverage.cardsWithVendorSpecs, 107);
   assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 85);
@@ -55,7 +55,7 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
 
 test("exact factory configurations carry a sourced system bill of materials", async () => {
   const { catalog } = await readHardwareCatalog(here);
-  const builds = catalog.machines.filter(({ kind }) => kind === "Complete factory configuration");
+  const builds = catalog.machines.filter(({ kind, cardIds }) => kind === "Complete factory configuration" && !cardIds.length);
   assert.deepEqual(builds.map(({ configuration, memory, documentedPower }) =>
     [configuration, memory.system, documentedPower.label, documentedPower.value]), [
     ["MCYT4LL/A", "24 GB unified memory", "Maximum continuous system power", "155 W"],
@@ -83,7 +83,7 @@ test("exact factory configurations carry a sourced system bill of materials", as
 test("withdrawing a factory BOM source removes dependent builds and updates coverage", async () => {
   const withdrawn = "https://docs.nvidia.com/dgx/dgx-spark/hardware.html";
   const { catalog, manifest } = await readHardwareCatalog(here, value => value === withdrawn);
-  assert.equal(manifest.coverage.completeBuilds, 2);
+  assert.equal(manifest.coverage.completeBuilds, 3);
   assert.ok(catalog.machines.some(({ id }) => id === "nvidia-dgx-spark"));
   assert.ok(!catalog.machines.some(({ id }) => id === "nvidia-dgx-spark-128gb-4tb"));
   assert.ok(!JSON.stringify(catalog).includes(withdrawn));

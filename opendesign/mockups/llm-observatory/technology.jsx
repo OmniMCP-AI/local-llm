@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState } from "react";
 import { ArrowUpRight, CircuitBoard, Cpu, Monitor, Pause, Play, StepForward, Terminal } from "lucide-react";
 import { catalogPath } from "./catalog-paths.mjs";
-import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, scalingReportUrl, scalingUnavailable, selectTopologyReport, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
+import { cardPhotoExample, draftFitEstimate, draftFitRequest, fitArtifactLabel, fitScenario, inferenceStages, scalingReportUrl, scalingUnavailable, selectTopologyReport, topologyLinkEndpoints, topologyPresets, topologyReports as reports, topologyView } from "./topology.mjs";
 
 const hardware = __FASTEST_HARDWARE_DIRECTORY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
@@ -37,11 +37,11 @@ function DiagramBoard({ view, step, selected, onSelect, playing }) {
         icon={view.isHost ? Monitor : CircuitBoard} active={step === 1} />)}
     </div>
     {view.links.length > 0 && <ul className="tech-links" aria-label="Documented connections">
-      {view.links.map(({ label, slots, state, source }) => <li key={label} data-state={state}>
-        <a href={source} target="_blank" rel="noreferrer">{view.partName} {slots.join(" ↔ ")} · {label} <ArrowUpRight size={13} aria-hidden="true" /></a>
+      {view.links.map(({ label, slots, state, source }) => <li key={`${slots.join("-")}-${label}`} data-state={state}>
+        <a href={source} target="_blank" rel="noreferrer">{topologyLinkEndpoints(view, slots)} · {label} <ArrowUpRight size={13} aria-hidden="true" /></a>
       </li>)}
     </ul>}
-    <p className="tech-board-caption">{view.isHost ? "Host transport" : "Inter-card links"} · {view.connection ?? (view.installedCount === 1 ? "Single-card layout" : "Unknown")}</p>
+    <p className="tech-board-caption">{view.isHost ? "Host transport" : view.report.hosts?.length ? "GPU-to-host links" : "Inter-card links"} · {view.connection ?? (view.installedCount === 1 ? "Single-card layout" : "Unknown")}</p>
     {!view.draft && view.report.note && <p className="tech-board-caption">{view.report.note}</p>}
   </div>;
 }
@@ -96,7 +96,7 @@ function Inventory({ view, sourceLink }) {
         <th scope="row">{view.partName} {part.slot}</th><td>{part.label}</td><td>{part.memory ?? "Unknown"}</td><td>{part.placement ?? "Unknown"}</td>
       </tr>)}</tbody>
     </table></div>
-    <p>{view.links.length ? view.links.map(({ label, slots }) => `${label} (${view.partName.toLowerCase()} ${slots.join(" ↔ ")})`).join("; ")
+    <p>{view.links.length ? view.links.map(({ label, slots }) => `${label} (${topologyLinkEndpoints(view, slots)})`).join("; ")
       : view.installedCount === 1 ? "No inter-card link in the single-card layout." : "Link endpoints unknown."} Measured transport is unavailable in this view.</p>
     {!view.draft && view.report.note && <p>{view.report.note}</p>}
     <ol>{inferenceStages.map(({ title, note }) => <li key={title}><strong>{title}.</strong> {note}</li>)}</ol>

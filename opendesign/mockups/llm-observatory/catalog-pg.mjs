@@ -9,6 +9,7 @@ import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 const project = new URL(".", import.meta.url);
 const docs = new URL("../../../docs/", project);
 const seed = new URL("Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/", docs);
+const manufacturerSourcePath = "opendesign/mockups/llm-observatory/catalog-source-additions.json";
 const readJson = async (root, name) => JSON.parse(await readFile(new URL(name, root), "utf8"));
 const encode = JSON.stringify;
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -65,10 +66,11 @@ function topologyRecords(reports, machines, documents, photos) {
     topology_link: [],
   };
   const topologies = [];
-  for (const { id, devices, links = [], ...report } of reports) {
+  for (const { id, devices, links = [], hosts: reportedHosts = [], ...report } of reports) {
     const machine = machineById.get(id);
     if (!machine) continue;
-    const sourcePath = relative(fileURLToPath(docs), fileURLToPath(new URL(`hardware-profiles/${id}.md`, seed)));
+    const sourcePath = machine.kind === "Complete factory configuration" ? manufacturerSourcePath
+      : relative(fileURLToPath(docs), fileURLToPath(new URL(`hardware-profiles/${id}.md`, seed)));
     const sourceDigest = digestByPath.get(sourcePath);
     const isHost = report.group === "hosts";
     const normalizedDevices = devices.map(({ photo = null, card = null, ...part }, index) => ({
@@ -76,22 +78,27 @@ function topologyRecords(reports, machines, documents, photos) {
     }));
     const hosts = isHost ? Array.from({ length: report.hostCount }, (_, index) => ({
       slot: index + 1, label: report.hostModel,
-    })) : [];
-    const parts = isHost ? hosts : normalizedDevices;
+    })) : reportedHosts.toSorted((a, b) => a.slot - b.slot);
+    const parts = [...normalizedDevices, ...hosts];
+    const partSlots = new Set(parts.map(({ slot }) => slot));
     if (!sourceDigest || machine.source !== report.source ||
         (isHost ? !hosts.length || !report.hostModel || devices.length : report.count !== devices.length || !devices.length) ||
+        partSlots.size !== parts.length || hosts.some(({ slot, label }) => !Number.isInteger(slot) || slot < 1 || !label) ||
         normalizedDevices.some(({ card, photo }) => (card && !machine.cardIds.includes(card)) || (photo && !photos[photo])) ||
         links.some(({ slots }) => slots.length !== 2 || slots[0] === slots[1] ||
-          slots.some(slot => !Number.isInteger(slot) || slot < 1 || slot > parts.length))) {
-      throw new Error("Topology lacks a matching research profile, part or link: " + id);
+          slots.some(slot => !partSlots.has(slot)))) {
+      throw new Error("Topology lacks a matching sourced profile, part or link: " + id);
     }
     const layout = { id, ...report, sourcePath, sourceDigest, devices: normalizedDevices, hosts, links };
     const photoIds = [...new Set(normalizedDevices.map(({ photo }) => photo).filter(Boolean))].sort();
     const revision = "topology-" + sha256(encode(canonicalJson([layout, photoIds.map(photo => photos[photo])])));
     topologies.push({ ...layout, revision });
     records.topology_revision.push([id, revision, topologies.length, sourcePath, encode({ ...report, sourceDigest })]);
-    parts.forEach(({ slot, photo, card, ...part }) => {
-      records.topology_node.push([id, revision, slot, isHost ? "host" : "card", card, photo, encode(part)]);
+    normalizedDevices.forEach(({ slot, photo, card, ...part }) => {
+      records.topology_node.push([id, revision, slot, "card", card, photo, encode(part)]);
+    });
+    hosts.forEach(({ slot, ...part }) => {
+      records.topology_node.push([id, revision, slot, "host", null, null, encode(part)]);
     });
     links.forEach(({ slots, ...link }, index) => {
       records.topology_link.push([id, revision, index + 1, ...slots, encode(link)]);
@@ -101,7 +108,8 @@ function topologyRecords(reports, machines, documents, photos) {
 }
 
 export async function importLocalCatalog(hardware, database = process.env.FASTEST_DATABASE_URL ?? "postgresql://localhost/localdecode_catalog") {
-  const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos] = await Promise.all([
+  const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos,
+    manufacturerSource] = await Promise.all([
     readFile(new URL("catalog-pg.sql", project), "utf8"),
     readCatalogModelFiles(fileURLToPath(project)),
     ...["catalog-runtimes.json", "catalog-topics.json"].map(name => readJson(project, name)),
@@ -110,6 +118,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     researchDocuments(),
     readJson(project, "catalog-topology.json"),
     readCatalogPhotos(project),
+    readFile(new URL(manufacturerSourcePath.split("/").at(-1), project), "utf8"),
   ]);
   const { source: models, identities, discovery, sourceManifest, supplement, supplementalModels } = modelFiles;
   const { models: modelRows, ...modelMetadata } = models;
@@ -117,6 +126,7 @@ export async function importLocalCatalog(hardware, database = process.env.FASTES
     id, { ...identity, artifacts: identity.artifacts ?? [] },
   ]));
   const { cards, machines } = hardware.catalog;
+  documents.push([manufacturerSourcePath, sha256(manufacturerSource), manufacturerSource]);
   const { topologies, records: topologyTables } = topologyRecords(reports, machines, documents, photos);
   const byPosition = new Map(inventory.map(row => [Number(row.position), row.id]));
   const distinctVideos = new Map();

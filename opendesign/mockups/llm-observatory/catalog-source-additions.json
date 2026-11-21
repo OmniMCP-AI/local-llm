@@ -1459,6 +1459,84 @@
   },
   "machines": [
     {
+      "id": "tinybox-red-4x-mi300x-batch-2",
+      "name": "tinybox red 4× MI300X · Batch 2",
+      "kind": "Complete factory configuration",
+      "detail": "4 refurbished MI300X on vendor carriers · 192 GB system RAM",
+      "configuration": "Batch 2 · 4 refurbished AMD Instinct MI300X accelerators",
+      "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+      "locator": "tiny corp product specification and gallery · Batch 2 · reviewed November 21, 2026",
+      "cardIds": ["amd-instinct-mi300x"],
+      "memory": {
+        "system": "192 GB DDR5",
+        "perDevice": "192 GB nominal per MI300X",
+        "aggregate": "768 GB aggregate installed across four devices",
+        "allocation": null
+      },
+      "interconnect": "PCIe 5.0 x16 from each accelerator to the host, as specified by tiny corp. No xGMI links between accelerators. Switch layout, negotiated link speeds and runtime peer access are unknown.",
+      "gallery": {
+        "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+        "label": "Open tiny corp’s product photos"
+      },
+      "documentedPower": {
+        "label": "Power supply inventory",
+        "value": "2 × 1,700 W rated power supplies",
+        "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+        "locator": "Configuration and chassis description"
+      },
+      "bom": [
+        {
+          "category": "CPU",
+          "part": "32-core AMD Genoa, water cooled",
+          "quantity": "1",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Batch 2 configuration"
+        },
+        {
+          "category": "GPU",
+          "part": "AMD Instinct MI300X (refurbished), each on a custom tiny corp carrier",
+          "quantity": "4",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Accelerator configuration and carrier description"
+        },
+        {
+          "category": "Memory",
+          "part": "192 GB DDR5 system memory",
+          "quantity": "192 GB total",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Batch 2 configuration"
+        },
+        {
+          "category": "Boot storage",
+          "part": "1 TB boot SSD",
+          "quantity": "1",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Batch 2 configuration"
+        },
+        {
+          "category": "Data storage",
+          "part": "1 TB drive in 4 TB RAID 0",
+          "quantity": "4",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Batch 2 configuration"
+        },
+        {
+          "category": "Platform",
+          "part": "PCIe 5.0 platform in the tall tinybox chassis",
+          "quantity": "1 system",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Configuration and chassis description"
+        },
+        {
+          "category": "Power supply",
+          "part": "1,700 W ATX power supply with voltage conversion for the accelerators",
+          "quantity": "2",
+          "source": "https://tinycorp.myshopify.com/products/tinybox-red-4xmi300x",
+          "locator": "Configuration and chassis description"
+        }
+      ]
+    },
+    {
       "id": "nvidia-dgx-spark",
       "name": "NVIDIA DGX Spark",
       "kind": "Manufacturer system reference",
