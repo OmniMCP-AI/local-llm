@@ -277,9 +277,11 @@ class PriceTest(unittest.TestCase):
         ])
         self.assertEqual([row["price"] for row in current["offers"]], ["241.00", "225.00"])
         self.assertEqual([row["availability"] for row in current["offers"]], ["expired", "available"])
-        self.assertIn('<circle cx="30.00"', html)
-        self.assertIn('<circle cx="610.00"', html)
-        self.assertEqual(html.count("<circle "), 2)
+        chart = html.split('aria-label="Dated seller-day price dots"', 1)[1].split("</svg>", 1)[0]
+        self.assertEqual(chart.count("<circle "), 2)
+        for item in current["offers"]:
+            title = f"Quote date (UTC): {item['observed_at'][:10]} · Landed price: {item['landed_price']} USD"
+            self.assertIn(title, chart)
         with api_client(price_reader=self.store.read) as request:
             status, _, historical = request(f"/api/v1/historical-offers?release={current['release_id']}")
             self.assertEqual(status, 200)

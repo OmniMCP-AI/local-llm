@@ -149,6 +149,50 @@ ORDER BY batch.checked_at, trial.batch_id, trial.id;
 
 Source-reported rows are review candidates. The [scaling evidence review](../fastest_release/SCALING-EVIDENCE.md) describes the protocol, exact identity, quality, transport, and rights evidence needed to publish a scaling pair.
 
+## Import the CC BY hardware matrix
+
+Michael Malura and contributors published five structured single-GPU reports
+at commit `8340ac1d8dfaf8902f47ccf1d4ebbcf81703f21e`. The importer adapts the
+reported warm speed, 8K and 32K memory-ladder, and concurrency results into
+private inference trials. It checks the SHA-256 of each input and includes the
+publisher, original report link, source revision and license in the probe.
+[Repository and attribution](https://github.com/maluramichael/llm-benchmarks/tree/8340ac1d8dfaf8902f47ccf1d4ebbcf81703f21e)
+· [CC BY 4.0 grant](https://github.com/maluramichael/llm-benchmarks/blob/8340ac1d8dfaf8902f47ccf1d4ebbcf81703f21e/LICENSE)
+
+From `production/`, with `FASTEST_DATABASE_URL` set for the intake operator,
+capture the five inputs in a disposable directory and retain the check time
+with the receipt. Use that same time and source files for a replay.
+
+```sh
+python3 -B - <<'PYCODE'
+from datetime import datetime, timezone
+from pathlib import Path
+from subprocess import check_output, run
+from tempfile import TemporaryDirectory
+from fastest_intake.hardware_matrix import INPUTS, REPOSITORY, REVISION
+
+checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+with TemporaryDirectory(prefix="fastest-hardware-matrix.") as staging:
+    directory = Path(staging)
+    for run_id in INPUTS:
+        source = f"repos/{REPOSITORY}/contents/runs/{run_id}/results.json?ref={REVISION}"
+        body = check_output(["gh", "api", "-H", "Accept: application/vnd.github.raw+json", source], timeout=30)
+        (directory / f"{run_id}.json").write_bytes(body)
+    print(f"Source check time {checked_at}", flush=True)
+    run(["python3", "-B", "-m", "fastest_intake", "ingest-hardware-matrix",
+         staging, "--checked-at", checked_at], check=True)
+PYCODE
+```
+
+The November 22 import retained 405 numeric observations and 41 source-scoped
+fit or skip outcomes. The five reports cover the GTX 1080 Ti, Radeon RX 560,
+RTX 3080 Ti, RTX 3090 and RTX 4060 Ti. The older RTX 4090 and MacBook result
+files carry only legacy run labels. Fit estimates and skips stay distinct from
+runtime OOM. Device inventory identifies the host GPU. An active-device count
+is recorded when the test reports GPU participation. Model class stays scoped
+to the source, and the artifact digest stays separate from a model repository.
+Public comparison requires a separate evidence review.
+
 ## Import private image-pilot timing
 
 Run from `production` with `FASTEST_DATABASE_URL` set to the operator database.
