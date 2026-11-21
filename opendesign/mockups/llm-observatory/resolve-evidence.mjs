@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { emptyEvidenceState, isPublicIssue, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
-import { checkedPagesFile, pagesFileRoutes } from "./evidence-public-paths.mjs";
+import { checkedPagesFile, evidenceUpdatesPath, pagesFileRoutes } from "./evidence-public-paths.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
 import { feedbackId } from "./feedback-policy.mjs";
 import { readResearchApprovals } from "./research-release-build.mjs";
@@ -176,20 +176,33 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
     }
 
     const id = digest(json([action, evidenceId, old.release, current.release]));
-    const resolutionPath = "/wiki/evidence-updates#" + id;
+    const resolutionPath = evidenceUpdatesPath + "#" + id;
+    // Use the current build before restoring historical pins so unchanged exports never match a notice.
+    const currentPublicHashes = new Set([...stagedHashes]
+      .filter(([path]) => checkedPagesFile(path))
+      .map(([, hash]) => hash));
+    const affectedPagesSha256 = history.flatMap(({ artifacts }) => artifacts
+      .filter(({ path, before }) => checkedPagesFile(path) && !currentPublicHashes.has(before) &&
+        path !== "/evidence-quarantine.json" && !path.startsWith(evidenceUpdatesPath + "."))
+      .map(({ before }) => before));
     const update = { id, action, research: `/research/${current.release}/library`,
-      ...(action === "correct" && { source: updatedTarget.url, sourceDigest: digest(sourceId) }), ...(intake.issue && { issue: intake.issue }) };
+      ...(action === "correct" && { source: updatedTarget.url, sourceDigest: digest(sourceId) }), ...(intake.issue && { issue: intake.issue }),
+      affectedSha256: affectedPagesSha256 };
+    const state = { ...priorState, paths: [...paths], withdrawnSources, researchPins, updates: [...priorState.updates, update] };
     const sourceIndex = await readJson(join(directory, "wiki", "research-index.json"));
     const checks = [sourceIndex, ...archives.map(({ index }) => index)]
       .map((index) => withdrawnReference(index, approvals));
     const isWithdrawn = (value) => checks.some((check) => check(value));
-    await writeEvidenceState(candidate, {
-      ...priorState, paths: [...paths], withdrawnSources, researchPins, updates: [...priorState.updates, update],
-    }, isWithdrawn);
+    await writeEvidenceState(candidate, state, isWithdrawn);
     for (const path of await publicFiles(candidate)) {
       if (isWithdrawn(await readFile(join(candidate, path), "utf8"))) {
         throw new Error("Withdrawn source still referenced by " + path);
       }
+    }
+    const benchmark = await resolveBenchmark(request.benchmark, action, sourceLocator, output);
+    if (benchmark) {
+      update.affectedSha256 = [...affectedPagesSha256, ...Object.values(benchmark.earlierExports)];
+      await writeEvidenceState(candidate, state, isWithdrawn);
     }
     const oldHashes = await hashes(previous);
     const newHashes = await hashes(candidate);
@@ -201,12 +214,8 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
       const after = newHashes.get(path) ?? null;
       return before === after ? [] : [{ path, before, after }];
     });
-    const benchmark = await resolveBenchmark(request.benchmark, action, sourceLocator, output);
     const changes = [...pagesChanges, ...(benchmark?.changes ?? [])];
-    const earlierHashes = [...new Set([
-      ...history.flatMap(({ artifacts }) => artifacts.map(({ before }) => before)),
-      ...Object.values(benchmark?.earlierExports ?? {}),
-    ])].sort();
+    const earlierHashes = [...new Set(update.affectedSha256)].sort();
     const notificationDraft = [
       `Evidence ${evidenceId} has been ${action === "withdraw" ? "withdrawn" : "corrected"} in the staged release.`,
       `Resolution: ${resolutionPath}`,

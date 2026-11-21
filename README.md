@@ -88,6 +88,8 @@ For a review of a PostgreSQL-backed Pages release, set `FASTEST_CATALOG_DATABASE
 
 Deploy only `review-output/pages` through the existing Pages workflow. Keep `review.json` and `approvals.json` private. The report contains the affected file and diff SHA-256 digests, earlier export hashes, a notification draft and an optional receipt update statement.
 
+Evidence updates links to the public JSON notice at `/wiki/evidence-updates.json`. Each entry gives the resolution action, a link to its update, and SHA-256 digests that readers can match against their saved exports.
+
 Use the trusted review generated for this deployment with the approved public Pages origin. Include the approved release origin when the review includes a linked benchmark.
 
 ```sh
