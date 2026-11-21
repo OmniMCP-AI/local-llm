@@ -19,11 +19,11 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
   assert.equal(catalog.machines.length, 124);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
-  assert.equal(manifest.coverage.cards, 114);
-  assert.equal(manifest.coverage.cardsWithVendorSpecs, 107);
-  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 85);
-  assert.equal(manifest.coverage.cardsWithProductImageLinks, 47);
-  assert.equal(manifest.coverage.boardPartnerCards, 6);
+  assert.equal(manifest.coverage.cards, 116);
+  assert.equal(manifest.coverage.cardsWithVendorSpecs, 109);
+  assert.equal(manifest.coverage.cardsWithSpecificVendorSpecs, 87);
+  assert.equal(manifest.coverage.cardsWithProductImageLinks, 49);
+  assert.equal(manifest.coverage.boardPartnerCards, 8);
 
   const find = (rows, id) => rows.find((row) => row.id === id);
   assert.equal(find(catalog.machines, "V001-HP-G001").kind, "Component reference");
@@ -119,8 +119,8 @@ test("withdrawing the Colorful launch announcement removes just its sourced RTX 
   const { catalog, manifest } = await readHardwareCatalog(here, value => value === source);
   const family = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5060-ti");
   assert.deepEqual(family.variants.map(({ id }) => id).sort(), [
-    "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb",
+    "asus-t1-rtx5060ti-o8g-gaming", "nvidia-geforce-rtx-5060-ti-16gb", "pny-vcg5060t8dfxpb1-o",
   ]);
-  assert.equal(manifest.coverage.boardPartnerCards, 5);
+  assert.equal(manifest.coverage.boardPartnerCards, 7);
   assert.ok(!JSON.stringify(catalog).includes(source));
 });
