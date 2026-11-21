@@ -12,6 +12,13 @@
 !production/fastest_release/scaling.py
 !production/fastest_release/validation.py
 !production/fastest_release/profile-interaction.js
+!production/fastest_release_watch/__init__.py
+!production/fastest_release_watch/applicability.py
+!production/fastest_release_watch/feed.py
+!production/fastest_release_watch/postgres.py
+!production/fastest_release_watch/render.py
+!production/fastest_release_watch/retest.py
+!production/fastest_release_watch/store.py
 !production/fastest_agent_task/__init__.py
 !production/fastest_agent_task/__main__.py
 !production/fastest_agent_task/evidence.py

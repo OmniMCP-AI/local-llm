@@ -123,6 +123,8 @@ read-only and pass the existing `serve` flags. A deployment with fit enabled
 also mounts the pinned fit executable and passes `--fit-engine`. To let
 benchmark contributors check their review status, apply the [receipt route
 setup](fastest_contributor/README.md#serve-receipt-links).
+To publish retained llama.cpp releases, grant read access to the watcher
+schema and enable the route. [Serve the watch](fastest_release_watch/README.md#serve-the-watch)
 
 Terminate TLS in the reverse proxy and forward the canonical `Host` header
 through to the listener. Set `FASTEST_RELEASE_HOST` to that header value,

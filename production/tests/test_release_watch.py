@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import os
 from pathlib import Path
@@ -8,7 +9,13 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
+
+from fastest_release import ReleaseStore
+from fastest_release_watch.feed import decode
+from fastest_release_watch.postgres import PostgresStore
+from test_public_api import api_client
 
 
 PRODUCTION = Path(__file__).resolve().parents[1]
@@ -185,9 +192,22 @@ class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
             timeout=15,
         )
 
+    def test_origin_watch_configuration_requires_database_and_explicit_enablement(self):
+        for option, expected in (
+            (["--runtime-release-watch"], "requires FASTEST_DATABASE_URL or --database-url"),
+            (["--runtime-release-watch-notes", "reviewed.json"], "requires --runtime-release-watch"),
+        ):
+            with self.subTest(option=option):
+                result = subprocess.run(
+                    [sys.executable, "-B", "-m", "fastest_release", "--database-url", "",
+                     "serve", *option],
+                    cwd=PRODUCTION, capture_output=True, text=True, timeout=5,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(expected, result.stderr)
+
     def test_official_request_rejects_redirects_without_following_them(self):
         import io
-        from unittest.mock import patch
 
         from fastest_release_watch.feed import fetch
 
@@ -202,8 +222,6 @@ class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
                              ("GET", "/repos/ggml-org/llama.cpp/releases?per_page=10&page=1"))
 
     def test_only_measured_retests_with_matching_conditions_are_linked(self):
-        from copy import deepcopy
-
         from fastest_release_watch.retest import approved_links
 
         first_id = "3a76f0db-50f3-40c7-a31e-377fe32361b3"
@@ -343,3 +361,127 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
             "stale": True,
             "releases": [],
         })
+
+    def test_origin_exposes_retained_release_history_and_refresh_status(self):
+        self.prepare_history()
+        watch = PostgresStore(self.database_url)
+        first_success = "2001-01-01T01:00:00Z"
+        last_success = "2001-01-02T01:00:00Z"
+        published = github_release(100, "test-b100", first_success)
+        edited = {**published, "body": "Edited release notes"}
+        preview = github_release(101, "test-b101", last_success, prerelease=True)
+        watch.record("live", first_success, decode(json.dumps([published]).encode()))
+        watch.record("live", last_success, decode(json.dumps([edited, preview]).encode()))
+        watch.record("live", "2001-01-03T01:00:00Z", error="GitHub release feed timed out")
+        store = ReleaseStore(self.database_url)
+
+        with api_client(store) as request:
+            self.assertNotIn('/runtime-releases', request("/", decode=False)[2])
+            self.assertEqual(request("/runtime-releases", decode=False)[0], 404)
+
+        reader_watch = PostgresStore(self.database_url + " options='-c default_transaction_read_only=on'")
+        with patch("http.client.HTTPSConnection", side_effect=AssertionError("GET must use retained data")), \
+                api_client(store, runtime_watch=reader_watch) as request:
+            index = request("/", decode=False)[2]
+            status, headers, report = request("/runtime-releases.json")
+            canonical = self.invoke("report", read_only=True)
+            self.assertEqual(canonical.returncode, 0, canonical.stderr)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            self.assertEqual(report, json.loads(canonical.stdout))
+            self.assertEqual(report["last_successful_refresh"], last_success)
+            self.assertTrue(report["stale"])
+            self.assertEqual(report["last_error"], "GitHub release feed timed out")
+            self.assertEqual([release["status"] for release in report["releases"]],
+                             ["prerelease", "current", "superseded_revision"])
+            for path, content_type in [("/runtime-releases", "text/html"),
+                                       ("/runtime-releases.md", "text/markdown")]:
+                with self.subTest(path=path):
+                    self.assertIn(f'href="{path}"', index)
+                    status, headers, body = request(path, decode=False)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(headers.get_content_type(), content_type)
+                    self.assertIn(last_success, body)
+                    self.assertIn("GitHub release feed timed out", body)
+                    self.assertIn("stale", body)
+                    self.assertIn("Superseded revision", body)
+            self.assertIn('href="/runtime-releases.json"', index)
+            self.assertEqual(request("/runtime-releases", "HEAD", decode=False)[2], "")
+
+    def test_origin_distinguishes_empty_live_history_from_a_service_outage(self):
+        watch = PostgresStore(self.database_url)
+        with api_client(runtime_watch=watch) as request:
+            for path, content_type in (("/runtime-releases", "text/html"), ("/runtime-releases.md", "text/markdown"),
+                                       ("/runtime-releases.json", "application/json")):
+                with self.subTest(path=path):
+                    status, headers, body = request(path, decode=False)
+                    self.assertEqual(status, 503)
+                    self.assertEqual(headers.get_content_type(), content_type)
+                    self.assertIn("Runtime release watch unavailable.", body)
+                    self.assertNotIn("last_successful_refresh", body)
+                    self.assertNotIn("source_status", body)
+
+            self.prepare_history()
+            status, _, report = request("/runtime-releases.json")
+            self.assertEqual(status, 200)
+            self.assertEqual(report["releases"], [])
+            self.assertIsNone(report["last_successful_refresh"])
+            self.assertTrue(report["stale"])
+
+            self.refresh([github_release(100, "test-only-tag", DAY_ONE)], DAY_ONE)
+            status, _, body = request("/runtime-releases.json", decode=False)
+            self.assertEqual(status, 503)
+            self.assertNotIn("test-only-tag", body)
+
+    def test_origin_rechecks_matched_retest_rights(self):
+        self.prepare_history()
+        watch = PostgresStore(self.database_url)
+        fixture_directory = PRODUCTION / "fixtures/release-watch"
+        watch.record("live", DAY_ONE, decode((fixture_directory / "releases.json").read_bytes()))
+        note = json.loads((fixture_directory / "applicability.json").read_text())["notes"][0]
+        fixture = PRODUCTION / "fixtures/synthetic-observation.json"
+        baseline = json.loads(fixture.read_text())
+        artifact = baseline["artifact"]
+        note["configuration"]["model_artifact"] = f"{artifact['repository']}@{artifact['revision']}/{artifact['path']}"
+        config = note["configuration"]
+        baseline["kind"] = "measured"
+        baseline["fields"] = {
+            field: {"status": "known", "value": value, "rights": "allow"}
+            for field, value in {
+                "card_id": note["card_id"], "configuration_id": config["id"], "os_version": config["os"],
+                "driver_version": config["driver"], "backend": config["backend"],
+                "runtime_build": config["build_sha"], "runtime_id": "llama.cpp",
+                "runtime_flags": '["--gpu-layers", "0"]',
+            }.items()
+        }
+        tuned = deepcopy(baseline)
+        tuned["evidence_id"] = str(uuid4())
+        tuned["fields"]["runtime_flags"]["value"] = json.dumps(config["flags"])
+        publisher = ReleaseStore(self.database_url)
+        publisher.migrate()
+        note["status"] = "fastest_ai_verified"
+        baseline_id = publisher.publish(baseline)
+        tuned_id = publisher.publish(tuned)
+        note["retest"] = {"baseline_release_id": baseline_id, "tuned_release_id": tuned_id}
+        notes = self.directory / "reviewed.json"
+        notes.write_text(json.dumps({"notes": [note]}))
+
+        reader_url = self.database_url + " options='-c default_transaction_read_only=on'"
+        with api_client(ReleaseStore(reader_url), runtime_watch=PostgresStore(reader_url),
+                        runtime_watch_notes=notes) as request:
+            for path in ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json"):
+                with self.subTest(path=path):
+                    status, _, body = request(path, decode=False)
+                    self.assertEqual(status, 200)
+                    self.assertIn("550.120", body)
+                    self.assertIn(f"/releases/{baseline_id}/benchmark.html", body)
+                    self.assertIn(f"/releases/{tuned_id}/benchmark.html", body)
+
+            publisher.withdraw(tuned["evidence_id"], "Private fixture withdrawal reason")
+            for path in ("/runtime-releases", "/runtime-releases.md", "/runtime-releases.json"):
+                with self.subTest(path=path):
+                    status, headers, body = request(path, decode=False)
+                    self.assertEqual(status, 503)
+                    self.assertEqual(headers["Cache-Control"], "no-store")
+                    self.assertNotIn(tuned_id, body)
+                    self.assertNotIn("Private fixture withdrawal reason", body)

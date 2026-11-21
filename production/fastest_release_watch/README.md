@@ -18,8 +18,8 @@ python3 -B -m fastest_release_watch --db watch-demo.sqlite3 report \
 ```
 
 The reporter writes to standard output. Select `html`, `markdown`, or `json`.
-Save or publish those public review views through the project's normal
-publishing process. `--as-of` sets the freshness check clock.
+Use `--as-of` to set the freshness check clock. The release origin serves the
+current public view from a live PostgreSQL history. [Serve the watch](#serve-the-watch)
 
 ## Refresh the live feed in PostgreSQL
 
@@ -68,6 +68,42 @@ credentials. Current means latest observed stable release by publication time.
 Prereleases, superseded releases and previous edits have distinct statuses.
 Historical source links open the upstream release, whose visible text can
 change after the watcher captured its revision digest.
+
+## Serve the watch
+
+Apply the watcher migration as the publisher and refresh the live feed
+separately. Give the release origin's existing reader these additional grants.
+The example role is `fastest_reader`.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_release_watch TO fastest_reader;
+GRANT SELECT ON fastest_release_watch.source_status,
+    fastest_release_watch.release_revision TO fastest_reader;
+```
+
+From `production/`, start the release origin with the reader connection.
+
+```sh
+FASTEST_DATABASE_URL='service=fastest-reader' \
+  python3 -B -m fastest_release serve --runtime-release-watch
+```
+
+The origin index links to the watch and its Markdown and JSON companions at
+`/runtime-releases.md` and `/runtime-releases.json`. [Open the local watch](http://127.0.0.1:8000/runtime-releases)
+
+For an origin container, append `--runtime-release-watch` to the deployment
+command. To include reviewed mappings, mount the approval JSON read-only and
+pass `--runtime-release-watch-notes /path/to/reviewed-applicability.json`. The
+origin rereads that file and checks the permissions of cited benchmark
+releases on each request. [Deploy the release origin](../README.md#deploy-the-release-origin)
+
+The three views use the same stored release history. An upstream refresh
+failure leaves the last successful data and timestamp visible alongside the
+latest error. A missing or stale refresh is shown in all three views.
+Fixture histories are available through the CLI reporter for review.
+An unavailable database or an ineligible configured note yields a 503 in
+the requested format. Keep the origin's `Cache-Control: no-store` header
+through the proxy.
 
 ## Add reviewed applicability
 

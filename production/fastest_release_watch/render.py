@@ -16,6 +16,9 @@ RELEASE_STATUSES = {
 
 def lines(report):
     yield "h1", "llama.cpp release watch", None
+    if "error" in report:
+        yield "p", report["error"], None
+        return
     if report["source"]["mode"] == "fixture":
         yield "p", "Synthetic fixture replay", None
     yield "p", "Official GitHub release feed", report["source"]["feed_url"]
