@@ -24,6 +24,7 @@ from fastest_release.capture_cpu import candidate as cpu_baseline_candidate
 from fastest_prices import PriceStore
 from fastest_release.research import SEED_ROOT
 from test_mcp import HAS_SDK, get as get_public, mcp_client
+from test_mcp_http import mcp_http_client, mcp_http_server
 from test_public_api import api_client, api_server
 from test_scaling import BASELINE, COMPARISON, fixture_releases
 from fastest_release.scaling import scaling_report
@@ -420,7 +421,7 @@ class ReleaseTest(unittest.TestCase):
             record["review"]["evidence_id"] = bundle["review"]["evidence_id"]
             self.assertNotEqual(publish(check=False).returncode, 0)
 
-    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test MCP")
     def test_mcp_replays_hosted_agent_task_evidence_and_rechecks_withdrawal(self):
         from mcp import McpError
 
@@ -453,21 +454,29 @@ class ReleaseTest(unittest.TestCase):
         uri = f"fastest://v1/agent-task/{pin}"
 
         async def check(port):
-            async with mcp_client(port) as client:
-                handshake = await client.initialize()
+            async with (
+                mcp_client(port) as client,
+                mcp_http_server(port) as url,
+                mcp_http_client(url) as (http, handshake),
+            ):
+                self.assertEqual(handshake, await client.initialize())
                 self.assertEqual(handshake.protocolVersion, "2025-11-25")
+                self.assertEqual(await http.list_tools(), await client.list_tools())
+                self.assertEqual(await http.list_resource_templates(), await client.list_resource_templates())
                 tools = {tool.name: tool for tool in (await client.list_tools()).tools}
                 self.assertTrue(tools["v1_agent_task"].annotations.readOnlyHint)
                 templates = (await client.list_resource_templates()).resourceTemplates
                 self.assertIn("fastest://v1/agent-task/{pin}", [resource.uriTemplate for resource in templates])
 
                 result = await client.call_tool("v1_agent_task", args)
+                self.assertEqual(result, await http.call_tool("v1_agent_task", args))
                 self.assertFalse(result.isError)
                 status, api = get_public(port, api_path, args)
                 self.assertEqual(status, 200)
                 payload = result.structuredContent
                 self.assertEqual(payload, json.loads(api))
                 resource = await client.read_resource(uri)
+                self.assertEqual(resource, await http.read_resource(uri))
                 self.assertEqual(payload, json.loads(resource.contents[0].text))
 
                 status, site = get_public(port, payload["citations"][0]["url"])
@@ -491,20 +500,26 @@ class ReleaseTest(unittest.TestCase):
                                   {**args, "sql": "SELECT *"}, {**args, "artifact": "private.json"}):
                     with self.subTest(arguments=arguments):
                         invalid = await client.call_tool("v1_agent_task", arguments)
+                        self.assertEqual(invalid, await http.call_tool("v1_agent_task", arguments))
                         self.assertTrue(invalid.isError)
                         self.assertIsNone(invalid.structuredContent)
                 for invalid_uri in (uri + "?artifact=private.json", uri + "/raw-turns", uri + "#data",
                                     "fastest://v1/agent-task/current", "fastest://v1/agent-task/" + "0" * 64):
                     with self.subTest(uri=invalid_uri), self.assertRaises(McpError):
                         await client.read_resource(invalid_uri)
+                    with self.subTest(uri=invalid_uri), self.assertRaises(McpError):
+                        await http.read_resource(invalid_uri)
 
                 self.store.withdraw(evidence, "private withdrawal reason")
                 withdrawn = await client.call_tool("v1_agent_task", args)
+                self.assertEqual(withdrawn, await http.call_tool("v1_agent_task", args))
                 self.assertTrue(withdrawn.isError)
                 self.assertIsNone(withdrawn.structuredContent)
                 self.assertEqual(withdrawn.content[0].text, "Public rights have ended for this release.")
                 with self.assertRaisesRegex(McpError, "Public rights have ended"):
                     await client.read_resource(uri)
+                with self.assertRaisesRegex(McpError, "Public rights have ended"):
+                    await http.read_resource(uri)
 
         with api_server(reader, agent_task_release=pin) as server:
             asyncio.run(check(server.server_port))
@@ -980,15 +995,21 @@ class ReleaseTest(unittest.TestCase):
             server.server_close()
             self.assertFalse(worker.is_alive())
 
-    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test MCP")
     def test_mcp_pinned_evidence_and_comparisons_follow_live_release_rights(self):
         from mcp import McpError
 
         releases, ids, withdrawn_evidence = self.reviewed_profile_fixture()
 
         async def check(port):
-            async with mcp_client(port) as client:
-                await client.initialize()
+            async with (
+                mcp_client(port) as client,
+                mcp_http_server(port) as url,
+                mcp_http_client(url) as (http, handshake),
+            ):
+                self.assertEqual(handshake, await client.initialize())
+                self.assertEqual(await http.list_tools(), await client.list_tools())
+                self.assertEqual(await http.list_resource_templates(), await client.list_resource_templates())
                 names = {tool.name for tool in (await client.list_tools()).tools}
                 self.assertIn("v1_evidence", names)
                 self.assertNotIn("v1_historical_offers", names)
@@ -998,6 +1019,7 @@ class ReleaseTest(unittest.TestCase):
 
                 args = {"kind": "models", "id": "qwen2.5-7b-instruct"}
                 comparison = await client.call_tool("v1_profile_comparison", args)
+                self.assertEqual(comparison, await http.call_tool("v1_profile_comparison", args))
                 self.assertFalse(comparison.isError)
                 result = comparison.structuredContent
                 args["revision"] = result["revision"]
@@ -1019,6 +1041,7 @@ class ReleaseTest(unittest.TestCase):
                 release_id = measurement["release_id"]
                 uri = f"fastest://v1/releases/{release_id}/evidence"
                 resource = await client.read_resource(uri)
+                self.assertEqual(resource, await http.read_resource(uri))
                 saved = json.loads(resource.contents[0].text)
                 status, api = get_public(port, "/api/v1/evidence", {"release": release_id})
                 self.assertEqual(status, 200)
@@ -1043,11 +1066,14 @@ class ReleaseTest(unittest.TestCase):
                 with self.assertRaises(McpError) as denied:
                     await client.read_resource(uri)
                 self.assertIn("Public rights have ended", str(denied.exception))
+                with self.assertRaisesRegex(McpError, "Public rights have ended"):
+                    await http.read_resource(uri)
                 evidence = await client.call_tool("v1_evidence", {"release": release_id})
                 self.assertTrue(evidence.isError)
                 self.assertIn("Public rights have ended", evidence.content[0].text)
                 self.assertNotIn("Private fixture withdrawal reason", evidence.content[0].text)
                 after = await client.call_tool("v1_profile_comparison", args)
+                self.assertEqual(after, await http.call_tool("v1_profile_comparison", args))
                 self.assertFalse(after.isError)
                 self.assertNotIn("42.000", after.content[0].text)
                 self.assertIn("withdrawn", {entry.get("status") for entry in after.structuredContent["results"]})
@@ -1055,7 +1081,7 @@ class ReleaseTest(unittest.TestCase):
         with api_server(self.store, profile_releases=releases) as server:
             asyncio.run(check(server.server_port))
 
-    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test MCP")
     def test_mcp_evidence_matches_the_standalone_cpu_release(self):
         release = self.store.publish(self.cpu_baseline_observation())
 
