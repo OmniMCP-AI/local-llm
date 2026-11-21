@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS fastest_discoveries.discovery (
     submitted_at timestamptz NOT NULL DEFAULT date_trunc('second', clock_timestamp())
 );
 
+CREATE TABLE IF NOT EXISTS fastest_discoveries.youtube_metadata (
+    source_url text COLLATE "C" PRIMARY KEY
+        CHECK (source_url ~ '^https://www[.]youtube[.]com/watch[?]v=[A-Za-z0-9_-]{11}$'),
+    policy text NOT NULL DEFAULT 'youtube_metadata_discovery_only_v1'
+        CHECK (policy = 'youtube_metadata_discovery_only_v1'),
+    source_reference text NOT NULL CHECK (
+        split_part(source_reference, '#', 1) COLLATE "C" ~
+            '^opendesign/mockups/llm-observatory/battle-title-sample[.]json@sha256:[a-f0-9]{64}$'
+        AND source_reference = split_part(source_reference, '#', 1) || '#video=' || split_part(source_url, '?v=', 2)
+    ),
+    submitted_at timestamptz NOT NULL DEFAULT date_trunc('second', clock_timestamp())
+);
+
 CREATE TABLE IF NOT EXISTS fastest_discoveries.review (
     source_url text COLLATE "C" PRIMARY KEY REFERENCES fastest_discoveries.discovery (source_url),
     choice text NOT NULL CHECK (choice IN ('approve', 'withhold')),
@@ -54,6 +67,17 @@ AS $$
 $$;
 
 CREATE OR REPLACE VIEW fastest_discoveries.entries AS
+WITH candidates AS (
+    SELECT COALESCE(d.source_url, m.source_url) AS source_url,
+           COALESCE(d.original_url, m.source_url) AS original_url,
+           COALESCE(d.source_format, 'video') AS source_format,
+           d.published_at, d.authority, d.consent_reference,
+           COALESCE(d.scope, 'discovery_only') AS scope,
+           COALESCE(d.submitted_at, m.submitted_at) AS submitted_at,
+           m.policy AS metadata_policy, m.source_reference AS metadata_source_reference
+    FROM fastest_discoveries.discovery AS d
+    FULL JOIN fastest_discoveries.youtube_metadata AS m USING (source_url)
+)
 SELECT d.source_url, d.original_url, d.source_format,
        fastest_discoveries.utc_text(d.published_at) AS published_at,
        d.authority, d.consent_reference, d.scope,
@@ -65,8 +89,9 @@ SELECT d.source_url, d.original_url, d.source_format,
            WHEN COALESCE(self.reason, origin.reason) IS NOT NULL THEN COALESCE(self.reason, origin.reason)
            WHEN d.source_url <> d.original_url THEN 'cross_post'
            WHEN d.scope = 'discovery_only' THEN 'discovery_only'
-       END AS withholding
-FROM fastest_discoveries.discovery AS d
+       END AS withholding,
+       d.metadata_policy, d.metadata_source_reference
+FROM candidates AS d
 LEFT JOIN fastest_discoveries.review AS r USING (source_url)
 LEFT JOIN fastest_discoveries.withdrawal AS self ON self.source_url = d.source_url
 LEFT JOIN fastest_discoveries.withdrawal AS origin ON origin.source_url = d.original_url;
@@ -105,6 +130,44 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION fastest_discoveries.intake_youtube_metadata(snapshot_reference text, video_ids jsonb)
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp
+AS $$
+DECLARE
+    video_id text;
+    permalink text;
+    reference text;
+    discoveries integer := 0;
+BEGIN
+    IF video_ids IS NULL OR jsonb_typeof(video_ids) <> 'array' THEN
+        RETURN json_build_object('error', 'Expected a YouTube metadata array');
+    END IF;
+    IF jsonb_array_length(video_ids) NOT BETWEEN 1 AND 100 THEN
+        RETURN json_build_object('error', 'Expected a bounded YouTube metadata snapshot');
+    END IF;
+
+    PERFORM fastest_discoveries.lock_history();
+    FOR video_id IN SELECT DISTINCT jsonb_array_elements_text(video_ids) LOOP
+        permalink := 'https://www.youtube.com/watch?v=' || video_id;
+        reference := snapshot_reference || '#video=' || video_id;
+        INSERT INTO fastest_discoveries.youtube_metadata (source_url, source_reference)
+        VALUES (permalink, reference) ON CONFLICT (source_url) DO NOTHING;
+        IF EXISTS (
+            SELECT FROM fastest_discoveries.youtube_metadata
+            WHERE source_url = permalink AND source_reference <> reference
+        ) THEN
+            RAISE unique_violation;
+        END IF;
+        discoveries := discoveries + 1;
+    END LOOP;
+
+    RETURN json_build_object('discoveries', discoveries);
+EXCEPTION WHEN unique_violation THEN
+    RETURN json_build_object('error', 'Conflicting YouTube metadata provenance. The snapshot was rolled back.');
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION fastest_discoveries.review(
     permalink text, decision text, editor text, explanation text
 )
@@ -114,6 +177,7 @@ AS $$
 DECLARE
     recorded fastest_discoveries.review;
     restriction text;
+    has_consent boolean;
 BEGIN
     PERFORM fastest_discoveries.lock_history();
     SELECT * INTO recorded FROM fastest_discoveries.review WHERE source_url = permalink;
@@ -122,11 +186,12 @@ BEGIN
             RETURN json_build_object('error', 'The recorded review choice is immutable');
         END IF;
     ELSE
-        SELECT withholding INTO restriction FROM fastest_discoveries.entries WHERE source_url = permalink;
+        SELECT withholding, authority IS NOT NULL INTO restriction, has_consent
+        FROM fastest_discoveries.entries WHERE source_url = permalink;
         IF NOT FOUND THEN
             RETURN json_build_object('error', 'No submission for this source permalink');
         END IF;
-        IF decision = 'approve' AND restriction IS NOT NULL THEN
+        IF restriction IS NOT NULL AND (decision = 'approve' OR NOT has_consent) THEN
             RETURN json_build_object('error', 'Publication is withheld: ' || restriction);
         END IF;
         INSERT INTO fastest_discoveries.review (source_url, choice, reviewer, reason)

@@ -1,7 +1,8 @@
 # Discovery intake
 
-Editors can record opt-in forum, social, and video leads, then export approved
-source links and withholding reasons. PostgreSQL retains submissions, review
+Editors can record opt-in forum, social, and video leads and queue the
+reviewed YouTube metadata snapshot. Exports contain approved source links
+and fixed withholding reasons. PostgreSQL retains discoveries, review
 decisions, and withdrawals in the private `fastest_discoveries` schema. Treat
 the `queue` output and write receipts as private.
 
@@ -29,6 +30,8 @@ GRANT EXECUTE ON FUNCTION fastest_discoveries.submit(jsonb),
     fastest_discoveries.queue_entries() TO discoveries_editor;
 GRANT EXECUTE ON FUNCTION fastest_discoveries.public_report()
     TO discoveries_editor, discoveries_reader;
+GRANT EXECUTE ON FUNCTION fastest_discoveries.intake_youtube_metadata(text, jsonb)
+    TO discoveries_editor;
 ```
 
 Set `FASTEST_DISCOVERIES_DATABASE_URL` to the editor's libpq connection for
@@ -69,6 +72,46 @@ It immediately suppresses the link on subsequent exports and retains the
 prior review in the private history. Withdrawals take effect even if an
 earlier submission is replayed or the withdrawal arrives before intake.
 Regenerate or remove any separately distributed copy after a withdrawal.
+
+## Queue reviewed YouTube metadata
+
+Apply the PostgreSQL schema with the owner connection, including on an existing
+installation, and grant the metadata intake function to the editor before
+running the intake. From `production/`, run the following with the editor login.
+
+```sh
+FASTEST_DISCOVERIES_DATABASE_URL='service=discoveries-editor' \
+  python3 -B -m fastest_discoveries intake-youtube-metadata \
+  ../opendesign/mockups/llm-observatory/battle-title-sample.json
+```
+
+The command accepts the exact [reviewed title sample](../../opendesign/mockups/llm-observatory/battle-title-sample.json)
+observed on 2026-11-21. It verifies the sample against SHA-256
+`e0de59de5686414466374d3a68c0e05d957c085ee2a935e01e4c46574eb01842`
+before writing. A modified snapshot requires a new review and digest.
+The intake uses only video IDs from the local file, including the three
+videos excluded from title-based matchup rankings. All 12 identities are
+eligible for discovery. X and Reddit intake requires separate source
+authorization and operator support.
+
+Expect `{"discoveries": 12}` on the first run and on an exact retry. The private
+queue shows each canonical YouTube watch URL with `published_at: null`,
+`consent: null`, and the `youtube_metadata_discovery_only_v1` policy alongside
+the sample path, digest, and per-video locator. The observation date describes
+the sample. The sample provides no publication times.
+
+On an empty database, the public export shows 12 `discovery_only` reasons
+after intake. The operator can record a deletion through `withdraw`.
+A `source_deleted` withdrawal appears as a fixed withholding reason, including
+after replay. Source URLs and metadata provenance stay in the private queue.
+
+If a creator opts in for the same canonical permalink, use `submit` with a
+verified grant. The queue retains both the metadata provenance and the grant.
+An eligible opt-in needs an explicit review to appear in the public export.
+Existing decisions and withdrawals continue to apply, regardless of when the
+metadata is queued.
+For the separate opt-in fixture replay, the public export still contains the
+reviewed original and the fixed cross-post, deletion and discovery-only reasons.
 
 ## Import existing SQLite history
 

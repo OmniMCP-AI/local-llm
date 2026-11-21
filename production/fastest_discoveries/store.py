@@ -211,9 +211,14 @@ def format_report(rows, *, public):
             entry = {field: row[field] for field in (
                 "source_url", "original_url", "source_format", "published_at", "submitted_at",
             )}
-            entry["consent"] = {
-                "authority": row["authority"], "reference": row["consent_reference"], "scope": row["scope"],
-            }
+            entry["consent"] = (
+                {"authority": row["authority"], "reference": row["consent_reference"], "scope": row["scope"]}
+                if row["authority"] is not None else None
+            )
+            if "metadata_policy" in row.keys() and row["metadata_policy"] is not None:
+                entry["metadata"] = {
+                    "policy": row["metadata_policy"], "source_reference": row["metadata_source_reference"],
+                }
             entry.update(status=status, reason=reason)
             entry["review"] = (
                 {field: row[field] for field in ("choice", "reviewer", "reason", "reviewed_at")}
