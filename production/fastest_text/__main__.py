@@ -237,14 +237,18 @@ def main(argv=None):
     publish.add_argument("--record", type=Path, action="append", default=[], help="Include a reviewed runner JSON record.")
     publish.add_argument("--demo", action="store_true", help="Require synthetic records and label their public output.")
     collect = commands.add_parser("capture", help="Run both pinned phases and retain private evidence.")
-    collect.add_argument("output", type=Path, help="New operator-private evidence directory.")
-    collect.add_argument("--cell", choices=("apple-m4", "rtx-4090"), required=True)
+    latency = commands.add_parser("capture-latency", help="Capture private timings for the pinned Chinese task stream.")
     collect.add_argument("--bench", type=Path, required=True, help="Pinned b5163 llama-bench executable.")
-    collect.add_argument("--model-dir", type=Path, required=True, help="Directory containing both pinned shards.")
-    collect.add_argument("--build-evidence", type=Path, required=True, help="Local build and linked-library provenance file.")
-    collect.add_argument("--host-revision", required=True, help="Operator's stable physical host/configuration identifier.")
-    collect.add_argument("--quiet-host", action="store_true", required=True, help="Attest to an otherwise idle host.")
+    latency.add_argument("--server", type=Path, required=True, help="Pinned b5163 llama-server executable.")
+    for command in (collect, latency):
+        command.add_argument("output", type=Path, help="New operator-private evidence directory.")
+        command.add_argument("--cell", choices=("apple-m4", "rtx-4090"), required=True)
+        command.add_argument("--model-dir", type=Path, required=True, help="Directory containing both pinned shards.")
+        command.add_argument("--build-evidence", type=Path, required=True, help="Local build and linked-library provenance file.")
+        command.add_argument("--host-revision", required=True, help="Operator's stable physical host/configuration identifier.")
+        command.add_argument("--quiet-host", action="store_true", required=True, help="Attest to an otherwise idle host.")
     collect.add_argument("--timeout", type=int, default=900, help="Maximum seconds per phase.")
+    latency.add_argument("--timeout", type=int, default=120, help="Maximum seconds per streaming request.")
     review = commands.add_parser("review-packet", help="Prepare retained Chinese completions for blinded review.")
     review.add_argument("output", type=Path, help="New directory for the review packet and private source map.")
     review.add_argument("--response", type=Path, action="append", required=True, help="Retained chat completion JSON.")
@@ -259,6 +263,15 @@ def main(argv=None):
             if capture(args, plan, latency):
                 return 0
             print(f"Capture incomplete. Private evidence retained in {args.output}.", file=sys.stderr)
+            return 1
+        if args.command == "capture-latency":
+            from .latency import capture_latency, capture_signals
+
+            plan = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
+            with capture_signals():
+                if capture_latency(args, plan):
+                    return 0
+            print(f"Private latency capture incomplete. Evidence retained in {args.output}.", file=sys.stderr)
             return 1
         if args.command == "review-packet":
             rubric = json.loads(PLAN_PATH.read_text(encoding="utf-8"))["rubric"]
