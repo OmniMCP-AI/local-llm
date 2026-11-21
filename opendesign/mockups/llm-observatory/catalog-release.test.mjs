@@ -309,7 +309,7 @@ test("versioned hardware cards preserve uncertain memory, source links and board
   const { read, request } = await buildFixture(t);
   const { hardware } = JSON.parse(await read("manifest.json"));
   assert.equal(hardware.asOf, "2026-11-21");
-  assert.equal(hardware.coverage.cards, 156);
+  assert.equal(hardware.coverage.memoryModifiedCards, 16);
   assert.equal(hardware.coverage.researchProfiles, 116);
 
   const machine = "machines/V018-HP-C002";
@@ -524,8 +524,9 @@ test("the released tinybox profile separates installed GPU memory and documented
 });
 
 test("every released hardware row resolves in both formats", async (t) => {
-  const { readData, request } = await buildFixture(t);
-  for (const [kind, count] of [["cards", 156], ["machines", 124]]) {
+  const { read, readData, request } = await buildFixture(t);
+  const { hardware: { coverage } } = JSON.parse(await read("manifest.json"));
+  for (const [kind, count] of [["cards", coverage.cards], ["machines", 124]]) {
     const rows = await readData(kind + ".json");
     assert.equal(rows.length, count);
     for (const { id, source } of rows) {
@@ -539,6 +540,26 @@ test("every released hardware row resolves in both formats", async (t) => {
       }));
       assertProfileFieldsAgree(html, markdown, id);
     }
+  }
+});
+
+test("released modified GPU profiles expose seller and lab evidence in both formats", async (t) => {
+  const { request } = await buildFixture(t);
+  for (const [id, fields] of [
+    ["nvidia-geforce-rtx-4090-modified-48gb", ["48 GB", "Seller listing", "Seller service", "Advertised board capacity"]],
+    ["nvidia-cmp-170hx-modified-80gb", ["80 GB", "Lab demonstration", "Reported tested framebuffer", "Synthetic memory reads and writes"]],
+  ]) {
+    const [html, markdown] = await Promise.all(["html", "md"].map(async extension => {
+      const response = await request(`cards/${id}.${extension}`);
+      assert.equal(response.status, 200);
+      return response.text();
+    }));
+    for (const body of [html, markdown]) {
+      for (const field of fields) assert.ok(body.includes(field), field);
+      assert.match(body, /Runtime-usable memory[^\n]*Unknown/);
+      assert.doesNotMatch(body, /GPU position by rated specifications/);
+    }
+    assertProfileFieldsAgree(html, markdown, id);
   }
 });
 
@@ -786,6 +807,11 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
   assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
   const published = readPublishedCatalog(testDatabase, imported.snapshotId);
+  const modified = published.hardware.catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-4090-modified-48gb");
+  assert.equal(modified.parent, "nvidia-geforce-rtx-4090");
+  assert.equal(modified.modification.capacityGb, 48);
+  assert.equal(modified.modification.evidence[0].kind, "Seller listing");
+  assert.equal(modified.vendorSpec, null);
   const topology = published.topologies.find(({ id }) => id === tinyboxId);
   assert.match(topology?.revision ?? "", /^topology-[a-f0-9]{64}$/);
   assert.deepEqual(topology.devices.map(({ slot, card }) => [slot, card]), [1, 2, 3, 4].map(slot => [slot, "amd-instinct-mi300x"]));

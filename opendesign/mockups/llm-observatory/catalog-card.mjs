@@ -153,6 +153,9 @@ export function hardwareCard(row, release, kind, {
 
   if (kind === "cards") {
     const vendor = row.vendorSpec;
+    const modified = row.modification;
+    const firstEvidence = modified?.evidence[0].source;
+    const reportedCapacity = modified?.capacityGb != null ? `${modified.capacityGb} GB` : null;
     const vendorFields = Object.entries(vendor?.facts ?? {}).map(([label, value]) => [label, value, vendor.source]);
     const memory = vendor?.facts["Memory configuration"] ?? vendor?.facts["Dedicated memory (GB)"];
     const bus = vendor?.facts["Memory bus"] ?? vendor?.facts["Memory bus (bits)"];
@@ -165,6 +168,7 @@ export function hardwareCard(row, release, kind, {
     const withSource = (label, value) => [label, value ?? "Unknown", value && vendor?.source];
     const memoryField = moduleMemory ? withSource("Aggregate module capacity", moduleMemory)
       : memory ? withSource("Capacity / configuration", memory)
+      : modified ? ["Reported modified capacity", reportedCapacity ?? "Unknown", reportedCapacity && firstEvidence]
       : ["Capacity / configuration", row.memory ?? "Unknown", row.memory && row.source];
     const gallery = vendor?.gallery;
     const ratings = cardRatings(row);
@@ -177,7 +181,7 @@ export function hardwareCard(row, release, kind, {
       title: row.name,
       kind: row.kind,
       source: vendor?.source ?? row.source,
-      position: cardPosition(row, peers, id => path("cards", id)),
+      position: modified ? null : cardPosition(row, peers, id => path("cards", id)),
       visuals: [
         { title: "On-board memory", graphic: graphic("Nominal capacity", "capacity", "GB"), fields: [
           memoryField,
@@ -197,11 +201,23 @@ export function hardwareCard(row, release, kind, {
         ["Manufacturer", row.manufacturer],
         ["Board or product variant", row.variant],
         ["Source names and lookup aliases", row.aliases.join(" · ") || "Unavailable"],
-        ["Reported nominal memory per device", row.memory ?? "Unknown"],
-        ["Runtime-usable memory", "Unknown"],
-        ...(row.parent ? [["Related product family or calibration", row.parent, path("cards", row.parent)]] : []),
+        ...(!modified ? [["Reported nominal memory per device", row.memory ?? "Unknown"], ["Runtime-usable memory", "Unknown"]] : []),
+        ...(row.parent ? [[modified ? "Base GPU identity" : "Related product family or calibration", row.parent, path("cards", row.parent)]] : []),
       ],
       sections: [
+        ...(modified ? [{
+          title: "Memory modification evidence",
+          fields: [
+            ["Stock capacity before modification", modified.stockGb != null ? `${modified.stockGb} GB` : "Unknown",
+              modified.stockGb != null && firstEvidence],
+            ["Modified capacity scope", modified.capacityScope, firstEvidence],
+            ...(modified.installedGb != null ? [["Reported installed memory", `${modified.installedGb} GB`, firstEvidence]] : []),
+            ...(modified.validatedGb != null ? [["Reported tested framebuffer", `${modified.validatedGb} GB`, firstEvidence]] : []),
+            ["Runtime-usable memory", modified.usableGb != null ? `${modified.usableGb} GB` : "Unknown",
+              modified.usableGb != null && firstEvidence],
+            ...modified.evidence.map(({ kind, source, detail }) => [kind, detail, source]),
+          ],
+        }] : []),
         {
           title: "Manufacturer specifications",
           fields: vendor

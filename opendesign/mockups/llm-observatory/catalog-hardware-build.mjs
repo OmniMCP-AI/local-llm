@@ -31,18 +31,20 @@ function researchMemory(profile, native, exceptions) {
 }
 
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
-  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes] = await Promise.all([
+  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
     readFile(join(directory, "../../..", seedPath, "hardware-profiles.json")),
     readFile(join(directory, "../../..", seedPath, "llmfit/research/hardware.json")),
     readFile(join(directory, "gpu-vendor-specs.json")),
     readFile(join(directory, "catalog-source-additions.json")),
+    readFile(join(directory, "catalog-modified-gpus.json")),
   ]);
   const inventory = JSON.parse(inventoryBytes);
   const { asOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
   const vendor = JSON.parse(specBytes);
   const additions = JSON.parse(additionsBytes);
+  const modified = JSON.parse(modifiedBytes);
   const vendorSpec = (id) => {
     const source = [additions.specs[id], vendor.cards[id]].find(spec => spec && !isWithdrawn(spec.source));
     if (!source) return null;
@@ -140,6 +142,32 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       vendorSpec: spec,
     });
   }
+  for (const { id, name, manufacturer, parent = null, ...modification } of index(modified.cards).values()) {
+    const existing = cards.get(id);
+    const primary = modification.evidence[0];
+    if (isWithdrawn(id) || isWithdrawn(primary.source) || withdrawnCards.has(id)) {
+      cards.delete(id);
+      withdrawnCards.add(id);
+      continue;
+    }
+    if (existing?.vendorSpec || (!existing && (!name || !(parent || manufacturer)))) {
+      throw new Error(`Invalid identity for memory-modified GPU: ${id}`);
+    }
+    const capacity = modification.capacityGb == null ? "" : ` · ${modification.capacityGb} GB`;
+    const detail = `Memory-modified GPU${capacity} · ${primary.kind}`;
+    cards.set(id, {
+      ...(existing ?? {
+        id, name, parent, manufacturer: manufacturer ?? cards.get(parent)?.manufacturer,
+        variant: detail, source: primary.source, kind: "Component reference", aliases: [],
+        lookupSource: null, memory: null, relatedProfiles: [], explicitProfiles: [], vendorSpec: null,
+      }),
+      detail,
+      modification: {
+        ...modification,
+        evidence: modification.evidence.filter(({ source }) => !isWithdrawn(source)),
+      },
+    });
+  }
   let previousCardCount;
   do {
     previousCardCount = cards.size;
@@ -171,7 +199,9 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     const cardIds = profileCards[id] ?? (explicit.length
       ? explicit.map((card) => card.id)
       : unique([names.get(key(profile.gpu))]));
-    if (!withdrawnProfiles.size && cardIds.some((id) => !cards.has(id))) throw new Error(`Unknown card in machine: ${id}`);
+    if (!withdrawnProfiles.size && cardIds.some(id => !cards.has(id) && !withdrawnCards.has(id))) {
+      throw new Error(`Unknown card in machine: ${id}`);
+    }
     return {
       id, name, source, kind, cardIds: cardIds.filter((id) => cards.has(id)),
       detail: kind === "Component reference" ? kind : `${kind} / ${profile.core_fields_reported} of ${profile.core_fields_total} build fields reported`,
@@ -231,7 +261,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
 
   const manifest = {
     asOf,
-    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, the retained research hardware inventory, and selected manufacturer and board-partner product records. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
+    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, the retained research hardware inventory, selected manufacturer and board-partner product records, and source-backed aftermarket memory modifications. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
     upstream: {
       commit: upstream.commit,
       commitDate: upstream.commitDate,
@@ -250,8 +280,13 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       capturedAt: vendor.capturedAt, sha256: sha256(specBytes),
       additionsCapturedAt: additions.capturedAt, additionsSha256: sha256(additionsBytes),
     },
+    modifiedGpus: { reviewedAt: modified.reviewedAt, sha256: sha256(modifiedBytes) },
     coverage: {
       cards: catalog.cards.length,
+      memoryModifiedCards: catalog.cards.filter(card => card.modification).length,
+      memoryModifiedWithSellerEvidence: catalog.cards.filter(card => card.modification?.evidence.some(
+        ({ kind }) => kind === "Seller listing" || kind === "Seller service"
+      )).length,
       cardsWithVendorSpecs: catalog.cards.filter(card => card.vendorSpec).length,
       cardsWithSpecificVendorSpecs: catalog.cards.filter(card => card.vendorSpec &&
         card.vendorSpec.scope !== "Multiple manufacturer configurations").length,
@@ -261,7 +296,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       upstreamOnlyCards: upstreamOnly,
       researchOnlyCards: researchOnly,
       cardsWithBothSources: [...cards.values()].filter(row => row.lookupSource && row.relatedProfiles.length).length,
-      manufacturerOnlyCards: [...cards.values()].filter(row => !row.lookupSource && !row.relatedProfiles.length).length,
+      manufacturerOnlyCards: [...cards.values()].filter(row => !row.lookupSource && !row.relatedProfiles.length && !row.modification).length,
       unresolvedCardReferences: catalog.cards.filter(({ kind }) => kind === "Unresolved family reference").length,
       researchProfiles: machines.length,
       researchComponentReferences: componentReferences,

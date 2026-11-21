@@ -480,6 +480,15 @@ test("the static Pages review links to exact hardware profiles from its pinned P
     assert.ok(script);
     assert.equal((await get(script)).status, 200);
     const directory = await (await get(root + "/hardware")).text();
+    const modifiedProfile = `${root}/cards/nvidia-geforce-rtx-4090-modified-48gb`;
+    assert.match(directory, /href="#memory-modified">Memory-modified GPUs/);
+    assert.match(directory, /id="memory-modified"><h2>Memory-modified GPUs \(16\)/);
+    assert.ok(directory.includes(`href="${modifiedProfile}"`));
+    const modified = await get(modifiedProfile);
+    assert.equal(modified.status, 200);
+    assert.match(await modified.text(), /Reported modified capacity.*48 GB/);
+    assert.match(await (await get(modifiedProfile + ".md")).text(), /Seller listing/);
+    assert.match(battleHtml, /Stock and modified RTX 4090/);
     const profile = `${root}/machines/${id}`;
     assert.ok(directory.includes(`href="${profile}">${name}</a>`));
     const html = await get(profile);

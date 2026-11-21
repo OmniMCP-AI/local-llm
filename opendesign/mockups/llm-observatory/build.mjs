@@ -131,7 +131,9 @@ if (!published) {
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
-  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory, vendorSpec }) => ({ id, name, detail, aliases, source, memory, vendorSpec })),
+  cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory, vendorSpec, modification }) => ({
+    id, name, detail, aliases, source, memory, vendorSpec, memoryModified: Boolean(modification),
+  })),
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
 const runtimes = published?.runtimes ?? JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8")).map(({ references, ...row }) => ({

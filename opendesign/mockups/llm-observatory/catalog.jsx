@@ -18,6 +18,7 @@ const manifestPath = (catalogRelease || localCatalogRelease) &&
   `${catalogRelease ? "" : "local-catalog/"}catalog/${catalogRelease || localCatalogRelease}/manifest.json`;
 const runtimes = __FASTEST_RUNTIMES__;
 const hardwareCatalog = __FASTEST_HARDWARE_DIRECTORY__;
+const modifiedCardTag = "memory-modified";
 const machineKinds = ["Complete factory configuration", "Partial configuration", "Component reference", "llmfit example preset", "Manufacturer system reference"];
 const runtimeCategories = [...new Set(runtimes.map(row => row.category))].sort();
 const { byId: modelById, ...modelViews } = modelCollections(modelCatalog.models, discovery, __FASTEST_SUPPLEMENTAL_MODELS__);
@@ -27,8 +28,8 @@ const tabs = [
   {
     key: "cards", title: "Cards", icon: Cpu, rows: hardwareCatalog.cards, scope: "Graphics card references",
     titleZh: "显卡", scopeZh: "显卡资料",
-    description: "Card identities and variants from the research inventory, pinned llmfit lookup, and manufacturer and board-partner records.",
-    descriptionZh: "显卡型号与版本来自研究资料、固定版本的 llmfit 硬件表，以及芯片厂商与板卡合作伙伴。",
+    description: "Browse stock GPUs and memory-modified variants with linked specifications, seller listings and research.",
+    descriptionZh: "浏览原厂显卡与显存改装版，并查看对应规格、卖家商品页和研究资料。",
   },
   {
     key: "machines", title: "Machines", icon: Layers3, rows: hardwareCatalog.machines, scope: "Machine and component records",
@@ -77,7 +78,7 @@ const taskAndFormatTags = Array.from(new Set(modelViews.all
   .filter((value) => !value.endsWith(" parameters")))).sort();
 const emptyFilters = { query: "", tag: "", license: "", page: 1, view: "popular" };
 
-function modelFiltersFromLocation() {
+function catalogFiltersFromLocation() {
   const params = new URLSearchParams(location.hash.split("?")[1]);
   const page = Number(params.get("page"));
   const view = params.get("view");
@@ -90,7 +91,7 @@ function modelFiltersFromLocation() {
   };
 }
 
-function saveModelFilters(filters, paginate) {
+function saveCatalogFilters(filters, paginate) {
   const params = new URLSearchParams();
   if (filters.query) params.set("q", filters.query);
   if (filters.tag) params.set("tag", filters.tag);
@@ -237,14 +238,14 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   const { language, t } = useLocale();
   const number = useMemo(() => new Intl.NumberFormat(language), [language]);
   const [active, setActive] = useState(() => validKind(initialKind));
-  const [filters, setFilters] = useState(modelFiltersFromLocation);
+  const [filters, setFilters] = useState(catalogFiltersFromLocation);
   const [picks, setPicks] = useState([]);
   const [runtimeWatch, setRuntimeWatch] = useState(null);
   const { query, tag, license, page, view } = filters;
   const tableTop = useRef(null);
   useEffect(() => {
-    if (active !== "models") return;
-    const restore = () => setFilters(modelFiltersFromLocation());
+    if (active !== "models" && active !== "cards") return;
+    const restore = () => setFilters(catalogFiltersFromLocation());
     window.addEventListener("popstate", restore);
     window.addEventListener("hashchange", restore);
     return () => {
@@ -268,7 +269,8 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
     if (tab.key === "models") return queryModelCatalog(modelRows, modelIdentities, { ...filters, ranked: view !== "all" });
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const filtered = terms.length || tag ? tab.rows.filter((row) => {
-      if (tag && (row.category ?? row.kind) !== tag) return false;
+      const category = row.memoryModified ? modifiedCardTag : row.category ?? row.kind;
+      if (tag && category !== tag) return false;
       const text = [row.id, row.name, row.detail, row.tag, ...(row.aliases ?? [])].join(" ").toLowerCase();
       return terms.every((term) => text.includes(term));
     }) : tab.rows;
@@ -298,7 +300,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
   function updateFilters(patch, paginate = false) {
     const next = { ...filters, page: 1, ...patch };
     setFilters(next);
-    if (active === "models") saveModelFilters(next, paginate);
+    if (active === "models" || active === "cards") saveCatalogFilters(next, paginate);
   }
 
   const setPage = (newPage) => updateFilters({ page: newPage }, true);
@@ -354,6 +356,9 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
         {active === "cards" && <>{t("{specs} with manufacturer or board-partner specs", "{specs} 条附有厂商或板卡合作伙伴规格", {
           specs: number.format(coverage.cardsWithVendorSpecs),
         })} ·{" "}</>}
+        {active === "cards" && coverage.memoryModifiedCards > 0 && <>{t("{modified} memory-modified variants", "{modified} 种显存改装版", {
+          modified: number.format(coverage.memoryModifiedCards),
+        })} ·{" "}</>}
         {t("No reviewed benchmark results", "暂无经过审核的基准测试结果")}
         {manifestPath && <> · <a className="catalog-source-link" href={manifestPath}>{t("Snapshot sources and counts", "快照来源与数量")}</a></>}
       </p>}
@@ -380,6 +385,12 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           <Search size={16} aria-hidden="true" />
           <input type="search" aria-label={search} placeholder={active === "models" ? t("Search owner/model or metadata", "搜索组织名、模型名或元数据") : search} value={query} onChange={(event) => updateFilters({ query: event.target.value })} />
         </label>
+        {active === "cards" && coverage.memoryModifiedCards > 0 && <label className="catalog-filter"><span>{t("Card type", "显卡类型")}</span>
+          <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
+            <option value="">{t("All cards", "全部显卡")}</option>
+            <option value={modifiedCardTag}>{t("Memory-modified GPUs", "显存改装显卡")}</option>
+          </select>
+        </label>}
         {active === "machines" && <label className="catalog-filter"><span>{t("Record type", "记录类型")}</span>
           <select value={tag} onChange={(event) => updateFilters({ tag: event.target.value })}>
             <option value="">{t("Any", "全部")}</option>
