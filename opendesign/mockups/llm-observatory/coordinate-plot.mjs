@@ -8,7 +8,7 @@ const tickNumber = new Intl.NumberFormat("en", { maximumFractionDigits: 8 }).for
 export const axisTitle = ({ label, unit }) => unit ? `${label} (${unit})` : label;
 const valueText = (axis, value) => axis.formatValue?.(value) ??
   `${typeof value === "number" ? formatNumber(value) : value}${axis.unit ? " " + axis.unit : ""}`;
-const tickText = (axis, value) => axis.formatTick?.(value) ?? (typeof value === "number" ? tickNumber(value) : value);
+const tickText = (axis, value) => axis.formatTick?.(value) ?? axis.tickLabels?.[value] ?? (typeof value === "number" ? tickNumber(value) : value);
 const percent = value => `${(value * 100).toFixed(5)}%`;
 const svgCoord = value => (value * 1000).toFixed(3);
 
@@ -132,4 +132,62 @@ ${interactiveZoom ? `<div class="coordinate-zoom" role="group" aria-label="Zoom 
 ${guides.length ? `<p class="coordinate-guide-key">${guides.map(guide => `${escape(guide.label)}: ${escape(valueText(guide.axis === "x" ? xAxis : yAxis, guide.value))}`).join(" · ")}</p>` : ""}
 ${selected ? `<p class="coordinate-selection">${pointText(selected)}</p>` : ""}
 <ul class="coordinate-label-list" tabindex="0">${labelList}</ul></div>`;
+}
+
+
+// The release profiles are standalone HTML, so include the same renderer and
+// chart-local state rather than depending on an app bundle or a server.
+export function renderStandaloneCoordinatePlot(chart) {
+  if (!chart.points.length) return renderCoordinatePlot(chart);
+  const data = JSON.stringify(chart).replace(/</g, "\\u003c");
+  return `<div data-coordinate-static><div data-coordinate-content>${renderCoordinatePlot({ ...chart, interactiveZoom: true })}</div><script type="application/json" data-coordinate-data>${data}</script></div>`;
+}
+
+function initStandalonePlots() {
+  document.querySelectorAll("[data-coordinate-static]").forEach(root => {
+    const chart = JSON.parse(root.querySelector("[data-coordinate-data]").textContent);
+    const content = root.querySelector("[data-coordinate-content]");
+    let zoom = { start: 0, end: 1 };
+    let labels = false;
+    content.addEventListener("change", event => {
+      if (event.target.matches('input[type="checkbox"]')) labels = event.target.checked;
+    });
+    content.addEventListener("click", event => {
+      const button = event.target.closest("button[data-zoom]");
+      if (!button) return;
+      const action = button.dataset.zoom;
+      const width = zoom.end - zoom.start;
+      if (action === "reset") zoom = { start: 0, end: 1 };
+      else if (action === "previous" || action === "next") {
+        const start = Math.max(0, Math.min(1 - width, zoom.start + (action === "next" ? width / 2 : -width / 2)));
+        zoom = { start, end: start + width };
+      } else {
+        const nextWidth = Math.min(1, Math.max(1 / 64, width * (action === "in" ? .5 : 2)));
+        const start = Math.max(0, Math.min(1 - nextWidth, (zoom.start + zoom.end - nextWidth) / 2));
+        zoom = { start, end: start + nextWidth };
+      }
+      content.innerHTML = renderCoordinatePlot({ ...chart, showLabels: labels, interactiveZoom: true, zoom });
+      const next = content.querySelector(`button[data-zoom="${action}"]`);
+      (next.disabled ? content.querySelector('button[data-zoom="in"]') : next).focus();
+    });
+  });
+}
+
+export function standaloneCoordinateScript() {
+  return `<script data-coordinate-script>(() => {
+const escape = ${escape.toString()};
+const formatNumber = new Intl.NumberFormat("en", { maximumSignificantDigits: 15 }).format;
+const tickNumber = new Intl.NumberFormat("en", { maximumFractionDigits: 8 }).format;
+const axisTitle = ${axisTitle.toString()};
+const valueText = ${valueText.toString()};
+const tickText = ${tickText.toString()};
+const percent = ${percent.toString()};
+const svgCoord = ${svgCoord.toString()};
+${numericAxis.toString()}
+${categoricalAxis.toString()}
+${axisMarkup.toString()}
+${markMarkup.toString()}
+${renderCoordinatePlot.toString()}
+(${initStandalonePlots.toString()})();
+})();</script>`;
 }

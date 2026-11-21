@@ -1,7 +1,7 @@
 import { guidanceSections } from "./catalog-guidance.mjs";
 import { catalogPath, hardwareDirectoryPath, modelCollectionPath, runtimeDirectoryPath, topologyRevisionHref } from "./catalog-paths.mjs";
 import { bandwidthAxis, cardPosition, cardRatings, memoryAxis, speedAxis } from "./catalog-position.mjs";
-import { axisTitle, renderCoordinatePlot } from "./coordinate-plot.mjs";
+import { axisTitle, renderCoordinatePlot, renderStandaloneCoordinatePlot, standaloneCoordinateScript } from "./coordinate-plot.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 import { navigationHref, navigationRoutes } from "./release-origin.mjs";
 import { languages } from "./locale-settings.mjs";
@@ -403,14 +403,14 @@ function positionHtml({ id, name, points, capacityPoints }, heading) {
   };
   const gpuLabels = new Map(capacityPoints.map(point => [point.id, point.short]));
   const memory = {
-    title: "GPU memory capacity", xAxis: { ...gpuAxis, formatTick: id => gpuLabels.get(id) }, yAxis: memoryAxis, kind: "bar", points: capacityPoints,
+    title: "GPU memory capacity", xAxis: { ...gpuAxis, tickLabels: Object.fromEntries(gpuLabels) }, yAxis: memoryAxis, kind: "bar", points: capacityPoints,
     selectedId: id, emptyText: "The release has no comparable manufacturer-rated memory capacities.",
   };
   const speed = { title: speedTitle, xAxis: memoryAxis, yAxis: speedAxis, points: [], emptyText: speedUnavailable };
   return `<section class="profile-section"><${heading}>${positionTitle}</${heading}><p>${positionBasis}</p>
 <p class="profile-chart-note">${selected ? `◆ Selected GPU: ${escapeHtml(name)} · ${selected.x} GB · ${selected.y} GB/s`
     : `${escapeHtml(name)} has no unambiguous pair of rated specifications for these axes.`}</p>
-${renderCoordinatePlot(atlas)}
+${renderStandaloneCoordinatePlot(atlas)}
 <details><summary>View chart data (${points.length} GPUs)</summary><table class="profile-chart-table">
 <thead><tr><th scope="col">GPU</th><th scope="col">${axisTitle(memoryAxis)}</th><th scope="col">${axisTitle(bandwidthAxis)}</th><th scope="col">Source</th></tr></thead><tbody>
 ${points.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
@@ -422,7 +422,7 @@ ${points.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml
 <p>Manufacturer-rated memory per GPU, ordered by capacity.</p>
 <p class="profile-chart-note">${capacity ? `◆ Selected GPU: ${escapeHtml(name)} · ${capacity.y} GB`
     : `${escapeHtml(name)} has no unambiguous manufacturer-rated capacity on this scale.`}</p>
-${renderCoordinatePlot(memory)}
+${renderStandaloneCoordinatePlot(memory)}
 <details><summary>View memory data (${capacityPoints.length} GPUs)</summary><table class="profile-chart-table">
 <thead><tr><th scope="col">GPU</th><th scope="col">${axisTitle(memoryAxis)}</th><th scope="col">Source</th></tr></thead><tbody>
 ${capacityPoints.map(point => `<tr${active(point)}><th scope="row"><a href="${escapeHtml(point.href)}">${escapeHtml(point.name)}</a></th>
@@ -536,6 +536,7 @@ ${main}
   update();
 })();
 </script>
+${main.includes("data-coordinate-static") ? standaloneCoordinateScript() : ""}
 </body>
 </html>
 `;
