@@ -135,7 +135,7 @@ function Modes({ active, onChoose }) {
 
 function Header({ page, slug, go }) {
   const { t } = useLocale();
-  const current = __FASTEST_CATALOG_POSTGRES__ && page === "Catalog" && ["machines", "models"].includes(slug)
+  const current = page === "Catalog" && (slug === "machines" || (__FASTEST_CATALOG_POSTGRES__ && slug === "models"))
     ? "#catalog/" + slug : "#" + routes[page];
   return <header className="site-header"><div className="nav-inner">
     <a href="#explorer" className="wordmark" onClick={(e) => { e.preventDefault(); go("#explorer"); }}>

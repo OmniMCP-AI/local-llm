@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { hardwareIdPattern } from "./catalog-paths.mjs";
+import { readCatalogPhotos } from "./catalog-topology-build.mjs";
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+export const machineBuildRegistry = "catalog-machine-builds.json";
 const seedPath = "docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts";
 const unreported = "Not reported in available captions";
 const fact = (value) => value && value !== unreported ? value : null;
@@ -30,8 +34,29 @@ function researchMemory(profile, native, exceptions) {
   };
 }
 
+function reviewedMachineRows(builds, cards, withdrawnCards, isWithdrawn) {
+  index(builds);
+  return builds.filter(({ id, source, cardIds, name, buildSource, bom, video }) => {
+    if (!hardwareIdPattern.test(id) || !source?.startsWith("https://") || !name ||
+        !buildSource?.platform || !buildSource.author || !buildSource.locator ||
+        !bom?.length || bom.some(({ category, part }) => !category || !part) ||
+        cardIds.some(card => !cards.has(card) && !withdrawnCards.has(card)) ||
+        (video && (!/^[\w-]{11}$/.test(video.id) || source !== ("https://www.youtube.com/watch?v=" + video.id) ||
+          !video.title || (video.start !== undefined && (!Number.isSafeInteger(video.start) || video.start < 0))))) {
+      throw new Error("Invalid reviewed machine: " + id);
+    }
+    return ![id, source].some(isWithdrawn) && cardIds.every(card => cards.has(card));
+  }).map(({ gallery, ...machine }) => ({
+    ...machine,
+    kind: "Creator-reported build",
+    bom: machine.bom.map(part => ({ ...part, source: machine.source, locator: machine.buildSource.locator })),
+    ...(gallery && !isWithdrawn(gallery.source) ? { gallery } : {}),
+  }));
+}
+
 export async function readHardwareCatalog(directory, isWithdrawn = () => false) {
-  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes] = await Promise.all([
+  const [inventoryBytes, mappingsBytes, profileBytes, nativeBytes, specBytes, additionsBytes, modifiedBytes,
+    buildBytes, photos] = await Promise.all([
     readFile(join(directory, "catalog-hardware.json")),
     readFile(join(directory, "catalog-hardware-sources.json")),
     readFile(join(directory, "../../..", seedPath, "hardware-profiles.json")),
@@ -39,12 +64,15 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     readFile(join(directory, "gpu-vendor-specs.json")),
     readFile(join(directory, "catalog-source-additions.json")),
     readFile(join(directory, "catalog-modified-gpus.json")),
+    readFile(join(directory, machineBuildRegistry)),
+    readCatalogPhotos(pathToFileURL(join(directory, "catalog-hardware-build.mjs")), "machine"),
   ]);
   const inventory = JSON.parse(inventoryBytes);
-  const { asOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
+  const { asOf: inventoryAsOf, upstream, research, variants, cardMetadata, profileCards, memoryNotes } = JSON.parse(mappingsBytes);
   const vendor = JSON.parse(specBytes);
   const additions = JSON.parse(additionsBytes);
   const modified = JSON.parse(modifiedBytes);
+  const { reviewedAt, builds, photoIds } = JSON.parse(buildBytes);
   const vendorSpec = (id) => {
     const source = [additions.specs[id], vendor.cards[id]].find(spec => spec && !isWithdrawn(spec.source));
     if (!source) return null;
@@ -247,7 +275,20 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
     .map(({ gallery, ...machine }) => ({
       ...machine, ...(gallery && !isWithdrawn(gallery.source) ? { gallery } : {}),
     }));
-  const machineRows = [...machines, ...presets, ...manufacturerMachines];
+  const creatorBuilds = reviewedMachineRows(builds, cards, withdrawnCards, isWithdrawn);
+  const knownBuilds = new Map([...builds, ...additions.machines].map(row => [row.id, row]));
+  for (const [id, ids] of Object.entries(photoIds)) {
+    const known = knownBuilds.get(id);
+    if (!known || new Set(ids).size !== ids.length || ids.length + Number(Boolean(known.video)) > 3 ||
+        ids.some(photoId => !Object.hasOwn(photos, photoId))) {
+      throw new Error("Invalid machine photos: " + id);
+    }
+  }
+  const machineRows = [...creatorBuilds, ...machines, ...presets, ...manufacturerMachines].map(row => {
+    const gallery = (photoIds[row.id] ?? []).map(id => photos[id])
+      .filter(photo => !isWithdrawn(photo.source));
+    return gallery.length ? { ...row, photos: gallery } : row;
+  });
   const catalog = {
     cards: [...cards.values()].map(({ explicitProfiles, resolveShortAliases, ...card }) => ({
       ...card,
@@ -260,8 +301,8 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
   index(catalog.machines);
 
   const manifest = {
-    asOf,
-    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, the retained research hardware inventory, selected manufacturer and board-partner product records, and source-backed aftermarket memory modifications. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
+    asOf: reviewedAt > inventoryAsOf ? reviewedAt : inventoryAsOf,
+    scope: "Pinned llmfit discrete memory-bandwidth lookup, its three HardwareProfile examples, the retained research hardware inventory, selected manufacturer and board-partner product records, source-backed aftermarket memory modifications, and reviewed creator build disclosures. Integrated GPU lookup aliases do not identify a graphics card or a complete machine. Benchmark values and community caches are outside this snapshot.",
     upstream: {
       commit: upstream.commit,
       commitDate: upstream.commitDate,
@@ -281,6 +322,11 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       additionsCapturedAt: additions.capturedAt, additionsSha256: sha256(additionsBytes),
     },
     modifiedGpus: { reviewedAt: modified.reviewedAt, sha256: sha256(modifiedBytes) },
+    creatorBuilds: {
+      reviewedAt, sha256: sha256(buildBytes),
+      sourcesByPlatform: Object.fromEntries(Object.entries(Object.groupBy(creatorBuilds, row => row.buildSource.platform))
+        .map(([platform, rows]) => [platform, rows.length])),
+    },
     coverage: {
       cards: catalog.cards.length,
       memoryModifiedCards: catalog.cards.filter(card => card.modification).length,
@@ -303,6 +349,7 @@ export async function readHardwareCatalog(directory, isWithdrawn = () => false) 
       partialMachines: machines.length - componentReferences,
       upstreamPresets: presets.length,
       manufacturerMachines: manufacturerMachines.length,
+      creatorBuilds: creatorBuilds.length,
       completeBuilds: catalog.machines.filter(({ kind }) => kind === "Complete factory configuration").length,
       profilesWithCreatorReports: machines.filter((row) => row.associations > 0).length,
       profilesWithoutCreatorReports: machines.filter((row) => row.associations === 0).length,

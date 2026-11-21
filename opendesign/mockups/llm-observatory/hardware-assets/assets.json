@@ -34,5 +34,90 @@
     "source": "https://commons.wikimedia.org/wiki/File:Intel_Arc_Battlemage_B580_Limited_Edition.jpg",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "alt": "Intel Arc B580 Limited Edition graphics card and packaging"
+  },
+  "dgx-spark-front": {
+    "file": "dgx-spark-front.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_front_view_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Front of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "dgx-spark-oblique": {
+    "file": "dgx-spark-oblique.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_Spark_oblique_view_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Three-quarter view of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "dgx-spark-ports": {
+    "file": "dgx-spark-ports.jpg",
+    "credit": "Dllu / Wikimedia Commons (resized; exterior reference)",
+    "author": "Dllu",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nvidia_DGX_Spark_rear_ports_dllu.jpg",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Rear ports of an NVIDIA DGX Spark",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-bench": {
+    "file": "cangemi-wrx90-bench.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/bench-assembly.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "WRX90 bench assembly before chassis installation",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-gpu-spacing": {
+    "file": "cangemi-wrx90-gpu-spacing.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/gpu-slot-gap.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "Spacing between the two RTX 3090 Founders Edition cards",
+    "scope": "machine"
+  },
+  "cangemi-wrx90-airflow": {
+    "file": "cangemi-wrx90-airflow.jpg",
+    "credit": "Zachary Cangemi / GitHub (resized)",
+    "author": "Zachary Cangemi",
+    "license": "MIT",
+    "source": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/assets/images/airflow-layout.jpg",
+    "licenseUrl": "https://github.com/zacangemi/local-llm-infrastructure-v2/blob/bca862ea3ade1f6701f4eb319d711a64fc54e675/LICENSE",
+    "noticeFile": "cangemi-media-notice.txt",
+    "alt": "Builder-annotated airflow in the completed WRX90 system",
+    "scope": "machine"
+  },
+  "canales-rigup-open": {
+    "file": "canales-rigup-open.jpg",
+    "credit": "Gustavo Canales / GitHub (resized)",
+    "author": "Gustavo Canales",
+    "license": "MIT",
+    "source": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/docs/build/rig-open.jpg",
+    "licenseUrl": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/LICENSE",
+    "noticeFile": "canales-media-notice.txt",
+    "alt": "Fractal Terra build with its panel removed and RTX 3090 visible",
+    "scope": "machine"
+  },
+  "canales-rigup-closed": {
+    "file": "canales-rigup-closed.jpg",
+    "credit": "Gustavo Canales / GitHub (resized)",
+    "author": "Gustavo Canales",
+    "license": "MIT",
+    "source": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/docs/build/rig-closed.jpg",
+    "licenseUrl": "https://github.com/guscanales/rigup/blob/c5564754a3b5fcc1ee1a4cf49ea43e145b9f596e/LICENSE",
+    "noticeFile": "canales-media-notice.txt",
+    "alt": "Fractal Terra build with its side panel installed",
+    "scope": "machine"
   }
 }

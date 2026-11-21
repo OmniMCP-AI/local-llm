@@ -3,12 +3,13 @@ import { dirname } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
+import { hardwareCard, renderCard } from "./catalog-card.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {
   const { manifest, catalog } = await readHardwareCatalog(here);
-  assert.equal(manifest.asOf, "2026-11-21");
+  assert.equal(manifest.asOf, "2026-11-22");
   assert.equal(manifest.coverage.llmfitDiscreteMatchers, 72);
   assert.equal(manifest.coverage.researchProfiles, 116);
   assert.equal(manifest.coverage.researchComponentReferences, 46);
@@ -17,7 +18,7 @@ test("the hardware snapshot accounts for all sources and keeps memory limits sep
   assert.equal(manifest.coverage.completeBuilds, 4);
   assert.equal(manifest.coverage.reviewedMeasuredProfiles, 0);
   assert.equal(manifest.coverage.creatorReportedAssociations, 293);
-  assert.equal(catalog.machines.length, 124);
+  assert.equal(catalog.machines.length, 124 + manifest.coverage.creatorBuilds);
   assert.equal(manifest.coverage.manufacturerMachines, 5);
   assert.equal(manifest.coverage.cards, catalog.cards.length);
   assert.equal(catalog.cards.filter(card => !card.modification || card.relatedProfiles.length).length, 156);
@@ -213,4 +214,37 @@ test("5090 partner variants keep memory, operating modes and radiator dimensions
   assert.equal(original.parent, "nvidia-geforce-rtx-5090-d-32gb");
   assert.equal(v2.parent, "nvidia-geforce-rtx-5090-d-v2");
   assert.deepEqual([original, v2].map(card => card.vendorSpec.facts["Memory configuration"]), ["32 GB GDDR7", "24 GB GDDR7"]);
+});
+
+test("reviewed machines expose creator build facts, attributed media and withdrawal behavior", async () => {
+  const { catalog, manifest } = await readHardwareCatalog(here);
+  const builds = catalog.machines.filter(({ kind }) => kind === "Creator-reported build");
+  assert.ok(builds.length >= 12);
+  assert.equal(manifest.coverage.creatorBuilds, builds.length);
+  assert.ok(builds.every(row => row.bom.length && row.bom.every(part => part.source === row.source)));
+  assert.ok(builds.every(row => row.associations === undefined && row.fit === undefined));
+  assert.deepEqual([...new Set(builds.map(row => row.buildSource.platform))].sort(), [
+    "Builder site", "GitHub", "Reddit", "X", "YouTube",
+  ]);
+
+  const release = "v1-1234567890abcdef";
+  const createCard = (row, markdown = false) => renderCard(hardwareCard(row, release, "machines"), {
+    release, pathname: `/catalog/${release}/machines/${row.id}.${markdown ? "md" : "html"}`, markdown,
+  });
+  const cluster = builds.find(({ id }) => id === "geerling-compute-blade-cluster");
+  assert.match(createCard(cluster), /<iframe[^>]+youtube-nocookie.com\/embed\/8SiB-bNyP5E/);
+  assert.match(createCard(cluster, true), /youtube.com\/watch\?v=8SiB-bNyP5E/);
+
+  const wrx90 = builds.find(({ id }) => id === "cangemi-wrx90-dual-rtx-3090");
+  assert.equal(wrx90.bom.find(({ category }) => category === "GPU").quantity, 2);
+  assert.equal((createCard(wrx90).match(/<figure>/g) ?? []).length, 3);
+  assert.equal((createCard(wrx90).match(/Copyright \(c\) 2026 Zachary Cangemi/g) ?? []).length, 1);
+
+  const spark = catalog.machines.find(({ id }) => id === "nvidia-dgx-spark-128gb-4tb");
+  assert.equal((createCard(spark).match(/<figure>/g) ?? []).length, 3);
+  assert.match(createCard(spark, true), /CC BY-SA 4\.0/);
+  const { catalog: filtered } = await readHardwareCatalog(here, value =>
+    value === cluster.source || value?.includes("File:Nvidia_DGX_front_view_dllu.jpg"));
+  assert.ok(!filtered.machines.some(({ id }) => id === cluster.id));
+  assert.equal(filtered.machines.find(({ id }) => id === spark.id).photos.length, 2);
 });

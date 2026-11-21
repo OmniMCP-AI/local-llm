@@ -163,9 +163,11 @@ test("the Pages navigation keeps standalone hash links and resolves hosted evide
   assert.equal(navigationHref("goals", false, origin), "#goals");
   assert.equal(navigationHref("goals", true, null), "#goals");
   for (const [route, expected] of [["explorer", "/profiles"], ["goals", "/goals"], ["advisor", "/advisor"], ["costs", "/costs"],
-    ["machines", "/profiles#machines"], ["models", "/profiles#models"]]) {
+    ["models", "/profiles#models"]]) {
     assert.equal(navigationHref(route, true, origin), origin + expected);
   }
+  assert.equal(navigationHref("machines", false, null), "#catalog/machines");
+  assert.equal(navigationHref("machines", true, origin), "#catalog/machines");
   assert.equal(navigationHref("prices", true, origin), "/prices");
   assert.equal(navigationHref("methods", true, origin), "/wiki/comparison-methods/");
 });

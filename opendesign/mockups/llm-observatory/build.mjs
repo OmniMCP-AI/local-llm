@@ -134,7 +134,9 @@ const hardwareDirectory = {
   cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory, vendorSpec, modification }) => ({
     id, name, detail, aliases, source, memory, vendorSpec, memoryModified: Boolean(modification),
   })),
-  machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
+  machines: hardware.catalog.machines.map(({ id, name, detail, kind, source, buildSource }) => ({
+    id, name, detail, kind, source, ...(buildSource && { platform: buildSource.platform }),
+  })),
 };
 const runtimes = published?.runtimes ?? JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8")).map(({ references, ...row }) => ({
   ...row,

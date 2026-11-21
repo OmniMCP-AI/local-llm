@@ -7,6 +7,7 @@ import { catalogPath, hardwareDirectoryPath, hardwareIdPattern, modelCollectionP
 import { recentModels } from "./catalog-search.mjs";
 
 const machineSections = [
+  ["Creator-reported builds", "Creator-reported build"],
   ["Complete factory configurations", "Complete factory configuration"],
   ["Partial configurations", "Partial configuration"],
   ["Manufacturer system references", "Manufacturer system reference"],
