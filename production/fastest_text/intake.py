@@ -75,6 +75,17 @@ def summarize_reviews(reviews, rubric):
     }
 
 
+def validate_release_rights(rights):
+    keys(rights, "decision_id destination core basis", "record.rights")
+    require(
+        rights["destination"] == "public-release" and rights["core"] == "allow",
+        "pilot record requires a public-release allow decision",
+    )
+    require_text(rights["basis"], "rights.basis")
+    require_text(rights["decision_id"], "rights.decision_id")
+    require(str(UUID(rights["decision_id"])) == rights["decision_id"], "rights.decision_id must be a canonical UUID")
+
+
 def validate_record(record, dataset, cell, kind):
     keys(
         record, "kind cell_id protocol runtime_revision artifact_sha256 source rights runtime_build attempts quality_reviews",
@@ -94,15 +105,7 @@ def validate_record(record, dataset, cell, kind):
     require_text(source["locator"], "source.locator")
     require_text(source["revision"], "source.revision")
 
-    rights = record["rights"]
-    keys(rights, "decision_id destination core basis", "record.rights")
-    require(
-        rights["destination"] == "public-release" and rights["core"] == "allow",
-        "pilot record requires a public-release allow decision",
-    )
-    require_text(rights["basis"], "rights.basis")
-    require_text(rights["decision_id"], "rights.decision_id")
-    require(str(UUID(rights["decision_id"])) == rights["decision_id"], "rights.decision_id must be a canonical UUID")
+    validate_release_rights(record["rights"])
 
     runtime = record["runtime_build"]
     keys(

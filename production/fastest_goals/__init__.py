@@ -12,7 +12,8 @@ from fastest_prices import PriceError
 from fastest_prices.result import eligible_offer
 from fastest_release.validation import plain_text
 from fastest_serving import METRICS as SERVING_METRICS, PROTOCOL as SERVING_PROTOCOL, load_records
-from fastest_text.__main__ import load_dataset, text_artifacts
+from fastest_text.__main__ import LATENCY_METRICS, load_dataset, text_artifacts
+from fastest_text.latency_review import apply_latency_reviews
 
 
 METRICS = {
@@ -53,11 +54,11 @@ class GoalRightsUnavailable(RuntimeError):
 
 
 class GoalService:
-    def __init__(self, manifest=None, *, price_reader=None, rights_path=None):
+    def __init__(self, manifest=None, *, price_reader=None, rights_path=None, latency_reader=None):
         policy = json.loads(manifest.read_text(encoding="utf-8")) if manifest else {
             "schema_version": 1, "records": [], "market": DEFAULT_MARKET, "candidates": {},
         }
-        _require(isinstance(policy, dict) and policy.keys() - {"serving_records"} == {
+        _require(isinstance(policy, dict) and policy.keys() - {"serving_records", "latency_reviews"} == {
             "schema_version", "records", "market", "candidates",
         } and type(policy["schema_version"]) is int and policy["schema_version"] == 1, "Invalid goals cohort manifest.")
         records = policy["records"]
@@ -100,10 +101,6 @@ class GoalService:
         _require(isinstance(serving_records, list) and all(plain_text(path) for path in serving_records),
                  "Invalid goals serving records.")
         self.serving = load_records([manifest.parent / path for path in serving_records], self.text)
-        release = {"version": 1, "text": self.text, "market": self.market, "candidates": self.candidates}
-        if "serving_records" in policy:
-            release["serving"] = {"protocol": SERVING_PROTOCOL, "setups": self.serving}
-        self.release_id = digest(json_text(release))
         self.rights_path = rights_path
         context = [self.text[key] for key in ("artifact", "runtime")]
         self.observation_digests = {
@@ -112,6 +109,20 @@ class GoalService:
             "serving": {cell: digest(json_text(["serving", SERVING_PROTOCOL, context, cell, record]))
                         for cell, record in self.serving.items() if "rights" in record},
         }
+        latency_reviews = policy.get("latency_reviews", [])
+        _require(isinstance(latency_reviews, list) and all(plain_text(path) for path in latency_reviews),
+                 "Invalid goals text latency reviews.")
+        apply_latency_reviews(self.text, [manifest.parent / path for path in latency_reviews], latency_reader)
+        for cell in self.text["cells"]:
+            if "latency_review" in cell:
+                self.observation_digests["text"][f"{cell['id']}:latency"] = digest(json_text([
+                    "text-latency", self.text["latency_protocol"], context, cell["id"], cell["latency_review"],
+                    {metric: cell["metrics"][metric] for metric in LATENCY_METRICS},
+                ]))
+        release = {"version": 1, "text": self.text, "market": self.market, "candidates": self.candidates}
+        if "serving_records" in policy:
+            release["serving"] = {"protocol": SERVING_PROTOCOL, "setups": self.serving}
+        self.release_id = digest(json_text(release))
         self._text_artifacts = text_artifacts(self.text)
         self._text_artifacts["manifest.json"] = bundle_manifest(self.text["id"], self._text_artifacts)
 

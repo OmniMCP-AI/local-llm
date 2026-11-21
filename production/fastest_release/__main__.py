@@ -10,6 +10,7 @@ from fastest_fit import FitEngineError
 from fastest_goals import GoalService
 from fastest_prices import PriceStore
 from fastest_release_watch.postgres import PostgresStore
+from fastest_text.latency_review import read_eligible_latency
 
 from . import ReleaseError, ReleaseNotFound, ReleaseStore
 from .http import CONTENT_TYPES, make_server
@@ -116,7 +117,11 @@ def main(argv=None):
                 EngagementStore(service), args.pilot_engagement_origin, args.pilot_engagement_mode, bytes.fromhex(key)
             ) if args.pilot_engagement_origin else None
             price_reader = PriceStore(args.database_url).read if args.database_url else None
-            goal_history = [GoalService(manifest, price_reader=price_reader, rights_path=args.goal_rights) for manifest in args.goal_cohort]
+            latency_reader = (lambda capture: read_eligible_latency(store, capture)) if store else None
+            goal_history = [
+                GoalService(manifest, price_reader=price_reader, rights_path=args.goal_rights, latency_reader=latency_reader)
+                for manifest in args.goal_cohort
+            ]
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
                              profile_releases=args.profile_release,
                              profile_archives=[archive.split(",") for archive in args.profile_archive],

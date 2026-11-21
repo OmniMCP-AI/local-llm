@@ -1,14 +1,17 @@
 import argparse
 from html import escape
 import json
+import os
 from pathlib import Path
 import re
 import sys
 
 from fastest_pilot_bundle import digest, json_text, write_bundle
+from fastest_release import ReleaseStore
 
 from .capture import capture
 from .intake import apply_record
+from .latency_review import apply_latency_reviews, read_eligible_latency
 from .review import write_review_packet
 
 
@@ -127,8 +130,10 @@ def render(dataset, data_hash):
         )
     paragraph("Runner settings · " + ", ".join(f"{key}={value}" for key, value in protocol["settings"].items()))
     paragraph("Throughput is the median of successful repetitions in each phase.")
-    paragraph("TTFT measures " + LATENCY_METRICS["ttft"][1].lower())
-    paragraph("First visible answer measures " + LATENCY_METRICS["first_visible_answer"][1].lower())
+    latency_protocol = dataset.get("latency_protocol")
+    if not latency_protocol:
+        paragraph("TTFT measures " + LATENCY_METRICS["ttft"][1].lower())
+        paragraph("First visible answer measures " + LATENCY_METRICS["first_visible_answer"][1].lower())
     table(
         ("Machine", "Backend", "Cell status", "Recorded attempts", "Failures", "Blocker"),
         [
@@ -141,12 +146,16 @@ def render(dataset, data_hash):
         ],
     )
 
-    rows = []
-    for cell in dataset["cells"]:
-        for metric in cell["metrics"].values():
-            result = metric["reason"] if metric["status"] == "missing" else f"{metric['value']} {metric['unit']}"
-            rows.append((cell["name"], metric["label"], metric["status"], metric["sample_count"], result))
-    table(("Machine", "Metric", "Status", "Samples", "Result or blocker"), rows)
+    def metric_table(keys):
+        rows = []
+        for cell in dataset["cells"]:
+            for key in keys:
+                metric = cell["metrics"][key]
+                result = metric["reason"] if metric["status"] == "missing" else f"{metric['value']} {metric['unit']}"
+                rows.append((cell["name"], metric["label"], metric["status"], metric["sample_count"], result))
+        table(("Machine", "Metric", "Status", "Samples", "Result or blocker"), rows)
+
+    metric_table(protocol["phases"] if latency_protocol else dataset["cells"][0]["metrics"])
 
     for cell in dataset["cells"]:
         if not cell["attempts"]:
@@ -167,6 +176,28 @@ def render(dataset, data_hash):
                 for attempt in cell["attempts"]
             ],
         )
+
+    if latency_protocol:
+        heading("Native streaming latency")
+        latency_runtime = latency_protocol["runtime"]
+        paragraph(f"{latency_runtime['name']} {latency_runtime['tag']} at {latency_runtime['revision']}. "
+                  f"Protocol {latency_protocol['id']}.")
+        source_link("Pinned streaming runtime source", latency_runtime["source"])
+        paragraph(latency_protocol["conditions"])
+        paragraph("Streaming controls · " + ", ".join(
+            f"{name}={value}" for settings in ("server_settings", "generation_settings")
+            for name, value in latency_protocol[settings].items()
+        ))
+        paragraph("TTFT ends at receipt of generated token ordinal 1. First visible answer ends at the "
+                  "first complete frame with printable non-whitespace text. Both timings start at client request submission.")
+        metric_table(LATENCY_METRICS)
+        for cell in dataset["cells"]:
+            review = cell.get("latency_review")
+            if review:
+                paragraph(f"{cell['name']} used {review['prompt_tokens']} prompt tokens and generated "
+                          f"{review['output_tokens']} tokens. Capture SHA-256 {review['capture_sha256']}. "
+                          f"Binary SHA-256 {review['binary_sha256']}. "
+                          f"Public rights decision {review['rights_decision_id']}.")
 
     heading("Chinese task quality review")
     paragraph(rubric["rights"])
@@ -224,8 +255,9 @@ def text_artifacts(dataset):
     return {"text-pilot.json": payload, "text-pilot.md": markdown, "text-pilot.html": html}
 
 
-def build(target, records, demo):
+def build(target, records, demo, latency_reviews=(), latency_reader=None):
     dataset = load_dataset(records, demo)
+    apply_latency_reviews(dataset, latency_reviews, latency_reader)
     write_bundle(target, dataset["id"], text_artifacts(dataset))
 
 
@@ -235,6 +267,10 @@ def main(argv=None):
     publish = commands.add_parser("build", help="Write a new public report directory.")
     publish.add_argument("output", type=Path)
     publish.add_argument("--record", type=Path, action="append", default=[], help="Include a reviewed runner JSON record.")
+    publish.add_argument("--latency-review", type=Path, action="append", default=[],
+                         help="Attach an authorized native-stream capture retained in PostgreSQL.")
+    publish.add_argument("--database-url", default=os.environ.get("FASTEST_DATABASE_URL"),
+                         help="PostgreSQL connection with eligible latency access.")
     publish.add_argument("--demo", action="store_true", help="Require synthetic records and label their public output.")
     collect = commands.add_parser("capture", help="Run both pinned phases and retain private evidence.")
     latency = commands.add_parser("capture-latency", help="Capture private timings for the pinned Chinese task stream.")
@@ -279,7 +315,9 @@ def main(argv=None):
             return 0
         if args.demo and not args.record:
             parser.error("--demo requires at least one --record")
-        build(args.output, args.record, args.demo)
+        store = ReleaseStore(args.database_url) if args.latency_review and args.database_url else None
+        build(args.output, args.record, args.demo, args.latency_review,
+              (lambda capture: read_eligible_latency(store, capture)) if store else None)
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1

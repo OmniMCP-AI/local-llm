@@ -15,6 +15,7 @@ from .image_pilot import ingest_image_pilot
 from .scaling_capture import ingest_scaling_capture
 from .serving_capture import ingest_serving_capture
 from .text_capture import ingest_text_capture
+from .text_latency import ingest_text_latency
 
 
 def table_counts(store):
@@ -33,7 +34,8 @@ def table_counts(store):
             'scaling_capture_runs', (SELECT count(*) FROM fastest_intake.scaling_capture_run),
             'scaling_capture_attempts', (SELECT count(*) FROM fastest_intake.scaling_capture_attempt),
             'text_capture_runs', (SELECT count(*) FROM fastest_intake.text_capture_run),
-            'text_capture_attempts', (SELECT count(*) FROM fastest_intake.text_capture_attempt)
+            'text_capture_attempts', (SELECT count(*) FROM fastest_intake.text_capture_attempt),
+            'text_latency_runs', (SELECT count(*) FROM fastest_intake.text_latency_run)
         );
     """))
 
@@ -125,7 +127,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("FASTEST_DATABASE_URL"))
     imports = ("ingest", "ingest-core19", "ingest-image-pilot", "ingest-serving-capture", "ingest-scaling-capture",
-               "ingest-text-capture", "ingest-text-ambient-m4")
+               "ingest-text-capture", "ingest-text-ambient-m4", "ingest-text-latency")
     parser.add_argument("command", choices=("migrate", *imports, "stats"))
     parser.add_argument("source", type=Path, nargs="?", help="Capture bundle JSON or private packet directory.")
     parser.add_argument("--checked-at", help="Core-19 source check time with time zone.")
@@ -153,6 +155,8 @@ def main():
             print(json.dumps(ingest_scaling_capture(store, args.source)))
         elif args.command in ("ingest-text-capture", "ingest-text-ambient-m4"):
             print(json.dumps(ingest_text_capture(store, args.source, ambient_m4=args.command == "ingest-text-ambient-m4")))
+        elif args.command == "ingest-text-latency":
+            print(json.dumps(ingest_text_latency(store, args.source)))
         else:
             print(json.dumps(table_counts(store)))
     except (OSError, ReleaseError, TimeoutExpired, TypeError, ValueError) as error:

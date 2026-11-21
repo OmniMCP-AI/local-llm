@@ -84,10 +84,10 @@ class Handler(BaseHTTPRequestHandler):
 
         self.wfile.write(b": keepalive\n\n")
         mode = os.environ.get("FIXTURE_STREAM") if completed else None
-        if mode != "buffered-first":
+        if mode not in ("buffered-first", "no-boundaries"):
             chunk(" ", [468], 1)
             sleep(0.02)
-        chunk("芽杯", [110], 2)
+        chunk(" " if mode == "no-boundaries" else "芽杯", [110], 2)
         if mode == "timeout":
             sleep(30)
         elif mode == "disconnected":
