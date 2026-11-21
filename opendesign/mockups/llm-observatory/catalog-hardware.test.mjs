@@ -7,6 +7,22 @@ import { hardwareCard, renderCard } from "./catalog-card.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+test("GPU profile main navigation matches the home page and links back from deep paths", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const release = "v1-1234567890abcdef";
+  const card = hardwareCard(catalog.cards[0], release, "cards");
+  for (const local of [true, false]) {
+    const html = renderCard(card, { release, pathname: `catalog/${release}/cards/${card.id}.html`, local });
+    const nav = html.match(/<nav[^>]*aria-label="Main navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
+    assert.ok(nav, "main navigation is present in the initial HTML");
+    const labels = [...nav.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(match => match[1]);
+    assert.deepEqual(labels, ["Explorer", "Compare", "Battles", "Methods", "Costs", "Catalog", "Machines", "Models", "Wiki", "Price watch", "For agents"]);
+    const home = local ? "../../../../fastest-ai.html" : "/";
+    assert.ok(nav.includes(`href="${home}#explorer"`));
+    assert.ok(nav.includes(`href="${home}#catalog" aria-current="page"`));
+  }
+});
+
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {
   const { manifest, catalog } = await readHardwareCatalog(here);
   assert.equal(manifest.asOf, "2026-11-22");

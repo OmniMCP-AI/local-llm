@@ -2,6 +2,7 @@ import { catalogPath, hardwareDirectoryPath, modelCollectionPath, runtimeDirecto
 import { bandwidthAxis, cardPosition, cardRatings, memoryAxis, speedAxis } from "./catalog-position.mjs";
 import { axisTitle, renderCoordinatePlot } from "./coordinate-plot.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
+import { navigationHref, navigationRoutes } from "./release-origin.mjs";
 
 const htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => htmlEntities[char]);
@@ -469,7 +470,10 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">\n` : ""}<l
 <style>${profileStyles}</style>
 </head>
 <body class="profile-document"><div class="profile-shell">
-<header><nav class="profile-nav" aria-label="Catalog"><a href="${home}">fastest.ai / localdecode.com</a>${review
+<header><a class="profile-brand" href="${home}">fastest.ai / localdecode.com</a><nav class="profile-nav" aria-label="Main navigation">${Object.entries(navigationRoutes(null)).map(([label, route]) => {
+    const href = navigationHref(route, false, null, true);
+    return `<a href="${escapeHtml(home + href)}"${route === "catalog" ? ' aria-current="page"' : ""}>${escapeHtml(label)}</a>`;
+  }).join("")}</nav><nav class="profile-actions" aria-label="Catalog">${review
     ? `<a href="${directory}">Hardware catalog</a><a href="${directory}#cards">GPU cards</a><a href="${directory}#machines">Machine profiles</a><a href="${modelCollectionPath(release)}">Model catalog</a><a href="${runtimeDirectoryPath(release)}">Runtime catalog</a>`
     : `<a href="${home}#catalog/cards">Cards</a><a href="${home}#catalog/machines">Machines</a><a href="${home}#catalog/models">Models</a><a href="${home}#catalog/runtimes">Runtimes</a>`}</nav></header>
 <main>

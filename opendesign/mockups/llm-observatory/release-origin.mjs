@@ -1,3 +1,11 @@
+export function navigationRoutes(origin) {
+  return {
+    Explorer: "explorer", Compare: "goals", Battles: "battle",
+    ...(origin ? { "Guided advisor": "advisor" } : {}),
+    Methods: "methods", Costs: "costs", Catalog: "catalog", Machines: "machines", Models: "models", Wiki: "wiki", "Price watch": "prices", "For agents": "agents",
+  };
+}
+
 const productionRoutes = {
   explorer: "/profiles", goals: "/goals", advisor: "/advisor", costs: "/costs",
   models: "/profiles#models",

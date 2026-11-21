@@ -20,7 +20,7 @@ export const profileStyles = `
 }
 .profile-nav { padding: 1rem 0; border-bottom: 1px solid var(--profile-edge); }
 .profile-nav a { color: var(--profile-muted); text-decoration: none; min-height: 2rem; display: inline-flex; align-items: center; }
-.profile-nav a:first-child { color: var(--profile-ink); font-weight: 750; }
+.profile-brand { display: inline-block; padding-top: 1rem; color: var(--profile-ink) !important; font-weight: 750; text-decoration: none; }
 .profile-nav a[aria-current] { color: var(--profile-accent); }
 .profile-actions a[aria-current] { color: var(--profile-ink); font-weight: 750; }
 .profile-lookup { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
