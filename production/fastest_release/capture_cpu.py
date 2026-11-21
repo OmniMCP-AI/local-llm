@@ -37,7 +37,8 @@ REPETITIONS = 7
 SETTINGS = {
     "n_threads": 1, "n_batch": 128, "n_ubatch": 128, "n_gpu_layers": 0,
     "type_k": "f16", "type_v": "f16", "no_kv_offload": True, "flash_attn": False,
-    "use_mmap": True, "split_mode": "none", "main_gpu": 0,
+    # In b5163, split mode "none" requires an active GPU even with zero offloaded layers.
+    "use_mmap": True, "split_mode": "layer", "main_gpu": 0,
 }
 LOG_NAMES = ("stdout.jsonl", "stderr.log")
 FILE_LIMIT = 256 * 1024
@@ -167,13 +168,27 @@ def candidate(receipt, receipt_sha256):
     }
 
 
+
+def report_stderr(path, work):
+    if not path.is_file():
+        return
+    with path.open("rb") as log:
+        limit = 4096
+        log.seek(max(0, path.stat().st_size - limit))
+        tail = log.read(limit).decode("utf-8", errors="replace").replace(str(work), "<capture>")
+    for line in tail.splitlines()[-16:]:
+        if line:
+            printable = "".join(character if character.isprintable() else "?" for character in line)
+            print(f"llama-bench stderr | {printable}", file=sys.stderr)
+
+
 def capture(archive, model, output):
     runner = runner_provenance()
     run_url(runner)
     require(sha256_file(archive) == ARCHIVE_SHA256, "Runtime archive SHA-256 does not match the official asset.")
     require(sha256_file(model) == ARTIFACT["sha256"], "GGUF SHA-256 does not match the catalog artifact.")
     with TemporaryDirectory(prefix="fastest-cpu-") as temporary:
-        work = Path(temporary)
+        work = Path(temporary).resolve()
         runtime = work / "runtime"
         runtime.mkdir()
         with ZipFile(archive) as source:
@@ -186,8 +201,12 @@ def capture(archive, model, output):
         attempt_path = work / "attempt"
         attempt = record_process(attempt_path, {"argv": invocation()}, LOG_NAMES[0], 180,
                                  {"LC_ALL": "C", "LD_LIBRARY_PATH": "./runtime", "OMP_NUM_THREADS": "1"}, cwd=work)
-        require(attempt["exit_code"] == 0, f"Runner failed ({attempt['outcome']}, exit {attempt['exit_code']}).")
-        receipt = build_receipt(attempt_path, runner)
+        try:
+            require(attempt["exit_code"] == 0, f"Runner failed ({attempt['outcome']}, exit {attempt['exit_code']}).")
+            receipt = build_receipt(attempt_path, runner)
+        except (OSError, ValueError):
+            report_stderr(attempt_path / LOG_NAMES[1], work)
+            raise
         output.mkdir(mode=0o700)
         for name in LOG_NAMES:
             shutil.copyfile(attempt_path / name, output / name)
