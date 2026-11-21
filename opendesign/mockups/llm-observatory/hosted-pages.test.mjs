@@ -74,6 +74,27 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
   assert.equal(await releaseDigest(output), await releaseDigest(rebuilt));
   const manifest = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
   assert.deepEqual(manifest.highlights.map(({ id }) => id), ["dual-rtx-2080-ti-nvlink", "open-benchmark-requests"]);
+  const wikiHome = await readFile(join(output, "wiki/index.html"), "utf8");
+  assert.match(wikiHome, /<h1>awesome-local-llm<\/h1>/);
+  assert.match(wikiHome, /href="\/wiki\/inference-frameworks\/">Inference frameworks<\/a>/);
+  for (const heading of ["GPU resources", "Small models", "Card-specific tuning"]) {
+    assert.ok(wikiHome.includes(`<h2>${heading}</h2>`), `Missing wiki section ${heading}`);
+  }
+  const catalogWiki = await readFile(join(output, "wiki/catalog/index.html"), "utf8");
+  assert.match(catalogWiki, /href="\/wiki\/inference-frameworks\/">Inference frameworks<\/a>/);
+  assert.match(catalogWiki, /href="\/#catalog\/runtimes">Runtime catalog<\/a>/);
+  assert.match(catalogWiki, /href="\/wiki\/runtimes\/">/);
+  const frameworks = manifest.pages.find(({ id }) => id === "inference-frameworks");
+  assert.equal(frameworks?.html, "/wiki/inference-frameworks/");
+  assert.equal(frameworks.markdown, "/wiki/inference-frameworks.md");
+  for (const file of ["wiki/inference-frameworks/index.html", "wiki/inference-frameworks.md"]) {
+    const article = await readFile(join(output, file), "utf8");
+    assert.match(article, /https:\/\/github\.com\/alibaba\/MNN\/releases\/tag\/3\.6\.2/);
+    assert.match(article, /https:\/\/github\.com\/open-webui\/open-webui/);
+    assert.match(article, /Graphify backlinks/);
+  }
+  const llms = await readFile(join(output, "llms.txt"), "utf8");
+  assert.match(llms, /\[Inference frameworks\]\(https:\/\/fastest\.ai\/wiki\/inference-frameworks\.md\)/);
   const home = await readFile(join(output, "index.html"), "utf8");
   const homeMarkdown = await readFile(join(output, "index.md"), "utf8");
   assert.match(home, /<section data-home-highlights><h2>Research highlights<\/h2>/);
@@ -454,6 +475,13 @@ test("the static Pages review links to exact hardware profiles from its pinned P
     assert.ok(home.includes(`href="${root}/hardware"`));
     assert.ok(home.includes(`href="${root}/models">Model catalog</a>`));
     assert.ok(home.includes('href="/battles/">Hardware battles</a>'));
+    const frameworks = await get("/wiki/inference-frameworks/");
+    assert.equal(frameworks.status, 200);
+    assert.ok((await frameworks.text()).includes(`href="${root}/runtimes">runtime catalog</a>`));
+    const runtimeDirectory = await get(root + "/runtimes");
+    assert.ok((await runtimeDirectory.text()).includes(`href="${root}/runtimes/open-webui">Open WebUI</a>`));
+    const runtime = await get(root + "/runtimes/open-webui.md");
+    assert.match(await runtime.text(), /\*\*Project category\*\* — Web interface/);
     const battle = await get("/battles/");
     const battleHtml = await battle.text();
     assert.equal(battle.status, 200);
@@ -656,6 +684,8 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.ok(cardSearch.results.some(({ id }) => id === "nvidia-geforce-rtx-5090"));
     const runtimeSearch = await (await get("/api/v1/catalog?kind=runtimes&q=llama.cpp")).json();
     assert.equal(runtimeSearch.results.find(({ id }) => id === "llama.cpp").source, "https://github.com/ggml-org/llama.cpp");
+    const frameworkSearch = await (await get("/api/v1/catalog?kind=runtimes&q=ctranslate2")).json();
+    assert.equal(frameworkSearch.results.find(({ id }) => id === "ctranslate2").source, "https://github.com/OpenNMT/CTranslate2");
 
     const openapi = await (await get(`/catalog/${release}/openapi.json`)).json();
     const catalogOperation = openapi.paths["/api/v1/catalog"]?.get;

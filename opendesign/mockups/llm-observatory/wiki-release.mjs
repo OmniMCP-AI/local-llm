@@ -161,7 +161,12 @@ export async function writeWikiRelease({
       source === id ? [target] : target === id ? [source] : []))]
       .filter((target) => target !== id && Object.hasOwn(pages, target)).sort();
     const catalogAccess = id === "agent-discovery" && catalogOpenApi;
-    const body = (format) => renderBody(doc.body, (link) => linkDestination(link, pages, research, excluded, format), format)
+    const body = (format) => renderBody(doc.body, (link) => {
+      if (link === "#catalog/runtimes" && catalogRelease) {
+        return review ? runtimeDirectoryPath(catalogRelease) + (format === "md" ? ".md" : "") : "/#catalog/runtimes";
+      }
+      return linkDestination(link, pages, research, excluded, format);
+    }, format)
       + (id === "technology" || id === "gpu-topology" ? "\n\n" + renderTopologyReference(format, selectTopologyPresets(topologies), scalingUrl, !review) : "")
       + (catalogAccess ? format === "html"
         ? `\n<p><a href="${catalogOpenApi}">Catalog API (OpenAPI)</a> · <a href="${catalogApiPath}?kind=cards">Browse released card metadata</a></p>`

@@ -2,7 +2,7 @@
   "directed": true,
   "multigraph": false,
   "graph": {
-    "source_sha256": "d8041444d38060d7c924d0ad17ac1fc007252eff43514640281d1e832c0856cd",
+    "source_sha256": "d0bef10c23518ede341bdcb399eed4d4cd2d7338bf8f131c5a585a0d1f25b05d",
     "research_index_sha256": "323e3e34d1a5d522a66477ea14ba49e622eead0f079067edc273ff06186365f3",
     "taxonomy_version": 1,
     "research_inputs": {
@@ -146,12 +146,20 @@
       "norm_label": "gpu topology"
     },
     {
-      "label": "Fastest.ai wiki",
+      "label": "awesome-local-llm",
       "file_type": "document",
       "source_file": "pages/index.md",
       "id": "index",
       "community": null,
-      "norm_label": "fastest.ai wiki"
+      "norm_label": "awesome-local-llm"
+    },
+    {
+      "label": "Inference frameworks",
+      "file_type": "document",
+      "source_file": "pages/inference-frameworks.md",
+      "id": "inference-frameworks",
+      "community": null,
+      "norm_label": "inference frameworks"
     },
     {
       "label": "Llama 3.1 8B Instruct",
@@ -11473,6 +11481,16 @@
       "source_location": "L14",
       "weight": 1.0,
       "source": "catalog",
+      "target": "inference-frameworks"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/catalog.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "catalog",
       "target": "runtimes"
     },
     {
@@ -11480,7 +11498,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "catalog",
       "target": "goals"
@@ -11490,7 +11508,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "source": "catalog",
       "target": "community"
@@ -11500,7 +11518,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/catalog.md",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "source": "catalog",
       "target": "gpu-topology"
@@ -11910,40 +11928,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L12",
+      "source_location": "L10",
       "weight": 1.0,
       "source": "index",
-      "target": "research"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L14",
-      "weight": 1.0,
-      "source": "index",
-      "target": "benchmark-method"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L25",
-      "weight": 1.0,
-      "source": "index",
-      "target": "comparison-methods"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L16",
-      "weight": 1.0,
-      "source": "index",
-      "target": "build-guide"
+      "target": "inference-frameworks"
     },
     {
       "relation": "references",
@@ -11953,54 +11941,14 @@
       "source_location": "L17",
       "weight": 1.0,
       "source": "index",
-      "target": "evidence-guide"
+      "target": "gpu-topology"
     },
     {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "index",
-      "target": "catalog"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "index",
-      "target": "goals"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L21",
-      "weight": 1.0,
-      "source": "index",
-      "target": "community"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L23",
-      "weight": 1.0,
-      "source": "index",
-      "target": "machines"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pages/index.md",
-      "source_location": "L23",
+      "source_location": "L42",
       "weight": 1.0,
       "source": "index",
       "target": "models"
@@ -12010,7 +11958,107 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L25",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "index",
+      "target": "runtimes"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "index",
+      "target": "benchmark-method"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "index",
+      "target": "research"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "index",
+      "target": "comparison-methods"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "index",
+      "target": "build-guide"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "index",
+      "target": "evidence-guide"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "index",
+      "target": "catalog"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "index",
+      "target": "goals"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "index",
+      "target": "community"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "index",
+      "target": "machines"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/index.md",
+      "source_location": "L44",
       "weight": 1.0,
       "source": "index",
       "target": "explorer"
@@ -12020,7 +12068,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L25",
+      "source_location": "L44",
       "weight": 1.0,
       "source": "index",
       "target": "prices"
@@ -12030,7 +12078,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L26",
+      "source_location": "L45",
       "weight": 1.0,
       "source": "index",
       "target": "rtx-4090"
@@ -12040,7 +12088,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L26",
+      "source_location": "L45",
       "weight": 1.0,
       "source": "index",
       "target": "m4-pro"
@@ -12050,7 +12098,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L27",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "index",
       "target": "qwen25-7b"
@@ -12060,7 +12108,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L27",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "index",
       "target": "qwen25-14b"
@@ -12070,7 +12118,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L27",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "index",
       "target": "llama31-8b"
@@ -12080,10 +12128,30 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/index.md",
-      "source_location": "L29",
+      "source_location": "L48",
       "weight": 1.0,
       "source": "index",
       "target": "technology"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/inference-frameworks.md",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "inference-frameworks",
+      "target": "runtimes"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/inference-frameworks.md",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "inference-frameworks",
+      "target": "benchmark-method"
     },
     {
       "relation": "references",
@@ -12600,7 +12668,67 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/runtimes.md",
-      "source_location": "L16",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "rtx-3090"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "rtx-4090"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "arc-b580"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "gpu-topology"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "evidence-guide"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "runtimes",
+      "target": "inference-frameworks"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pages/runtimes.md",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "runtimes",
       "target": "catalog"
@@ -12610,7 +12738,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pages/runtimes.md",
-      "source_location": "L16",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "runtimes",
       "target": "goals"

@@ -1,11 +1,30 @@
 ---
-title: Fastest.ai wiki
+title: awesome-local-llm
 status: published
 kind: guide
-summary: A field guide to choosing hardware, running models, and reading benchmark evidence.
+summary: A curated guide to local inference software, GPU resources, small models, and benchmark evidence.
 ---
 
-Start with a build, a model, or a workload. Follow the links between pages to see what each comparison covers and where evidence is still missing.
+## Inference engines
+
+- [Inference frameworks](#wiki/inference-frameworks) covers local engines, high-concurrency servers, and companion projects.
+- [llama.cpp](https://github.com/ggml-org/llama.cpp) runs compatible GGUF models. [SGLang](https://github.com/sgl-project/sglang) and [vLLM](https://github.com/vllm-project/vllm) serve supported models with batching. Check each project's backend and model documentation for the release you use.
+
+## GPU resources
+
+- [NVIDIA CUDA GPU list](https://developer.nvidia.com/cuda/gpus) maps card names to compute capabilities. [AMD ROCm compatibility matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html) lists supported GPU and OS combinations by release.
+- [Intel Compute Runtime](https://github.com/intel/compute-runtime) documents the oneAPI Level Zero and OpenCL driver. [Apple MLX](https://github.com/ml-explore/mlx) documents its Apple Silicon array framework.
+- [GPU topology](#wiki/gpu-topology) shows how installed cards, active devices, memory pools, and transport differ across builds.
+
+## Small models
+
+- [SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) is a 360M-parameter text model. [Qwen3-0.6B](https://huggingface.co/Qwen/Qwen3-0.6B) is a 0.6B-parameter text model with thinking and non-thinking modes.
+- [Granite 4.2 3B](https://huggingface.co/ibm-granite/granite-4.2-3b) is a dense text model from IBM. Explore the [model library](#models) and check the exact artifact, quantization, and context before estimating fit.
+
+## Card-specific tuning
+
+- [Inference runtimes and tuning](#wiki/runtimes) links documented cases for NVIDIA, AMD, Intel, and Apple, with the scope of each source.
+- [vLLM optimization and tuning](https://docs.vllm.ai/en/latest/configuration/optimization/) covers memory, batching, and parallelism settings. Use the [benchmark method](#wiki/benchmark-method) to compare a change against a matching baseline.
 
 ## Start here
 

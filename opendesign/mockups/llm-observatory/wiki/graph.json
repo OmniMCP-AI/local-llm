@@ -50,7 +50,11 @@
     },
     {
       "id": "index",
-      "title": "Fastest.ai wiki"
+      "title": "awesome-local-llm"
+    },
+    {
+      "id": "inference-frameworks",
+      "title": "Inference frameworks"
     },
     {
       "id": "llama31-8b",
@@ -196,6 +200,10 @@
     },
     {
       "source": "catalog",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "catalog",
       "target": "machines"
     },
     {
@@ -312,6 +320,14 @@
     },
     {
       "source": "index",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "index",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "index",
       "target": "llama31-8b"
     },
     {
@@ -348,7 +364,19 @@
     },
     {
       "source": "index",
+      "target": "runtimes"
+    },
+    {
+      "source": "index",
       "target": "technology"
+    },
+    {
+      "source": "inference-frameworks",
+      "target": "benchmark-method"
+    },
+    {
+      "source": "inference-frameworks",
+      "target": "runtimes"
     },
     {
       "source": "llama31-8b",
@@ -556,11 +584,35 @@
     },
     {
       "source": "runtimes",
+      "target": "arc-b580"
+    },
+    {
+      "source": "runtimes",
       "target": "catalog"
     },
     {
       "source": "runtimes",
+      "target": "evidence-guide"
+    },
+    {
+      "source": "runtimes",
       "target": "goals"
+    },
+    {
+      "source": "runtimes",
+      "target": "gpu-topology"
+    },
+    {
+      "source": "runtimes",
+      "target": "inference-frameworks"
+    },
+    {
+      "source": "runtimes",
+      "target": "rtx-3090"
+    },
+    {
+      "source": "runtimes",
+      "target": "rtx-4090"
     },
     {
       "source": "technology",
