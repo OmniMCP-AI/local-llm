@@ -2,21 +2,18 @@
 
 import argparse
 import csv
-from datetime import datetime, timezone
 from decimal import Decimal
-from hashlib import file_digest
 import json
 import os
 from pathlib import Path
 import platform
 import re
 import shutil
-import subprocess
 import sys
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from fastest_pilot_bundle import json_text
+from fastest_pilot_capture import BENCH_SETTING_FLAGS, record_process, save_json, sha256_file, utc_now
 from fastest_text.intake import json_settings_match
 
 from .scaling import DEVICE_ID, LOAD, PLAN, transport_matches_devices
@@ -24,11 +21,6 @@ from .validation import keys, plain_text
 
 
 GPU_UUID = re.compile(r"GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
-SETTING_FLAGS = {
-    "n_threads": "-t", "n_batch": "-b", "n_ubatch": "-ub", "n_gpu_layers": "-ngl",
-    "type_k": "-ctk", "type_v": "-ctv", "no_kv_offload": "-nkvo", "flash_attn": "-fa",
-    "use_mmap": "-mmp", "split_mode": "-sm", "main_gpu": "-mg",
-}
 INVENTORY = ["nvidia-smi", "--query-gpu=uuid,pci.bus_id,name,driver_version", "--format=csv,noheader"]
 BUFFER = re.compile(r"\b(CUDA\d+)\s+(model|KV) buffer size =\s+([0-9]+\.[0-9]+) MiB")
 DECODE_ERROR = re.compile(r"failed to decode|decode failed|could not find a kv slot|CUDA error:", re.IGNORECASE)
@@ -37,49 +29,8 @@ ENVIRONMENT = ("CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER", "CUDA_MODULE_LOADING
                "GGML_BACKEND_PATH", "LD_LIBRARY_PATH", "LD_PRELOAD")
 
 
-def _utc():
-    return datetime.now(timezone.utc).isoformat()
-
-
-def _sha256(path):
-    with path.open("rb") as source:
-        return file_digest(source, "sha256").hexdigest()
-
-
-def _save(path, record):
-    staging = path.with_suffix(".next.json")
-    staging.write_text(json_text(record), encoding="utf-8")
-    staging.replace(path)
-
-
 def _read(path):
     return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _run(directory, record, stdout_name, timeout, env):
-    directory.mkdir()
-    ledger = directory / "attempt.json"
-    stdout, stderr = (directory / name for name in (stdout_name, "stderr.log"))
-    record.update(started_utc=_utc(), outcome="running", exit_code=None, timeout_seconds=timeout)
-    _save(ledger, record)
-    try:
-        with stdout.open("xb") as output, stderr.open("xb") as error_log:
-            completed = subprocess.run(record["argv"], stdin=subprocess.DEVNULL, stdout=output, stderr=error_log,
-                                       env=env, timeout=timeout, check=False)
-        record["exit_code"] = completed.returncode
-        record["outcome"] = "exited"
-    except subprocess.TimeoutExpired:
-        record.update(outcome="timeout", reason="Subprocess deadline elapsed.")
-    except OSError as error:
-        record.update(outcome="failed", reason=str(error))
-    except KeyboardInterrupt:
-        record.update(outcome="interrupted", reason="Operator interrupted the subprocess.")
-        raise
-    finally:
-        record.update(finished_utc=_utc(), files={path.name: _sha256(path) for path in (stdout, stderr)
-                                                 if path.is_file()})
-        _save(ledger, record)
-    return record
 
 
 def _devices(path):
@@ -99,7 +50,7 @@ def _devices(path):
 
 
 def _inventory(output, selected):
-    record = _run(output / "inventory", {"argv": INVENTORY}, "stdout.csv", 30, dict(os.environ))
+    record = record_process(output / "inventory", {"argv": INVENTORY}, "stdout.csv", 30, dict(os.environ))
     if record["exit_code"] != 0:
         raise ValueError("nvidia-smi inventory failed. See inventory/attempt.json.")
     by_uuid = {}
@@ -133,7 +84,7 @@ def _decode_attempt(output, *, role, devices, bench, model, protocol, timeout):
     reps = protocol["warm_samples_per_phase"]
     tensor_split = "/".join(["1"] * len(devices))
     argv = [str(bench), "-m", str(model), "-p", str(phase["input_tokens"]), "-n", str(phase["output_tokens"])]
-    for setting, flag in SETTING_FLAGS.items():
+    for setting, flag in BENCH_SETTING_FLAGS.items():
         value = settings[setting]
         argv.extend((flag, str(int(value) if type(value) is bool else value)))
     argv.extend(("-ts", tensor_split, "-r", str(reps), "--progress", "-v", "-o", "jsonl"))
@@ -148,13 +99,13 @@ def _decode_attempt(output, *, role, devices, bench, model, protocol, timeout):
                       else "All selected GPUs are visible to CUDA with equal layer-split weights."),
         "environment": {name: env.get(name) for name in ENVIRONMENT},
     }
-    _run(directory, record, "stdout.jsonl", timeout, env)
+    record_process(directory, record, "stdout.jsonl", timeout, env)
     stderr = (directory / "stderr.log").read_text(encoding="utf-8", errors="replace")
     record["placement_mib"] = _placement(stderr)
     if record["outcome"] == "exited":
         outcome, reason, samples = _decode_result(directory, record, stderr, protocol, model)
         record.update(outcome=outcome, reason=reason, samples_ns=samples)
-    _save(directory / "attempt.json", record)
+    save_json(directory / "attempt.json", record)
     return record
 
 
@@ -205,10 +156,10 @@ def _capture(args):
         raise ValueError("The pinned llama-bench treats commas in model paths as argument separators.")
     for shard in artifact["shards"]:
         path = model_dir / shard["path"]
-        if path.stat().st_size != shard["bytes"] or _sha256(path) != shard["sha256"]:
+        if path.stat().st_size != shard["bytes"] or sha256_file(path) != shard["sha256"]:
             raise ValueError(f"GGUF shard differs from the pinned artifact: {path.name}")
     bench = args.bench.resolve()
-    binary_sha256 = _sha256(bench)
+    binary_sha256 = sha256_file(bench)
     args.output.mkdir(mode=0o700)
     build_evidence = args.output / "build-evidence"
     shutil.copyfile(args.build_evidence, build_evidence)
@@ -216,7 +167,7 @@ def _capture(args):
     ledger = {
         "schema_version": 1, "kind": "private-capture", "status": "starting", "host_revision": args.host_revision,
         "platform": platform.platform(), "binary_sha256": binary_sha256,
-        "build_evidence_sha256": _sha256(build_evidence), "artifact": artifact, "runtime": PLAN["runtime"],
+        "build_evidence_sha256": sha256_file(build_evidence), "artifact": artifact, "runtime": PLAN["runtime"],
         "protocol": {**protocol, "load": LOAD, "phases": {"decode": protocol["phases"]["decode"]}},
         "quality": {"status": "unreviewed", "protocol": PLAN["rubric"]["id"]},
         "transport": {"status": "unknown", "reason": "No independent comparison trace supplied at capture.",
@@ -224,17 +175,17 @@ def _capture(args):
         "selected_devices": devices, "attempts": {},
     }
     capture_path = args.output / "capture.json"
-    _save(capture_path, ledger)
+    save_json(capture_path, ledger)
     try:
         devices = _inventory(args.output, devices)
         ledger.update(os_driver=f"{ledger['platform']} · NVIDIA {devices[0]['driver']}", status="capturing")
-        _save(capture_path, ledger)
+        save_json(capture_path, ledger)
         for role, selection in (("baseline", devices[:1]), ("comparison", devices)):
             attempt = _decode_attempt(args.output, role=role, devices=selection, bench=bench, model=model,
                                       protocol=protocol, timeout=args.timeout)
             ledger["attempts"][role] = {"run_id": attempt["run_id"], "outcome": attempt["outcome"],
                                         "ledger": f"{role}/attempt.json"}
-            _save(capture_path, ledger)
+            save_json(capture_path, ledger)
         ledger["status"] = ("complete" if all(run["outcome"] == "complete" for run in ledger["attempts"].values())
                             else "incomplete")
     except (OSError, ValueError, KeyboardInterrupt) as error:
@@ -242,7 +193,7 @@ def _capture(args):
                       reason=str(error) or type(error).__name__)
         raise
     finally:
-        _save(capture_path, ledger)
+        save_json(capture_path, ledger)
     return ledger["status"] == "complete"
 
 
@@ -269,10 +220,10 @@ def _attach_transport(args):
         staging.mkdir(mode=0o700)
         (staging / "links.json").write_bytes(links_bytes)
         shutil.copyfile(args.trace, staging / "trace")
-        _save(staging / "receipt.json", {
-            "status": "supplied", "run_id": comparison["run_id"], "attached_utc": _utc(),
+        save_json(staging / "receipt.json", {
+            "status": "supplied", "run_id": comparison["run_id"], "attached_utc": utc_now(),
             "trace_filename": args.trace.name,
-            "files": {name: _sha256(staging / name) for name in ("trace", "links.json")},
+            "files": {name: sha256_file(staging / name) for name in ("trace", "links.json")},
         })
         staging.rename(destination)
 

@@ -22,7 +22,7 @@ COPY production/fastest_image/__init__.py production/fastest_image/__main__.py p
 COPY production/fastest_prices/__init__.py production/fastest_prices/artifacts.py production/fastest_prices/result.py production/fastest_prices/validation.py ./fastest_prices/
 COPY production/fastest_text/*.py production/fastest_text/plan.json ./fastest_text/
 COPY production/fastest_serving/__init__.py ./fastest_serving/
-COPY production/fastest_pilot_bundle.py ./
+COPY production/fastest_pilot_bundle.py production/fastest_pilot_capture.py ./
 COPY opendesign/mockups/llm-observatory/catalog-hardware-sources.json opendesign/mockups/llm-observatory/catalog-hardware.json \
      opendesign/mockups/llm-observatory/catalog-identities.json opendesign/mockups/llm-observatory/catalog-runtimes.json \
      opendesign/mockups/llm-observatory/catalog-source-additions.json /opt/fastest/opendesign/mockups/llm-observatory/
