@@ -30,6 +30,7 @@
 !production/fastest_text/plan.json
 !production/fastest_serving/__init__.py
 !production/fastest_pilot_bundle.py
+!production/fastest_pilot_capture.py
 !opendesign/mockups/llm-observatory/catalog-hardware-sources.json
 !opendesign/mockups/llm-observatory/catalog-hardware.json
 !opendesign/mockups/llm-observatory/catalog-identities.json
