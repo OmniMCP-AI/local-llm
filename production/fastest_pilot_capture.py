@@ -29,7 +29,7 @@ def save_json(path, record):
     staging.replace(path)
 
 
-def record_process(directory, record, stdout_name, timeout, env):
+def record_process(directory, record, stdout_name, timeout, env, *, cwd=None):
     directory.mkdir()
     ledger = directory / "attempt.json"
     stdout, stderr = (directory / name for name in (stdout_name, "stderr.log"))
@@ -38,7 +38,7 @@ def record_process(directory, record, stdout_name, timeout, env):
     try:
         with stdout.open("xb") as output, stderr.open("xb") as error_log:
             completed = subprocess.run(record["argv"], stdin=subprocess.DEVNULL, stdout=output, stderr=error_log,
-                                       env=env, timeout=timeout, check=False)
+                                       env=env, cwd=cwd, timeout=timeout, check=False)
         record["exit_code"] = completed.returncode
         record["outcome"] = "exited"
     except subprocess.TimeoutExpired:
