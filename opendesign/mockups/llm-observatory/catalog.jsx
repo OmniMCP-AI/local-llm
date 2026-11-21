@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Cpu, Layers3, List, Search } from "lucide-react";
-import modelIdentities from "./catalog-identities.json";
-import modelCatalog from "./catalog-models.json";
-import discovery from "./model-discovery.json";
 import topics from "./catalog-topics.json";
 import { catalogPath } from "./catalog-paths.mjs";
 import { modelCard, renderCard } from "./catalog-card.mjs";
@@ -11,6 +8,9 @@ import { modelTags, queryModelCatalog } from "./catalog-search.mjs";
 import { useLocale } from "./locale";
 
 const pageSize = 30;
+const modelIdentities = __FASTEST_MODEL_IDENTITIES__;
+const modelCatalog = __FASTEST_MODEL_CATALOG__;
+const discovery = __FASTEST_MODEL_DISCOVERY__;
 const catalogRelease = __FASTEST_CATALOG_RELEASE__;
 const localCatalogRelease = __FASTEST_LOCAL_CATALOG_RELEASE__;
 const localModelIds = new Set(__FASTEST_LOCAL_MODEL_IDS__);

@@ -11,21 +11,49 @@ const upstream = {
   commitDate: "2026-11-18T14:59:13Z",
 };
 
-export async function writeCatalogRelease(directory, output, hardware, reviewedRuntimes) {
-  const [sourceBytes, identityBytes, runtimeBytes, hardwareSource] = await Promise.all([
+export async function readCatalogModelFiles(directory) {
+  const [sourceBytes, identityBytes, discoveryBytes] = await Promise.all([
     readFile(join(directory, "catalog-models.json")),
     readFile(join(directory, "catalog-identities.json")),
-    reviewedRuntimes ? Buffer.from(JSON.stringify(reviewedRuntimes)) : readFile(join(directory, "catalog-runtimes.json")),
-    hardware ?? readHardwareCatalog(directory),
+    readFile(join(directory, "model-discovery.json")),
   ]);
   const source = JSON.parse(sourceBytes);
   if (source.commit !== upstream.commit) throw new Error("Review the new catalog source and its SHA-256 before publishing");
-  const identities = JSON.parse(identityBytes);
+  return {
+    sourceBytes, identityBytes, source,
+    identities: JSON.parse(identityBytes), discovery: JSON.parse(discoveryBytes),
+    sourceManifest: {
+      ...upstream, url: source.upstream, projectionSha256: sha256(sourceBytes),
+      license: source.catalogLicense, licenseUrl: source.catalogLicenseUrl,
+    },
+  };
+}
+
+export async function writeCatalogRelease(directory, output, hardware, reviewedRuntimes, modelFiles) {
+  const [models, runtimeBytes, hardwareSource] = await Promise.all([
+    modelFiles ?? readCatalogModelFiles(directory),
+    reviewedRuntimes ? Buffer.from(JSON.stringify(reviewedRuntimes)) : readFile(join(directory, "catalog-runtimes.json")),
+    hardware ?? readHardwareCatalog(directory),
+  ]);
   const runtimes = JSON.parse(runtimeBytes);
-  const release = "v1-" + sha256(Buffer.concat([sourceBytes, identityBytes, runtimeBytes, Buffer.from(hardwareSource.digest, "hex")])).slice(0, 16);
-  const target = join(output, "catalog", release);
+  const digest = sha256(Buffer.concat([models.sourceBytes, models.identityBytes, runtimeBytes, Buffer.from(hardwareSource.digest, "hex")]));
+  return writeCatalogProjection(output, prepareCatalogRelease({ ...models, hardware: hardwareSource, runtimes, digest }));
+}
+
+export function prepareCatalogRelease({ source, identities, discovery, sourceManifest, hardware, runtimes, digest, snapshotId }) {
+  const release = "v1-" + (snapshotId ?? digest).slice(0, 16);
   const shards = new Map();
   const ids = new Set();
+  const ranks = new Map();
+  const { capturedAt, source: rankingSource } = discovery;
+  if (snapshotId) {
+    for (const collection of ["popular", "small"]) {
+      discovery[collection].forEach((row, index) => {
+        if (!ranks.has(row.id)) ranks.set(row.id, {});
+        ranks.get(row.id)[collection] = { ...row, rank: index + 1 };
+      });
+    }
+  }
 
   for (const row of source.models) {
     if (!modelIdPattern.test(row.id) || new URL(row.source).href !== "https://huggingface.co/" + row.id || ids.has(row.id)) {
@@ -34,7 +62,9 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
     ids.add(row.id);
     const key = modelShard(row.id);
     if (!shards.has(key)) shards.set(key, []);
-    shards.get(key).push({ ...row, identity: identities[row.id] });
+    shards.get(key).push({ ...row, identity: identities[row.id], ...(ranks.has(row.id) && {
+      discovery: ranks.get(row.id), discoveryCapture: { capturedAt, source: rankingSource },
+    }) });
   }
   if (source.sourceRows !== ids.size + source.duplicateRows + source.rejectedRows) {
     throw new Error("Model catalog counts do not reconcile");
@@ -46,14 +76,9 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
   const reviewed = Object.values(identities);
   const manifest = {
     release,
-    source: {
-      ...upstream,
-      url: source.upstream,
-      projectionSha256: sha256(sourceBytes),
-      license: source.catalogLicense,
-      licenseUrl: source.catalogLicenseUrl,
-    },
-    hardware: hardwareSource.manifest,
+    ...(snapshotId && { snapshotId, discovery: { capturedAt, source: rankingSource, popular: discovery.popular.length, small: discovery.small.length } }),
+    source: sourceManifest,
+    hardware: hardware.manifest,
     artifactScope: "Selected upstream artifacts have individually pinned repository revisions and upstream digests. External benchmark caches are excluded.",
     coverage: {
       sourceRows: source.sourceRows,
@@ -68,15 +93,20 @@ export async function writeCatalogRelease(directory, output, hardware, reviewedR
       runtimeProjects: runtimes.length,
     },
   };
+  return { manifest, shards, hardware, runtimes, licenseNotice: source.licenseNotice };
+}
 
+export async function writeCatalogProjection(output, { manifest, shards, hardware, runtimes, licenseNotice }) {
+  const { release } = manifest;
+  const target = join(output, "catalog", release);
   const data = join(output, "catalog-data", release);
   await Promise.all([mkdir(target, { recursive: true }), mkdir(data, { recursive: true })]);
   await Promise.all([
     writeFile(join(target, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n"),
-    writeFile(join(target, "LICENSE.txt"), source.licenseNotice + "\n"),
+    writeFile(join(target, "LICENSE.txt"), licenseNotice + "\n"),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
-    writeFile(join(data, "cards.json"), JSON.stringify(hardwareSource.catalog.cards)),
-    writeFile(join(data, "machines.json"), JSON.stringify(hardwareSource.catalog.machines)),
+    writeFile(join(data, "cards.json"), JSON.stringify(hardware.catalog.cards)),
+    writeFile(join(data, "machines.json"), JSON.stringify(hardware.catalog.machines)),
     ...[...shards].map(([key, rows]) => writeFile(join(data, key + ".json"), JSON.stringify(rows))),
   ]);
   return release;

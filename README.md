@@ -27,7 +27,25 @@ Open `fastest-ai.html` with `local-catalog/` beside it. Each card and machine na
 
 The standalone preview uses browser preferences on a first visit. Both 简体中文 (CNY) and 繁體中文 (TWD) are available, and the display currency can be selected independently.
 
-For Cloudflare Pages, set the project root to the prototype directory, the build command to `npm ci && npm run build:pages`, and the output directory to `dist`. The root `functions` directory provides the first-visit language hint from Cloudflare's IP country. Set `FASTEST_RELEASE_ORIGIN` to the authorized HTTPS production release origin in both the Pages build and Functions environments. The main navigation and starting points then open released profiles, goals and costs, and the topology fit request uses the same-origin Pages endpoint to reach the configured estimator. A saved language or display currency takes priority over the corresponding automatic default. [Deploy the release origin](production/README.md#deploy-the-release-origin) · [Cloudflare Pages middleware](https://developers.cloudflare.com/pages/functions/middleware/)
+For Cloudflare Pages, set the project root to the prototype directory and the output directory to `dist`. Use `npm ci && npm run build:pages:production` for production. `npm ci && npm run build:pages` builds a preview from the checkout without database credentials. The root `functions` directory provides the first-visit language hint from Cloudflare's IP country. Set `FASTEST_RELEASE_ORIGIN` to the authorized HTTPS production release origin in both the Pages build and Functions environments. The main navigation and starting points then open released profiles, goals and costs, and the topology fit request uses the same-origin Pages endpoint to reach the configured estimator. A saved language or display currency takes priority over the corresponding automatic default. [Deploy the release origin](production/README.md#deploy-the-release-origin) · [Cloudflare Pages middleware](https://developers.cloudflare.com/pages/functions/middleware/)
+
+### Pin the production Pages catalog
+
+On an authorized publisher checkout, run `npm run build` with `FASTEST_DATABASE_URL` pointing to the catalog database. Review the imported snapshot and take its full SHA-256 digest from `Imported local PostgreSQL catalog snapshot …`. Reimport snapshots created before the Pages publication metadata was added. Set `FASTEST_CATALOG_SNAPSHOT_ID` to the reviewed digest in the production Pages build environment. The build reads that exact pin independently of the database's current snapshot pointer.
+
+Install `psql` on the build host and set `FASTEST_CATALOG_DATABASE_URL` for a dedicated reader login. Keep passwords in the build host's libpq password file. Give the reader schema usage and access only to the public catalog projection tables. For example, with a login named `pages_catalog_reader`:
+
+```sql
+ALTER ROLE pages_catalog_reader SET default_transaction_read_only = on;
+GRANT USAGE ON SCHEMA fastest_catalog TO pages_catalog_reader;
+GRANT SELECT ON fastest_catalog.snapshot, fastest_catalog.gpu, fastest_catalog.machine,
+  fastest_catalog.runtime, fastest_catalog.model_repository, fastest_catalog.model_artifact,
+  fastest_catalog.model_discovery TO pages_catalog_reader;
+```
+
+The catalog manifest records the full snapshot ID. The directory, ranked model lists, shards and HTML and Markdown profiles use that snapshot. The build checks the public projection digest, current evidence approvals and quarantine state before it writes output. A catalog pin that includes actively withdrawn evidence requires a reviewed replacement snapshot. Successful production builds replace earlier catalog assets in `dist`. Archive `catalog/` and `catalog-data/` together outside `dist` to retain a release.
+
+Set `FASTEST_TEST_DATABASE_URL` to an isolated publisher database and `FASTEST_TEST_CATALOG_READER_URL` to its restricted reader to run the PostgreSQL and Wrangler catalog check with `npm run test:pages`.
 
 The Pages build publishes a JavaScript-free wiki at `/wiki/` and Markdown companions such as `/wiki/benchmark-method.md`. The explorer has a readable initial page and highlights before JavaScript loads. Set `FASTEST_PUBLIC_ORIGIN` to the canonical site origin for `robots.txt`, `sitemap.xml` and `llms.txt`. It defaults to `https://fastest.ai`. Wiki citations carry page, source and release IDs in both formats. The wiki manifest also identifies the matching research and catalog releases.
 
@@ -62,6 +80,8 @@ node resolve-evidence.mjs request.json previous-pages review-output approvals.js
 ```
 
 Use `action` (`correct` or `withdraw`), `evidenceId` (the published source or record ID), `sourceId`, and the exact published `sourceLocator`. Set `intake.issue` to the reviewed public GitHub issue, or use the consented D1 row fields `intake.id`, `category`, `status`, and `context_json`. Omit the submission message from the request. Supply the current approval file if the release has source approvals or earlier withdrawals. For a linked benchmark with the same source locator, add `benchmark.evidenceId` and `benchmark.previousRelease`, add a validated `benchmark.correction` observation for a correction, and set `FASTEST_DATABASE_URL` to the authorized publisher database. The database action takes effect when the operator command runs and serializes against concurrent publication.
+
+For a review of a PostgreSQL-backed Pages release, set `FASTEST_CATALOG_DATABASE_URL` for the build reader. The review reuses the previous catalog pin. Set `FASTEST_CATALOG_SNAPSHOT_ID` when the review needs a different eligible snapshot.
 
 Deploy only `review-output/pages` through the existing Pages workflow. Keep `review.json` and `approvals.json` private. The report contains the affected file and diff SHA-256 digests, earlier export hashes, a notification draft and an optional receipt update statement.
 
