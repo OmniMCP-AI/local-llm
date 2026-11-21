@@ -1,13 +1,14 @@
-"""Read released evidence over MCP stdio using the loopback public API."""
+"""Read public evidence and catalog metadata over MCP stdio."""
 
 import argparse
 import asyncio
 from contextlib import closing
-from http.client import HTTPConnection, HTTPException
+from functools import partial
+from http.client import HTTPConnection, HTTPException, HTTPSConnection
 from importlib.metadata import version
 import json
 import re
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from jsonschema import Draft202012Validator
 from mcp import McpError, types
@@ -23,6 +24,22 @@ API_VERSION = "1.0.0"
 OPENAPI_PATH = "/api/v1/openapi.json"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 CATALOG_URI = "fastest://v1/catalog"
+PAGES_CATALOG_PATH = "/api/v1/catalog"
+PAGES_CATALOG_TOOL = "v1_catalog"
+PAGES_CATALOG_INPUT = {
+    "type": "object",
+    "properties": {
+        "kind": {"type": "string", "enum": ["cards", "machines", "models", "runtimes"]},
+        "revision": {"type": "string", "pattern": "^v1-[a-f0-9]{16}$"},
+        "q": {"type": "string", "maxLength": 200},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 25},
+        "offset": {"type": "integer", "minimum": 0, "maximum": 999999},
+    },
+    "required": ["kind"],
+    "additionalProperties": False,
+    "if": {"properties": {"offset": {"minimum": 1}}, "required": ["offset"]},
+    "then": {"required": ["revision"]},
+}
 EVIDENCE_TEMPLATE = "fastest://v1/releases/{release_id}/evidence"
 EVIDENCE_URI = re.compile(r"fastest://v1/releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/evidence")
 TOOL_PATHS = {
@@ -47,11 +64,11 @@ class PublicApiError(Exception):
     pass
 
 
-def get_json(port, path, arguments=None):
+def get_json(connect, path, arguments=None):
     try:
         if arguments:
             path += "?" + urlencode(arguments)
-        with closing(HTTPConnection("127.0.0.1", port, timeout=5)) as client:
+        with closing(connect()) as client:
             client.request("GET", path)
             response = client.getresponse()
             if response.status != 200:
@@ -69,13 +86,41 @@ def get_json(port, path, arguments=None):
         raise PublicApiError(UNAVAILABLE) from None
 
 
-def build_server(port):
-    description = get_json(port, OPENAPI_PATH)
+def pages_connection(origin):
+    invalid = PublicApiError("--catalog-origin must be an HTTPS origin or a loopback HTTP origin.")
+    if any(ord(character) < 33 or ord(character) == 127 or character in "?#\\" for character in origin):
+        raise invalid
+    try:
+        url = urlsplit(origin)
+        host, port = url.hostname, url.port
+    except ValueError:
+        raise invalid from None
+    if not host or port == 0 or url.username is not None or url.path not in {"", "/"}:
+        raise invalid
+    if url.scheme == "https":
+        return partial(HTTPSConnection, host, port, timeout=5)
+    if url.scheme == "http" and host in {"127.0.0.1", "::1"}:
+        return partial(HTTPConnection, host, port, timeout=5)
+    raise invalid
+
+
+def build_server(port, catalog_origin=None):
+    connect_evidence = partial(HTTPConnection, "127.0.0.1", port, timeout=5)
+    connect_catalog = pages_connection(catalog_origin) if catalog_origin is not None else None
+    description = get_json(connect_evidence, OPENAPI_PATH)
     if description.get("info", {}).get("version") != API_VERSION:
         raise PublicApiError("The listener must serve public API version " + API_VERSION + ".")
 
     tools = {}
     validators = {}
+
+    def register_tool(name, summary, input_schema, *, open_world=False):
+        tools[name] = types.Tool(
+            name=name, description=summary, inputSchema=input_schema,
+            annotations=types.ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=open_world),
+        )
+        validators[name] = Draft202012Validator(input_schema, registry=Registry())
+
     for name, path in TOOL_PATHS.items():
         operation = description["paths"].get(path, {}).get("get")
         if operation is None:
@@ -90,17 +135,23 @@ def build_server(port):
                 required.append(parameter["name"])
         input_schema = {"type": "object", "properties": properties, "required": required,
                         "additionalProperties": False}
-        tools[name] = types.Tool(
-            name=name, description=operation["summary"], inputSchema=input_schema,
-            annotations=types.ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False),
+        register_tool(name, operation["summary"], input_schema)
+
+    if connect_catalog is not None:
+        register_tool(
+            PAGES_CATALOG_TOOL,
+            "Browse or search the published Pages catalog. Use an exact owner/repository ID for model lookups. "
+            "Use the result revision and nextOffset to fetch the next page. "
+            f"Resolve relative profile and manifest links against {catalog_origin.rstrip('/')}.",
+            PAGES_CATALOG_INPUT,
+            open_world=True,
         )
-        validators[name] = Draft202012Validator(input_schema, registry=Registry())
 
     server = Server("fastest-ai-evidence", version=API_VERSION,
                     instructions="Cite the public result's release or revision ID with its sources and exclusions.")
 
     def read(path, arguments=None):
-        result = get_json(port, path, arguments)
+        result = get_json(connect_evidence, path, arguments)
         if result.get("api_version") != API_VERSION:
             raise PublicApiError(UNAVAILABLE)
         return result
@@ -113,10 +164,17 @@ def build_server(port):
     async def call_tool(name, arguments):
         # Reject invalid selectors without echoing client-supplied values.
         try:
+            if name == PAGES_CATALOG_TOOL and connect_catalog is None:
+                raise PublicApiError("Configure --catalog-origin to enable the Pages catalog tool.")
             if name not in tools:
                 raise PublicApiError("Unsupported read-only tool.")
             if not validators[name].is_valid(arguments):
                 raise PublicApiError(PUBLIC_ERRORS[400])
+            if name == PAGES_CATALOG_TOOL:
+                result = get_json(connect_catalog, PAGES_CATALOG_PATH, arguments)
+                if result.get("apiVersion") != "1":
+                    raise PublicApiError(UNAVAILABLE)
+                return result
             return read(TOOL_PATHS[name], arguments)
         except PublicApiError as error:
             return types.CallToolResult(isError=True, content=[types.TextContent(type="text", text=str(error))])
@@ -160,13 +218,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", default=8000, type=int,
                         help="Port of the local public API listener on 127.0.0.1 (default 8000)")
+    parser.add_argument("--catalog-origin", help="Optional origin of the published Pages catalog (HTTPS or loopback HTTP)")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("--port must be from 1 to 65535")
     if version("mcp") != SDK_VERSION or types.LATEST_PROTOCOL_VERSION != PROTOCOL_VERSION:
         parser.exit(1, f"Install MCP Python SDK {SDK_VERSION} from fastest_mcp/requirements.txt.\n")
     try:
-        server = build_server(args.port)
+        server = build_server(args.port, args.catalog_origin)
     except (PublicApiError, KeyError, TypeError, AttributeError) as error:
         parser.exit(1, (str(error) if isinstance(error, PublicApiError) else UNAVAILABLE) + "\n")
     asyncio.run(serve(server))
