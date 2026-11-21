@@ -518,7 +518,7 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
       ...(photos.length || video ? ["## Build and product media", ""] : []),
       ...photos.map(({ alt, source, credit, license, licenseUrl }) =>
         `- [${escapeMarkdown(alt)}](<${source}>) · ${escapeMarkdown(credit)}${licenseUrl ? ` · [${escapeMarkdown(license)}](<${licenseUrl}>)` : ""}`),
-      ...(video ? [`- [${escapeMarkdown(video.title)}](<${card.source}>) · YouTube`] : []),
+      ...(video ? [`- [${escapeMarkdown(video.title)}](<${card.source}>) · [YouTube thumbnail](<${videoThumbnail(video)}>)`] : []),
       ...(mediaNotices.length ? ["", "### Image license notices", "", ...mediaNotices.flatMap(notice => ["```text", notice, "```", ""])] : []),
       ...(photos.length || video ? [""] : []),
       ...(gallery ? [`## ${imageSourceTitle}`, "", ...markdownFields(imageSourceFields(gallery)), ""] : []),
@@ -543,6 +543,8 @@ export function renderCard(card, { release, pathname, markdown, local = false, r
   });
 }
 
+const videoThumbnail = ({ id }) => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+
 const photoNotices = photos => [...new Set(photos.map(({ licenseNotice }) => licenseNotice).filter(Boolean))];
 
 export function renderCardContent(card, { mdLink, nested = false } = {}) {
@@ -556,10 +558,13 @@ export function renderCardContent(card, { mdLink, nested = false } = {}) {
 ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, graphic }) =>
   `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? cardIllustration(card.title, position.capacityPoints.find(point => point.id === position.id)?.y) : ""}
-${video ? `<figure class="profile-video"><iframe loading="lazy" title="${escapeHtml(video.title)}"
-  src="https://www.youtube-nocookie.com/embed/${escapeHtml(video.id)}${video.start ? "?start=" + video.start : ""}"
-  referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-  <figcaption><a href="${escapeHtml(card.source)}">${escapeHtml(video.title)} on YouTube</a></figcaption></figure>` : ""}
+${video ? `<figure class="profile-video">
+  <a href="${escapeHtml(card.source)}"><img loading="lazy" width="480" height="360"
+    referrerpolicy="no-referrer" src="${escapeHtml(videoThumbnail(video))}" alt="${escapeHtml(video.title)} thumbnail"></a>
+  <figcaption><a href="${escapeHtml(card.source)}">${escapeHtml(video.title)} on YouTube</a> · Creator thumbnail</figcaption>
+  <details><summary>Watch build video</summary><iframe loading="lazy" title="${escapeHtml(video.title)}"
+    src="https://www.youtube-nocookie.com/embed/${escapeHtml(video.id)}${video.start ? "?start=" + video.start : ""}"
+    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></details></figure>` : ""}
 ${photos.length ? `<div class="profile-gallery">${photos.map(({ data, alt, source, credit, license, licenseUrl }) =>
   `<figure><img loading="lazy" src="${escapeHtml(data)}" alt="${escapeHtml(alt)}"><figcaption>
   ${escapeHtml(alt)} · <a href="${escapeHtml(source)}">${escapeHtml(credit)}</a>${licenseUrl ? ` · <a href="${escapeHtml(licenseUrl)}">${escapeHtml(license)}</a>` : ""}

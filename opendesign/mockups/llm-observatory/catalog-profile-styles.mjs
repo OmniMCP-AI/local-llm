@@ -53,7 +53,9 @@ export const profileStyles = `
 .profile-gallery img { width: 100%; height: auto; max-height: 22rem; object-fit: contain; background: var(--profile-panel); outline: 1px solid #ffffff1a; }
 .profile-gallery figcaption, .profile-video figcaption { color: var(--profile-muted); font-size: .84rem; }
 .profile-video { margin: 1.25rem 0 0; max-width: 40rem; }
-.profile-video iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; background: var(--profile-panel); }
+.profile-video img, .profile-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: var(--profile-panel); }
+.profile-video img { height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.profile-video summary { cursor: pointer; padding-block: .5rem; width: fit-content; }
 .profile-photo-notices { color: var(--profile-muted); font-size: .84rem; margin-top: .75rem; }
 .profile-photo-notices pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .profile-footer { color: var(--profile-muted); margin-top: 1.2rem; overflow-wrap: anywhere; font-size: .85rem; }
