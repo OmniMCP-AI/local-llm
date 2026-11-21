@@ -115,19 +115,6 @@ const publicDocuments = Object.fromEntries(Object.entries(documents)
     return [id, { ...doc, body: clean(doc.body), raw: clean(doc.raw) }];
   }));
 const hardware = published?.hardware ?? await readHardwareCatalog(catalogDirectory, isWithdrawn);
-if (!published) {
-  const gpuPhotos = {
-    "nvidia-geforce-rtx-4090": "rtx-4090",
-    "nvidia-geforce-rtx-3090": "rtx-3090",
-    "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
-    "intel-arc-b580": "arc-b580",
-  };
-  for (const card of hardware.catalog.cards) {
-    const photo = media[gpuPhotos[card.id]];
-    if (photo) card.photos = [photo];
-  }
-  hardware.digest = createHash("sha256").update(JSON.stringify({ catalog: hardware.catalog, manifest: hardware.manifest })).digest("hex");
-}
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,

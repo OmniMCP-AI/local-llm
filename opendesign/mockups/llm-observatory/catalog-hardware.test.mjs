@@ -248,3 +248,49 @@ test("reviewed machines expose creator build facts, attributed media and withdra
   assert.ok(!filtered.machines.some(({ id }) => id === cluster.id));
   assert.equal(filtered.machines.find(({ id }) => id === spark.id).photos.length, 2);
 });
+
+test("GPU photo galleries publish exact models with photo and license links", async () => {
+  const { catalog, manifest } = await readHardwareCatalog(here);
+  const card = catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5090");
+  assert.ok(card.photos?.length > 1);
+  assert.ok(card.photos.some(({ alt }) => alt.includes("Palit")));
+  assert.ok(!catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5090-d-32gb").photos);
+  const photographed = catalog.cards.filter(({ photos }) => photos?.length);
+  assert.ok(photographed.length >= 12);
+  assert.equal(manifest.coverage.cardsWithPhotos, photographed.length);
+  assert.ok(photographed.every(({ modification }) => !modification));
+  const photos = photographed.flatMap(({ photos }) => photos);
+  assert.equal(new Set(photos.map(({ source }) => source)).size, photos.length);
+  assert.equal(new Set(photos.map(({ sha256 }) => sha256)).size, photos.length);
+  for (const { author, credit, license, licenseUrl } of photos) {
+    assert.ok(credit.includes(author) && /resized|converted to JPEG/.test(credit), credit);
+    const licensePath = license === "CC0 1.0" ? "publicdomain/zero/1.0/" :
+      "licenses/" + license.slice(3).toLowerCase().replace(" ", "/") + "/";
+    assert.equal(licenseUrl, "https://creativecommons.org/" + licensePath, credit);
+  }
+
+  const release = "v1-1234567890abcdef";
+  for (const markdown of [false, true]) {
+    const pathname = `/catalog/${release}/cards/${card.id}.${markdown ? "md" : "html"}`;
+    const page = renderCard(hardwareCard(card, release, "cards"), { release, pathname, markdown });
+    for (const { source, licenseUrl, author } of card.photos) {
+      assert.ok(page.includes(source) && page.includes(licenseUrl) && page.includes(author), pathname);
+    }
+    if (!markdown) assert.equal((page.match(/data:image\/jpeg;base64,/g) ?? []).length, card.photos.length);
+  }
+
+  const { catalog: filtered } = await readHardwareCatalog(here, source => source === card.photos[0].source);
+  const filteredCard = filtered.cards.find(({ id }) => id === card.id);
+  assert.deepEqual(filteredCard.photos, card.photos.slice(1));
+  assert.deepEqual(filteredCard.vendorSpec.gallery, card.vendorSpec.gallery);
+});
+
+test("a GPU photo stays on the exact board when the catalog also contains other variants", async () => {
+  const { catalog } = await readHardwareCatalog(here);
+  const card = id => catalog.cards.find(row => row.id === id);
+  assert.ok(card("pny-vcg5060t16dfxpb1-o").photos.every(photo => photo.alt.includes("PNY") && photo.alt.includes("16 GB")));
+  assert.equal(card("pny-vcg5060t8dfxpb1-o").photos, undefined);
+  assert.equal(card("intel-arc-a770-8gb").photos, undefined);
+  assert.equal(card("intel-arc-a770-16gb").photos.length, 3);
+  assert.equal(card("nvidia-geforce-rtx-3080-12gb").photos, undefined);
+});

@@ -1,4 +1,5 @@
 import hardwareSources from "./catalog-hardware-sources.json" with { type: "json" };
+import gpuPhotoIds from "./catalog-gpu-photo-ids.json" with { type: "json" };
 import identities from "./catalog-identities.json" with { type: "json" };
 import { topologyRevisionPattern } from "./catalog-paths.mjs";
 import { cardRatings } from "./catalog-position.mjs";
@@ -58,13 +59,8 @@ export const fitScenario = {
   hostModel: `${fitProfile.memoryGb} GB system RAM (llmfit example assumptions)`,
 };
 
-const photosByCard = {
-  "nvidia-geforce-rtx-4090": "rtx-4090",
-  "nvidia-geforce-rtx-3090": "rtx-3090",
-  "nvidia-geforce-rtx-3060": "rtx-3060",
-  "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
-  "intel-arc-b580": "arc-b580",
-};
+const photosByCard = Object.fromEntries(Object.entries(gpuPhotoIds)
+  .flatMap(([id, { topology }]) => topology ? [[id, topology]] : []));
 
 export function cardPhotoExample(photo, cards) {
   if (!photo) return undefined;

@@ -717,7 +717,16 @@ test("production Pages serves the selected PostgreSQL snapshot through the catal
     assert.deepEqual(joined.results.map(({ id }) => id), [previousShard.at(-1).id, followingShard[0].id]);
 
     const cardSearch = await (await get("/api/v1/catalog?kind=cards&q=nvidia-geforce-rtx-5090")).json();
-    assert.ok(cardSearch.results.some(({ id }) => id === "nvidia-geforce-rtx-5090"));
+    const card = cardSearch.results.find(({ id }) => id === "nvidia-geforce-rtx-5090");
+    assert.ok(card);
+    const cardHtml = await (await get(card.html)).text();
+    const cardMarkdown = await (await get(card.markdown)).text();
+    assert.equal((cardHtml.match(/data:image\/jpeg;base64,/g) ?? []).length, 3);
+    for (const body of [cardHtml, cardMarkdown]) {
+      assert.match(body, /Palit GeForce RTX 5090 GameRock/);
+      assert.match(body, /commons\.wikimedia\.org\/wiki\/File:Palit_GeForce_RTX_5090_Gamerock/);
+      assert.match(body, /creativecommons\.org\/licenses\/by\/4\.0\//);
+    }
     const runtimeSearch = await (await get("/api/v1/catalog?kind=runtimes&q=llama.cpp")).json();
     assert.equal(runtimeSearch.results.find(({ id }) => id === "llama.cpp").source, "https://github.com/ggml-org/llama.cpp");
     const frameworkSearch = await (await get("/api/v1/catalog?kind=runtimes&q=ctranslate2")).json();
