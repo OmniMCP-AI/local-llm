@@ -820,6 +820,15 @@ test("the local PostgreSQL snapshot exports ranked repositories and complete fac
   assert.equal(manifest.models.discovery.capturedAt, "2026-11-20T21:34:32+00:00");
   assert.match(await readFile(join(root, "LICENSE.txt"), "utf8"), /Copyright \(c\) 2026 Alex Jones/);
   const published = readPublishedCatalog(testDatabase, imported.snapshotId);
+  const photoCard = hardware.catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-5090");
+  assert.deepEqual(published.hardware.catalog.cards.find(({ id }) => id === photoCard.id).photos, photoCard.photos);
+  const [photoHtml, photoMarkdown] = await Promise.all(["html", "md"].map(ext =>
+    readFile(join(root, "cards", photoCard.id + "." + ext), "utf8")));
+  for (const { source, licenseUrl, alt } of photoCard.photos) {
+    assert.ok(photoHtml.includes(source) && photoHtml.includes(licenseUrl) && photoHtml.includes(alt));
+    assert.ok(photoMarkdown.includes(source) && photoMarkdown.includes(licenseUrl) && photoMarkdown.includes(alt));
+  }
+  assert.equal((photoHtml.match(/data:image\/jpeg;base64,/g) ?? []).length, photoCard.photos.length);
   const modified = published.hardware.catalog.cards.find(({ id }) => id === "nvidia-geforce-rtx-4090-modified-48gb");
   assert.equal(modified.parent, "nvidia-geforce-rtx-4090");
   assert.equal(modified.modification.capacityGb, 48);
