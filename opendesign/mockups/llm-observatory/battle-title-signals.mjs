@@ -10,7 +10,8 @@ export function estimateBattleTitles({ observedOn, videos }, catalog) {
 
   const pairs = Object.fromEntries(["cards", "machines"].map(kind => {
     const eligible = new Set(catalog[kind]
-      .filter(row => kind === "cards" || row.kind !== "Component reference").map(row => row.id));
+      .filter(row => kind === "cards" || !["Component reference", "Manufacturer system reference"].includes(row.kind))
+      .map(row => row.id));
     const matches = new Map();
     for (const video of videos) {
       const members = [...new Set(video[kind] ?? [])].filter(id => eligible.has(id)).sort(ascending);
