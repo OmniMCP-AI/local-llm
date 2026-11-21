@@ -32,6 +32,9 @@ from test_scaling import BASELINE, COMPARISON, fixture_releases
 from fastest_release.scaling import PLAN, scaling_report
 from test_scaling_capture import BENCH, FIRST, SECOND
 from fastest_serving import capture
+from fastest_text.__main__ import PLAN_PATH as TEXT_PLAN_PATH, main as text_main
+from fastest_text.capture import finish_phase
+from test_text_capture import BENCH as TEXT_BENCH
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
@@ -564,6 +567,162 @@ class ReleaseTest(unittest.TestCase):
             [sys.executable, "-B", "-m", "fastest_intake", "--database-url", self.database_url,
              command, *args], cwd=FIXTURE.parents[1], capture_output=True, text=True, timeout=30,
         )
+
+    def text_capture_packet(self, **controls):
+        root = self.socket_path.parent / uuid4().hex
+        root.mkdir()
+        packet, bench, build = root / "capture", root / "llama-bench", root / "build.txt"
+        script = TEXT_BENCH.replace("list(range(100, 120))", "[9007199254740993] + list(range(101, 120))")
+        bench.write_text(f"#!{sys.executable}\n" + script)
+        bench.chmod(0o700)
+        build.write_text("private-build-evidence-marker")
+        with redirect_stderr(StringIO()), patch.dict(os.environ, {"FIXTURE_CAPTURE": str(packet), **controls}), \
+                patch("fastest_text.capture.verify_shards", side_effect=lambda _, artifact, verified:
+                      verified.extend(artifact["shards"])):
+            text_main(["capture", str(packet), "--cell", "apple-m4", "--bench", str(bench),
+                       "--model-dir", str(root), "--host-revision", "fixture-text-host",
+                       "--build-evidence", str(build), "--quiet-host", "--timeout", "1"])
+        return packet
+
+    def test_private_text_intake_preserves_raw_timings_and_attempt_outcomes(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.text_capture_packet(FIXTURE_FAILURE="decode")
+        result = self.serving_intake("ingest-text-capture", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_sha256"], sha256((packet / "capture.json").read_bytes()).hexdigest())
+        self.assertEqual(receipt["capture_status"], "incomplete")
+        self.assertEqual(receipt["review_status"], "held")
+        self.assertEqual(json.loads(self.serving_intake("ingest-text-capture", packet).stdout), receipt)
+        self.assertEqual(self.store._query("""
+            SELECT phase, attempt_number, outcome, elapsed_ns
+            FROM fastest_intake.text_capture_attempt WHERE attempt_number IN (1, 3, 4)
+            ORDER BY phase, attempt_number;
+        """).splitlines(), [
+            "decode|1|success|9007199254740993", "decode|3|failed|", "decode|4|success|103",
+            "prefill|1|success|9007199254740993", "prefill|3|success|102", "prefill|4|success|103",
+        ])
+        plan = json.loads(TEXT_PLAN_PATH.read_bytes())
+        output = self.store._query("""
+            SELECT run.metadata, phase.placement, phase.outcome
+            FROM fastest_intake.text_capture_run AS run
+            JOIN fastest_intake.text_capture_phase AS phase USING (capture_sha256)
+            WHERE phase.phase = 'decode';
+        """)
+        metadata, placement, outcome = output.split("|")
+        metadata, placement = json.loads(metadata), json.loads(placement)
+        self.assertEqual(metadata["artifact"], plan["artifact"])
+        self.assertEqual(metadata["runtime"], plan["runtime"])
+        self.assertEqual(metadata["backend"], "Metal")
+        self.assertIs(metadata["quiet_host_operator_attested"], True)
+        self.assertEqual(placement["devices"], {"Metal": "Apple M4"})
+        self.assertEqual(outcome, "partial")
+        self.assertNotIn(str(packet.parent), output)
+        self.assertNotIn("private-build-evidence-marker", output)
+        stats = json.loads(self.serving_intake("stats").stdout)
+        self.assertEqual((stats["text_capture_runs"], stats["text_capture_attempts"]), (1, 40))
+
+    def test_private_text_intake_preserves_blocked_and_timeout_outcomes_and_rejects_edited_evidence(self):
+        self.serving_intake("migrate").check_returncode()
+        blocked = self.text_capture_packet(FIXTURE_COMMIT="0000000")
+        result = self.serving_intake("ingest-text-capture", blocked)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual((receipt["capture_status"], receipt["observed_attempts"], receipt["timing_samples"]),
+                         ("blocked", 0, 0))
+
+        timed_out = self.text_capture_packet(FIXTURE_FAILURE="timeout")
+        result = self.serving_intake("ingest-text-capture", timed_out)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["timing_samples"], 20)
+        self.assertEqual(self.store._query("""
+            SELECT attempt.outcome, attempt.elapsed_ns
+            FROM fastest_intake.text_capture_attempt AS attempt
+            WHERE attempt.phase = 'decode' ORDER BY attempt.attempt_number;
+        """).splitlines(), ["unmeasured|", "unmeasured|", "timeout|"])
+
+        ledger_file = timed_out / "decode" / "attempt.json"
+        ledger = json.loads(ledger_file.read_bytes())
+        ledger["attempts"][2].update(outcome="success", elapsed_ns=12)
+        ledger["attempts"][2].pop("reason")
+        ledger["samples_ns"] = [12]
+        ledger_file.write_text(json.dumps(ledger))
+        capture_file = timed_out / "capture.json"
+        capture = json.loads(capture_file.read_bytes())
+        capture["phases"]["decode"].update(
+            sample_count=1, ledger_sha256=sha256(ledger_file.read_bytes()).hexdigest(),
+        )
+        capture_file.write_text(json.dumps(capture))
+        rejected = self.serving_intake("ingest-text-capture", timed_out)
+        self.assertEqual(rejected.returncode, 1, rejected.stderr)
+        self.assertIn("disagree with retained runner output", rejected.stderr)
+        self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.text_capture_run"), "2")
+
+        def fail_to_finalize_decode(directory, *args):
+            if directory.name == "decode":
+                raise OSError("fixture could not finalize the phase")
+            return finish_phase(directory, *args)
+
+        with patch("fastest_text.capture.finish_phase", side_effect=fail_to_finalize_decode):
+            stopped = self.text_capture_packet()
+        result = self.serving_intake("ingest-text-capture", stopped)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual((receipt["capture_status"], receipt["timing_samples"]), ("blocked", 20))
+        self.assertEqual(self.store._query("""
+            SELECT outcome FROM fastest_intake.text_capture_phase WHERE outcome = 'unavailable';
+        """), "unavailable")
+
+    def legacy_text_capture_packet(self):
+        current = self.text_capture_packet()
+        packet = current.parent / "ambient"
+        packet.mkdir()
+        plan = json.loads(TEXT_PLAN_PATH.read_bytes())
+        (packet / "llama-release.json").write_text(json.dumps({
+            "tag_name": plan["runtime"]["tag"], "target_commitish": plan["runtime"]["revision"],
+            "assets": [{"name": "llama-b5163-bin-macos-arm64.zip", "digest": None}],
+        }))
+        (packet / "model-sha256.txt").write_text("".join(
+            f"{shard['sha256']}  {shard['path']}\n" for shard in plan["artifact"]["shards"]
+        ))
+        (packet / "llama-binaries.sha256").write_text(f"{'b' * 64}  /private/bin/llama-bench\n")
+        events = []
+        for phase in ("prefill", "decode"):
+            receipt = json.loads((current / phase / "attempt.json").read_bytes())
+            for suffix, name in (("jsonl", "stdout.jsonl"), ("stderr", "stderr.log")):
+                shutil.copyfile(current / phase / name, packet / f"{phase}.{suffix}")
+            events += [
+                {"name": phase, "event": "start", "pid": 101, "timestamp": receipt["started_utc"],
+                 "worktree_revision": "a" * 40, "argv": receipt["argv"]},
+                {"name": phase, "event": "exit", "pid": 101, "timestamp": receipt["finished_utc"],
+                 "worktree_revision": "a" * 40, "code": receipt["exit_code"]},
+            ]
+        (packet / "run-events.jsonl").write_text("".join(json.dumps(event) + "\n" for event in events))
+        (packet / "sources.sha256").write_text("".join(
+            f"{sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in sorted(packet.iterdir())
+        ))
+        return packet
+
+    def test_private_text_intake_accepts_sealed_ambient_m4_evidence_with_no_quiet_host_claim(self):
+        self.serving_intake("migrate").check_returncode()
+        packet = self.legacy_text_capture_packet()
+        result = self.serving_intake("ingest-text-ambient-m4", packet)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["capture_sha256"], sha256((packet / "sources.sha256").read_bytes()).hexdigest())
+        self.assertEqual((receipt["packet_kind"], receipt["review_status"], receipt["timing_samples"]),
+                         ("ambient-m4-legacy", "held", 40))
+        self.assertEqual(json.loads(self.serving_intake("ingest-text-ambient-m4", packet).stdout), receipt)
+        self.assertEqual(self.store._query("""
+            SELECT metadata #>> '{quiet_host_operator_attested}', metadata #>> '{quality,status}'
+            FROM fastest_intake.text_capture_run;
+        """), "false|unreviewed")
+
+        with (packet / "decode.stderr").open("ab") as log:
+            log.write(b"Changed sealed evidence.")
+        rejected = self.serving_intake("ingest-text-ambient-m4", packet)
+        self.assertEqual(rejected.returncode, 1, rejected.stderr)
+        self.assertIn("SHA-256 mismatch", rejected.stderr)
 
     def scaling_capture_packet(self, bench=BENCH):
         root = Path(self.socket_path.parent, f"fixture-{uuid4().hex}")
