@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { hardwareCard, renderCard } from "./catalog-card.mjs";
+import { renderCoordinatePlot } from "./coordinate-plot.mjs";
 
 const card = (id, spec) => ({
   id, name: id, source: "https://example.test/" + id, kind: "Component reference", manufacturer: "Example",
@@ -60,4 +61,18 @@ test("NVIDIA product and architecture sources cover distinct RTX 3090 and RTX 40
   assert.equal(rtx3090.vendorSpec.facts["Memory bandwidth"], undefined);
   assert.equal(rtx3090.vendorSpec.facts["Memory configuration"], "24 GB GDDR6X");
   assert.equal(rtx3090.vendorSpec.gallery.label, "Product images on NVIDIA");
+});
+
+
+test("the highlighted budget region covers the best performance side of the target", () => {
+  for (const [reverse, expectedHeight] of [[false, "60.00000%"], [true, "40.00000%"]]) {
+    const chart = renderCoordinatePlot({
+      title: "Tradeoffs",
+      xAxis: { label: "Build price", unit: "USD", domain: [0, 100] },
+      yAxis: { label: "Performance", domain: [0, 100], reverse },
+      points: [{ id: "gpu", name: "GPU", x: 20, y: 60 }],
+      targetArea: { x: 45, y: 40 },
+    });
+    assert.ok(chart.includes(`--area-width:45.00000%;--area-height:${expectedHeight};top:0`));
+  }
 });
