@@ -15,6 +15,54 @@ const evidenceId = "youtube/09GB4LtXUok";
 const source = sourceIndex.sources.find(({ id }) => id === evidenceId);
 const receipt = "16660254-d91d-498d-8c9c-91ec112b211b";
 
+test("a reviewed publisher withdrawal retires each archived catalog carrying that exact source", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "fastest-publisher-policy-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const request = join(root, "request.json");
+  const policy = join(root, "policy.json");
+  const source = "https://publisher.test/evaluation/";
+  const issue = "https://github.com/OmniMCP-AI/local-llm/issues/24";
+  const original = "v1-aabbccddeeff0011";
+  const older = "v1-2233445566778899";
+  const clean = "v1-0101010101010101";
+  const fixtures = [original, older, clean].map((id) => join(root, id));
+  for (const [release, directory] of [original, older, clean].map((id, index) => [id, fixtures[index]])) {
+    const data = join(directory, "catalog-data", release);
+    await mkdir(data, { recursive: true });
+    await mkdir(join(directory, "wiki"));
+    await writeFile(join(directory, "wiki/manifest.json"), JSON.stringify({ catalogRelease: release }));
+    await writeFile(join(data, "ex.json"), JSON.stringify([{
+      id: "example/model",
+      supplemental: { publisherEvaluations: [{ source: release === clean ? source + "different" : source }] },
+    }]));
+  }
+  await writeFile(join(fixtures[0], "evidence-quarantine.json"), JSON.stringify({ paths: ["/downloads/retired.md"], updates: [] }));
+  const stage = (modelId) => writeFile(request, JSON.stringify({ action: "withdraw", modelId, source, issue }))
+    .then(() => run(process.execPath, ["withdraw-publisher-evaluation.mjs", request, fixtures[0], policy, ...fixtures.slice(1)]));
+  await assert.rejects(stage("example/unknown"), /do not identify a published publisher evaluation/);
+  await stage("example/model");
+  const state = JSON.parse(await readFile(policy, "utf8"));
+  assert.deepEqual(state.paths.slice().sort(), [
+    `/catalog-data/${older}/*`, `/catalog-data/${original}/*`, `/catalog/${older}/*`,
+    `/catalog/${original}/*`, "/downloads/retired.md",
+  ]);
+  assert.deepEqual(state.publisherWithdrawals, [{ sourceSha256: digest(source), issue, catalogReleases: [older, original] }]);
+  assert.ok(!JSON.stringify(state).includes(source));
+  const { onRequestGet: readPage } = await import("./functions/_middleware.js");
+  const { onRequestGet: readCatalog } = await import("./functions/api/v1/catalog.js");
+  const env = { ASSETS: { fetch: (request) => Response.json(
+    new URL(request.url).pathname === "/wiki/manifest.json" ? { catalogRelease: clean } : state,
+  ) } };
+  for (const path of [`/catalog/${original}/models/example/model`, `/catalog-data/${older}/ex.json`]) {
+    const request = new Request("https://example.test" + path, { headers: { "If-None-Match": '"old"' } });
+    const reply = await readPage({ request, env, next: () => assert.fail("Stale asset was requested") });
+    assert.equal(reply.status, 410);
+    assert.equal(reply.headers.get("Cache-Control"), "no-store");
+  }
+  const api = await readCatalog({ request: new Request(`https://example.test/api/v1/catalog?kind=models&revision=${older}`), env });
+  assert.equal(api.status, 410);
+});
+
 test("an opted-in withdrawal retires prior exports and verifies the reviewed release over Pages HTTP", { timeout: 90_000 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "fastest-evidence-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -28,6 +76,14 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   await run(process.execPath, ["build.mjs", "--pages", "--output", previous], {
     env: { ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: approvals },
   });
+  const existingPolicy = join(previous, "evidence-quarantine.json");
+  const existing = JSON.parse(await readFile(existingPolicy, "utf8"));
+  const retiredPublisher = {
+    sourceSha256: digest("https://publisher.test/retired/"),
+    issue: "https://github.com/OmniMCP-AI/local-llm/issues/24",
+    catalogReleases: ["v1-1234123412341234"],
+  };
+  await writeFile(existingPolicy, JSON.stringify({ ...existing, publisherWithdrawals: [retiredPublisher] }));
   const old = JSON.parse(await readFile(join(previous, "wiki/manifest.json"))).researchRelease;
   const exportPath = "downloads/earlier-library.md";
   const markdown = await readFile(join(previous, "research", old, "library.md"));
@@ -69,6 +125,7 @@ test("an opted-in withdrawal retires prior exports and verifies the reviewed rel
   assert.ok(report.receiptUpdate.includes(receipt));
   assert.ok(report.receiptUpdate.includes(report.resolutionPath));
   const policy = JSON.parse(await read("evidence-quarantine.json"));
+  assert.deepEqual(policy.publisherWithdrawals, [retiredPublisher]);
   assert.ok(policy.paths.includes("/research/" + old + "/*"));
   assert.ok(policy.paths.includes("/" + exportPath));
   assert.match(await read("wiki/evidence-updates.md"), /Withdrawn/);

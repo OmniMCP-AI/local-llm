@@ -5,6 +5,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readCatalogModelFiles } from "./catalog-release-build.mjs";
 import { readCatalogPhotos } from "./catalog-topology-build.mjs";
+import { readEvidenceState, withdrawnPublisherSource } from "./evidence-state.mjs";
 
 const project = new URL(".", import.meta.url);
 const docs = new URL("../../../docs/", project);
@@ -107,11 +108,13 @@ function topologyRecords(reports, machines, documents, photos) {
   return { topologies, records };
 }
 
-export async function importLocalCatalog(hardware, database = process.env.FASTEST_DATABASE_URL ?? "postgresql://localhost/localdecode_catalog") {
+export async function importLocalCatalog(hardware, database = process.env.FASTEST_DATABASE_URL ?? "postgresql://localhost/localdecode_catalog",
+  isPublisherWithdrawn) {
+  const publisherFilter = isPublisherWithdrawn ?? withdrawnPublisherSource(await readEvidenceState());
   const [schema, modelFiles, runtimes, topics, inventory, series, references, observations, documents, reports, photos,
     manufacturerSource] = await Promise.all([
     readFile(new URL("catalog-pg.sql", project), "utf8"),
-    readCatalogModelFiles(fileURLToPath(project)),
+    readCatalogModelFiles(fileURLToPath(project), publisherFilter),
     ...["catalog-runtimes.json", "catalog-topics.json"].map(name => readJson(project, name)),
     ...["inventory.json", "llmfit/research/test-series.json", "llmfit/research/models.json", "llmfit/research/benchmarks.json"]
       .map(name => readJson(seed, name)),

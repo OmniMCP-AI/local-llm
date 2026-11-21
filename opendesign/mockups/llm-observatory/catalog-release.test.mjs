@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { readCatalogModelFiles, writeCatalogRelease } from "./catalog-release-build.mjs";
+import { withdrawnPublisherSource } from "./evidence-state.mjs";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { importLocalCatalog, readPublishedCatalog } from "./catalog-pg.mjs";
@@ -124,6 +126,38 @@ test("reviewed releases have pinned source-backed cards outside the llmfit count
   assert.equal(manifest.supplement.repositories, 3);
   assert.equal(manifest.supplement.publisherResults, 2);
   assert.match(manifest.supplement.sha256, /^[a-f0-9]{64}$/);
+});
+
+test("rebuilding a withdrawn publisher evaluation changes the catalog pin and preserves other model metadata", async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-publisher-fixture-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  for (const name of ["catalog-models.json", "catalog-identities.json", "model-discovery.json"]) {
+    await copyFile(join(here, name), join(output, name));
+  }
+  const source = "https://publisher.test/withdrawn/";
+  const retainedSource = "https://publisher.test/retained/";
+  const original = JSON.parse(await readFile(join(here, "catalog-model-supplements.json"), "utf8"));
+  const example = original.models[0];
+  example.id = "example/fixture-model";
+  example.publisherEvaluations = [
+    { ...example.publisherEvaluations[0], source, scorePercent: 61.1 },
+    { ...example.publisherEvaluations[0], source: retainedSource, scorePercent: 62.2 },
+  ];
+  await writeFile(join(output, "catalog-model-supplements.json"), JSON.stringify(original));
+  const before = await readCatalogModelFiles(output);
+  const after = await readCatalogModelFiles(output, withdrawnPublisherSource({
+    publisherWithdrawals: [{ sourceSha256: createHash("sha256").update(source).digest("hex") }],
+  }));
+  const release = (models) => writeCatalogRelease(here, output, undefined, undefined, models);
+  const beforePin = await release(before);
+  const afterPin = await release(after);
+  assert.notEqual(beforePin, afterPin);
+  const shard = JSON.parse(await readFile(join(output, "catalog-data", afterPin, "ex.json"), "utf8"));
+  const { supplemental, ...metadata } = shard.find(({ id }) => id === example.id);
+  const { publisherEvaluations, ...details } = supplemental;
+  assert.match(metadata.source, /huggingface\.co\/example\/fixture-model/);
+  assert.equal(details.revision, example.revision);
+  assert.deepEqual(publisherEvaluations.map(({ source, scorePercent }) => [source, scorePercent]), [[retainedSource, 62.2]]);
 });
 
 test("a publisher score pinned to a different model-card revision cannot enter the catalog", async (t) => {
