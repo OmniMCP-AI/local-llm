@@ -287,6 +287,94 @@ class ReleaseTest(unittest.TestCase):
         self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_run"), "1")
         self.assertEqual(self.store._query("SELECT count(*) FROM fastest_intake.image_pilot_attempt"), "2")
 
+    def test_agent_task_report_uses_reviewed_postgres_artifacts_and_live_withdrawal(self):
+        from fastest_agent_task.harness import plan
+
+        context = plan()["contexts"][0]
+        record = {
+            "kind": "measured", "context_id": context["id"], "context_sha256": context["sha256"],
+            "environment": {
+                "hardware": "Apple M4, 24 GiB", "os": "macOS 15.7", "backend": "Metal",
+                "runtime_binary_sha256": "1" * 64, "adapter_sha256": "2" * 64,
+            },
+            "review": {
+                "decision_id": str(uuid4()), "evidence_id": str(uuid4()), "retained_sha256": "3" * 64,
+                "ownership": "operator-owned", "destination": "public-release", "decision": "allow",
+            },
+            "attempts": [
+                {
+                    "trial": 1, "attempt": 1, "wall_ns": 30_000_000_000, "generated_tokens": None,
+                    "reasoning_tokens": 0, "termination": "timeout", "answer": None, "tool_reads": [],
+                },
+                {
+                    "trial": 1, "attempt": 2, "wall_ns": 25_000, "generated_tokens": 16,
+                    "reasoning_tokens": 0, "termination": "answered", "answer": {"open_units": 17},
+                    "tool_reads": [{"tool": "read_bundle", "resource": "inventory"}],
+                },
+            ],
+        }
+        submitted = self.socket_path.parent / "reviewed.json"
+
+        def publish(*arguments, check=True):
+            submitted.write_text(json.dumps(record), encoding="utf-8")
+            return subprocess.run(
+                [sys.executable, "-B", "-m", "fastest_release", "--database-url", self.database_url,
+                 "publish-agent-task", "--record", str(submitted), *arguments],
+                cwd=FIXTURE.parents[1], capture_output=True, text=True, check=check, timeout=15,
+            )
+
+        published = publish()
+        pin = published.stdout.strip()
+        self.assertRegex(pin, r"^[a-f0-9]{64}$")
+        self.assertEqual(publish().stdout.strip(), pin)
+        exported = self.socket_path.parent / "offline-report"
+        subprocess.run([sys.executable, "-B", "-m", "fastest_agent_task", "build", str(exported),
+                        "--record", str(submitted)], cwd=FIXTURE.parents[1], check=True,
+                       capture_output=True, timeout=15)
+        self.store._query("""
+            CREATE ROLE task_reader LOGIN;
+            GRANT USAGE ON SCHEMA fastest_release TO task_reader;
+            GRANT EXECUTE ON FUNCTION fastest_release.read_agent_task_artifact(text, text),
+                fastest_release.read_release(uuid) TO task_reader;
+        """)
+        reader = ReleaseStore(self.database_url + " user=task_reader")
+        with api_client(reader, agent_task_release=pin) as request:
+            self.assertEqual(request("/releases/current/benchmark.html", decode=False)[0], 404)
+            status, headers, _ = request("/agent-task")
+            self.assertEqual(status, 307)
+            base = f"/agent-task/{pin}/"
+            self.assertEqual(headers["Location"], base + "agent-task.html")
+            _, _, manifest = request(base + "manifest.json", decode=False)
+            self.assertEqual(sha256(manifest.encode()).hexdigest(), pin)
+            self.assertEqual(manifest.encode(), (exported / "manifest.json").read_bytes())
+            for name, digest in json.loads(manifest)["sha256"].items():
+                status, headers, body = request(base + name, decode=False)
+                self.assertEqual(status, 200)
+                self.assertEqual(headers["Cache-Control"], "no-store")
+                self.assertEqual(sha256(body.encode()).hexdigest(), digest)
+                self.assertEqual(body.encode(), (exported / name).read_bytes())
+                if name.endswith((".html", ".md")):
+                    self.assertIn("timeout", body)
+                    self.assertIn("25000", body)
+                    self.assertIn("open_units", body)
+            _, _, measured = request(base + "agent-task.json")
+            bundle, split = measured["contexts"]
+            self.assertEqual([row["outcome"] for row in bundle["attempts"]], ["timeout", "accepted"])
+            self.assertEqual(bundle["attempts"][1]["accepted_output"], {"open_units": 17})
+            self.assertEqual([bundle["counts"]["failed_attempts"], split["counts"]["attempts"]], [1, 0])
+
+            record["review"]["evidence_id"] = str(uuid4())
+            expired = publish("--expires-at", "2000-01-01T00:00:00Z").stdout.strip()
+            self.assertEqual(request(f"/agent-task/{expired}/agent-task.json", decode=False)[0], 410)
+            self.assertEqual(request(f"/agent-task/{'0' * 64}/task.json", decode=False)[0], 404)
+            self.store.withdraw(bundle["review"]["evidence_id"], "Private review withdrawal")
+            for name in (*json.loads(manifest)["sha256"], "manifest.json"):
+                status, _, body = request(base + name, decode=False)
+                self.assertEqual(status, 410)
+                self.assertNotIn(bundle["review"]["evidence_id"], body)
+            record["review"]["evidence_id"] = bundle["review"]["evidence_id"]
+            self.assertNotEqual(publish(check=False).returncode, 0)
+
     def test_deployed_origin_replays_published_values_after_restart(self):
         self.observation["kind"] = "measured"
         release = self.store.publish(self.observation)
@@ -352,7 +440,16 @@ class ReleaseTest(unittest.TestCase):
             self.assertEqual(text["evidence_kind"], "planned")
             self.assertEqual(text["artifact"], text_plan["artifact"])
             self.assertEqual(text["runtime"], text_plan["runtime"])
-            return evidence, first, second, costs, pilot, text
+            with urlopen(Request(origin + "/agent-task", headers=headers), timeout=5) as response:
+                report_path = response.geturl().removeprefix(origin)
+                self.assertRegex(report_path, r"^/agent-task/[a-f0-9]{64}/agent-task\.html$")
+                self.assertIn(b"0 accepted of 0 attempted trials", response.read())
+            task_base = report_path.removesuffix("agent-task.html")
+            task = get(task_base + "agent-task.json")
+            self.assertEqual([context["status"] for context in task["contexts"]], ["missing", "missing"])
+            task_fixture = get(task_base + "task.json", decode=False)
+            self.assertEqual(sha256(task_fixture.encode()).hexdigest(), task["conditions"]["task"]["fixture_sha256"])
+            return evidence, first, second, costs, pilot, text, task
 
         with self.deployed_origin() as (origin, host):
             initial = replay(origin, host)

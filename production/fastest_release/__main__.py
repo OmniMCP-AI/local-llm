@@ -20,6 +20,9 @@ def main(argv=None):
     commands.add_parser("migrate", help="Install the release schema.")
     publish = commands.add_parser("publish", help="Publish a reviewed observation JSON file.")
     publish.add_argument("observation", type=Path)
+    publish_agent_task = commands.add_parser("publish-agent-task", help="Publish a reviewed agent-task report in PostgreSQL.")
+    publish_agent_task.add_argument("--record", type=Path, action="append", required=True)
+    publish_agent_task.add_argument("--expires-at", help="Optional UTC expiry for the reviewed report.")
     read = commands.add_parser("read", help="Read the permitted release snapshot.")
     read.add_argument("release_id", nargs="?", default="current")
     artifact = commands.add_parser("artifact", help="Print a rights-filtered release artifact.")
@@ -44,6 +47,7 @@ def main(argv=None):
     serve.add_argument("--contributor-receipts", action="store_true",
                        help="Serve private contributor receipt links using the configured release reader.")
     serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
+    serve.add_argument("--agent-task-release", help="Use this pinned PostgreSQL agent-task report as the default.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -61,6 +65,9 @@ def main(argv=None):
             store.migrate()
         elif args.command == "publish":
             print(store.publish(json.loads(args.observation.read_text(encoding="utf-8"))))
+        elif args.command == "publish-agent-task":
+            records = [json.loads(path.read_text(encoding="utf-8")) for path in args.record]
+            print(store.publish_agent_task(records, args.expires_at))
         elif args.command == "read":
             print(json.dumps(store.read(args.release_id), ensure_ascii=False, indent=2))
         elif args.command == "artifact":
@@ -79,7 +86,8 @@ def main(argv=None):
                              profile_archives=[archive.split(",") for archive in args.profile_archive],
                              goals=goal_history[-1] if goal_history else None, goal_history=goal_history[:-1],
                              price_reader=price_reader, scaling_pair=args.scaling_pair, cost_scenario=args.cost_scenario,
-                             contributor_receipts=args.contributor_receipts) as server:
+                             contributor_receipts=args.contributor_receipts,
+                             agent_task_release=args.agent_task_release) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()

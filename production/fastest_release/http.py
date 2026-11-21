@@ -8,6 +8,8 @@ from subprocess import TimeoutExpired
 import re
 from urllib.parse import parse_qs
 
+from fastest_agent_task import AGENT_TASK_ROUTE
+from fastest_agent_task.publication import report_artifacts as agent_task_report_artifacts
 from fastest_cost import CostInputError, PUBLIC_FIELDS as COST_FIELDS, calculate
 from fastest_cost.render import ROUTES as COST_ROUTES, render as render_cost
 from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
@@ -43,6 +45,10 @@ RELEASE_ROUTE = re.compile(
 PRICE_ROUTE = re.compile(r"/price-releases/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})/prices\.json")
 
 
+AGENT_TASK_PIN = re.compile(r"[a-f0-9]{64}")
+AGENT_TASK_ARTIFACT_ROUTE = re.compile(r"/agent-task/([a-f0-9]{64})/([^/]+)")
+
+
 PROFILE_ROUTE = re.compile(r"/profiles/(v1-[a-f0-9]{16})/(machines|models)/([a-z0-9.-]+)\.(html|json|md)")
 
 
@@ -73,10 +79,12 @@ def render_contributor_receipt(revisions):
 
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
-                scaling_pair=(), cost_scenario=None, contributor_receipts=False):
+                scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
     if contributor_receipts and store is None:
         raise ValueError("Contributor receipts require a release reader.")
+    if agent_task_release is not None and (store is None or not AGENT_TASK_PIN.fullmatch(agent_task_release)):
+        raise ValueError("An agent task release requires a release reader and a pinned report digest.")
     scaling_pair = tuple(scaling_pair)
     if scaling_pair and (
         store is None or len(scaling_pair) != 2 or len(set(scaling_pair)) != 2
@@ -102,7 +110,13 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     text_files = {name: default_goals.text_artifact(name) for name in (
         "text-pilot.html", "text-pilot.md", "text-pilot.json", "manifest.json",
     )}
+    agent_task_files = agent_task_report_artifacts()
+    agent_task_base = f"{AGENT_TASK_ROUTE}/{digest(agent_task_files['manifest.json'])}/"
     pilot_redirects = {
+        AGENT_TASK_ROUTE: (
+            f"{AGENT_TASK_ROUTE}/{agent_task_release}/agent-task.html"
+            if agent_task_release is not None else agent_task_base + "agent-task.html"
+        ),
         IMAGE_PILOT_ROUTE: image_base + "image-pilot.html",
         TEXT_PILOT_ROUTE: (
             f"/goals/{goals.release_id}/text-pilot.html" if goals.text["evidence_kind"] == "measured"
@@ -113,7 +127,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                    "json": "application/json", "txt": "text/plain; charset=utf-8"}
     pilot_files = {
         base + name: (content, pilot_types[name.rsplit(".", 1)[1]])
-        for base, files in ((image_base, image_files), (text_base, text_files))
+        for base, files in ((image_base, image_files), (text_base, text_files), (agent_task_base, agent_task_files))
         for name, content in files.items()
     }
     cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader)
@@ -174,6 +188,9 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(307, location=pilot_redirects[path])
             if path in pilot_files:
                 return self._respond(200, *pilot_files[path])
+            agent_task = AGENT_TASK_ARTIFACT_ROUTE.fullmatch(path)
+            if store is not None and agent_task and agent_task[2] in agent_task_files:
+                return self._agent_task(*agent_task.groups())
             if path in {"/profiles", "/profiles/current"}:
                 return self._respond(307, location=profiles.base + "/index.html")
             if path in profile_indexes:
@@ -206,6 +223,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<p><a href="/costs">Compare text workload costs</a></p>'
                     f'<p><a href="{TEXT_PILOT_ROUTE}">Two-machine text pilot</a></p>'
                     f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot</a></p>'
+                    f'<p><a href="{AGENT_TASK_ROUTE}">Controlled inventory agent comparison</a></p>'
                     f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
                 )
@@ -228,6 +246,20 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
 
             status = 410 if snapshot["status"] == "withdrawn" else 200
             return self._respond(status, body, CONTENT_TYPES[name])
+
+        def _agent_task(self, pin, artifact):
+            try:
+                result = store.read_agent_task_artifact(pin, artifact)
+            except ReleaseNotFound:
+                return self._respond(404, "Agent task release unavailable.\n")
+            except (ReleaseError, OSError, TimeoutExpired, json.JSONDecodeError):
+                logging.warning("Cannot read an agent task release")
+                return self._respond(503, "Agent task release service unavailable.\n")
+            if result["status"] == "withdrawn":
+                return self._respond(410, "Agent task evidence withdrawn.\n")
+            if result["status"] != "published" or not isinstance(result.get("content"), str):
+                return self._respond(503, "Agent task release service unavailable.\n")
+            return self._respond(200, result["content"], pilot_types[artifact.rsplit(".", 1)[1]])
 
         def _contributor_receipt(self, query):
             key, _, receipt = query.partition("=")

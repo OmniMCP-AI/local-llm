@@ -68,3 +68,24 @@ python3 -B -m fastest_agent_task build /path/to/agent-task-release \
 ```
 
 The build accepts at most one reviewed ledger per context and requires matching execution environments across contexts. It validates the supplied review declaration and record against the protocol. The operator and reviewer verify the private evidence packet and actual execution controls. A changed tool policy, budget, task or runtime requires a new comparison context and fingerprint. With two planned trials per context, report individual outcomes and denominators.
+
+## Serve the pinned comparison
+
+The release origin links to `/agent-task`. Its default report pins the two planned contexts and shows zero observed attempts. The manifest links the same HTML, Markdown, JSON, and fictional fixture bytes as the offline build.
+
+Use the benchmark publisher's database to publish sanitized records with the approved fields described above.
+
+```sh
+python3 -B -m fastest_release migrate
+task_release=$(python3 -B -m fastest_release publish-agent-task \
+  --record reviewed-bundle.json --record reviewed-split.json)
+```
+
+Run the release origin with `serve --agent-task-release "$task_release"` to make this report the default. For a dedicated serving login, grant only the read function in addition to its existing permissions.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_release TO fastest_release_reader;
+GRANT EXECUTE ON FUNCTION fastest_release.read_agent_task_artifact(text, text) TO fastest_release_reader;
+```
+
+The report URL pins the SHA-256 of its artifact manifest. PostgreSQL stores the rendered public artifact bytes with the associated evidence IDs and an optional `--expires-at` UTC timestamp. Replays with the same approval return the same pin. Expiry or `python3 -B -m fastest_release withdraw EVIDENCE_UUID "Editorial reason"` retires the report on its next read, including old links and the manifest. The database read returns only the requested public artifact. Keep the capture directory and raw transcripts private.

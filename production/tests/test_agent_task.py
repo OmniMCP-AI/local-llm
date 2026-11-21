@@ -6,6 +6,8 @@ import sys
 from tempfile import TemporaryDirectory
 import unittest
 
+from test_public_api import api_client
+
 
 PRODUCTION = Path(__file__).resolve().parents[1]
 
@@ -16,6 +18,45 @@ class AgentTaskTest(unittest.TestCase):
             [sys.executable, "-B", "-m", "fastest_agent_task", *args],
             cwd=PRODUCTION, capture_output=True, text=True, check=False,
         )
+
+    def test_release_origin_serves_the_pinned_planned_report_and_no_private_paths(self):
+        with api_client() as request:
+            self.assertIn('href="/agent-task"', request("/", decode=False)[2])
+            status, headers, _ = request("/agent-task")
+            self.assertEqual(status, 307)
+            report = headers["Location"]
+            self.assertRegex(report, r"^/agent-task/[a-f0-9]{64}/agent-task\.html$")
+            base = report.removesuffix("agent-task.html")
+            status, _, manifest_text = request(base + "manifest.json", decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn(hashlib.sha256(manifest_text.encode()).hexdigest(), report)
+            manifest = json.loads(manifest_text)
+            self.assertEqual(set(manifest["sha256"]), {
+                "agent-task.html", "agent-task.md", "agent-task.json", "task.json",
+            })
+            contents = {}
+            for name, digest in manifest["sha256"].items():
+                status, headers, contents[name] = request(base + name, decode=False)
+                self.assertEqual(status, 200)
+                self.assertEqual(headers["Cache-Control"], "no-store")
+                self.assertEqual(hashlib.sha256(contents[name].encode()).hexdigest(), digest)
+            dataset = json.loads(contents["agent-task.json"])
+            self.assertEqual(dataset["release_id"], manifest["release_id"])
+            self.assertIsNone(dataset["environment"])
+            self.assertEqual([row["status"] for row in dataset["contexts"]], ["missing", "missing"])
+            self.assertEqual([row["counts"]["attempts"] for row in dataset["contexts"]], [0, 0])
+            self.assertNotEqual(*(row["sha256"] for row in dataset["contexts"]))
+            self.assertIn("0 accepted of 0 attempted trials", contents["agent-task.html"])
+            self.assertIn("0 accepted of 0 attempted trials", contents["agent-task.md"])
+            for path in (base + "review-pending.json", base + "private/turns.json", "/agent-task/demo"):
+                self.assertEqual(request(path, decode=False)[0], 404)
+            self.assertEqual(request(report, method="HEAD", decode=False)[2], "")
+            with TemporaryDirectory() as temporary:
+                destination = Path(temporary) / "release"
+                exported = self.cli("build", str(destination))
+                self.assertEqual(exported.returncode, 0, exported.stderr)
+                for name, content in {**contents, "manifest.json": manifest_text}.items():
+                    self.assertEqual(content.encode(), (destination / name).read_bytes())
 
     def test_only_pinned_fixture_reads_are_available(self):
         permitted = self.cli("tool", "split", "read_page", "a")

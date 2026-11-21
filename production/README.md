@@ -12,6 +12,8 @@ The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream r
 
 [Text workload costs](fastest_cost/README.md) compare keeping a machine, upgrading, hourly rental, and a token-metered API at the same service targets.
 
+[Controlled inventory agent comparison](fastest_agent_task/README.md#serve-the-pinned-comparison) links the two pinned fixture policies, their review status, and approved attempt outcomes through the release origin.
+
 ## Run the example
 
 Use Python 3.11 or later, PostgreSQL 13 or later, and `psql` on your path. From this directory, point the publisher at a writable PostgreSQL database. The connection can use libpq keyword syntax, a service name, or a PostgreSQL URL. Keep passwords in a libpq password file or service configuration.
