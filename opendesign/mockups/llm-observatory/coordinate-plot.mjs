@@ -17,7 +17,7 @@ function numericAxis(values, { zero = true, reverse = false, tickCount = 5, doma
   const maximum = Math.max(...values, ...(zero ? [0] : []));
   if (minimum === maximum && !zero && !domain) return { at: () => .5, ticks: [minimum] };
   const range = maximum - minimum || Math.max(1, Math.abs(maximum) * .1);
-  const approximate = range / tickCount;
+  const approximate = (domain ? domain[1] - domain[0] : range) / tickCount;
   const magnitude = 10 ** Math.floor(Math.log10(approximate));
   const step = magnitude * [1, 2, 2.5, 4, 5, 10].find(factor => factor * magnitude >= approximate);
   const low = domain?.[0] ?? Math.floor(minimum / step) * step;
@@ -26,7 +26,7 @@ function numericAxis(values, { zero = true, reverse = false, tickCount = 5, doma
   const tickEnd = Math.floor((high + step * 1e-9) / step);
   const valuesAtTicks = Array.from({ length: Math.max(0, tickEnd - tickStart + 1) }, (_, i) => (tickStart + i) * step);
   const normal = value => (value - low) / (high - low);
-  return { at: reverse ? value => 1 - normal(value) : normal, ticks: valuesAtTicks };
+  return { at: reverse ? value => 1 - normal(value) : normal, ticks: valuesAtTicks, low, high };
 }
 
 function categoricalAxis(values) {
@@ -67,21 +67,34 @@ function markMarkup(point, xAxis, yAxis, selection, actionable, kind, baseline, 
 export function renderCoordinatePlot({
   title, xAxis, yAxis, points, selectedId, onSelect, kind = "scatter", guides = [], targetArea, frontier = [], segments = [],
   showLabels = false, labelsLabel = "Show point labels", emptyText = "No comparable values are available.",
+  interactiveZoom = false, zoom = { start: 0, end: 1 },
 }) {
   const valid = points.filter(({ x, y }) => (xAxis.categorical ? x != null : Number.isFinite(x)) && Number.isFinite(y));
   if (!valid.length) return `<p class="coordinate-empty" role="status">${escape(emptyText)}</p>`;
   const scaleFor = (axis, key) => numericAxis([
     ...valid.map(point => point[key]), ...guides.filter(guide => guide.axis === key).map(guide => guide.value),
   ], axis);
-  const x = xAxis.categorical ? categoricalAxis(valid.map(point => point.x)) : scaleFor(xAxis, "x");
+  const categories = [...new Set(valid.map(point => point.x))];
+  const fullX = xAxis.categorical ? categoricalAxis(categories) : scaleFor(xAxis, "x");
+  const zoomed = zoom.start > 0 || zoom.end < 1;
+  const first = Math.min(categories.length - 1, Math.floor(zoom.start * categories.length));
+  const last = Math.max(first + 1, Math.ceil(zoom.end * categories.length));
+  const visibleCategories = categories.slice(first, last);
+  const domain = !xAxis.categorical && zoomed && Number.isFinite(fullX.low) && Number.isFinite(fullX.high)
+    ? [fullX.low + (fullX.high - fullX.low) * zoom.start, fullX.low + (fullX.high - fullX.low) * zoom.end] : null;
+  const x = xAxis.categorical ? categoricalAxis(visibleCategories) : domain ? numericAxis(valid.map(point => point.x), { ...xAxis, domain }) : fullX;
+  const visible = !zoomed ? valid : xAxis.categorical
+    ? valid.filter(point => visibleCategories.includes(point.x))
+    : domain ? valid.filter(point => point.x >= domain[0] && point.x <= domain[1]) : valid;
   const y = scaleFor(yAxis, "y");
-  const pointsAt = valid.map(point => ({ ...point, left: x.at(point.x), top: 1 - y.at(point.y) }));
+  const pointsAt = visible.map(point => ({ ...point, left: x.at(point.x), top: 1 - y.at(point.y) }));
+  const linePoints = xAxis.categorical ? pointsAt : valid.map(point => ({ ...point, left: x.at(point.x), top: 1 - y.at(point.y) }));
   const topFor = value => 1 - y.at(value);
   const baseline = Math.max(0, Math.min(1, topFor(0)));
   const lines = [];
   if (kind === "line") {
     const bySeries = new Map();
-    for (const point of [...pointsAt].sort((left, right) => left.left - right.left)) {
+    for (const point of [...linePoints].sort((left, right) => left.left - right.left)) {
       const series = point.series ?? "";
       if (!bySeries.has(series)) {
         const segment = [];
@@ -95,23 +108,24 @@ export function renderCoordinatePlot({
       bySeries.get(series).push(point);
     }
   }
-  const byId = new Map(pointsAt.map(point => [point.id, point]));
+  const byId = new Map(linePoints.map(point => [point.id, point]));
   for (const ids of [...segments, frontier]) lines.push(ids.map(id => byId.get(id)).filter(Boolean));
   const paths = lines.filter(points => points.length > 1).map(points =>
     `<polyline data-series="${escape(points[0].series ?? "")}" points="${points.map(point => `${svgCoord(point.left)},${svgCoord(point.top)}`).join(" ")}" />`).join("");
   const areaHeight = targetArea && topFor(targetArea.y);
-  const area = targetArea ? `<div class="coordinate-target-area" style="--area-width:${percent(x.at(targetArea.x))};--area-height:${percent(areaHeight)};top:0"></div>` : "";
+  const area = targetArea ? `<div class="coordinate-target-area" style="--area-width:${percent(Math.max(0, Math.min(1, x.at(targetArea.x))))};--area-height:${percent(areaHeight)};top:0"></div>` : "";
   const width = `min(3.5rem, ${percent(.58 / Math.max(1, x.ticks.length))})`;
   const pointText = point => `${escape(point.name)} · ${escape(point.xLabel ?? xAxis.label)}: ${escape(point.xText ?? valueText(xAxis, point.x))} · ${escape(point.yLabel ?? yAxis.label)}: ${escape(point.yText ?? valueText(yAxis, point.y))}${point.detail ? " · " + escape(point.detail) : ""}`;
   const selected = valid.find(point => point.id === selectedId);
   const labelList = valid.map(point => `<li>${pointText(point)}</li>`).join("");
   return `<div class="coordinate-plot coordinate-${kind}" role="group" aria-label="${escape(title)}" dir="ltr">
 <div class="coordinate-heading"><strong>${escape(axisTitle(yAxis))}</strong><label><input type="checkbox"${showLabels ? " checked" : ""}> ${escape(labelsLabel)}</label></div>
+${interactiveZoom ? `<div class="coordinate-zoom" role="group" aria-label="Zoom ${escape(title)}"><button type="button" data-zoom="in">Zoom in</button><button type="button" data-zoom="out"${zoomed ? "" : " disabled"}>Zoom out</button><button type="button" data-zoom="previous"${zoom.start > 0 ? "" : " disabled"}>Previous</button><button type="button" data-zoom="next"${zoom.end < 1 ? "" : " disabled"}>Next</button><button type="button" data-zoom="reset"${zoomed ? "" : " disabled"}>Reset zoom</button></div>` : ""}
 <div class="coordinate-viewport" tabindex="0"><div class="coordinate-canvas"><div class="coordinate-grid">
   ${area}
   <div aria-hidden="true">${axisMarkup(x.ticks, x.at, xAxis, "x")}${axisMarkup(y.ticks, topFor, yAxis, "y")}</div>
   ${paths ? `<svg class="coordinate-line" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>` : ""}
-  ${guides.map(guide => `<span class="coordinate-guide coordinate-guide-${guide.axis}" style="--at:${percent(guide.axis === "x" ? x.at(guide.value) : topFor(guide.value))}" aria-hidden="true"></span>`).join("")}
+  ${guides.filter(guide => guide.axis !== "x" || !domain || (guide.value >= domain[0] && guide.value <= domain[1])).map(guide => `<span class="coordinate-guide coordinate-guide-${guide.axis}" style="--at:${percent(guide.axis === "x" ? x.at(guide.value) : topFor(guide.value))}" aria-hidden="true"></span>`).join("")}
   ${pointsAt.map(point => markMarkup(point, xAxis, yAxis, selectedId, Boolean(onSelect), kind, baseline, width)).join("")}
 </div>
 <div class="coordinate-x-title">${escape(axisTitle(xAxis))}</div></div></div>
