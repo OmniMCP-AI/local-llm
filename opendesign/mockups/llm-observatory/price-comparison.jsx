@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { CoordinatePlot } from "./coordinate-plot.jsx";
 import { datedDisplayRate } from "./display-fx.mjs";
 import { LocaleControls, useLocale } from "./locale";
 import { priceCopy } from "./price-comparison-copy.mjs";
+import { priceObservationPoints } from "./price-overview.mjs";
 import { SiteName } from "./site-name";
 
 const dataRoute = "/api/price-comparison";
@@ -146,31 +148,78 @@ export function PriceCohorts({ cohorts, releaseId, copy }) {
 export function HostedPrices() {
   const { language, locale, currency } = useLocale();
   const copy = priceCopy(language);
-  const [data, setData] = useState(null);
-  const query = new URLSearchParams(location.search);
+  const [search, setSearch] = useState(() => location.search);
+  const [response, setResponse] = useState(null);
+  const data = response?.search === search ? response.data : null;
+  const query = new URLSearchParams(search);
   useEffect(() => {
     document.title = copy.title + " · fastest.ai";
   }, [copy.title]);
   useEffect(() => {
-    const abort = new AbortController();
-    fetch(dataRoute + location.search, { signal: abort.signal })
-      .then((response) => response.json())
-      .then(setData)
-      .catch(() => { if (!abort.signal.aborted) setData({ status: "unavailable" }); });
-    return () => abort.abort();
+    const update = () => setSearch(location.search);
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
   }, []);
+  useEffect(() => {
+    const abort = new AbortController();
+    fetch(dataRoute + search, { signal: abort.signal })
+      .then((response) => response.json())
+      .then(data => { if (!abort.signal.aborted) setResponse({ search, data }); })
+      .catch(() => { if (!abort.signal.aborted) setResponse({ search, data: { status: "unavailable" } }); });
+    return () => abort.abort();
+  }, [search]);
   const price = data?.price;
   if (data?.releaseId) query.set("release", data.releaseId);
+  const selectRelease = id => {
+    if (id === data?.releaseId) return;
+    query.set("release", id);
+    history.pushState(null, "", "?" + query);
+    setSearch(location.search);
+  };
   return <main className="main-shell hosted-prices">
     <header className="price-toolbar">
       <a className="wordmark" href="/"><SiteName /></a>
       <LocaleControls datedRatesOnly sourceCurrency={price?.currency} />
     </header>
     <div className="page-heading"><h1>{copy.title}</h1></div>
+    {data && <PriceOverview overview={data.overview} selectedId={data.releaseId} onSelect={selectRelease}
+      copy={copy} locale={locale} />}
     <PriceCohorts cohorts={data?.cohorts} releaseId={data?.releaseId} copy={copy} />
     {price ? <PriceRelease data={data} copy={copy} currency={currency} locale={locale} query={query} /> : <p role="status">{!data ? copy.loading : copy[data.status] ?? copy.unavailable}</p>}
     <footer><a href="/wiki/research/" hrefLang="en">{copy.research}</a></footer>
   </main>;
+}
+
+function moneyTicks(locale) {
+  const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  return value => formatter.format(value);
+}
+
+function PriceOverview({ overview, selectedId, onSelect, copy, locale }) {
+  return <section className="panel price-visual" aria-labelledby="price-overview-heading">
+    <h2 id="price-overview-heading">{copy.overview}</h2>
+    {!overview?.points.length ? <p>{copy.overviewEmpty}</p> : <>
+      <p><bdi>{[overview.market, overview.destination, overview.condition, overview.protocol].join(" · ")}</bdi></p>
+      <CoordinatePlot title={copy.overview}
+        xAxis={{ label: copy.landedAxis, unit: overview.currency, formatTick: moneyTicks(locale) }}
+        yAxis={{ label: copy.decodeAxis, unit: overview.unit, formatTick: moneyTicks(locale) }}
+        points={overview.points} labelsLabel={copy.pointLabels} selectedId={selectedId} onSelect={onSelect} />
+      <p>{copy.overviewChoose}</p>
+    </>}
+  </section>;
+}
+
+function PriceHistory({ price, copy, locale }) {
+  const points = priceObservationPoints(price);
+  const dates = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" });
+  const citation = price.data_class === "reviewed_citations";
+  return <section className="panel price-visual" aria-labelledby="quote-history-heading">
+    <h2 id="quote-history-heading">{copy.chartHistory} · <bdi>{price.scope.id}</bdi></h2>
+    {points.length ? <CoordinatePlot title={copy.chartHistory}
+      xAxis={{ label: copy.date, unit: "UTC", zero: false, formatTick: value => dates.format(value) }}
+      yAxis={{ label: citation ? copy.postCoupon : copy.original, unit: price.currency, zero: false, formatTick: moneyTicks(locale) }}
+      points={points} labelsLabel={copy.pointLabels} /> : <p>{citation ? copy.referencesEmpty : copy.empty}</p>}
+  </section>;
 }
 
 export function PriceRelease({ data, query, copy, currency, locale, now = new Date() }) {
@@ -192,6 +241,7 @@ export function PriceRelease({ data, query, copy, currency, locale, now = new Da
       <div><dt>{copy.release}</dt><dd><bdi>{price.release_id}</bdi> · <bdi>{price.authorization_decision_id}</bdi></dd></div>
     </dl>
     <p className="price-links"><a href={"/prices?" + query}>{copy.pinned}</a><a href={dataRoute + "?" + query}>{copy.exact}</a></p>
+    <PriceHistory price={price} copy={copy} locale={locale} />
     {citation ? <References price={price} copy={copy} /> : <>
       <Offers price={price} copy={copy} currency={currency} locale={locale} now={now} />
       <Coverage price={price} copy={copy} />

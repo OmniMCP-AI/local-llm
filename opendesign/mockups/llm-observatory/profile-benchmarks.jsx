@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
+import { CoordinatePlot } from "./coordinate-plot.jsx";
 import { useLocale } from "./locale";
 
 const recorded = (value) => Number.isFinite(value) && value >= 0;
@@ -22,7 +23,7 @@ function ProfileRanking({ relevant, ranked, context, runtime, type, hrefFor, go,
   const { t } = useLocale();
   const counterpart = type === "machine" ? "model" : "machine";
   const unranked = relevant.filter((run) => !ranked.includes(run));
-  const maximum = ranked[0]?.[context] || 1;
+  const rank = speed => ranked.findIndex(entry => entry[context] === speed) + 1;
   const status = (run) => {
     if (!recorded(run[context])) return t("No result", "没有结果");
     if (run.machine.kind === "estimate") return t("Fit estimate", "适配估算");
@@ -34,22 +35,29 @@ function ProfileRanking({ relevant, ranked, context, runtime, type, hrefFor, go,
     <p>{type === "machine"
       ? t("Fastest first. Models and tokenizers can differ. Throughput measures speed.", "按解码速度从高到低排列。模型和分词器可能不同，吞吐量只反映速度。")
       : t("Fastest first for the selected artifact and {backend} backend.", "所选模型文件在 {backend} 后端上的解码速度由高到低排列。", { backend: runtime })}</p>
-    {ranked.length ? <ol className="profile-rank-list">
+    {ranked.length ? <>
+      <CoordinatePlot title={t("Decode speed ranking", "解码速度排名")}
+        xAxis={{ label: t("Combination number in rank order", "按排名排列的组合序号"), categorical: true }}
+        yAxis={{ label: t("Decode throughput", "解码速度"), unit: "tok/s", formatTick: number }}
+        points={ranked.map((run, index) => ({ id: run.id, name: identity(run), short: run[counterpart].name,
+          x: index + 1, xText: number(index + 1), y: run[context],
+          yText: `${number(run[context])} tok/s`, detail: run.backend }))}
+        labelsLabel={t("Show point labels", "显示数据点标签")} kind="bar" selectedId={selected} onSelect={id => onSelect(ranked.find(run => run.id === id))} />
+      <ol className="profile-rank-list">
       {ranked.map((run) => {
         const speed = run[context];
         return <li key={run.id} className="profile-rank-row" data-speed={speed} data-selected={selected === run.id}>
-          <span className="profile-rank-number">{number(ranked.findIndex((entry) => entry[context] === speed) + 1)}</span>
+          <span className="profile-rank-number">{number(rank(speed))}</span>
           <div className="profile-rank-main">
             <div>
               <CounterpartLink href={hrefFor(run)} go={go}>{run[counterpart].name}</CounterpartLink>
               <strong className="numeric"><bdi>{number(speed)} tok/s</bdi></strong>
             </div>
-            <span className="profile-rank-track" aria-hidden="true"><i style={{ width: speed / maximum * 100 + "%" }} /></span>
           </div>
           <button type="button" className="text-button" aria-pressed={selected === run.id} onClick={() => onSelect(run)}>{t("View run", "查看记录")}</button>
         </li>;
       })}
-    </ol> : <p className="profile-benchmark-empty">{t("No matched benchmark examples for this selection.", "此选项下没有匹配的测试示例。")}</p>}
+      </ol></> : <p className="profile-benchmark-empty">{t("No matched benchmark examples for this selection.", "此选项下没有匹配的测试示例。")}</p>}
     {unranked.length > 0 && <details className="profile-context" open={ranked.length === 0 || undefined}>
       <summary>{t("Unranked combinations ({count})", "未参与排名的组合（{count}）", { count: number(unranked.length) })}</summary>
       <ul>
@@ -65,13 +73,9 @@ function ProfileRanking({ relevant, ranked, context, runtime, type, hrefFor, go,
 function ProfileMap({ paired, highlighted, selected, onSelect, number }) {
   const { t } = useLocale();
   const maximum = Math.ceil(Math.max(1, ...paired.flatMap(({ short, long }) => [short, long])) / 25) * 25;
-  const ticks = Array.from({ length: 5 }, (_, index) => maximum * index / 4);
-  const x = (value) => 58 + 457 * value / maximum;
-  const y = (value) => 226 - 209 * value / maximum;
+  const axis = { unit: "tok/s", domain: [0, maximum], formatTick: number };
   const currentName = t("This profile", "当前档案");
   const selectedName = t("Selected combination", "所选组合");
-  const axisX = t("4K decode (tok/s)", "4K 解码（tok/s）");
-  const axisY = t("32K decode (tok/s)", "32K 解码（tok/s）");
   return <div className="profile-map">
     <h3>{t("Performance map", "性能分布图")}</h3>
     <p>{t("Each point represents one model and machine with both context results. The map includes all backends for this quantization.", "每个点对应一个同时有两种上下文结果的模型与整机组合。分布图包含该量化版本的所有推理后端。")}</p>
@@ -82,35 +86,13 @@ function ProfileMap({ paired, highlighted, selected, onSelect, number }) {
         {selected && <span><i data-selected="true" aria-hidden="true" />{selectedName}</span>}
       </div>
       {highlighted.size === 0 && <p className="profile-map-missing">{t("This profile has no paired example at this quantization.", "当前档案在该量化版本下没有成对的测试示例。")}</p>}
-      <svg className="profile-map-plot" viewBox="0 0 538 267" direction="ltr" role="group" aria-label={t("Interactive 4K and 32K throughput map", "可交互的 4K 与 32K 吞吐量分布图")}>
-        <g className="profile-map-axis" aria-hidden="true">
-          {ticks.map((tick) => <g key={tick}>
-            <path d={`M ${x(tick)} 17 V 226 M 58 ${y(tick)} H 515`} />
-            <text x={x(tick)} y="244" textAnchor="middle">{number(tick)}</text>
-            <text x="48" y={y(tick) + 4} textAnchor="end">{number(tick)}</text>
-          </g>)}
-          <text x="286" y="263" textAnchor="middle">{axisX}</text>
-          <text x="13" y="124" textAnchor="middle" transform="rotate(-90 13 124)">{axisY}</text>
-        </g>
-        {[...paired].sort((a, b) => Number(a.id === selected) - Number(b.id === selected) ||
-          Number(highlighted.has(a.id)) - Number(highlighted.has(b.id))).map((run) => {
-          const current = highlighted.has(run.id);
-          const label = [identity(run), run.backend, `4K ${number(run.short)} tok/s`, `32K ${number(run.long)} tok/s`, current ? currentName : null].filter(Boolean).join(", ");
-          return <g key={run.id} className="profile-map-point" data-current={current} data-selected={selected === run.id}
-            data-run-id={run.id} role="button" tabIndex={0} aria-label={label} aria-pressed={selected === run.id}
-            onClick={() => onSelect(run)} onKeyDown={(event) => {
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              onSelect(run);
-            }}>
-            <title>{label}</title>
-            <circle className="profile-map-hit" cx={x(run.short)} cy={y(run.long)} r="14" />
-            <circle className="profile-map-mark" cx={x(run.short)} cy={y(run.long)} r={current ? 7 : 5} />
-            <circle className="profile-map-ring" cx={x(run.short)} cy={y(run.long)} r="10" />
-            <circle className="profile-map-selection" cx={x(run.short)} cy={y(run.long)} r="13" />
-          </g>;
-        })}
-      </svg>
+      <CoordinatePlot title={t("Interactive 4K and 32K throughput map", "可交互的 4K 与 32K 吞吐量分布图")}
+        xAxis={{ ...axis, label: t("4K decode", "4K 解码") }}
+        yAxis={{ ...axis, label: t("32K decode", "32K 解码") }}
+        points={paired.map(run => ({ id: run.id, name: identity(run), x: run.short, y: run.long,
+          xText: `${number(run.short)} tok/s`, yText: `${number(run.long)} tok/s`,
+          detail: run.backend, highlighted: highlighted.has(run.id), context: !highlighted.has(run.id) }))}
+        selectedId={selected} onSelect={id => onSelect(paired.find(run => run.id === id))} />
       <details className="profile-map-data">
         <summary>{t("Exact map values", "分布图的确切数值")}</summary>
         <ul>{paired.map((run) => <li key={run.id} data-current={highlighted.has(run.id)} data-selected={selected === run.id}>

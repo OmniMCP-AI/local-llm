@@ -141,6 +141,13 @@ The chooser checks the configured UUIDs at the origin on each request. It
 shows currently readable offer and reference releases. Invalid lists leave
 the individual default and direct release links available.
 
+Set `FASTEST_PRICE_OVERVIEW_GOAL` to a same-origin pinned decision path such as
+`/goals/DECISION_SHA256.json?entry=budget`. Price Watch plots landed prices on
+the horizontal axis and measured decode throughput on the vertical axis when
+the released workload, build revision and market terms match. Selecting a
+point opens its released price history below. The chooser also exposes SKU
+and citation histories that have no comparable throughput measurement.
+
 Add `goal` and `cost` URL parameters for optional decision and economics
 context. Use the exact same-origin paths from the release service, including
 the decision selection and cost scenario parameters. URL-encode each path

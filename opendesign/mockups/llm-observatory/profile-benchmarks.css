@@ -29,8 +29,6 @@
 .profile-rank-main { min-width: 0; padding-block: 9px; }
 .profile-rank-main > div { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; font-size: 13px; }
 .profile-rank-main strong { white-space: nowrap; font-size: 12px; }
-.profile-rank-track { display: block; margin-top: 6px; background: var(--color-paper-3); }
-.profile-rank-track i { display: block; height: 4px; background: var(--color-accent); }
 .profile-rank-row button { min-height: 42px; padding-inline: 4px; }
 .profile-context, .profile-map-data { margin-top: 10px; font-size: 12px; }
 .profile-context summary, .profile-map-data summary { cursor: pointer; width: fit-content; min-height: 34px; padding-top: 8px; }
@@ -45,20 +43,6 @@
 .profile-map-legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent-2); }
 .profile-map-legend i[data-current="true"] { background: var(--color-accent); outline: 1px solid var(--color-accent); outline-offset: 2px; }
 .profile-map-legend i[data-selected="true"] { border: 1px dashed var(--color-focus); background: none; width: 12px; height: 12px; }
-.profile-map-plot { display: block; width: 100%; height: auto; margin-top: 7px; overflow: visible; }
-.profile-map-axis path { stroke: var(--color-rule); fill: none; }
-.profile-map-axis text { fill: var(--color-muted); font: 12px var(--font-body); }
-.profile-map-hit { fill: transparent; }
-.profile-map-point { cursor: pointer; }
-.profile-map-mark { fill: var(--color-accent-2); stroke: var(--color-paper-3); stroke-width: 1.5; }
-.profile-map-point[data-current="true"] .profile-map-mark { fill: var(--color-accent); }
-.profile-map-ring { fill: none; stroke: var(--color-focus); stroke-width: 1.5; opacity: 0; }
-.profile-map-point[data-current="true"] .profile-map-ring,
-.profile-map-point:hover .profile-map-ring,
-.profile-map-point:focus-visible .profile-map-ring { opacity: 1; }
-.profile-map-point:focus-visible .profile-map-ring, .profile-map-point:hover .profile-map-ring { stroke-width: 3; }
-.profile-map-selection { fill: none; stroke: var(--color-focus); stroke-dasharray: 2 2; stroke-width: 1.75; opacity: 0; }
-.profile-map-point[data-selected="true"] .profile-map-selection { opacity: 1; }
 .profile-benchmark-selection { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; column-gap: 12px; margin-bottom: 9px; padding: 8px 10px; background: var(--color-chart-inset); font-size: 13px; }
 .profile-benchmark-selection p { color: var(--color-muted); line-height: 1.5; }
 .profile-selected-run > div:last-child { display: flex; flex-wrap: wrap; gap: 5px 14px; }
@@ -68,5 +52,4 @@
 }
 @media (max-width: 460px) {
   .profile-ranking, .profile-map { padding: 10px; }
-  .profile-map-axis text { font-size: 15px; }
 }

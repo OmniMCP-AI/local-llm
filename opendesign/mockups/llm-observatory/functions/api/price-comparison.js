@@ -1,4 +1,5 @@
 import { releaseOrigin } from "../../release-origin.mjs";
+import { pricePerformanceOverview } from "../../price-overview.mjs";
 
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const goalRoute = /^\/goals\/([a-f0-9]{64})\.json$/;
@@ -79,6 +80,8 @@ export async function onRequestGet({ request, env }) {
 
   const goalPath = pinnedPath(query.get("goal"), origin);
   const goalId = goalRoute.exec(goalPath?.pathname ?? "")?.[1];
+  const overviewPath = pinnedPath(env.FASTEST_PRICE_OVERVIEW_GOAL, origin);
+  const overviewId = goalRoute.exec(overviewPath?.pathname ?? "")?.[1];
   const costPath = pinnedPath(query.get("cost"), origin);
   const revision = costPath?.searchParams.get("revision");
   if ((query.has("goal") && !goalId)
@@ -88,18 +91,20 @@ export async function onRequestGet({ request, env }) {
   }
 
   const selected = readPrice(origin, releaseId);
-  const [result, entries] = await Promise.all([
-    selected, Promise.all(ids.map((id) => id === releaseId ? selected : readPrice(origin, id))),
+  const overviewRead = overviewId && readJSON(overviewPath).then(({ value }) => value);
+  const [result, entries, overviewGoal] = await Promise.all([
+    selected, Promise.all(ids.map((id) => id === releaseId ? selected : readPrice(origin, id))), overviewRead,
   ]);
   const directory = ids.length ? { cohorts: entries.map(cohortSummary).filter(Boolean) } : {};
   const { status, price } = result;
+  if (overviewId) directory.overview = pricePerformanceOverview(overviewGoal, overviewId, [price, ...entries.map(({ price }) => price)]);
   if (!price) return json({ status, releaseId, ...directory }, priceFailure[status]);
   if (price.data_class === "reviewed_citations") {
     return json({ status, releaseId, price, decision: null, economics: null, ...directory });
   }
   costPath?.searchParams.delete("revision");
   const [goal, cost] = await Promise.all([
-    goalId && readJSON(goalPath).then(({ value }) => value),
+    goalId && (goalPath.href === overviewPath?.href ? overviewGoal : readJSON(goalPath).then(({ value }) => value)),
     revision && readJSON(costPath).then(({ value }) => value),
   ]);
   const matchingDecision = goal?.release_id === goalId && Boolean(goalId)

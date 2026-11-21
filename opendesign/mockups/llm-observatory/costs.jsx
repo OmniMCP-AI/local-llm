@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import { COST_DEFAULTS, COST_LIMITS, COST_PROFILES, calculateCost } from "./cost-data";
 import { useLocale } from "./locale";
+import { CoordinatePlot } from "./coordinate-plot.jsx";
 
 const methods = [
   { id: "bill", label: ["Parts and upgrades", "配件与升级"], note: ["Price each GPU, then account for card count, CPU, RAM, storage, and platform costs. GPU-only mode assumes the rest of the host is already suitable.", "先计算单卡价格和显卡数量，再计入 CPU、内存、存储和平台成本。仅升级显卡的方案假定现有主机已满足要求。"], source: [["Used-build parts estimate", "二手装机配件估算"], "mjR-LJmHg_I", 143] },
@@ -101,56 +102,46 @@ function Settings({ options, result, update, changeProfile, reset }) {
   </aside>;
 }
 
-function Bars({ rows, format, animate }) {
-  const low = Math.min(0, ...rows.map(({ value }) => value ?? 0));
-  const high = Math.max(0, ...rows.map(({ value }) => value ?? 0));
-  const extent = high - low || 1;
-  const origin = -low / extent * 100;
-  return <ul className="cost-bars" data-animate={animate}>
-    {rows.map(({ label, value, detail }, index) => <li key={label}>
-      <div><span>{label}</span><strong>{format(value)}</strong></div>
-      {value != null && <div className="cost-bar-track" aria-hidden="true">
-        <i style={{ left: origin + "%" }} />
-        <span style={{ left: (value < 0 ? origin + value / extent * 100 : origin) + "%", width: Math.abs(value) / extent * 100 + "%" }} data-color={index % 3} data-negative={value < 0} />
-      </div>}
-      {detail && <small>{detail}</small>}
-    </li>)}
-  </ul>;
+function Bars({ rows, format, title, unit }) {
+  const { t } = useLocale();
+  const points = rows.map(({ label, value, detail }, index) => ({
+    id: label, name: label, short: String(index + 1), x: index + 1, y: value,
+    yText: format(value), detail,
+  }));
+  return <>
+    <CoordinatePlot title={title} kind="bar" points={points}
+      xAxis={{ label: t("Item number", "项目序号"), categorical: true }}
+      yAxis={{ label: title, unit, formatValue: format }}
+      labelsLabel={t("Show point labels", "显示数据点标签")} />
+    <ol className="cost-bars">
+      {rows.map(({ label, value, detail }, index) => <li key={label}>
+        <div><span>{index + 1}. {label}</span><strong>{format(value)}</strong></div>
+        {detail && <small>{detail}</small>}
+      </li>)}
+    </ol>
+  </>;
 }
 
-function LineFigure({ data, xKey, current, crossing, animate, xLabel }) {
-  const { currency, t, formatNumber, axisMoney } = useCostFormats();
-  const numbers = data.flatMap((entry) => series.map(([key]) => entry[key])).filter(Number.isFinite);
-  const low = Math.min(0, ...numbers);
-  const high = Math.max(1, ...numbers);
-  const maxX = data.at(-1)[xKey] || 1;
-  const x = (value) => 97 + value / maxX * 607;
-  const y = (value) => 216 - (value - low) / (high - low || 1) * 183;
-  return <div className="cost-lines" data-animate={animate}>
-    <svg viewBox="0 0 740 264" role="img" aria-label={t("Cumulative cost in {currency} by {axis}", "按{axis}查看以 {currency} 显示的累计成本", { currency, axis: xLabel })}>
-      {[0, 1, 2, 3, 4].map((index) => {
-        const value = low + (high - low) * index / 4;
-        return <g key={index}><line className="cost-grid" x1="96" x2="704" y1={y(value)} y2={y(value)} /><text x="85" y={y(value) + 4} textAnchor="end">{axisMoney(value)}</text></g>;
-      })}
-      {[0, 1, 2, 3, 4].map((index) => {
-        const value = maxX * index / 4;
-        return <text key={index} x={x(value)} y="241" textAnchor="middle">{formatNumber(value, 1)}</text>;
-      })}
-      <text x="399" y="260" textAnchor="middle">{xLabel}</text>
-      {current && <line className="cost-marker" x1={x(current[xKey])} x2={x(current[xKey])} y1="29" y2="217" />}
-      {series.map(([key]) => {
-        const path = data.reduce((parts, entry, index) => {
-          if (!Number.isFinite(entry[key])) return parts;
-          const command = index > 0 && Number.isFinite(data[index - 1][key]) ? "L" : "M";
-          return parts + command + x(entry[xKey]) + " " + y(entry[key]) + " ";
-        }, "");
-        return <g key={key} data-series={key}>
-          <path d={path} pathLength="1" className="cost-trend" />
-          {Number.isFinite(current?.[key]) && <circle cx={x(current[xKey])} cy={y(current[key])} r="4" />}
-        </g>;
-      })}
-      {crossing && <circle className="cost-crossing" cx={x(crossing[xKey])} cy={y(crossing.localUsd)} r="6" />}
-    </svg>
+function LineFigure({ data, xKey, current, crossing, xLabel }) {
+  const { currency, t, formatNumber, money, axisMoney } = useCostFormats();
+  const title = t("Cumulative cost", "累计成本");
+  const points = series.flatMap(([key, label], seriesIndex) => data.flatMap((entry, index) => {
+    if (!Number.isFinite(entry[key])) return [];
+    const atCrossing = entry === crossing && seriesIndex === 0;
+    return [{
+      id: key + ":" + entry[xKey], name: t(...label), short: money(entry[key]),
+      x: entry[xKey], y: entry[key], series: seriesIndex,
+      breakBefore: index > 0 && !Number.isFinite(data[index - 1][key]),
+      highlighted: atCrossing || entry === current,
+      detail: atCrossing ? t("Cost crossover", "用量成本交点") : undefined,
+    }];
+  }));
+  return <div className="cost-lines">
+    <CoordinatePlot title={title} kind="line" points={points}
+      xAxis={{ label: xLabel, formatTick: value => formatNumber(value, 1), formatValue: value => formatNumber(value, 3) }}
+      yAxis={{ label: title, unit: currency, formatTick: axisMoney, formatValue: money }}
+      guides={current ? [{ axis: "x", value: current[xKey], label: formatNumber(current[xKey]) }] : []}
+      labelsLabel={t("Show point labels", "显示数据点标签")} />
     <ul className="cost-legend">{series.map(([key, label]) => <li key={key} data-series={key}><i />{t(...label)}</li>)}</ul>
   </div>;
 }
@@ -176,36 +167,38 @@ function ComparisonRows({ monthly, totals, current, isTime }) {
   </table>;
 }
 
-function RiskChart({ result, showTable, animate }) {
-  const { t, money, formatNumber, alternative } = useCostFormats();
+function RiskChart({ result, showTable }) {
+  const { currency, t, money, axisMoney, formatNumber, alternative } = useCostFormats();
   const { input, sensitivity, totals } = result;
   const baseline = input.baseline;
   const mid = baseline === "api" ? totals.npvVsApiUsd : totals.npvVsRentalUsd;
   const scenarios = sensitivity.map((entry) => ({ ...entry, a: entry[baseline + "LowUsd"], b: entry[baseline + "HighUsd"] }));
-  const values = scenarios.flatMap(({ a, b }) => [a, b]).filter(Number.isFinite);
-  const low = Math.min(0, mid ?? 0, ...values);
-  const high = Math.max(0, mid ?? 0, ...values);
-  const position = (value) => (value - low) / (high - low || 1) * 100 + "%";
+  const title = t("Present-value savings vs {baseline}", "相对{baseline}的节省现值", { baseline: alternative(baseline) });
+  const points = scenarios.flatMap(({ id, label, a, b }, index) => [a, b].map((value, side) => ({
+    id: id + ":" + side, name: t(label, sensitivityFields[id][0]), short: money(value), x: index + 1, y: value,
+    detail: side === 0 ? t("Low input", "参数偏低") : t("High input", "参数偏高"),
+    series: side,
+  })));
   return <>
-    <p className="cost-result-text">{t("Present-value savings vs {baseline}", "相对{baseline}的节省现值", { baseline: alternative(baseline) })} <strong>{money(mid)}</strong></p>
+    <p className="cost-result-text">{title} <strong>{money(mid)}</strong></p>
+    {!showTable && <CoordinatePlot title={title} points={points}
+      xAxis={{ label: t("Assumption number", "参数序号"), categorical: true }}
+      yAxis={{ label: t("Present-value savings", "节省现值"), unit: currency, formatTick: axisMoney, formatValue: money }}
+      segments={scenarios.map(({ id }) => [id + ":0", id + ":1"])}
+      guides={Number.isFinite(mid) ? [{ axis: "y", value: mid, label: t("Current assumptions", "当前参数") }] : []}
+      labelsLabel={t("Show point labels", "显示数据点标签")} />}
     <div className="cost-table-wrap"><table className="cost-value-table">
-      <thead><tr><th scope="col">{t("Assumption range", "参数范围")}</th>{!showTable && <th scope="col">{t("Effect on savings", "对节省额的影响")}</th>}<th scope="col">{t("Low input", "参数偏低")}</th><th scope="col">{t("High input", "参数偏高")}</th></tr></thead>
-      <tbody>{scenarios.map(({ id, label, unit, low: inputLow, high: inputHigh, a, b }) => <tr key={id}>
-        <th scope="row">{t(label, sensitivityFields[id][0])}<small>{formatNumber(inputLow, 3)}–{formatNumber(inputHigh, 3)} {t(unit, sensitivityFields[id][1])}</small></th>
-        {!showTable && <td><div className="cost-range" data-animate={animate} aria-hidden="true">
-          <i style={{ left: position(0) }} />
-          {a != null && b != null && <span style={{ left: position(Math.min(a, b)), width: position(Math.abs(a - b) + low) }} />}
-          {a != null && <b style={{ left: position(a) }} />}
-          {b != null && <b style={{ left: position(b) }} />}
-        </div></td>}
+      <thead><tr><th scope="col">{t("Assumption range", "参数范围")}</th><th scope="col">{t("Low input", "参数偏低")}</th><th scope="col">{t("High input", "参数偏高")}</th></tr></thead>
+      <tbody>{scenarios.map(({ id, label, unit, low: inputLow, high: inputHigh, a, b }, index) => <tr key={id}>
+        <th scope="row">{index + 1}. {t(label, sensitivityFields[id][0])}<small>{formatNumber(inputLow, 3)}–{formatNumber(inputHigh, 3)} {t(unit, sensitivityFields[id][1])}</small></th>
         <td>{money(a)}</td><td>{money(b)}</td>
       </tr>)}</tbody>
     </table></div>
   </>;
 }
 
-function CostChart({ method, result, showTable, animate }) {
-  const { t, money, formatNumber, alternative } = useCostFormats();
+function CostChart({ method, result, showTable }) {
+  const { currency, t, money, formatNumber, alternative } = useCostFormats();
   const { bom, hardware, capacity, input, monthly, profile, unit, totals, payback, crossover, timeline, volumeCurve } = result;
   const [month, setMonth] = useState(null);
   const [playing, setPlaying] = useState(false);
@@ -244,7 +237,7 @@ function CostChart({ method, result, showTable, animate }) {
           : t("No crossover within the modeled capacity.", "在估算的容量范围内，成本曲线没有交点。");
     return <>
       <p className="cost-result-text">{message}</p>
-      {!showTable && <LineFigure data={isTime ? timeline : volumeCurve} xKey={isTime ? "month" : "volumeM"} current={current} crossing={crossing} animate={animate} xLabel={isTime ? t("Months", "月数") : t("Million useful output tokens per month", "每月有效输出量（百万 tokens）")} />}
+      {!showTable && <LineFigure data={isTime ? timeline : volumeCurve} xKey={isTime ? "month" : "volumeM"} current={current} crossing={crossing} xLabel={isTime ? t("Months", "月数") : t("Million useful output tokens per month", "每月有效输出量（百万 tokens）")} />}
       {isTime && <div className="cost-playback">
         <button type="button" className="btn outline" disabled={reduced} onClick={() => { if (!playing && currentMonth === input.months) setMonth(0); setPlaying(!playing); }}>
           {playing ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}{playing ? t("Pause", "暂停") : t("Play timeline", "播放时间轴")}
@@ -254,8 +247,9 @@ function CostChart({ method, result, showTable, animate }) {
       <div className="cost-table-wrap"><ComparisonRows monthly={monthly} totals={totals} current={current} isTime={isTime} /></div>
     </>;
   }
-  if (method === "risk") return <RiskChart result={result} showTable={showTable} animate={animate} />;
+  if (method === "risk") return <RiskChart result={result} showTable={showTable} />;
   let renderValue = money;
+  let unitLabel = currency;
   let rows;
   if (method === "bill") rows = [
     ...bom.map(({ id, label, usd, included }) => row(t(label, bomLabels[id]), usd, id === "gpu"
@@ -272,6 +266,7 @@ function CostChart({ method, result, showTable, animate }) {
       return row(sample.profile.name, sample.hardware.usdPerVramGb,
         t("{memory} GB installed / {cost} per assumed token/s (full build)", "{memory} GB 显存 / 整机成本每 token/s 为 {cost}（按假定速度）", { memory: installed, cost: pricePerSpeed }));
     });
+    unitLabel = currency + "/GB";
     renderValue = (value) => money(value) + " / GB";
   }
   if (method === "energy") {
@@ -286,6 +281,7 @@ function CostChart({ method, result, showTable, animate }) {
       row(t("External cooling", "外部制冷"), monthly.coolingKwh, t("{percent}% of active and idle IT energy", "运行与空闲耗电量之和的 {percent}%", { percent: cooling })),
       row(t("Total metered energy and cooling", "设备与制冷用电合计"), monthly.activeKwh + monthly.idleKwh + monthly.coolingKwh),
     ];
+    unitLabel = "kWh";
     renderValue = (value) => formatNumber(value) + " kWh";
   }
   if (method === "running") rows = [
@@ -311,7 +307,10 @@ function CostChart({ method, result, showTable, animate }) {
     row(t("Local, including ownership", "本地，含持有成本"), unit.localUsd), row(t("Local, running only", "本地，仅运行成本"), unit.localRunningUsd),
     row(alternative("api"), unit.apiUsd), row(alternative("rental"), unit.rentalUsd),
   ];
-  return showTable ? <ValueTable rows={rows} format={renderValue} label={t("Exact scenario values", "情景明细数值")} /> : <Bars rows={rows} format={renderValue} animate={animate} />;
+  if (method === "unit") unitLabel = currency + "/" + t("M output tokens", "百万输出 tokens");
+  const title = t(...methods.find(({ id }) => id === method).label);
+  return showTable ? <ValueTable rows={rows} format={renderValue} label={title} />
+    : <Bars rows={rows} format={renderValue} title={title} unit={unitLabel} />;
 }
 
 export function CostPage({ go, initialMethod }) {
@@ -362,7 +361,7 @@ export function CostPage({ go, initialMethod }) {
           {!capacity.localFeasible && <p>{t("Local capacity is {volume}M output tokens per month. This demand would require {hours} active hours. Local ownership and full-demand unit economics are unavailable.", "本地每月最多输出 {volume} 百万 tokens，满足当前需求需要运行 {hours} 小时。暂无法估算满足全部需求的本地持有成本与单位成本。", { volume: localMax, hours: hoursNeeded })}</p>}
           {!capacity.rentalFeasible && <p>{t("Rental capacity is {volume}M output tokens per month. Rental costs for full demand are unavailable.", "租用 GPU 每月最多输出 {volume} 百万 tokens，暂无法估算满足全部需求的租赁成本。", { volume: rentalMax })}</p>}
         </div>}
-        <CostChart key={methodId} method={methodId} result={result} showTable={showTable} animate={!showTable} />
+        <CostChart key={methodId} method={methodId} result={result} showTable={showTable} />
         <div className="cost-method-note"><p>{t(...method.note)}</p>
           {method.source && <a href={"https://www.youtube.com/watch?v=" + method.source[1] + "&t=" + method.source[2] + "s"} target="_blank" rel="noreferrer">{t(...method.source[0])} <ArrowUpRight size={13} aria-hidden="true" /></a>}
           <a href="#wiki/comparison-methods">{t("Research and formula notes", "研究记录与公式说明")} <ArrowUpRight size={13} aria-hidden="true" /></a>

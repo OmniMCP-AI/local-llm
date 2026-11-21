@@ -7,7 +7,8 @@ import {
   Table2, Wallet, X,
 } from "lucide-react";
 import { configurations, priceHistory, workloads } from "./scenarios";
-import { ScatterPlot, PricePlot, RankingPlot } from "./plots";
+import { ScatterPlot, RankingPlot } from "./plots";
+import { CoordinatePlot } from "./coordinate-plot.jsx";
 import { ExploreLenses, KnowledgePage, WikiDetails, wikiEntry } from "./knowledge";
 import { GoalPage } from "./goals";
 import { FeedbackBubble } from "./feedback";
@@ -385,12 +386,33 @@ function Drawer({ panel, close, state, onCompare, onEvidence, go }) {
 }
 
 function PricePage({ state, set, onEvidence }) {
-  const { t, formatMoney, displayCurrency } = useLocale();
+  const { t, formatMoney, displayCurrency, locale } = useLocale();
   const row = configurations.find((item) => item.id === state.history && priceHistory[item.id]) ?? configurations[1];
   const values = priceHistory[row.id];
   const change = Math.round((values.at(-1) / values[0] - 1) * 100);
+  const moneyAxis = { label: t("Whole-build price", "整机价格"), unit: displayCurrency(), formatTick: value => formatMoney(value) };
+  const overview = configurations.filter(item => item.kind === "measured" && priceHistory[item.id]
+    && Number.isFinite(item.measurements.text.short)).map(item => ({
+    id: item.id, name: item.name, short: item.short, x: priceHistory[item.id].at(-1), y: item.measurements.text.short,
+    xText: formatMoney(priceHistory[item.id].at(-1)), yText: `${item.measurements.text.short} tok/s`,
+    detail: conditionText(item),
+  }));
+  const day = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
+  const shortDay = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" });
+  const history = values.map((value, index) => {
+    const date = Date.UTC(2026, 7, 14 + index * 14);
+    return { id: String(date), name: row.name, x: date, y: value, xText: day.format(date), yText: formatMoney(value) };
+  });
   return <div className="interior">
     <div className="page-heading"><h1>{t(wikiEntry("prices").title, "价格趋势")}</h1><p>{t(wikiEntry("prices").summary, "按报价市场和配置查看历史价格。")}</p></div>
+    <article className="panel price-panel">
+      <div className="plot-head"><div><h2>{t("Price and performance overview", "价格与性能概览")}</h2>
+        <p>{t("Illustrative US build quotes and Qwen2.5 7B decode results at 4K context.", "示例数据：美国整机报价与 Qwen2.5 7B 在 4K 上下文中的生成速度。")}</p></div></div>
+      <div className="plot-shell"><CoordinatePlot title={t("Price and performance overview", "价格与性能概览")}
+        xAxis={moneyAxis} yAxis={{ label: t("Decode throughput", "生成速度"), unit: "tok/s" }}
+        points={overview} selectedId={row.id} onSelect={id => set({ history: id })} /></div>
+      <div className="plot-foot">{t("Choose a point to see that setup’s price history below.", "选择数据点可在下方查看该配置的历史价格。")}</div>
+    </article>
     <article className="panel price-panel">
       <div className="plot-head"><div><h2>{row.name}</h2><p>{t("US (USD) source", "美国（原始 USD）")} / {conditionText(row)} / {t("Illustrative quotes", "示例报价")} / {displayCurrency()}</p></div>
         <Select label={t("Select a setup", "选择配置")} value={row.id} onChange={(e) => set({ history: e.target.value })}>
@@ -398,7 +420,9 @@ function PricePage({ state, set, onEvidence }) {
         </Select>
       </div>
       <div className="price-summary"><strong>{formatMoney(values.at(-1))}</strong><span><ArrowDownRight size={16} /> {t(change + "% over the period", "期间变化 " + change + "%")}</span></div>
-      <div className="plot-shell"><PricePlot values={values} formatValue={formatMoney} /></div>
+      <div className="plot-shell"><CoordinatePlot title={t("Illustrative price history", "示例价格历史")}
+        xAxis={{ label: t("Quote date", "报价日期"), unit: "UTC", zero: false, formatTick: value => shortDay.format(value) }}
+        yAxis={{ ...moneyAxis, zero: false }} points={history} kind="line" selectedId={history.at(-1)?.id} /></div>
       <div className="plot-foot"><span>{t("8 sample observations, tax and shipping excluded", "8 个示例报价，不含税费和运费")}</span><button className="text-button" onClick={() => onEvidence(row)}>{t("Open setup evidence", "查看报价证据")} <ArrowUpRight size={15} /></button></div>
     </article>
   </div>;

@@ -33,29 +33,10 @@
 .cost-bars li > div:first-child { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; }
 .cost-bars strong, .cost-value-table td { font-family: var(--font-numeric); font-size: 12px; }
 .cost-bars small, .cost-value-table small { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; font-weight: 400; }
-.cost-bar-track, .cost-range { position: relative; height: 10px; margin-top: 4px; background: var(--color-paper-3); }
-.cost-bar-track > i, .cost-range > i { position: absolute; width: 1px; height: 100%; background: var(--color-muted); }
-.cost-bar-track > span, .cost-range > span { position: absolute; min-width: 1px; height: 100%; background: var(--color-accent); transform-origin: left; }
-.cost-bar-track > span[data-negative="true"] { transform-origin: right; }
-.cost-bar-track > span[data-color="1"] { background: var(--color-accent-2); }
-.cost-bar-track > span[data-color="2"] { background: var(--color-field-edge); }
-.cost-range { min-width: 55px; }
-.cost-range b { position: absolute; width: 4px; height: 100%; translate: -50%; background: var(--color-ink); }
-.cost-bars[data-animate="true"] .cost-bar-track > span, .cost-range[data-animate="true"] > span { animation: cost-grow .36s var(--ease-out) backwards; }
-@keyframes cost-grow { from { transform: scaleX(0); } }
-.cost-lines svg { display: block; width: 100%; min-height: 185px; height: auto; }
-.cost-lines text { fill: var(--color-muted); font-size: 13px; }
-.cost-grid { stroke: var(--color-rule); stroke-width: 1; }
-.cost-marker { stroke: var(--color-muted); stroke-dasharray: 4 3; stroke-width: 1; }
-.cost-crossing { fill: var(--color-paper); stroke: var(--color-ink); stroke-width: 2; }
-.cost-lines [data-series], .cost-legend [data-series] { --cost-stroke: var(--color-accent); }
-.cost-lines [data-series="apiUsd"], .cost-legend [data-series="apiUsd"] { --cost-stroke: var(--color-accent-2); }
-.cost-lines [data-series="rentalUsd"], .cost-legend [data-series="rentalUsd"] { --cost-stroke: var(--color-muted); }
-.cost-trend { stroke: var(--cost-stroke); stroke-width: 2.5; fill: none; vector-effect: non-scaling-stroke; }
-.cost-lines [data-series="rentalUsd"] .cost-trend { opacity: .72; stroke-dasharray: 0.028 0.017; }
-.cost-lines[data-animate="true"] [data-series]:not([data-series="rentalUsd"]) .cost-trend { animation: cost-draw .52s var(--ease-out) backwards; }
-.cost-lines [data-series] circle, .cost-legend i { fill: var(--cost-stroke); background: var(--cost-stroke); }
-@keyframes cost-draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
+.cost-legend [data-series] { --cost-stroke: var(--color-accent); }
+.cost-legend [data-series="apiUsd"] { --cost-stroke: var(--color-accent-2); }
+.cost-legend [data-series="rentalUsd"] { --cost-stroke: var(--color-muted); }
+.cost-legend i { background: var(--cost-stroke); }
 .cost-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; list-style: none; padding: 0; margin: 3px 0 10px; color: var(--color-ink-2); font-size: 12px; }
 .cost-legend i { display: inline-block; width: 15px; height: 2px; margin-inline-end: 4px; vertical-align: middle; }
 .cost-playback { justify-content: start; flex-wrap: wrap; margin-bottom: 8px; }
@@ -79,7 +60,4 @@
   .cost-analysis-head { flex-wrap: wrap; }
   .cost-controls, .cost-analysis { padding: 9px; }
   .cost-value-table th, .cost-value-table td { padding-inline: 3px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cost-page .cost-trend, .cost-page .cost-bar-track > span, .cost-page .cost-range > span { animation: none !important; }
 }

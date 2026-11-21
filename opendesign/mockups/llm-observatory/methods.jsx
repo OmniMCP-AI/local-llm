@@ -2,6 +2,7 @@ import { useResearchLabels } from "./research-library";
 import React, { useEffect, useState } from "react";
 import { ArrowRight, ArrowUpRight, Pause, Play } from "lucide-react";
 import { useLocale } from "./locale";
+import { CoordinatePlot } from "./coordinate-plot.jsx";
 
 const fact = (name, value, detail, video, time, display) => ({ name, value, detail, video, time, display });
 const scoreboard = "2L_RB-XqisE";
@@ -239,30 +240,28 @@ function MethodChart({ method }) {
   const [threshold, setThreshold] = useState(method.threshold);
   const { scale, rows, series, chart, unit } = method;
   const fitting = threshold ? rows.filter((row) => row.value <= threshold).length : 0;
-  const position = (value) => (100 * value / scale) + "%";
   const title = t(method.title, methodChinese[method.id][0]);
+  const measuredUnit = t(unit, chartChinese[unit]);
+  const points = rows.flatMap((row, index) => {
+    const values = Array.isArray(row.value) ? row.value : [row.value];
+    const name = t(row.name, chartChinese[row.name]);
+    return values.map((value, side) => ({
+      id: index + ":" + side, name, short: figures.format(value), x: index + 1, y: value,
+      series: series ? side : 0,
+      detail: series ? t(series[side], chartChinese[series[side]]) : undefined,
+    }));
+  });
+  const segments = rows.flatMap((row, index) => Array.isArray(row.value) ? [[index + ":0", index + ":1"]] : []);
   return <figure className="method-figure" aria-label={t("{title} visual summary", "{title}图示", { title })}>
-    <div className="method-plot" aria-hidden="true">
-      <div className="method-axis"><span>{t(unit, chartChinese[unit])}</span><div>{[0, scale / 2, scale].map((tick) => <span key={tick}>{figures.format(tick)}</span>)}</div><span /></div>
-      {rows.map((row) => {
-        const [first, second] = Array.isArray(row.value) ? row.value : [row.value, row.value];
-        return <div className="method-chart-row" key={row.name}>
-          <span>{t(row.name, chartChinese[row.name])}</span>
-          <div className="method-track">
-            {chart === "bars" ? <>
-              <i className="method-bar" style={{ width: position(first) }} />
-              {Array.isArray(row.value) && <i className="method-bar alt" style={{ width: position(second) }} />}
-            </> : <>
-              <i className="method-interval" style={{ left: position(Math.min(first, second)), width: position(Math.abs(first - second)) }} />
-              <i className="method-point" style={{ left: position(first) }} />
-              {first !== second && <i className={"method-point" + (chart === "paired" ? " alt" : "")} style={{ left: position(second) }} />}
-            </>}
-            {threshold && <i className="method-threshold" style={{ left: position(threshold) }} />}
-          </div>
-          <strong>{formatResult(row, method, t, figures)}</strong>
-        </div>;
-      })}
-    </div>
+    <CoordinatePlot title={title} points={points} segments={segments}
+      kind={chart === "bars" && !segments.length ? "bar" : "scatter"}
+      xAxis={{ label: t("Case number", "案例序号"), categorical: true }}
+      yAxis={{ label: title, unit: measuredUnit, domain: [0, scale], formatTick: figures.format }}
+      guides={threshold ? [{ axis: "y", value: threshold, label: figures.format(threshold) + " " + measuredUnit }] : []}
+      labelsLabel={t("Show point labels", "显示数据点标签")} />
+    <ol className="method-cases">
+      {rows.map(row => <li key={row.name}>{t(row.name, chartChinese[row.name])} <strong>{formatResult(row, method, t, figures)}</strong></li>)}
+    </ol>
     {series && <figcaption className="method-key">{series.map((label, index) => <span key={label}><i className={index === 1 ? "alt" : ""} aria-hidden="true" />{t(label, chartChinese[label])}</span>)}</figcaption>}
     {threshold && <div className="method-capacity">
       <label><span>{t("Available device memory", "设备可用内存")} <strong>{threshold} GB</strong></span><input type="range" min="12" max="32" value={threshold} onChange={(event) => setThreshold(event.target.valueAsNumber)} /></label>

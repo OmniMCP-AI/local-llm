@@ -162,6 +162,46 @@ test("a malformed or oversized cohort list leaves the legacy release available",
   assert.equal(fetchMock.mock.callCount(), 2);
 });
 
+test("the overview joins a measured decode rate to its exact released price and excludes mismatched scopes", async (t) => {
+  const otherId = "55555555-5555-4555-8555-555555555555";
+  const goalId = "a".repeat(64);
+  const goalPath = `/goals/${goalId}.json?entry=budget`;
+  const asOf = "2026-11-21";
+  const measurements = (release) => ({
+    budget: { status: "available", value: "1199.95", release_id: release, observed_at: "2026-11-21T14:00:00Z" },
+    decode: { status: "available", value: "58.6", sample_count: 20 },
+  });
+  const goal = {
+    release_id: goalId, protocol: "fixed-token@1", market,
+    metrics: { decode: { unit: "tok/s" } },
+    rows: [
+      { id: "apple-m4", name: "Apple M4 build", build_revision: "m4-rev", metrics: measurements(releaseId) },
+      { id: "other", name: "Different revision", build_revision: "old-revision", metrics: measurements(otherId) },
+    ],
+  };
+  const paths = new Map([
+    [`/price-releases/${releaseId}/prices.json`, { ...price, as_of: asOf }],
+    [`/price-releases/${otherId}/prices.json`, { ...price, as_of: asOf, release_id: otherId,
+      scope: { kind: "whole_build", id: "other", revision_id: "current-revision" } }],
+    [goalPath, goal],
+  ]);
+  t.mock.method(globalThis, "fetch", async (url) => Response.json(paths.get(url.pathname + url.search)));
+  const env = { FASTEST_RELEASE_ORIGIN: origin, FASTEST_PRICE_RELEASES: `${releaseId},${otherId}`,
+    FASTEST_PRICE_OVERVIEW_GOAL: goalPath };
+  const response = await request({}, env);
+  assert.equal(response.status, 200);
+  const { overview, decision } = await response.json();
+  assert.equal(decision, null);
+  assert.deepEqual(overview, {
+    goalRelease: goalId, protocol: "fixed-token@1", currency: "USD", market: "US", destination: market.destination,
+    condition: "new", unit: "tok/s",
+    points: [{ id: releaseId, name: "Apple M4 build", x: 1199.95, y: 58.6, xText: "1199.95 USD",
+      yText: "58.6 tok/s", detail: "2026-11-21 · 20 samples" }],
+  });
+  goal.rows[0].metrics.decode.sample_count = 0;
+  assert.deepEqual((await (await request({}, env)).json()).overview.points, []);
+});
+
 test("a dated display FX basis documents each needed source and currency pairs can be missing", async () => {
   const { datedDisplayRate } = await import("./display-fx.mjs");
   assert.deepEqual(datedDisplayRate("USD", "USD"), { factor: 1, sources: [] });

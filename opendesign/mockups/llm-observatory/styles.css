@@ -311,6 +311,7 @@ footer button { margin-left: auto; }
 .price-summary strong { color: var(--color-accent); font: 500 32px var(--font-numeric); letter-spacing: -.05em; }
 .price-summary span { display: inline-flex; align-items: center; gap: 4px; color: var(--color-muted); font-size: 12px; }
 .price-panel .plot-head .select-field { width: min(230px, 45%); }
+.price-panel + .price-panel { margin-top: 16px; }
 .agent-tools { display: flex; flex-wrap: wrap; gap: 7px; padding: 13px 15px; }
 pre { margin: 0 15px 15px; border: 1px solid var(--color-rule); background: var(--color-paper-3); color: var(--color-ink-2); padding: 14px; overflow: auto; font: 400 12px/1.55 var(--font-numeric); }
 code, .mono { font-family: var(--font-numeric); }

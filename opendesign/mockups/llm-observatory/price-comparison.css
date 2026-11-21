@@ -14,6 +14,7 @@
 .hosted-prices .price-cohorts time { font-variant-numeric: tabular-nums; }
 .hosted-prices section { margin-block-start: 2rem; }
 .hosted-prices section h2 { margin-block-end: .5rem; }
+.hosted-prices .price-visual { padding: clamp(.75rem, 2vw, 1.25rem); }
 .hosted-prices table { width: 100%; min-width: 44rem; }
 .hosted-prices th, .hosted-prices td { text-align: start; white-space: normal; overflow-wrap: anywhere; }
 .hosted-prices th[scope="row"] { white-space: nowrap; }
