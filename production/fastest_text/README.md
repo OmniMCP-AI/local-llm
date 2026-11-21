@@ -2,6 +2,8 @@
 
 The default report covers an Apple M4 with Metal and a GeForce RTX 4090 with CUDA. The pinned runtime and exact model shards ran on a local 24 GiB Apple M4 under ambient desktop GPU load. The capture is private. The planned Apple M4 timing cell requires a quiet-host run and public release approval. A separate Chinese completion awaits independent rubric review. The RTX 4090 cell requires access to an authorized host or operator-run evidence. Both public cells currently have zero approved timing samples and quality ratings.
 
+On the release origin, open `/text-pilot` from either machine's profile or the Qwen model profile. The default route redirects to the report pinned by the SHA-256 of its manifest. When the current goals cohort has reviewed records, the route opens that cohort's pinned report and checks its publication rights.
+
 From the `production` directory with Python 3.11 or later, build to a new directory.
 
 ```sh
