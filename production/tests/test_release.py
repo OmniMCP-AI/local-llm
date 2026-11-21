@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from fastest_release import InvalidObservation, ReleaseError, ReleaseStore
+from fastest_release.capture_cpu import candidate as cpu_baseline_candidate
 from fastest_prices import PriceStore
 from fastest_release.research import SEED_ROOT
 from test_mcp import HAS_SDK, get as get_public, mcp_client
@@ -29,6 +30,13 @@ from fastest_release.scaling import scaling_report
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic-observation.json"
+CPU_BASELINE_CONDITIONS = {
+    "comparison_eligibility": {
+        "status": "known", "value": "Standalone shared CI CPU baseline. Excluded from the quiet-host 7B text pilot.",
+    },
+    "runner_image_version": {"status": "known", "value": "20261120.1.0"},
+    "wall_power": {"status": "missing", "reason": "The GitHub-hosted runner has no wall power meter."},
+}
 
 
 class ReleaseTest(unittest.TestCase):
@@ -921,20 +929,64 @@ class ReleaseTest(unittest.TestCase):
         with api_server(self.store, profile_releases=releases) as server:
             asyncio.run(check(server.server_port))
 
+    @unittest.skipUnless(HAS_SDK, "Install fastest_mcp/requirements.txt to test stdio MCP")
+    def test_mcp_evidence_matches_the_standalone_cpu_release(self):
+        release = self.store.publish(self.cpu_baseline_observation())
+
+        async def check(port):
+            args = {"release": release}
+            status, body = get_public(port, "/api/v1/evidence", args)
+            self.assertEqual(status, 200)
+            api = json.loads(body)
+            async with mcp_client(port) as client:
+                await client.initialize()
+                result = await client.call_tool("v1_evidence", args)
+                self.assertFalse(result.isError)
+                self.assertEqual(result.structuredContent, api)
+                resource = await client.read_resource(f"fastest://v1/releases/{release}/evidence")
+                self.assertEqual(json.loads(resource.contents[0].text), api)
+                for name, expected in CPU_BASELINE_CONDITIONS.items():
+                    self.assertEqual(result.structuredContent["conditions"][name], expected)
+
+        with api_server(self.store) as server:
+            asyncio.run(check(server.server_port))
+
+    def cpu_baseline_observation(self):
+        observation = cpu_baseline_candidate({
+            "runner": {"architecture": "x86_64", "cpu_model": "Synthetic CPU", "image_version": "20261120.1.0"},
+            "run_url": "https://github.com/OmniMCP-AI/local-llm/actions/runs/123456/attempts/2",
+            "median_tokens_per_second": "53.500", "samples_ns": [2_392_523_364] * 7,
+        }, "a" * 64)
+        observation["rights"] = {**self.observation["rights"], "expires_at": "2099-01-01T00:00:00Z"}
+        observation["fields"] = {
+            **{key: {**field, "rights": "allow"} for key, field in observation["fields"].items()},
+            **self.observation["fields"],
+            "settings": {"status": "known", "value": "outside the measured API fields", "rights": "allow"},
+        }
+        return observation
+
     def test_api_evidence_projects_only_released_fields_and_honors_expiring_rights(self):
         synthetic = self.store.publish(self.observation)
-        self.observation["evidence_id"] = str(uuid4())
-        self.observation["kind"] = "measured"
-        self.observation["metric"]["value"] = "53.500"
-        self.observation["rights"]["expires_at"] = "2099-01-01T00:00:00Z"
-        self.observation["fields"]["internal_notes"] = {"status": "known", "value": "outside API fields", "rights": "allow"}
-        release = self.store.publish(self.observation)
-        self.observation["evidence_id"] = str(uuid4())
-        self.observation["rights"]["expires_at"] = "2000-01-01T00:00:00Z"
-        expired = self.store.publish(self.observation)
-        self.observation["rights"]["expires_at"] = "9999-02-31T00:00:00Z"
+        cpu_baseline = self.cpu_baseline_observation()
+        release = self.store.publish(cpu_baseline)
+        contributor = self.store.publish({
+            **cpu_baseline, "evidence_id": str(uuid4()), "kind": "contributor",
+            "fields": {
+                **cpu_baseline["fields"],
+                "comparison_eligibility": {
+                    "status": "known", "rights": "allow",
+                    "value": "Excluded from controlled comparisons. The measurement is contributor-reported.",
+                },
+            },
+        })
+        cpu_baseline["fields"]["runner_image_version"]["rights"] = "deny"
+        denied = self.store.publish({**cpu_baseline, "evidence_id": str(uuid4())})
+        cpu_baseline["evidence_id"] = str(uuid4())
+        cpu_baseline["rights"]["expires_at"] = "2000-01-01T00:00:00Z"
+        expired = self.store.publish(cpu_baseline)
+        cpu_baseline["rights"]["expires_at"] = "9999-02-31T00:00:00Z"
         with self.assertRaises(InvalidObservation):
-            self.store.publish(self.observation)
+            self.store.publish(cpu_baseline)
 
         self.store._query("""
             CREATE ROLE api_evidence_reader NOLOGIN;
@@ -949,19 +1001,48 @@ class ReleaseTest(unittest.TestCase):
             self.assertEqual(data["release_id"], release)
             self.assertEqual(data["metric"]["value"], "53.500")
             self.assertEqual(data["conditions"]["driver_version"]["status"], "missing")
+            for name, expected in CPU_BASELINE_CONDITIONS.items():
+                self.assertEqual(data["conditions"].get(name), expected, name)
             self.assertEqual(data["rights"]["expires_at"], "2099-01-01T00:00:00Z")
-            self.assertNotIn("outside API fields", json.dumps(data))
+            self.assertNotIn("settings", data["conditions"])
+            self.assertNotIn("physical_host_revision", data["conditions"])
             self.assertNotIn("private calibration note", json.dumps(data))
             self.assertEqual(request(f"/api/v1/evidence?evidence_id={data['evidence_id']}")[2], data)
+            status, _, protected = request(f"/api/v1/evidence?release={denied}")
+            self.assertEqual(status, 200)
+            self.assertNotIn("runner_image_version", protected["conditions"])
+            self.assertEqual(protected["conditions"]["wall_power"], CPU_BASELINE_CONDITIONS["wall_power"])
+            status, _, reported = request(f"/api/v1/evidence?release={contributor}")
+            self.assertEqual(status, 200)
+            self.assertEqual(reported["kind"], "contributor")
+            self.assertEqual(set(reported["conditions"]), {"comparison_eligibility", "runtime_revision", "settings"})
             status, _, html = request(data["url"], decode=False)
             self.assertEqual(status, 200)
             self.assertIn("53.500", html)
             self.assertIn(release, html)
+            for artifact in ("chart.json", "table.json"):
+                status, _, dataset = request(f"/releases/{release}/{artifact}")
+                self.assertEqual(status, 200)
+                fields = dataset["rows"][0]["fields"]
+                self.assertEqual({name: fields[name] for name in CPU_BASELINE_CONDITIONS}, CPU_BASELINE_CONDITIONS)
             self.assertEqual(request(f"/api/v1/evidence?release={synthetic}")[0], 404)
             for path in (f"/api/v1/evidence?release={expired}", f"/releases/{expired}/benchmark.html"):
                 status, _, body = request(path, decode=False)
                 self.assertEqual(status, 410)
                 self.assertNotIn("53.500", body)
+
+            status, _, spec = request("/api/v1/openapi.json")
+            self.assertEqual(status, 200)
+            response = spec["paths"]["/api/v1/evidence"]["get"]["responses"]["200"]
+            conditions = response["content"]["application/json"]["schema"]["properties"]["conditions"]
+            self.assertFalse(conditions.get("required"))
+            self.assertNotIn("physical_host_revision", conditions["properties"])
+            for name in CPU_BASELINE_CONDITIONS:
+                known, missing = conditions["properties"][name]["oneOf"]
+                self.assertEqual(known["properties"]["status"]["const"], "known")
+                self.assertEqual(known["properties"]["value"]["type"], "string")
+                self.assertEqual(missing["properties"]["status"]["const"], "missing")
+                self.assertEqual(missing["properties"]["reason"]["type"], "string")
 
     def test_public_routes_pin_current_and_quarantine_withdrawn_evidence(self):
         from fastest_release.http import make_server

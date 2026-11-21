@@ -70,6 +70,11 @@ price reader is configured.
 | `/api/v1/advisor` | Structured configuration or cost decision with clarification, abstention, or a cited answer. See the [guided advisor](fastest_release/ADVISOR.md). |
 | `/api/v1/calculator` | `scenario`, `monthly_accepted` and `months` match the cost page. An optional `revision` verifies the replayed calculation. Pass `scenario=illustrative` to reproduce the clearly labeled example. |
 
+Evidence conditions vary with the evidence kind and field rights. The shared
+CI CPU baseline includes its runner image version, its comparison exclusion,
+and the reason wall power is missing. Known conditions have a string `value`.
+Missing conditions have a `reason`. The same fields appear in MCP evidence.
+
 Search, coverage, profile comparisons and historical offers accept `limit`
 (1–100, default 25) and `offset` (0–10,000). Reuse the same selectors and
 resolved profile revision or price release with the returned `next_offset`.

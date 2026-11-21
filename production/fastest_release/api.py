@@ -36,7 +36,7 @@ KIND = {"type": "string", "enum": ["machines", "models"]}
 UUID_PATTERN = r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}"
 UUID_PARAM = {"type": "string", "pattern": f"^{UUID_PATTERN}$"}
 EVIDENCE_FIELDS = ("profile_cell", "backend", "runtime_revision", "run_id", "artifact_companion_sha256",
-                   "workflow_sha256", "driver_version")
+                   "workflow_sha256", "driver_version", "comparison_eligibility", "runner_image_version", "wall_power")
 CONTRIBUTOR_FIELDS = ("runtime_revision", "runtime_sha256", "os_driver", "settings", "source_sha256",
                       "comparison_eligibility")
 OFFER_FIELDS = ("listing_id", "seller", "kind", "confirmation", "stock", "discount", "observed_at",
@@ -60,6 +60,16 @@ PAGINATION = _object({"offset": "integer", "limit": "integer", "next_offset": ["
 CATALOG_ENTRY = _object({"id": "string", "kind": KIND, "name": "string", "url": "string"})
 MEASUREMENT = _object({"id": "string", "version": "integer", "value": "string", "unit": "string",
                        "statistic": "string", "boundary": "string", "sample_count": "integer"})
+EVIDENCE_CONDITION = {"oneOf": [
+    {**_object({"status": {"const": "known"}, "value": "string"}), "additionalProperties": False},
+    {**_object({"status": {"const": "missing"}, "reason": "string"}), "additionalProperties": False},
+]}
+EVIDENCE_CONDITIONS = {
+    "type": "object",
+    "description": "Optional public conditions by evidence kind and field permission.",
+    "properties": dict.fromkeys((*EVIDENCE_FIELDS, *CONTRIBUTOR_FIELDS), EVIDENCE_CONDITION),
+    "additionalProperties": False,
+}
 PRICE_OFFER = _object({
     "listing_id": "string", "seller": "string", "kind": "string", "confirmation": "string",
     "stock": "string", "discount": "string", "observed_at": "string", "captured_at": "string",
@@ -256,7 +266,7 @@ class PublicApi:
                  "evidence_id": UUID_PARAM},
                 {"release_id": "string", "revision": "integer", "evidence_id": "string", "status": "string",
                  "kind": {"type": "string", "enum": ["measured", "contributor"]},
-                 "metric": MEASUREMENT, "conditions": "object", "hardware": "object", "artifact": "object",
+                 "metric": MEASUREMENT, "conditions": EVIDENCE_CONDITIONS, "hardware": "object", "artifact": "object",
                  "workload": "object", "citations": "array", "rights": "object", "url": "string"},
             )
         if price_reader is not None:
