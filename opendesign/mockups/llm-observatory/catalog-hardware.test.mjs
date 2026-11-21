@@ -40,11 +40,13 @@ test("GPU profile locale controls retain the shared language and currency choice
   const handlers = {};
   const language = { value: "", addEventListener: (name, handler) => { handlers.language = handler; } };
   const currency = { value: "auto", options: [{ value: "auto" }], add: option => currency.options.push(option), addEventListener: (name, handler) => { handlers.currency = handler; } };
+  const rateForm = { hidden: false, addEventListener: (name, handler) => { handlers.rate = handler; } };
+  const rateValue = { value: "" };
   const links = [{ textContent: "Explorer" }, { textContent: "Compare demo" }];
   let saved;
   const document = {
-    documentElement: {},
-    getElementById: id => id === "profile-language" ? language : currency,
+    documentElement: { dataset: { visitorLanguage: "fr" } },
+    getElementById: id => ({ "profile-language": language, "profile-currency": currency, "profile-rate": rateForm, "profile-rate-value": rateValue })[id],
     querySelectorAll: () => links,
   };
   const localStorage = { getItem: () => JSON.stringify({ language: "zh-Hant", currency: "USD", manual: { ABC: 1 } }), setItem: (_key, value) => { saved = JSON.parse(value); } };
@@ -57,6 +59,15 @@ test("GPU profile locale controls retain the shared language and currency choice
   handlers.language();
   assert.equal(links[0].textContent, "Explorar");
   assert.deepEqual(saved, { language: "es", currency: "EUR", manual: { ABC: 1 } });
+  currency.value = "AED";
+  handlers.currency();
+  assert.equal(rateForm.hidden, false);
+  rateValue.value = "3.67";
+  handlers.rate({ preventDefault() {} });
+  assert.equal(saved.manual.AED, 3.67);
+  localStorage.getItem = () => "{}";
+  runInNewContext(script, { document, localStorage, navigator: { languages: ["en-US"] }, Intl, Option: function(_text, value) { this.value = value; } });
+  assert.equal(document.documentElement.lang, "fr");
 });
 
 test("the hardware snapshot accounts for all sources and keeps memory limits separate", async () => {
