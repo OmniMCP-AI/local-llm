@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
-const cohortSize = 8;
+export const cohortSize = 8;
 const decisions = ["keep", "cloud", "upgrade", "undecided"];
 const responseOptions = ["yes", "no", "undecided", "not_asked"];
 
@@ -26,7 +27,7 @@ function missingFields(row, caseIds) {
   return missing;
 }
 
-function review({ mode, caseIntake, observations }) {
+export function reviewObservations({ mode, caseIntake, observations }) {
   const caseIds = new Set();
   if (caseIntake !== undefined || observations.length > 0) {
     if (caseIntake?.mode !== mode || !Array.isArray(caseIntake.caseCards)) {
@@ -54,23 +55,35 @@ function review({ mode, caseIntake, observations }) {
     participantIds.add(participantId);
     const missing = missingFields(row, caseIds);
     if (missing.length > 0) held.push({ participantId, missing });
-    else eligible.push(row);
+    else eligible.push({
+      ...observationDetails(row),
+      willingnessToPay: responseOptions.includes(row.willingnessToPay) ? row.willingnessToPay : undefined,
+    });
   }
   if (eligible.length > cohortSize) throw new Error("Submit a cohort of at most eight eligible participants.");
-  return summarize(eligible, held);
+  return { eligible, held };
 }
 
-function summarize(rows = [], heldObservations = []) {
-  const observations = rows.map(({
+function observationDetails({
+  participantId, caseId, currentAlternative, baselineDecision, finalDecision,
+  elapsedSeconds, explainedChoice, citedEvidence, resolvedUncertainty,
+  unresolvedUncertainty, followUpCase,
+}) {
+  return {
     participantId, caseId, currentAlternative, baselineDecision, finalDecision,
     elapsedSeconds, explainedChoice, citedEvidence, resolvedUncertainty,
     unresolvedUncertainty, followUpCase,
-  }) => ({
-    participantId, caseId, currentAlternative, baselineDecision, finalDecision,
-    decisionChanged: baselineDecision !== finalDecision,
-    elapsedSeconds, explainedChoice, citedEvidence, resolvedUncertainty,
-    unresolvedUncertainty, followUpCase,
-  }));
+  };
+}
+
+export function summarize(rows = [], heldObservations = []) {
+  const observations = rows.map(row => {
+    const { participantId, caseId, currentAlternative, baselineDecision, finalDecision, ...evidence } = observationDetails(row);
+    return {
+      participantId, caseId, currentAlternative, baselineDecision, finalDecision,
+      decisionChanged: baselineDecision !== finalDecision, ...evidence,
+    };
+  });
   const complete = observations.length === cohortSize;
   function gate(target, qualifies) {
     const observed = observations.filter(qualifies).length;
@@ -118,7 +131,8 @@ function main() {
   }
   const { mode } = input;
   try {
-    const summary = review(input);
+    const { eligible, held } = reviewObservations(input);
+    const summary = summarize(eligible, held);
     const report = mode === "synthetic"
       ? { mode, actual: summarize(), rehearsal: summary }
       : { mode, actual: summary };
@@ -130,4 +144,6 @@ function main() {
   }
 }
 
-process.exitCode = main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = main();
+}
