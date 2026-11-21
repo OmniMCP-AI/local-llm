@@ -2,6 +2,8 @@
 
 PostgreSQL stores reviewed observation revisions and the current release pointer. The service publishes one observation per release. Its Markdown page, HTML chart and table, JSON datasets, and SHA-256 manifest use the same approved row. The example is synthetic. Its value demonstrates the pipeline, and its artifact checksum refers to the checked-in fixture bytes.
 
+The [shared CI CPU baseline](fastest_release/CPU-BASELINE.md) describes the measured decode capture and local publication procedure.
+
 The [llama.cpp release watch](fastest_release_watch/README.md) tracks upstream releases and authored card applicability. It links matched retests to approved benchmark releases.
 
 [Contributor benchmark intake](fastest_contributor/README.md) records private submissions, tracks editorial review, and releases eligible evidence with its source and comparison status.
