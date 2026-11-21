@@ -4,6 +4,7 @@ SELECT format('SELECT %L AS table_name, count(*) AS row_count FROM %I.%I;',
 FROM pg_tables
 WHERE schemaname IN ('fastest_catalog', 'fastest_research', 'fastest_release',
                      'fastest_prices', 'fastest_contributor', 'fastest_intake',
-                     'fastest_release_watch', 'fastest_github_intake', 'fastest_feedback')
+                     'fastest_release_watch', 'fastest_github_intake', 'fastest_feedback',
+                     'fastest_pilot_engagement')
 ORDER BY schemaname, tablename
 \gexec

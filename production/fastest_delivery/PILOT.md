@@ -44,9 +44,63 @@ Check `status` and `gaps` in the JSON. A report with missing evidence exits succ
 
 ## First-party engagement export
 
-Before scheduling the pilot, verify that an authorized first-party event source can identify the exact published post and observe the two workflow milestones below. This audit reads a local export from that source. It verifies the export against the retained approvals, handoffs, receipts and drafts. Keep the source query or projection with the export so another operator can reproduce it.
+Use the release origin for attributed pilot packages. The first-party link serves the approved, release-pinned benchmark and its citation. It can display the evidence while the operator reconciles the post or when collection is unavailable. It offers anonymous activity sharing only after the link is bound to that post's verified receipt.
 
-Use an exact post URL from first-party attribution and join it to the verified `receipt_id`. If the source uses a first-party attribution key, retain the mapping that ties that key to the exact published post. A platform name, domain-only referrer, shared evidence URL or aggregate click count is insufficient to attribute an event to a post. Export only observations for the two pilot channels within the seven Shanghai dates and at or after publication.
+### Enable collection
+
+Use a separate libpq service for engagement than for the release reader. Keep the connection settings in a private `PGSERVICEFILE` and the password in `PGPASSFILE`. Use verified TLS for remote PostgreSQL. On the private operator host, select the schema-owner service and run from `production/`.
+
+```sh
+FASTEST_PILOT_ENGAGEMENT_DBSERVICE="$ENGAGEMENT_OWNER_SERVICE" \
+  python3 -m fastest_delivery.engagement_capture migrate
+```
+
+As the schema owner, grant the following privileges to the dedicated origin, binder, and export roles. Substitute your actual role names.
+
+```sql
+GRANT USAGE ON SCHEMA fastest_pilot_engagement TO pilot_origin, pilot_binder, pilot_auditor;
+GRANT SELECT ON fastest_pilot_engagement.available TO pilot_origin;
+GRANT EXECUTE ON FUNCTION fastest_pilot_engagement.arrive(uuid, text, uuid) TO pilot_origin;
+GRANT EXECUTE ON FUNCTION fastest_pilot_engagement.complete(uuid, text, uuid, uuid) TO pilot_origin;
+GRANT SELECT, INSERT, UPDATE (attribution_key) ON fastest_pilot_engagement.binding TO pilot_binder;
+GRANT SELECT ON fastest_pilot_engagement.binding, fastest_pilot_engagement.journey TO pilot_auditor;
+```
+
+Give the release origin its `FASTEST_PILOT_ENGAGEMENT_DBSERVICE` name and a private, stable `FASTEST_PILOT_ENGAGEMENT_SIGNING_KEY` of 32 random bytes in lowercase hexadecimal. Generate it with `openssl rand -hex 32` and store it in the hosting secret store. For a container, mount the libpq service and password files read-only and set `PGSERVICEFILE` and `PGPASSFILE` to their mounted paths. Enable the release server with `--pilot-engagement-origin "$PUBLIC_ORIGIN"` and allow that origin's Host header with `--trusted-host`. Use the same lowercase HTTPS origin, without a trailing slash, when generating drafts. Disable proxy and load balancer access logging for `/pilot/evidence/` and keep POST bodies out of request logs, tracing, and analytics.
+
+The comparison uses the existing goals cohort and its current rights checks. Configure the release origin with `--goal-cohort` and `--goal-rights` for two approved measured setups before expecting completed comparison events. Planned and unavailable rows remain visible in the goal results. A pilot comparison counts after the server evaluates the submitted minimum decode and prefill goals and renders results containing at least two comparable reviewed points. One consented evidence journey can contribute one visit and one result. Reloading or retrying its form preserves the original event IDs and timestamps. The public evidence and regular goal comparison remain accessible without participating. The capture stores neither comparison inputs nor visitor cookies.
+
+### Attribute an approved post
+
+1. Generate a unique key for each candidate intended for first-party attribution with `python3 -c 'from uuid import uuid4; print(uuid4())'`. Pass it as `--engagement-key` when preparing the package. Review, approve, and publish the resulting text and assets as usual. Existing packages use their direct citation URLs.
+2. After posting, verify the exact link on the exact published post and give the `receipt` command its existing arguments plus `--observed-engagement-url "$APPROVED_LINK"`. Retain the approval, original handoff, and receipt. YouTube Shorts descriptions expose the approved URL as text. Verify how the audience can open it before claiming coverage for that post. [YouTube link placement guide](https://support.google.com/youtube/answer/13748639)
+3. Bind the reconciled receipt using the private binder service. The command checks the retained draft, approval and handoff against the receipt. The binding is immutable and the key and post can each be bound once.
+
+```sh
+FASTEST_PILOT_ENGAGEMENT_DBSERVICE="$ENGAGEMENT_BINDER_SERVICE" \
+  python3 -m fastest_delivery.engagement_capture bind \
+  --start "$PILOT_START" --mode live --receipt-id "$RECEIPT_ID" \
+  --draft-dir "$PILOT_ROOT/editorial-drafts" \
+  --x-approvals "$PILOT_ROOT/x-approvals" --x-deliveries "$PILOT_ROOT/x-deliveries" \
+  --shorts-approvals "$PILOT_ROOT/shorts-approvals" --shorts-deliveries "$PILOT_ROOT/shorts-deliveries"
+```
+
+Use `--mode rehearsal`, `--pilot-engagement-mode rehearsal`, and a disposable PostgreSQL service, signing key, and operator directory when testing the whole flow. Never route rehearsal traffic to the live database.
+
+### Write the audit input
+
+```sh
+FASTEST_PILOT_ENGAGEMENT_DBSERVICE="$ENGAGEMENT_AUDITOR_SERVICE" \
+  python3 -m fastest_delivery.engagement_capture export \
+  --start "$PILOT_START" --mode live --output "$ENGAGEMENT_EXPORT" \
+  --draft-dir "$PILOT_ROOT/editorial-drafts" \
+  --x-approvals "$PILOT_ROOT/x-approvals" --x-deliveries "$PILOT_ROOT/x-deliveries" \
+  --shorts-approvals "$PILOT_ROOT/shorts-approvals" --shorts-deliveries "$PILOT_ROOT/shorts-deliveries"
+```
+
+The private export uses the retained [PostgreSQL projection](engagement-export.sql) and includes only events for exact reconciled posts during the seven Shanghai dates and at or after publication. Pass the file to the existing pilot command using `--engagement-export "$ENGAGEMENT_EXPORT"`.
+
+The exporter leaves coverage empty unless the operator supplies `--coverage-evidence`. The separate JSON file has a `reference` to retained independent evidence and arrays named `qualified_evidence_visits` and `completed_comparisons` in the coverage format below. Supply rows only for closed dates and intervals for which the approved post path, attribution binding, collection and requested comparison workflow were independently verified available. If reconciliation happened after publication, omit that first day whenever the delay leaves any eligible interval unobserved. The collector cannot infer availability from the events it received.
 
 | Event `kind` | Include when | Additional fields |
 | --- | --- | --- |
@@ -100,7 +154,7 @@ Each `exercises` entry includes `kind`, `occurred_at` with a UTC offset, and the
 | `replay` | `approval_id` and the original `receipt_id` returned by the retry. |
 | `withdrawal` | `queued_approval_id` for the blocked delivery and `correction_id` from the retained `correction.json` for the same release. |
 
-The local fixture test exercises the audit and both handoffs with an isolated release fixture. Run it from `production/` with Pillow and FFmpeg installed.
+The local fixture test exercises the audit and both handoffs with an isolated release fixture. Run it from `production/` with Pillow, FFmpeg and the local PostgreSQL executables on `PATH`. The engagement test starts and removes its own PostgreSQL cluster.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_distribution_pilot.py -v

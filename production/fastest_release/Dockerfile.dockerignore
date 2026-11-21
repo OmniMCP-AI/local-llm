@@ -27,6 +27,10 @@
 !production/fastest_agent_task/task.json
 !production/fastest_agent_task/hosted.py
 !production/fastest_agent_task/measure.py
+!production/fastest_delivery/__init__.py
+!production/fastest_delivery/engagement_link.py
+!production/fastest_delivery/engagement_routes.py
+!production/fastest_delivery/engagement_store.py
 !production/fastest_cost/*.py
 !production/fastest_cost/illustrative.json
 !production/fastest_fit/__init__.py
