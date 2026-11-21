@@ -562,7 +562,7 @@ ${visuals.length ? `<div class="profile-specs">${visuals.map(({ title, fields, g
   `<section class="profile-section"><${heading}>${escapeHtml(title)}</${heading}>${graphic ? htmlSpecGraphic(graphic) : ""}${htmlFields(fields)}</section>`).join("")}</div>` : ""}
 ${position ? cardIllustration(card.title, position.capacityPoints.find(point => point.id === position.id)?.y) : ""}
 ${video ? `<figure class="profile-video">
-  <a href="${escapeHtml(video.source ?? card.source)}"><img loading="lazy" width="480" height="360"
+  <a href="${escapeHtml(video.source ?? card.source)}"><img width="480" height="360"
     referrerpolicy="no-referrer" src="${escapeHtml(videoThumbnail(video))}" alt="${escapeHtml(video.title)} thumbnail"></a>
   <figcaption><a href="${escapeHtml(video.source ?? card.source)}">${escapeHtml(video.title)} on YouTube</a> · ${escapeHtml(videoAttribution(video))}</figcaption>
   <details><summary>Watch source video</summary><iframe loading="lazy" title="${escapeHtml(video.title)}"
