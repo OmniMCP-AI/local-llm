@@ -11,6 +11,7 @@ from subprocess import TimeoutExpired
 from fastest_release import ReleaseError, ReleaseStore, _sql_text
 
 from .image_pilot import ingest_image_pilot
+from .serving_capture import ingest_serving_capture
 
 
 def table_counts(store):
@@ -21,7 +22,9 @@ def table_counts(store):
             'price_candidates', (SELECT count(*) FROM fastest_intake.price_candidate),
             'model_evaluations', (SELECT count(*) FROM fastest_intake.model_evaluation),
             'tariff_candidates', (SELECT count(*) FROM fastest_intake.tariff_candidate),
-            'inference_trials', (SELECT count(*) FROM fastest_intake.inference_trial)
+            'inference_trials', (SELECT count(*) FROM fastest_intake.inference_trial),
+            'serving_capture_runs', (SELECT count(*) FROM fastest_intake.serving_capture_run),
+            'serving_capture_attempts', (SELECT count(*) FROM fastest_intake.serving_capture_attempt)
         );
     """))
 
@@ -112,13 +115,14 @@ def ingest(store, bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("FASTEST_DATABASE_URL"))
-    parser.add_argument("command", choices=("migrate", "ingest", "ingest-image-pilot", "stats"))
-    parser.add_argument("source", type=Path, nargs="?", help="Capture bundle JSON or private image packet directory.")
+    imports = ("ingest", "ingest-image-pilot", "ingest-serving-capture")
+    parser.add_argument("command", choices=("migrate", *imports, "stats"))
+    parser.add_argument("source", type=Path, nargs="?", help="Capture bundle JSON or private packet directory.")
     args = parser.parse_args()
     if args.database_url is None:
         parser.error("Set FASTEST_DATABASE_URL or pass --database-url.")
-    if (args.command in ("ingest", "ingest-image-pilot")) != (args.source is not None):
-        parser.error("Supply a source path for ingest or ingest-image-pilot.")
+    if (args.command in imports) != (args.source is not None):
+        parser.error("Supply a source path only for an ingest command.")
     store = ReleaseStore(args.database_url)
     try:
         if args.command == "migrate":
@@ -127,6 +131,8 @@ def main():
             print(json.dumps(ingest(store, json.loads(args.source.read_text(encoding="utf-8")))))
         elif args.command == "ingest-image-pilot":
             print(json.dumps(ingest_image_pilot(store, args.source)))
+        elif args.command == "ingest-serving-capture":
+            print(json.dumps(ingest_serving_capture(store, args.source)))
         else:
             print(json.dumps(table_counts(store)))
     except (OSError, ReleaseError, TimeoutExpired, TypeError, ValueError) as error:

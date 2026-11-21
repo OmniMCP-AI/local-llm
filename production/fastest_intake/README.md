@@ -120,3 +120,32 @@ FROM fastest_intake.image_pilot_run AS run
 JOIN fastest_intake.image_pilot_attempt AS attempt USING (manifest_sha256)
 ORDER BY run.started_at, manifest_sha256, attempt.attempt_index;
 ```
+
+## Import a private four-user serving capture
+
+Run from `production` with `FASTEST_DATABASE_URL` set to the intake operator database.
+
+```sh
+python3 -B -m fastest_intake migrate
+python3 -B -m fastest_intake ingest-serving-capture /path/to/private-serving-run
+python3 -B -m fastest_intake stats
+```
+
+Pass the directory from [the serving collector](../fastest_serving/README.md#capture-the-pinned-workload). The importer reads `capture.json` and `trace.jsonl`, checks the pinned workload, and matches the timed request outcomes, latency, and output counts against the trace. The receipt identifies the exact input bytes with both SHA-256 digests. Replaying the same files preserves one run and one row per recorded slot. Reusing the same ledger with different trace bytes is rejected.
+
+Finalized partial, failed, and interrupted captures can be stored when their ledger and trace agree. A missed slot explicitly logged in the trace has outcome `unrecorded` and null response fields. Slots that were never reached have no attempt row. The receipt's `unrecorded` count covers both cases. Captures still marked starting, armed, or capturing need a finalized ledger before import.
+
+The receipt distinguishes `diagnostic` and `private-capture`. Every import is held for review, with separate-host provenance unverified and power missing. A non-loopback address alone cannot establish a dedicated second host. A meter-window announcement identifies the sampling window. Calibration, feed coverage, and actual samples are established through the separate [meter evidence workflow](../fastest_serving/README.md#retain-calibrated-ac-meter-evidence). Publication requires a [reviewed serving record](../fastest_serving/README.md#serve-a-reviewed-run).
+
+Keep the original packet and server provenance in private storage. PostgreSQL keeps protocol and capture status, file digests, window timing, and numeric workload slots with their outcomes, latencies, and output counts. Host identifiers, private paths, free-text notes and reasons, request payloads, and response content stay in the packet.
+
+```sql
+SELECT run.capture_sha256, run.kind, run.capture_status, run.power_status,
+       attempt.request_number, attempt.user_slot, attempt.outcome, attempt.started_ms,
+       attempt.elapsed_ms, attempt.observed_elapsed_ns, attempt.output_tokens
+FROM fastest_intake.serving_capture_run AS run
+LEFT JOIN fastest_intake.serving_capture_attempt AS attempt USING (capture_sha256)
+ORDER BY run.window_started_at, run.capture_sha256, attempt.request_number, attempt.user_slot;
+```
+
+`elapsed_ms` is the collector's original reported latency, capped at the client deadline for timeouts. `observed_elapsed_ns` is the monotonic difference recorded in the trace. The receipt counts accepted output tokens only for accepted requests. The private attempt table also preserves reported token counts from rejected responses.
