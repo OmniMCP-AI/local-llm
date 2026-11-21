@@ -15,6 +15,9 @@ COPY production/fastest_release/__init__.py production/fastest_release/__main__.
      production/fastest_release/healthcheck.py production/fastest_release/http.py \
      production/fastest_release/profiles.py production/fastest_release/research.py production/fastest_release/scaling.py \
      production/fastest_release/validation.py production/fastest_release/profile-interaction.js ./fastest_release/
+COPY production/fastest_agent_task/__init__.py production/fastest_agent_task/__main__.py \
+     production/fastest_agent_task/evidence.py production/fastest_agent_task/harness.py \
+     production/fastest_agent_task/publication.py production/fastest_agent_task/task.json ./fastest_agent_task/
 COPY production/fastest_cost/*.py production/fastest_cost/illustrative.json ./fastest_cost/
 COPY production/fastest_fit/__init__.py production/fastest_fit/page.py ./fastest_fit/
 COPY production/fastest_goals/*.py ./fastest_goals/

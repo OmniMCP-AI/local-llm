@@ -5,7 +5,7 @@ import subprocess
 import uuid
 
 from .artifacts import build_artifacts
-from .validation import InvalidObservation, plain_text, validate
+from .validation import InvalidObservation, plain_text, valid_expiry, validate
 
 
 CONTRIBUTOR_RECEIPT_PATH = "/contributors/receipt"
@@ -51,6 +51,34 @@ class ReleaseStore:
         validate(observation)
         payload = _sql_text(json.dumps(observation, ensure_ascii=False))
         return self._query(f"SELECT fastest_release.publish_observation({payload}::jsonb);")
+
+    def publish_agent_task(self, records, expires_at=None):
+        from fastest_agent_task.publication import report_artifacts
+
+        if not records:
+            raise InvalidObservation("Agent task publication requires at least one reviewed record")
+        if expires_at is not None and not valid_expiry(expires_at):
+            raise InvalidObservation("Agent task rights expiry requires a UTC timestamp at second precision")
+        files = report_artifacts(records)
+        dataset = json.loads(files["agent-task.json"])
+        identifiers = ",".join(
+            f"'{uuid.UUID(context['review']['evidence_id'])}'::uuid"
+            for context in dataset["contexts"] if context["review"]
+        )
+        payload = _sql_text(json.dumps(files, ensure_ascii=False))
+        expiry = "NULL" if expires_at is None else _sql_text(expires_at)
+        return self._query(
+            f"SELECT fastest_release.publish_agent_task({payload}::jsonb, "
+            f"ARRAY[{identifiers}], {expiry}::timestamptz);"
+        )
+
+    def read_agent_task_artifact(self, pin, artifact):
+        result = self._query(
+            f"SELECT fastest_release.read_agent_task_artifact({_sql_text(pin)}, {_sql_text(artifact)});"
+        )
+        if not result:
+            raise ReleaseNotFound(pin)
+        return json.loads(result)
 
     def read(self, release_id=None):
         requested = "NULL" if release_id in (None, "current") else f"'{uuid.UUID(release_id)}'::uuid"
