@@ -303,6 +303,7 @@ class ReleaseTest(unittest.TestCase):
                 fastest_release.read_evidence(uuid), fastest_prices.read_release(uuid) TO origin_reader;
         """)
         image_plan = json.loads((FIXTURE.parents[1] / "fastest_image" / "plan.json").read_text(encoding="utf-8"))
+        text_plan = json.loads((FIXTURE.parents[1] / "fastest_text" / "plan.json").read_text(encoding="utf-8"))
 
         def replay(origin, host):
             headers = {"Host": host} if host else {}
@@ -342,7 +343,16 @@ class ReleaseTest(unittest.TestCase):
             self.assertEqual(pilot["workflow"], image_plan["workflow"])
             workflow = get(report_base + image_plan["workflow"]["path"], decode=False)
             self.assertEqual(sha256(workflow.encode("utf-8")).hexdigest(), image_plan["workflow"]["sha256"])
-            return evidence, first, second, costs, pilot
+            with urlopen(Request(origin + "/text-pilot", headers=headers), timeout=5) as response:
+                report_path = response.geturl().removeprefix(origin)
+                self.assertRegex(report_path, r"^/text-pilot/[a-f0-9]{64}/text-pilot\.html$")
+                self.assertIn(b"Chinese task quality review", response.read())
+            text_base = report_path.removesuffix("text-pilot.html")
+            text = get(text_base + "text-pilot.json")
+            self.assertEqual(text["evidence_kind"], "planned")
+            self.assertEqual(text["artifact"], text_plan["artifact"])
+            self.assertEqual(text["runtime"], text_plan["runtime"])
+            return evidence, first, second, costs, pilot, text
 
         with self.deployed_origin() as (origin, host):
             initial = replay(origin, host)
