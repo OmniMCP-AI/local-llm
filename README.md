@@ -1,12 +1,14 @@
-# fastest.ai
+# localdecode.com
 
 Compare an existing local AI machine, a hardware upgrade and a cloud service for a specific workload. The repository contains the research, product specification and interactive review prototype.
 
-The site is also known as **localdecode.com**.
+The intended public site name is **localdecode.com**. The current review build still shows the earlier brand while the canonical name and alternate entry point are being prepared.
 
 ## Documentation
 
 - [Product specification and milestones](docs/product-spec.md) covers the first decision pilot, what the prototype demonstrates and the acceptance criteria for five milestones. [GitHub issue #1](https://github.com/OmniMCP-AI/local-llm/issues/1)
+- [Catalog, comparisons and market coverage](docs/catalog-and-market-coverage-spec.md) tracks all-card photography, daily used prices, event dates, runtime comparisons, build coverage and the public name. [GitHub issue #38](https://github.com/OmniMCP-AI/local-llm/issues/38)
+- [GPU photo source audit](docs/gpu-photo-source-audit.md) tracks existing photos, source leads and gaps by catalog identity.
 - [Database and publishing design](docs/database-publishing-design.md) defines the llmfit boundary, evidence and comparison rules, and DB → Markdown → HTML, chart and table publication.
 - [Twenty comparison methods](docs/youtube-comparison-methods.md) connects purchase, inference, evaluation and ownership questions to timestamped research and the milestones that can support them.
 - [Platform research](docs/Local-AI-Comparison-Platform/Local-AI-Comparison-Platform.md), [video research inventory and seed data](docs/Local-AI-Comparison-Platform/YouTube-Local-LLM-Transcripts/README.md), and [domain research](docs/AI-Hardware-Project-Domains/AI-Hardware-Project-Domains.md) are the source notes.

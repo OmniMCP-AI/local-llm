@@ -61,6 +61,8 @@ A fresh local checkout provides the repository data and a documented command tha
 
 ## Further Notes
 
+Use the [catalog and market coverage specification](catalog-and-market-coverage-spec.md#card-photography) and [per-card photo audit](gpu-photo-source-audit.md) for the all-card photography acceptance gate under issue #38. The issue also specifies chart zoom, Costs and Price Watch layout fixes, consistent current-card emphasis, and removal of the generic GPU schematic.
+
 Reuse the existing M1 work for data and directories, and M3 for recurring offers. [Relational import #3](https://github.com/OmniMCP-AI/local-llm/issues/3) · [GPU profiles #4](https://github.com/OmniMCP-AI/local-llm/issues/4) · [Model discovery #5](https://github.com/OmniMCP-AI/local-llm/issues/5) · [Price refresh #21](https://github.com/OmniMCP-AI/local-llm/issues/21)
 
 Use the discovery sources to check missing hardware, model families, tools and vocabulary. Keep each topic attached to its scope, such as a GPU identity, a runtime, a workload, or a measurement dimension. Trace technical values back to the manufacturer, model publisher or measurement source before admitting them to a release. [抡锤者 hardware](https://lcz.me/hardware) · [抡锤者 tags](https://lcz.me/tags) · [localrig](https://localrig.com/) · [The Local Bench](https://thelocalbench.com/) · [local-bench](https://local-bench.ai/)

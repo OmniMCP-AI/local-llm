@@ -22,7 +22,7 @@ Build out from that case. A source-linked catalog supports browsing even where m
 | Feedback, agents and languages | A local Pages test verifies a durable PostgreSQL feedback receipt. Local tests exercise the read-only evidence and cost interfaces, an MCP SDK client and 20 scripted advisor cases. Ten language choices, independent currency and country hints are available in the Pages build. | Verify live receipts, localized pricing and the public evidence API and MCP against the authorized production configuration. |
 | Distribution | An editorial rehearsal recorded a scheduled draft in PostgreSQL and prepared a text package for X and a vertical video for YouTube Shorts from the same released evidence. | Run the seven-day pilot with approved destinations and verified live receipts, corrections and engagement. |
 
-The site uses **fastest.ai** as its working name and **localdecode.com** as an alternate name. The domain study records the naming research. The decision criteria on the site include quality, latency, capacity, price and energy.
+The target public name is **localdecode.com**, with **fastest.ai** as an alternate entry point. The existing review build predates that naming change. The [catalog and market coverage specification](catalog-and-market-coverage-spec.md) records the rollout and related scope from issue #38. The decision criteria on the site include quality, latency, capacity, price and energy.
 
 ## Milestones and acceptance
 
