@@ -13,7 +13,7 @@ const machineSections = [
 
 function directoryTable(title, kind, rows, href, anchor) {
   return `<section class="profile-section"${anchor ? ` id="${anchor}"` : ""}><h2>${title} (${rows.length})</h2>
-<table class="profile-chart-table" aria-label="${title}">
+<table class="profile-chart-table profile-directory-table" aria-label="${title}">
 <thead><tr><th scope="col">Profile</th><th scope="col">Catalog detail</th></tr></thead>
 <tbody>${rows.map(row => `<tr><th scope="row"><a href="${href(kind, row.id)}">${escapeHtml(row.name)}</a><br>
 <code>${row.id}</code></th><td>${escapeHtml(row.detail)}</td></tr>`).join("\n")}</tbody></table>

@@ -64,5 +64,8 @@ export const profileStyles = `
 .profile-chart-table { width: 100%; margin-top: .65rem; text-align: start; border-collapse: collapse; font-size: .85rem; }
 .profile-chart-table :is(th,td) { text-align: start; padding: .45rem; border-bottom: 1px solid var(--profile-edge); }
 .profile-chart-table tr[aria-current] { background: #302016; }
+.profile-directory-table { table-layout: fixed; overflow-wrap: anywhere; }
+.profile-directory-table :is(th,td) { vertical-align: top; }
+.profile-directory-table code { color: var(--profile-muted); font-weight: 400; }
 @media (max-width: 520px) { .profile-shell { padding-inline: .9rem; } .profile-chart-grid { margin-inline: .5rem; } }
 `;
