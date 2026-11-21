@@ -10,6 +10,7 @@ from fastest_release.validation import keys, plain_text, valid_expiry
 MAX_SUBMISSION_BYTES = 16 * 1024
 PUBLIC_HOST = re.compile(r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*")
 WITHDRAWAL_REASONS = ("source_deleted", "permission_revoked")
+SUBMISSION_FIELDS = ("source_url", "original_url", "source_format", "published_at", "authority", "consent_reference", "scope")
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS discovery (
     source_url TEXT PRIMARY KEY NOT NULL,
@@ -77,7 +78,7 @@ def unique_fields(pairs):
     return fields
 
 
-def submit(database, body):
+def validate_submission(body):
     if len(body) > MAX_SUBMISSION_BYTES:
         raise ValueError("Submission exceeds the byte limit")
     submission = json.loads(body.decode("utf-8"), object_pairs_hook=unique_fields)
@@ -96,10 +97,15 @@ def submit(database, body):
     if consent["scope"] not in ("discovery_only", "public_source_link"):
         raise ValueError("Expected discovery_only or public_source_link consent")
 
-    recorded = (
+    return (
         source_url, original_url, submission["source_format"], submission["published_at"],
         consent["authority"], consent["reference"], consent["scope"],
     )
+
+
+def submit(database, body):
+    recorded = validate_submission(body)
+    source_url = recorded[0]
     with write(database) as db:
         db.execute(
             """INSERT INTO discovery
@@ -113,12 +119,16 @@ def submit(database, body):
         return {"source_url": source_url, "submitted_at": existing["submitted_at"]}
 
 
-def review(database, source_url, choice, reviewer, reason):
+def validate_review(source_url, choice, reviewer, reason):
     permalink(source_url)
     if choice not in ("approve", "withhold"):
         raise ValueError("Expected approve or withhold")
     if not plain_text(reviewer) or not plain_text(reason):
         raise ValueError("Review requires a reviewer and a single-line reason")
+
+
+def review(database, source_url, choice, reviewer, reason):
+    validate_review(source_url, choice, reviewer, reason)
     with write(database) as db:
         discovery = db.execute(ENTRIES + " WHERE d.source_url = ?", (source_url,)).fetchone()
         if discovery is None:
@@ -138,10 +148,14 @@ def review(database, source_url, choice, reviewer, reason):
         return dict(db.execute("SELECT * FROM review WHERE source_url = ?", (source_url,)).fetchone())
 
 
-def withdraw(database, source_url, reason):
+def validate_withdrawal(source_url, reason):
     permalink(source_url)
     if reason not in WITHDRAWAL_REASONS:
         raise ValueError("Expected source_deleted or permission_revoked")
+
+
+def withdraw(database, source_url, reason):
+    validate_withdrawal(source_url, reason)
     with write(database) as db:
         db.execute(
             "INSERT INTO withdrawal (source_url, reason) VALUES (?, ?) ON CONFLICT (source_url) DO NOTHING",
@@ -161,6 +175,29 @@ def report(database, *, public):
             db.execute("BEGIN")
             if db.execute("SELECT 1 FROM sqlite_schema WHERE name = 'discovery'").fetchone():
                 rows = db.execute(ENTRIES + " ORDER BY d.original_url, d.source_url").fetchall()
+    return format_report(rows, public=public)
+
+
+def read_history(database):
+    columns = {
+        "discovery": (*SUBMISSION_FIELDS, "submitted_at"),
+        "review": ("source_url", "choice", "reviewer", "reason", "reviewed_at"),
+        "withdrawal": ("source_url", "reason", "recorded_at"),
+    }
+    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as db, db:
+        db.row_factory = sqlite3.Row
+        db.execute("PRAGMA trusted_schema = OFF")
+        db.execute("BEGIN")
+        tables = {row["name"] for row in db.execute("SELECT name FROM sqlite_schema WHERE type = 'table'")}
+        if not columns.keys() <= tables:
+            raise ValueError("Expected an initialized SQLite discovery history")
+        return {
+            table: [dict(row) for row in db.execute(f"SELECT {', '.join(fields)} FROM main.{table}")]
+            for table, fields in columns.items()
+        }
+
+
+def format_report(rows, *, public):
     entries = []
     for row in rows:
         status, reason = outcome(row)

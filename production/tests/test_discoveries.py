@@ -1,9 +1,15 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 from pathlib import Path
+import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from uuid import uuid4
 
 
 PRODUCTION = Path(__file__).resolve().parents[1]
@@ -13,23 +19,40 @@ SOURCE_DATE = "2026-11-19T12:30:00Z"
 CROSS_POST = "https://video.example/watch/local-models-repost"
 DISCOVERY_ONLY = "https://social.example/posts/63"
 DELETED = "https://forum.example/topics/local-models/24"
+LOCAL_ENV = {key: value for key, value in os.environ.items() if not key.startswith("PG")}
 
 
-class DiscoveryTest(unittest.TestCase):
+class DiscoveryCases:
+    connection = None
+
     def setUp(self):
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="fastest-discoveries-22-")))
         self.database = self.directory / "discoveries.sqlite3"
 
-    def run_cli(self, *args, succeeds=True):
-        result = subprocess.run(
-            [sys.executable, "-B", "-m", "fastest_discoveries", "--db", self.database, *args],
-            cwd=PRODUCTION, capture_output=True, text=True, timeout=10,
+    def invoke_cli(self, *args, connection=None, legacy=False):
+        database_url = None if legacy else connection or self.connection
+        options = ["--db", self.database] if database_url is None else []
+        env = {**LOCAL_ENV}
+        if database_url is not None:
+            env["FASTEST_DISCOVERIES_DATABASE_URL"] = database_url
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_discoveries", *options, *args],
+            cwd=PRODUCTION, env=env, capture_output=True, text=True, timeout=15,
         )
+
+    def run_cli(self, *args, succeeds=True, **kwargs):
+        result = self.invoke_cli(*args, **kwargs)
         if succeeds:
             self.assertEqual(result.returncode, 0, result.stderr)
             return json.loads(result.stdout)
         self.assertNotEqual(result.returncode, 0)
         return result.stderr
+
+    def review(self, source, choice, **kwargs):
+        return self.run_cli(
+            "review", source, choice, "--reviewer", "fixture-editor",
+            "--reason", "Reviewed public permalink and opt-in.", **kwargs,
+        )
 
     def test_attributed_submission_is_private_until_approved(self):
         first = self.run_cli("submit", FIXTURES / "original.json")
@@ -49,12 +72,6 @@ class DiscoveryTest(unittest.TestCase):
             "status": "approved", "reason": "source_link_approved",
             "source_url": ORIGINAL, "published_at": SOURCE_DATE,
         }])
-
-    def review(self, source, choice, *, succeeds=True):
-        return self.run_cli(
-            "review", source, choice, "--reviewer", "fixture-editor",
-            "--reason", "Reviewed public permalink and opt-in.", succeeds=succeeds,
-        )
 
     def test_cross_post_points_to_original_and_never_publishes_twice(self):
         self.run_cli("submit", FIXTURES / "cross-post.json")
@@ -129,6 +146,238 @@ class DiscoveryTest(unittest.TestCase):
         draft.write_text(conflicting_scope, encoding="utf-8")
         self.assertIn("duplicate", self.run_cli("submit", draft, succeeds=False))
         self.assertEqual(self.run_cli("queue")["entries"], [])
+
+
+class DiscoveryTest(DiscoveryCases, unittest.TestCase):
+    pass
+
+
+@unittest.skipUnless(
+    all(shutil.which(tool) for tool in ("initdb", "postgres", "pg_isready", "createdb", "psql")),
+    "PostgreSQL command-line tools required",
+)
+class PostgresDiscoveryTest(DiscoveryCases, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        temporary = tempfile.TemporaryDirectory(prefix="fastest-discoveries-pg-", dir="/tmp")
+        cls.addClassCleanup(cls.assert_removed, temporary.name)
+        cls.socket = Path(cls.enterClassContext(temporary))
+        cluster = cls.socket / "db"
+        subprocess.run(
+            ["initdb", "-D", cluster, "--auth=trust", "--encoding=UTF8", "--no-locale"],
+            check=True, capture_output=True, timeout=30, env=LOCAL_ENV,
+        )
+        server_log = cls.socket / "postgres.log"
+        with server_log.open("w") as output:
+            postgres = subprocess.Popen(
+                ["postgres", "-D", cluster, "-k", cls.socket, "-c", "listen_addresses="],
+                stdout=output, stderr=subprocess.STDOUT, env=LOCAL_ENV,
+            )
+        cls.addClassCleanup(cls.stop_postgres, postgres)
+        cls.maintenance = f"host={cls.socket} dbname=postgres"
+        for _ in range(100):
+            ready = subprocess.run(
+                ["pg_isready", "-d", cls.maintenance], capture_output=True, timeout=3, env=LOCAL_ENV,
+            )
+            if ready.returncode == 0:
+                return
+            if postgres.poll() is not None:
+                raise RuntimeError(server_log.read_text(encoding="utf-8"))
+            time.sleep(0.05)
+        raise RuntimeError("Discovery test PostgreSQL did not start")
+
+    @staticmethod
+    def stop_postgres(postgres):
+        if postgres.poll() is None:
+            postgres.send_signal(signal.SIGINT)
+            try:
+                postgres.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                postgres.send_signal(signal.SIGQUIT)
+                postgres.wait(timeout=10)
+        assert postgres.returncode is not None
+
+    @staticmethod
+    def assert_removed(path):
+        assert not Path(path).exists()
+
+    def setUp(self):
+        super().setUp()
+        database_name = f"discoveries_{uuid4().hex}"
+        subprocess.run(
+            ["createdb", "--maintenance-db", self.maintenance, database_name],
+            check=True, capture_output=True, timeout=15, env=LOCAL_ENV,
+        )
+        self.connection = f"host={self.socket} dbname={database_name}"
+        self.run_cli("migrate")
+
+    def test_postgres_public_export_after_later_cross_post_and_withdrawal(self):
+        receipt = self.run_cli("submit", FIXTURES / "original.json")
+        self.assertEqual(self.run_cli("submit", FIXTURES / "original.json"), receipt)
+        self.assertEqual(self.run_cli("public")["entries"], [])
+        self.review(ORIGINAL, "approve")
+        self.run_cli("submit", FIXTURES / "cross-post.json")
+        self.run_cli("submit", FIXTURES / "discovery-only.json")
+        self.run_cli("withdraw", DELETED, "--reason", "source_deleted")
+        self.run_cli("submit", FIXTURES / "deleted.json")
+        self.assertEqual(self.run_cli("public"), {
+            "schema": "fastest.ai/discovery-public/v1",
+            "entries": [
+                {"status": "approved", "reason": "source_link_approved", "source_url": ORIGINAL,
+                 "published_at": SOURCE_DATE},
+                {"status": "withheld", "reason": "cross_post"},
+                {"status": "withheld", "reason": "source_deleted"},
+                {"status": "withheld", "reason": "discovery_only"},
+            ],
+        })
+        self.assertEqual(
+            self.run_cli("queue")["entries"][0]["consent"]["reference"], "fixture-original-grant",
+        )
+        catalog_stats = PRODUCTION.parent / "opendesign" / "mockups" / "llm-observatory" / "catalog-stats.sql"
+        counts = subprocess.run(
+            ["psql", "-XqAtw", "-d", self.connection, "-f", catalog_stats],
+            check=True, capture_output=True, text=True, timeout=10, env=LOCAL_ENV,
+        ).stdout.splitlines()
+        self.assertIn("fastest_discoveries.discovery|4", counts)
+        self.assertIn("fastest_discoveries.review|1", counts)
+        self.assertIn("fastest_discoveries.withdrawal|1", counts)
+
+    def test_import_keeps_original_history_and_pre_arrival_tombstones(self):
+        self.run_cli("submit", FIXTURES / "original.json", legacy=True)
+        self.review(ORIGINAL, "approve", legacy=True)
+        self.run_cli("submit", FIXTURES / "cross-post.json", legacy=True)
+        self.run_cli("submit", FIXTURES / "discovery-only.json", legacy=True)
+        self.review(DISCOVERY_ONLY, "withhold", legacy=True)
+        self.run_cli("withdraw", ORIGINAL, "--reason", "permission_revoked", legacy=True)
+        tombstone = self.run_cli("withdraw", DELETED, "--reason", "source_deleted", legacy=True)
+        previous_queue = self.run_cli("queue", legacy=True)
+        previous_public = self.run_cli("public", legacy=True)
+        source_contents = self.database.read_bytes()
+
+        imported = self.run_cli("import-sqlite", self.database)
+        self.assertEqual(imported, {"discoveries": 3, "reviews": 2, "withdrawals": 2})
+        self.assertEqual(self.run_cli("import-sqlite", self.database), imported)
+        self.assertEqual(self.run_cli("queue"), previous_queue)
+        self.assertEqual(self.run_cli("public"), previous_public)
+        self.assertEqual(self.database.read_bytes(), source_contents)
+        self.assertEqual(self.run_cli("withdraw", DELETED, "--reason", "source_deleted"), tombstone)
+        self.run_cli("submit", FIXTURES / "deleted.json")
+        self.assertIn("source_deleted", self.review(DELETED, "approve", succeeds=False))
+
+    def test_import_conflict_rolls_back_all_history(self):
+        self.run_cli("submit", FIXTURES / "original.json", legacy=True)
+        self.run_cli("withdraw", ORIGINAL, "--reason", "permission_revoked", legacy=True)
+        self.run_cli("withdraw", DELETED, "--reason", "source_deleted", legacy=True)
+        self.run_cli("withdraw", ORIGINAL, "--reason", "source_deleted")
+        error = self.run_cli("import-sqlite", self.database, succeeds=False)
+        self.assertIn("Conflicting legacy history", error)
+        self.assertEqual(self.run_cli("queue")["entries"], [])
+        self.run_cli("submit", FIXTURES / "deleted.json")
+        self.review(DELETED, "approve")
+        self.run_cli("submit", FIXTURES / "original.json")
+        self.assertEqual(self.run_cli("queue")["entries"][0]["withdrawal"]["reason"], "source_deleted")
+
+    def test_concurrent_duplicate_and_withdrawal_preserve_one_receipt(self):
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            receipts = list(pool.map(lambda _: self.run_cli("submit", FIXTURES / "original.json"), range(4)))
+            self.assertTrue(all(receipt == receipts[0] for receipt in receipts))
+
+            review = pool.submit(
+                self.invoke_cli, "review", ORIGINAL, "approve", "--reviewer", "fixture-editor",
+                "--reason", "Reviewed public permalink and opt-in.",
+            )
+            withdrawals = list(pool.map(
+                lambda _: self.run_cli("withdraw", ORIGINAL, "--reason", "permission_revoked"), range(2),
+            ))
+            self.assertEqual(withdrawals[0], withdrawals[1])
+            attempted_review = review.result()
+
+        queued, = self.run_cli("queue")["entries"]
+        if attempted_review.returncode == 0:
+            self.assertEqual(self.review(ORIGINAL, "approve"), json.loads(attempted_review.stdout))
+            self.assertEqual(queued["review"]["choice"], "approve")
+        else:
+            self.assertIn("Publication is withheld: permission_revoked", attempted_review.stderr)
+            self.assertIsNone(queued["review"])
+
+        self.assertIn("already recorded", self.run_cli("withdraw", ORIGINAL, "--reason", "source_deleted", succeeds=False))
+        self.assertEqual(self.run_cli("public")["entries"], [{"status": "withheld", "reason": "permission_revoked"}])
+
+    def test_editor_and_public_reader_use_only_their_granted_operations(self):
+        suffix = uuid4().hex
+        editor, reader = (f"discovery_{role}_{suffix}" for role in ("editor", "reader"))
+        grants = f"""
+            CREATE ROLE {editor} LOGIN;
+            CREATE ROLE {reader} LOGIN;
+            GRANT USAGE ON SCHEMA fastest_discoveries TO {editor}, {reader};
+            GRANT EXECUTE ON FUNCTION fastest_discoveries.submit(jsonb),
+                fastest_discoveries.review(text, text, text, text),
+                fastest_discoveries.withdraw(text, text),
+                fastest_discoveries.queue_entries() TO {editor};
+            GRANT EXECUTE ON FUNCTION fastest_discoveries.public_report() TO {editor}, {reader};
+            ALTER ROLE {reader} SET default_transaction_read_only = on;
+        """
+        psql = ["psql", "-XqAtw", "-v", "ON_ERROR_STOP=1", "-d"]
+        subprocess.run(
+            [*psql, self.connection], input=grants, check=True, capture_output=True,
+            text=True, timeout=10, env=LOCAL_ENV,
+        )
+        editor_url = f"{self.connection} user={editor}"
+        reader_url = f"{self.connection} user={reader}"
+
+        self.run_cli("submit", FIXTURES / "original.json", connection=editor_url)
+        self.review(ORIGINAL, "approve", connection=editor_url)
+        self.assertEqual(self.run_cli("queue", connection=editor_url)["entries"][0]["consent"]["reference"],
+                         "fixture-original-grant")
+        self.assertEqual(self.run_cli("public", connection=reader_url)["entries"], [{
+            "status": "approved", "reason": "source_link_approved",
+            "source_url": ORIGINAL, "published_at": SOURCE_DATE,
+        }])
+        self.run_cli("queue", connection=reader_url, succeeds=False)
+        self.run_cli("submit", FIXTURES / "deleted.json", connection=reader_url, succeeds=False)
+        private_read = subprocess.run(
+            [*psql, reader_url], input="SELECT consent_reference FROM fastest_discoveries.discovery;",
+            capture_output=True, text=True, timeout=10, env=LOCAL_ENV,
+        )
+        self.assertNotEqual(private_read.returncode, 0)
+        self.assertIn("permission denied", private_read.stderr)
+        operator_access = subprocess.run(
+            [*psql, reader_url], input="""
+                SELECT has_function_privilege('fastest_discoveries.submit(jsonb)', 'EXECUTE')
+                    OR has_function_privilege('fastest_discoveries.review(text,text,text,text)', 'EXECUTE')
+                    OR has_function_privilege('fastest_discoveries.withdraw(text,text)', 'EXECUTE')
+                    OR has_function_privilege('fastest_discoveries.queue_entries()', 'EXECUTE')
+                    OR has_function_privilege('fastest_discoveries.import_history(jsonb)', 'EXECUTE');
+            """, check=True, capture_output=True, text=True, timeout=10, env=LOCAL_ENV,
+        )
+        self.assertEqual(operator_access.stdout.strip(), "f")
+
+        for unsafe_url in (
+            "http://forum.example/posts/unsafe",
+            "https://editor@forum.example/posts/unsafe",
+            "https://forum.example/posts/unsafe?token=fixture-secret",
+            "https://forum.example/posts/unsafe#access_token=fixture-secret",
+        ):
+            with self.subTest(unsafe_url=unsafe_url):
+                unsafe = json.dumps({
+                    "source_url": unsafe_url, "original_url": unsafe_url, "source_format": "forum",
+                    "authority": "rights_holder", "consent_reference": "fixture-grant", "scope": "public_source_link",
+                })
+                direct_submission = subprocess.run(
+                    [*psql, editor_url], input=f"SELECT fastest_discoveries.submit('{unsafe}'::jsonb);",
+                    capture_output=True, text=True, timeout=10, env=LOCAL_ENV,
+                )
+                self.assertNotEqual(direct_submission.returncode, 0)
+                self.assertIn("check constraint", direct_submission.stderr)
+
+        video = "https://www.youtube.com/watch?v=qW2E2ay47dw#comments"
+        submission = json.loads((FIXTURES / "original.json").read_text(encoding="utf-8"))
+        submission.update(source_url=video, original_url=video, source_format="video")
+        path = self.directory / "video.json"
+        path.write_text(json.dumps(submission), encoding="utf-8")
+        self.run_cli("submit", path, connection=editor_url)
+        self.review(video, "approve", connection=editor_url)
+        self.assertEqual(self.run_cli("public", connection=reader_url)["entries"][-1]["source_url"], video)
 
 
 if __name__ == "__main__":
