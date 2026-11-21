@@ -16,18 +16,36 @@ The resulting `text-pilot.md`, `text-pilot.html`, and typed `text-pilot.json` de
 
 Download the shards from the [pinned Qwen revision](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/tree/bb5d59e06d9551d752d08b292a50eb208b07ab1f) and verify both exact byte lengths and SHA-256 values. The published bundle includes model identity and source metadata. Read Qwen's artifact license and notices before distributing any weights.
 
-Use a quiet host and an explicit single visible CUDA device for the RTX 4090. Check the logs for the actual backend, GPU SKU, active device and offload. Run these phases sequentially and keep the raw JSONL, stderr, exit status, command and environment details. Run from a directory dedicated to the private run records. Set `model` to the first verified shard and `bench` to the verified executable.
+On an authorized, otherwise idle machine, place the two local shards in one directory. Prepare a private build evidence file with the clean checkout or official release asset provenance, build flags, linked-library paths and checksums, machine configuration, and OS/driver details. Use a stable operator-assigned host revision for the physical configuration. Start from the `production` directory.
+
+Apple M4 with Metal
 
 ```sh
-"$bench" -m "$model" -p 1024 -n 0 -b 1024 -ub 512 -t 8 -ngl 99 -ctk f16 -ctv f16 \
-  -nkvo 0 -fa 0 -mmp 1 -sm layer -mg 0 -r 20 --progress -v -o jsonl \
-  > prefill.jsonl 2> prefill.stderr
-"$bench" -m "$model" -p 0 -n 128 -b 1024 -ub 512 -t 8 -ngl 99 -ctk f16 -ctv f16 \
-  -nkvo 0 -fa 0 -mmp 1 -sm layer -mg 0 -r 20 --progress -v -o jsonl \
-  > decode.jsonl 2> decode.stderr
+python3 -B -m fastest_text capture /path/to/private/m4-run-01 \
+  --cell apple-m4 --bench /path/to/b5163/llama-bench \
+  --model-dir /path/to/shards --host-revision m4-host-1 \
+  --build-evidence /path/to/private/m4-build.txt --quiet-host
 ```
 
-The runner warms each phase once and clears KV before every timed repetition. Decode starts with empty KV. Context capacity is requested as the total token count for each phase, subject to runtime allocation padding. Token lengths and the sampling method match across hosts. The runtime generates token IDs with platform-specific RNG. Timing starts after model load and KV clear, covers the selected synchronized phase and ends before unloading. Prefill and decode use separate microbenchmarks, so latency fields carry an explicit missing status. A future request-timing probe would need its own protocol and recorded client boundary. [Pinned runner implementation](https://github.com/ggml-org/llama.cpp/blob/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/llama-bench/llama-bench.cpp)
+GeForce RTX 4090 with CUDA
+
+```sh
+CUDA_VISIBLE_DEVICES=GPU-00000000-1111-2222-3333-444444444444 \
+  python3 -B -m fastest_text capture /path/to/private/rtx4090-run-01 \
+    --cell rtx-4090 --bench /path/to/b5163/llama-bench \
+    --model-dir /path/to/shards --host-revision rtx4090-host-1 \
+    --build-evidence /path/to/private/cuda-build.txt --quiet-host
+```
+
+Replace the example CUDA UUID with the allocated card's UUID from `nvidia-smi -L`. A single allocated device ordinal also works. The tool preserves the chosen mask. The `--quiet-host` flag records the operator's attestation. Run two commands at different times if they share a host or other resources.
+
+The capture records the executable SHA-256 and checks its b5163 build footer with a zero-work probe. It checks both shard sizes and streams their SHA-256 digests before either benchmark phase. It then runs 20 warm prefill repetitions and 20 warm decode repetitions in that order, with a 900-second deadline per phase by default. Review the copied build evidence alongside the runner's self-reported build commit. Both benchmark rows must match the verified build and pinned settings.
+
+The runner warms each phase once and clears KV before every timed repetition. Decode starts with empty KV. Context capacity is requested as the total token count for each phase, subject to runtime allocation padding. Token lengths and the sampling method match across hosts. The runtime generates token IDs with platform-specific RNG. Timing starts after model load and KV clear, covers the selected synchronized phase and ends before unloading. Both latency fields retain an explicit missing status with zero samples. A request-timing probe would need its own protocol and client boundary. [Pinned runner implementation](https://github.com/ggml-org/llama.cpp/blob/84a9bf2fc2875205f0806fbbfbb66dc67204094c/examples/llama-bench/llama-bench.cpp)
+
+Inspect `capture.json` for the verified build and artifact, phase outcomes and actual sample counts. The private phase folders hold the command, exit status, raw JSONL and stderr hashes, logged accelerator model and buffer placement, progress ordinals, and eligible timings. Metal and CUDA require one matching device, positive model and KV allocations on that device, full layer offload and the expected context. Host model buffers can still appear alongside accelerator buffers. If progress survives a timeout or early exit, the ledger records the repetitions that had started. Only verified durations count as samples. An attributable runtime error remains tied to its repetition, even if the runner emits a duration for it.
+
+An incomplete capture returns a nonzero status and keeps its evidence. Correct the blocker and use a new output directory for a retry. Keep the capture directory and build evidence private until reviewing the fields intended for release.
 
 ## Review and ingest runner evidence
 
@@ -38,6 +56,16 @@ Use the [synthetic fixture](../fixtures/synthetic-text-pilot.json) as the JSON s
 The Chinese product-copy prompt and rubric are original. Capture one completion per run from the same verified GGUF and llama.cpp revision under the pinned settings in the plan. Save the prompt, exact output, request options, runtime flags, source and output checksum in the private evaluation ledger. Present each output to independent reviewers under an opaque ID before disclosing the machine. Submit each rubric rating with that output ID, its SHA-256, a pseudonymous reviewer ID and a cleared note. A repeated completion can have its own output ID even when its text matches a previous run. The report counts reviewed outputs, individual ratings, disagreements and outputs that pass every criterion for every reviewer.
 
 For the quality run, start the pinned `llama-server` on loopback or an owned Unix socket with `--jinja --parallel 1`. Keep the model's embedded chat template. Send one user message to `/v1/chat/completions` with `temperature: 0` and `max_tokens: 256`. Retain the request and response, the resolved prompt from `/apply-template`, and the SHA-256 of the UTF-8 bytes of `choices[0].message.content` as returned, without a trailing newline added by the capture tool. Stop the server after capturing the response.
+
+Prepare the independent review from one retained response file per completion. Pass both machines' responses together when available.
+
+```sh
+python3 -B -m fastest_text review-packet /path/to/private/quality-review-01 \
+  --response /path/to/private/m4-response.json \
+  --response /path/to/private/rtx4090-response.json
+```
+
+Give reviewers a copy of `review-packet.json`. It contains the original prompt, the criteria and randomly ordered responses with opaque IDs, exact text hashes and blank rating forms. Keep `private-map.json` with the operator's raw evaluation evidence. After independent reviewers return their ratings, use that map to join them to the correct machine.
 
 Use a public release allow decision covering every field in the submitted record, including the operational notes, source locator, raw durations and pseudonymous reviews. Use public-safe locators and phrasing. Raw logs may include usernames, paths, identifiers or private remarks. Keep them in their original private location when the rights decision does not cover those details.
 

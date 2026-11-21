@@ -3,10 +3,13 @@ from html import escape
 import json
 from pathlib import Path
 import re
+import sys
 
 from fastest_pilot_bundle import digest, json_text, write_bundle
 
+from .capture import capture
 from .intake import apply_record
+from .review import write_review_packet
 
 
 PLAN_PATH = Path(__file__).with_name("plan.json")
@@ -219,21 +222,52 @@ def build(target, records, demo):
     write_bundle(target, dataset["id"], text_artifacts(dataset))
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Build the two-machine text pilot.")
     commands = parser.add_subparsers(dest="command", required=True)
     publish = commands.add_parser("build", help="Write a new public report directory.")
     publish.add_argument("output", type=Path)
     publish.add_argument("--record", type=Path, action="append", default=[], help="Include a reviewed runner JSON record.")
     publish.add_argument("--demo", action="store_true", help="Require synthetic records and label their public output.")
-    args = parser.parse_args()
-    if args.demo and not args.record:
-        parser.error("--demo requires at least one --record")
+    collect = commands.add_parser("capture", help="Run both pinned phases and retain private evidence.")
+    collect.add_argument("output", type=Path, help="New operator-private evidence directory.")
+    collect.add_argument("--cell", choices=("apple-m4", "rtx-4090"), required=True)
+    collect.add_argument("--bench", type=Path, required=True, help="Pinned b5163 llama-bench executable.")
+    collect.add_argument("--model-dir", type=Path, required=True, help="Directory containing both pinned shards.")
+    collect.add_argument("--build-evidence", type=Path, required=True, help="Local build and linked-library provenance file.")
+    collect.add_argument("--host-revision", required=True, help="Operator's stable physical host/configuration identifier.")
+    collect.add_argument("--quiet-host", action="store_true", required=True, help="Attest to an otherwise idle host.")
+    collect.add_argument("--timeout", type=int, default=900, help="Maximum seconds per phase.")
+    review = commands.add_parser("review-packet", help="Prepare retained Chinese completions for blinded review.")
+    review.add_argument("output", type=Path, help="New directory for the review packet and private source map.")
+    review.add_argument("--response", type=Path, action="append", required=True, help="Retained chat completion JSON.")
+    args = parser.parse_args(argv)
     try:
+        if args.command == "capture":
+            plan = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
+            latency = {
+                key: missing(label, "ms", boundary, "The fixed-token runner does not instrument client latency.")
+                for key, (label, boundary) in LATENCY_METRICS.items()
+            }
+            if capture(args, plan, latency):
+                return 0
+            print(f"Capture incomplete. Private evidence retained in {args.output}.", file=sys.stderr)
+            return 1
+        if args.command == "review-packet":
+            rubric = json.loads(PLAN_PATH.read_text(encoding="utf-8"))["rubric"]
+            write_review_packet(args.output, args.response, rubric)
+            return 0
+        if args.demo and not args.record:
+            parser.error("--demo requires at least one --record")
         build(args.output, args.record, args.demo)
     except (OSError, ValueError) as error:
-        parser.exit(1, f"{error}\n")
+        print(error, file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print(f"Capture interrupted. Check private evidence in {args.output}.", file=sys.stderr)
+        return 130
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
