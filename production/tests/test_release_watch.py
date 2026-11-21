@@ -26,6 +26,11 @@ PRODUCTION = Path(__file__).resolve().parents[1]
 REPOSITORY = "ggml-org/llama.cpp"
 DAY_ONE = "2026-11-20T01:00:00Z"
 DAY_TWO = "2026-11-21T01:00:00Z"
+EXPANDED_FEEDS = {
+    "mlx-lm": ("MLX LM", "ml-explore/mlx-lm", "v0.32.2"),
+    "openvino": ("OpenVINO GenAI", "openvinotoolkit/openvino.genai", "2026.4.1.0"),
+    "aiter": ("AMD AITER", "ROCm/aiter", "v0.1.29.post1"),
+}
 
 
 def github_release(release_id, tag, published_at, *, body="Original notes", prerelease=False,
@@ -100,12 +105,60 @@ class ReleaseWatchScenarios:
             ],
         )
 
+    def test_expanded_feeds_keep_existing_history_and_their_own_release_status(self):
+        self.prepare_history()
+        for runtime_id, repository in (
+            ("llama.cpp", REPOSITORY), ("sglang", "sgl-project/sglang"),
+            ("vllm", "vllm-project/vllm"), ("ollama", "ollama/ollama"),
+        ):
+            self.refresh([github_release(100, "fixture-v1", DAY_ONE, repository=repository)],
+                         DAY_ONE, "--source", runtime_id)
+        before = self.report()
+        self.prepare_history()
+        for runtime_id, (_, repository, tag) in EXPANDED_FEEDS.items():
+            release = github_release(100, tag, DAY_ONE, repository=repository)
+            self.refresh([release], DAY_ONE, "--source", runtime_id)
+            self.refresh([release], DAY_ONE, "--source", runtime_id)
+        preview = github_release(101, "preview", DAY_TWO, prerelease=True, repository="ROCm/aiter")
+        self.refresh([preview], DAY_TWO, "--source", "aiter")
+        other_project = github_release(101, "fixture-v2", DAY_TWO, repository="alibaba/MNN")
+        self.refresh([other_project], DAY_TWO, "--source", "openvino", success=False)
+
+        report = self.report("2026-11-21T01:00:01Z")
+        for runtime_id, (name, repository, tag) in EXPANDED_FEEDS.items():
+            with self.subTest(runtime=runtime_id):
+                source = report["sources"][runtime_id]
+                self.assertEqual(source["name"], name)
+                self.assertEqual(source["feed_url"], f"https://api.github.com/repos/{repository}/releases?per_page=10&page=1")
+                expected_refresh = DAY_TWO if runtime_id == "aiter" else DAY_ONE
+                self.assertEqual(source["last_successful_refresh"], expected_refresh)
+                self.assertEqual(source["stale"], runtime_id != "aiter")
+                expected = [(tag, "current", f"https://github.com/{repository}/releases/tag/{tag}", [])]
+                if runtime_id == "aiter":
+                    expected.insert(0, ("preview", "prerelease", "https://github.com/ROCm/aiter/releases/tag/preview", []))
+                self.assertEqual(
+                    [(row["tag"], row["status"], row["source_url"], row["applicability"])
+                     for row in report["releases"] if row["runtime_id"] == runtime_id],
+                    expected,
+                )
+        self.assertEqual(report["sources"]["openvino"]["last_attempt"], DAY_TWO)
+        self.assertIn("official OpenVINO GenAI", report["sources"]["openvino"]["last_error"])
+        for runtime_id in ("llama.cpp", "sglang", "vllm", "ollama"):
+            self.assertEqual(
+                report["sources"][runtime_id],
+                {**before["sources"][runtime_id], "stale": True},
+            )
+        self.assertEqual([row for row in report["releases"] if row["runtime_id"] not in EXPANDED_FEEDS],
+                         before["releases"])
+        self.assertEqual(report["last_successful_refresh"], before["last_successful_refresh"])
+
     def test_html_report_has_exact_target_for_each_runtime(self):
         self.prepare_history()
         rendered = self.invoke("report", "--as-of", DAY_TWO, "--format", "html")
         self.assertEqual(rendered.returncode, 0, rendered.stderr)
         for identifier, title in (
             ("llama.cpp", "llama.cpp"), ("sglang", "SGLang"), ("vllm", "vLLM"), ("ollama", "Ollama"),
+            *((runtime_id, name) for runtime_id, (name, _, _) in EXPANDED_FEEDS.items()),
         ):
             self.assertIn(f'<h2 id="runtime-{identifier}">{title}</h2>', rendered.stdout)
 
@@ -272,6 +325,7 @@ class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
             "sgl-project/sglang": "v0.5.23",
             "vllm-project/vllm": None,
             "ollama/ollama": "v0.40.17",
+            **{repository: tag for _, repository, tag in EXPANDED_FEEDS.values()},
         }
 
         def response(_, path, **kwargs):
@@ -292,7 +346,8 @@ class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         self.assertIn("vllm: GitHub release feed returned HTTP 429", stderr.getvalue())
 
         report = self.report()
-        self.assertCountEqual([r["runtime_id"] for r in report["releases"]], ["llama.cpp", "sglang", "ollama"])
+        self.assertCountEqual([r["runtime_id"] for r in report["releases"]],
+                              ["llama.cpp", "sglang", "ollama", *EXPANDED_FEEDS])
         self.assertIsNone(report["sources"]["vllm"]["last_successful_refresh"])
         self.assertIn("HTTP 429", report["sources"]["vllm"]["last_error"])
         self.assertIsNotNone(report["sources"]["ollama"]["last_successful_refresh"])
@@ -631,7 +686,7 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(result.stdout)
         sources = report.pop("sources")
-        self.assertEqual(set(sources), {"llama.cpp", "sglang", "vllm", "ollama"})
+        self.assertEqual(set(sources), {"llama.cpp", "sglang", "vllm", "ollama", *EXPANDED_FEEDS})
         self.assertTrue(all(source["stale"] and source["mode"] is None for source in sources.values()))
         self.assertEqual(report, {
             "schema": "fastest.ai/runtime-release-watch/v1",
@@ -701,13 +756,27 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
         watch.record("live", last_success, decode(json.dumps([vllm_release]).encode(), runtime_id="vllm"),
                      runtime_id="vllm")
         watch.record("live", "2001-01-03T01:00:00Z", error="GitHub release feed timed out")
+        for runtime_id, (_, repository, tag) in EXPANDED_FEEDS.items():
+            row = github_release(100, tag, last_success, repository=repository)
+            releases = decode(json.dumps([row]).encode(), runtime_id=runtime_id)
+            watch.record("live", last_success, releases, runtime_id=runtime_id)
+        subprocess.run(
+            ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", self.database_url],
+            input="""
+                CREATE ROLE watch_reader LOGIN;
+                GRANT USAGE ON SCHEMA fastest_release_watch TO watch_reader;
+                GRANT SELECT ON fastest_release_watch.source_status,
+                    fastest_release_watch.release_revision TO watch_reader;
+            """,
+            check=True, capture_output=True, text=True, timeout=15,
+        )
         store = ReleaseStore(self.database_url)
 
         with api_client(store) as request:
             self.assertNotIn('/runtime-releases', request("/", decode=False)[2])
             self.assertEqual(request("/runtime-releases", decode=False)[0], 404)
 
-        reader_watch = PostgresStore(self.database_url + " options='-c default_transaction_read_only=on'")
+        reader_watch = PostgresStore(self.database_url + " user=watch_reader options='-c default_transaction_read_only=on'")
         with patch("http.client.HTTPSConnection", side_effect=AssertionError("GET must use retained data")), \
                 api_client(store, runtime_watch=reader_watch) as request:
             index = request("/", decode=False)[2]
@@ -722,6 +791,8 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
             self.assertEqual(report["last_error"], "GitHub release feed timed out")
             self.assertEqual(report["sources"]["vllm"]["last_successful_refresh"], last_success)
             self.assertIsNone(report["sources"]["vllm"]["last_error"])
+            for runtime_id in EXPANDED_FEEDS:
+                self.assertEqual(report["sources"][runtime_id]["last_successful_refresh"], last_success)
             self.assertEqual([release["status"] for release in report["releases"] if release["runtime_id"] == "llama.cpp"],
                              ["prerelease", "current", "superseded_revision"])
             for path, content_type in [("/runtime-releases", "text/html"),
@@ -737,6 +808,9 @@ class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
                     self.assertIn("Superseded revision", body)
                     self.assertIn("vLLM", body)
                     self.assertIn("https://github.com/vllm-project/vllm/releases/tag/test-vllm", body)
+                    for name, repository, tag in EXPANDED_FEEDS.values():
+                        self.assertIn(name, body)
+                        self.assertIn(f"https://github.com/{repository}/releases/tag/{tag}", body)
             self.assertIn('href="/runtime-releases.json"', index)
             self.assertEqual(request("/runtime-releases", "HEAD", decode=False)[2], "")
 

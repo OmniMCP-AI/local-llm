@@ -152,8 +152,9 @@ Machine pages can use a topology widget to show installed devices, physical and 
 
 ## Runtime release watch
 
-A separate refresh reads the official llama.cpp, SGLang, vLLM and Ollama feeds
-and records deduplicated revisions and refresh health in the PostgreSQL
+A separate refresh reads the official llama.cpp, SGLang, vLLM, Ollama,
+MLX LM, OpenVINO GenAI and AMD AITER feeds. It records deduplicated revisions
+and refresh health in the PostgreSQL
 `fastest_release_watch` schema.
 The opt-in release origin reads that retained history for `/runtime-releases`,
 `/runtime-releases.md` and `/runtime-releases.json`. The CLI and origin share the

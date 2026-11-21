@@ -1,16 +1,16 @@
 # Runtime release watch
 
-Refresh official GitHub release pages for llama.cpp, SGLang, vLLM and Ollama
-into PostgreSQL. The watch shows the last successful refresh of each feed,
-upstream edits, superseded releases and reviewed notes for exact card
-configurations.
+Refresh official GitHub release pages for llama.cpp, SGLang, vLLM, Ollama,
+MLX LM, OpenVINO GenAI and AMD AITER into PostgreSQL. The watch shows each
+feed’s last successful refresh, upstream edits, superseded releases and
+reviewed notes for exact card configurations.
 
 ## Run a fixture replay
 
 Run from `production/` with Python 3.11 or later. The supplied fixture contains
 synthetic releases and a sample suggested technique. The explicit `--db PATH`
-option also opens existing SQLite histories. Choose a different fixture's
-feed with `--source sglang`, `--source vllm` or `--source ollama`.
+option also opens existing SQLite histories. Use `--source` with the runtime ID
+that matches the fixture's repository.
 
 ```sh
 python3 -B -m fastest_release_watch --db watch-demo.sqlite3 refresh \
@@ -42,14 +42,16 @@ preserves existing runtime release history. Reports can use the same
 [read-only grants as the release origin](#serve-the-watch). Use separate
 databases for PostgreSQL fixture replays and live refreshes.
 
-Choose a single feed with `--source llama.cpp`, `--source sglang`,
-`--source vllm` or `--source ollama`. The original `refresh` command without
-`--source` refreshes llama.cpp. The adapter uses these exact endpoints.
+Choose a single feed with `--source` followed by one of these runtime IDs.
+The `refresh` command defaults to llama.cpp. The adapter uses these exact endpoints.
 
-- [llama.cpp](https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1)
-- [SGLang](https://api.github.com/repos/sgl-project/sglang/releases?per_page=10&page=1)
-- [vLLM](https://api.github.com/repos/vllm-project/vllm/releases?per_page=10&page=1)
-- [Ollama](https://api.github.com/repos/ollama/ollama/releases?per_page=10&page=1)
+- `llama.cpp` [llama.cpp](https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1)
+- `sglang` [SGLang](https://api.github.com/repos/sgl-project/sglang/releases?per_page=10&page=1)
+- `vllm` [vLLM](https://api.github.com/repos/vllm-project/vllm/releases?per_page=10&page=1)
+- `ollama` [Ollama](https://api.github.com/repos/ollama/ollama/releases?per_page=10&page=1)
+- `mlx-lm` [MLX LM](https://api.github.com/repos/ml-explore/mlx-lm/releases?per_page=10&page=1)
+- `openvino` [OpenVINO GenAI](https://api.github.com/repos/openvinotoolkit/openvino.genai/releases?per_page=10&page=1)
+- `aiter` [AMD AITER](https://api.github.com/repos/ROCm/aiter/releases?per_page=10&page=1)
 
 GitHub permits unauthenticated access to published releases. Use the optional
 `FASTEST_RELEASE_WATCH_GITHUB_TOKEN` environment variable for a least-privilege

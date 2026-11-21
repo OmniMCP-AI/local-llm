@@ -273,13 +273,22 @@ test("reviewed repository and conversion artifacts retain their own revisions an
 });
 
 test("runtime cards cite pinned releases and keep documented support apart from tests", async (t) => {
-  const { request } = await buildFixture(t);
+  const { readData, request } = await buildFixture(t);
+  const directory = await readData("runtimes.json");
+  for (const [id, releaseUrl] of [
+    ["mlx-lm", "https://github.com/ml-explore/mlx-lm/releases/tag/v0.32.2"],
+    ["openvino", "https://github.com/openvinotoolkit/openvino.genai/releases/tag/2026.4.1.0"],
+    ["aiter", "https://github.com/ROCm/aiter/releases/tag/v0.1.29.post1"],
+  ]) {
+    assert.equal(directory.find((row) => row.id === id)?.releaseUrl, releaseUrl);
+  }
   for (const [runtime, tag, repository, format] of [
     ["llama.cpp", "v1.0.0", "ggml-org/llama.cpp", "GGUF"],
     ["sglang", "v0.5.23", "sgl-project/sglang", "Safetensors"],
     ["vllm", "v0.34.0", "vllm-project/vllm", "Safetensors"],
     ["ollama", "v0.40.16", "ollama/ollama", "GGUF"],
     ["mlx-lm", "v0.32.2", "ml-explore/mlx-lm", "MLX"],
+    ["openvino", "2026.4.1.0", "openvinotoolkit/openvino.genai", "OpenVINO"],
     ["strata", "v0.2.17", "Niko1221/Strata", "GGUF"],
     ["project-maya", "v1.1.70", "mw00/project-maya", "GGUF"],
     ["mnn", "3.6.2", "alibaba/MNN", "MNN"],
