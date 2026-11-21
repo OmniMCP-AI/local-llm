@@ -23,13 +23,53 @@ The client assigns users 1 through 4 and sends 1,024 integer token IDs per reque
 
 The client schedules one request per user every six seconds for 24 batches and keeps the window open for 144 seconds. Requests that miss their 100 ms arrival tolerance are unrecorded and appear in the private trace. Timing starts as the client initiates the HTTP request and ends when the complete response body arrives. A single monotonic 5,000 ms deadline covers connection, queue, generation and transfer. A successful, valid complete response with exactly 128 returned token IDs counts as accepted. Each other response retains its outcome and reason. The private ledger `capture.json` contains the timed attempts, and `trace.jsonl` contains the warmup, slot erasures, raw timing, transport status and response filenames. The directory also preserves each exact request payload and received response body. Use `--diagnostic-reason` for deviations such as a loopback client. Keep diagnostic captures out of the reviewed cohort.
 
-Use a calibrated cumulative energy meter at the AC input across every serving host power feed. Record meter identification and readings in joules at the start and end of the same 144-second window. Include idle gaps and unsuccessful work. The boundary excludes client power, network equipment and external cooling. Keep the meter log with the private capture and use the client's window origin to verify alignment. The client records an explicit missing reason by default. Use observed AC measurements in the reviewed record when the original meter log covers the complete window.
-
 The least favorable of the four per-user p95 values drives the latency goal. Each p95 is the nearest rank among that user's accepted responses and requires 20 accepted responses. Capacity divides accepted output tokens by the full 144 seconds. Intensity divides the wall-meter delta by the accepted request count. Ratios are rounded to six decimal places. An incomplete schedule keeps its counts and outcomes and leaves the goal metrics unknown. A complete run can supply capacity even when its latency sample is too small or the wall meter is missing.
+
+## Retain calibrated AC meter evidence
+
+Use a calibrated cumulative energy meter across every AC power feed into the serving host. The meter includes idle gaps and unsuccessful work. Keep client, network equipment and external cooling power outside the metered boundary.
+
+Run the capture on a separate Linux client with `--meter-lead-ms 10000`, or choose a longer lead to suit the recorder. After warmup and KV erasure, `capture.json` briefly reports `status: armed` and announces `meter_window` with a unique `capture_id`, client clock identity and absolute `start_ns` and `end_ns`. Both boundaries use the client's `CLOCK_MONOTONIC` in nanoseconds. Have the recorder watch for this announcement and latch the cumulative counter at both boundaries. The final ledger records the same scheduled bounds as `window_started_ns` and `window_ended_ns` after the full window reaches its end.
+
+This intake supports a recorder that can latch actual counter samples on that clock. The recorder must independently identify its boot from `/proc/sys/kernel/random/boot_id` and time namespace from the inode of `/proc/self/ns/time`. Use the latch timestamps from recorder evidence. A UTC timestamp, a software polling time, or a timestamp copied from the announced schedule leaves alignment unknown. Keep the native recorder log and the calibration certificate with the private capture. The recorder needs a counter epoch that changes when the counter resets, wraps or loses continuity, even if it later exceeds the start reading.
+
+Export recorder evidence JSON with the fields below. The example values illustrate the format.
+
+```json
+{
+  "schema_version": 1,
+  "capture_id": "248f9d4e-cac3-4017-abcb-e000d5e20ef5",
+  "clock": {
+    "source": "linux-clock-monotonic",
+    "boot_id": "cebb3678-779c-4b1d-a0df-d83885982ed0",
+    "time_namespace": 4026531834
+  },
+  "alignment": "latched-on-client-monotonic-clock",
+  "meter_id": "Meter make, model and serial",
+  "calibration_ref": "Reference to the retained calibration certificate",
+  "raw_log_ref": "Reference to the retained native recorder log",
+  "boundary": "serving-host-ac-input",
+  "server_ip": "192.0.2.25",
+  "feeds": ["server input A", "server input B"],
+  "unit": "J",
+  "samples": [
+    {"sampled_ns": 12345678901, "joules": "2500", "counter_epoch": "native session 1"},
+    {"sampled_ns": 156345678901, "joules": "11800", "counter_epoch": "native session 1"}
+  ]
+}
+```
+
+List the boundary samples and any in-window samples in recorded order. Use nonnegative decimal strings for cumulative joules. From `production`, create a new private receipt after capture finishes.
+
+```sh
+python3 -B -m fastest_serving.meter /path/to/private-run /path/to/recorder-evidence.json /path/to/meter-receipt.json
+```
+
+The receipt retains the recorder evidence and SHA-256 digests of both input files. It contains the validated `power` object for serving review. `capture.json` remains the original capture with its explicit missing power entry. The command rejects partial and diagnostic captures, unknown alignment, invalid counters and mismatched boundaries with a reason. Keep power missing if the recorder or proof is unavailable. Review the calibration and physical feed coverage against the retained records before using measured power.
 
 ## Serve a reviewed run
 
-Retain the original request trace, client and runtime logs and meter evidence. After confirming the cell, pinned inputs and protocol, copy the timed `attempts` and `duration_ms` from the private capture. Include the measured or explicitly missing `power` evidence and the reviewed runtime metadata. Use a public-safe locator with an immutable revision and a public-release allow decision covering each submitted field. Include serving records through `"serving_records": ["reviewed-serving-m4.json"]` in the [goals cohort manifest](../README.md#compare-setups-against-goals). Pass the manifest to `python3 -B -m fastest_release serve --goal-cohort PATH`. Paths are relative to the manifest. Include at most one ledger per planned setup. The JSON below illustrates an incomplete ledger. Replace every example value with reviewed evidence.
+Retain the original request trace, client and runtime logs and meter evidence. After confirming the cell, pinned inputs and protocol, copy the timed `attempts` and `duration_ms` from the private capture. Use `power` from the private meter receipt when review confirms the evidence, or include a missing reason. Include the reviewed runtime metadata. Use a public-safe locator with an immutable revision and a public-release allow decision covering each submitted field. Include serving records through `"serving_records": ["reviewed-serving-m4.json"]` in the [goals cohort manifest](../README.md#compare-setups-against-goals). Pass the manifest to `python3 -B -m fastest_release serve --goal-cohort PATH`. Paths are relative to the manifest. Include at most one ledger per planned setup. The JSON below illustrates an incomplete ledger. Replace every example value with reviewed evidence.
 
 ```json
 {
@@ -60,11 +100,5 @@ Retain the original request trace, client and runtime logs and meter evidence. A
 ```
 
 Use `accepted`, `rejected`, `failed` or `timeout` as the outcome. Supply a reason for each unsuccessful attempt. Use the client deadline as the elapsed time for a timeout and list only the output tokens the client observed. Leave an uncaptured request out of the array so it is counted as unrecorded. Record `external` privacy if applicable. Use `rtx-4090` and `CUDA` for the other planned setup.
-
-For measured wall energy, use this shape for `power` and replace the illustrative readings and identifier with the observed evidence.
-
-```json
-{"status":"measured","boundary":"serving-host-ac-input","meter":"Calibrated meter identifier","start_ms":0,"end_ms":144000,"start_joules":"2500","end_joules":"11800"}
-```
 
 Use `/api/v1/comparison?entry=serving` for the same decision and pinned link. The goal parameters are `user_p95` in milliseconds, `capacity` in tokens per second, and optional `wall_energy` in joules per accepted request. Use these same metric keys for `priority`, `x` and `y`. The goal manifest can be versioned and withdrawn through the same operator workflow as other goal cohorts.

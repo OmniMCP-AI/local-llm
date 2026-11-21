@@ -20,6 +20,7 @@ MIN_P95 = 20
 INPUT_TOKENS = 1024
 OUTPUT_TOKENS = 128
 WALL_BOUNDARY = "serving-host-ac-input"
+METER_CLOCK_SOURCE = "linux-clock-monotonic"
 OUTCOMES = ("accepted", "failed", "timeout", "rejected")
 JOULES = re.compile(r"(?:0|[1-9][0-9]{0,14})(?:\.[0-9]{1,6})?")
 METRICS = {

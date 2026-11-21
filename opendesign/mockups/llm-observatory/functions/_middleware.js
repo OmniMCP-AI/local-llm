@@ -1,10 +1,12 @@
 import { languageForCountry } from "../locale-settings.mjs";
+import { homeHighlightHtml, homeHighlightMarkdown, observedHomeHighlight } from "../home-highlights.mjs";
 
 const policyPath = "/evidence-quarantine.json";
 const noStore = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const validators = ["ETag", "Last-Modified", "CDN-Cache-Control", "Cloudflare-CDN-Cache-Control"];
 const conditionals = ["If-Match", "If-None-Match", "If-Modified-Since", "If-Unmodified-Since", "If-Range", "Range"];
-const checkedFile = new Set(["/", "/index", "/index.html", "/index.md", "/sitemap.xml", "/robots.txt", "/llms.txt"]);
+const homeHtml = new Set(["/", "/index", "/index.html"]);
+const checkedFile = new Set([...homeHtml, "/index.md", "/sitemap.xml", "/robots.txt", "/llms.txt"]);
 const checkedFolder = /^\/(wiki|research|catalog|catalog-data|downloads)(?:\/|$)/;
 
 function retirementNotice(request, status, message) {
@@ -55,19 +57,34 @@ export async function onRequestGet(context) {
   if (!sensitive && !html) return response;
 
   const language = html && request.method === "GET" && languageForCountry(request.cf?.country);
+  const homeMarkdown = path === "/index.md" && contentType === "text/markdown";
+  const manifest = path === "/wiki/manifest.json" && contentType === "application/json";
+  const highlight = request.method === "GET" && response.status === 200 &&
+    (homeMarkdown || manifest || (html && homeHtml.has(path))) && await observedHomeHighlight(env);
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", html ? "private, no-store" : "no-store");
   for (const name of validators) headers.delete(name);
-  if (language) headers.delete("Content-Length");
+  if (language || highlight) headers.delete("Content-Length");
   const page = new Response(request.method === "HEAD" ? null : response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
-  if (!language) return page;
-  return new HTMLRewriter()
-    .on("html", { element: (element) => element.setAttribute("data-visitor-language", language) })
-    .transform(page);
+  if (highlight && homeMarkdown) return new Response(homeHighlightMarkdown(await page.text(), highlight), page);
+  if (highlight && manifest) {
+    const content = await page.json();
+    const { id, type, href, markdown, source, priority } = highlight;
+    content.highlights.unshift({ id, type, href, markdown, source, priority });
+    return new Response(JSON.stringify(content, null, 2) + "\n", page);
+  }
+  if (!language && !highlight) return page;
+  const rewriter = new HTMLRewriter();
+  if (language) rewriter.on("html", { element: (element) => element.setAttribute("data-visitor-language", language) });
+  if (highlight) {
+    rewriter.on("[data-home-highlights]", { element: (element) => element.removeAttribute("hidden") })
+      .on("[data-home-highlights] > ul", { element: (element) => element.prepend(homeHighlightHtml(highlight), { html: true }) });
+  }
+  return rewriter.transform(page);
 }
 
 export const onRequestHead = onRequestGet;
