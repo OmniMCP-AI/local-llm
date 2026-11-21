@@ -94,3 +94,48 @@ test("dense point labels are readable in a separate list with exact values", () 
   assert.match(list, /Cloud[\s\S]*Month: 1[\s\S]*Cost: 1,001 USD/);
   assert.match(chart, /class="coordinate-viewport"/);
 });
+
+test("zoom shows an inspectable categorical subset while retaining the full exact-value list and selection", () => {
+  const chart = renderCoordinatePlot({
+    title: "Ranks", kind: "bar", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "GPU", categorical: true }, yAxis: { label: "Speed", unit: "tok/s" },
+    points: ["A", "B", "C", "D"].map((name, i) => ({ id: name, name, x: name, y: i + 1 })),
+    selectedId: "A", showLabels: true,
+  });
+  assert.match(chart, /Zoom in/);
+  assert.match(chart, /Reset zoom/);
+  assert.doesNotMatch(chart, /data-point-id="A"/);
+  assert.match(chart, /data-point-id="B"/);
+  assert.match(chart, /data-point-id="C"/);
+  assert.doesNotMatch(chart, /data-point-id="D"/);
+  assert.match(chart, /A · GPU: A · Speed: 1 tok\/s/);
+  assert.match(chart, /coordinate-selection/);
+  assert.match(chart, /type="checkbox" checked/);
+});
+
+test("continuous zoom rescales the horizontal domain and preserves exact units", () => {
+  const chart = renderCoordinatePlot({
+    title: "Prices", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "Price", unit: "USD", domain: [0, 100] },
+    yAxis: { label: "Speed", unit: "tok/s", domain: [0, 100] },
+    points: [
+      { id: "low", name: "Low", x: 10, y: 30 },
+      { id: "middle", name: "Middle", x: 50, y: 60 },
+      { id: "high", name: "High", x: 90, y: 80 },
+    ],
+  });
+  assert.doesNotMatch(chart, /data-point-id="low"/);
+  assert.match(chart, /data-point-id="middle"[^>]*--column:50\.00000%/);
+  assert.doesNotMatch(chart, /data-point-id="high"/);
+  assert.match(chart, /Price 50 USD, Speed 60 tok\/s/);
+  assert.match(chart, /Price \(USD\)/);
+});
+
+test("zoom retains a line crossing the visible range even when its endpoints are outside it", () => {
+  const chart = renderCoordinatePlot({
+    title: "Costs", kind: "line", interactiveZoom: true, zoom: { start: 0.25, end: 0.75 },
+    xAxis: { label: "Month", domain: [0, 100] }, yAxis: { label: "Cost", domain: [0, 100] },
+    points: [{ id: "a", name: "Start", x: 0, y: 0 }, { id: "b", name: "End", x: 100, y: 100 }],
+  });
+  assert.match(chart, /<polyline[^>]+points="-500\.000,1000\.000 1500\.000,0\.000"/);
+});
