@@ -8,6 +8,8 @@ from fastest_release import ReleaseNotFound
 
 
 EDITORIAL_TIMEZONE = "Asia/Shanghai"
+LLAMA_BENCH_DECODE_METRIC = ("llama-bench-decode", 1, "median", "tok/s")
+SUPPORTED_METRICS = {("decode-throughput", 1, "median", "tok/s"), LLAMA_BENCH_DECODE_METRIC}
 COPY = {
     "en": (
         {"evergreen": "How fast did this configuration decode?", "correction": "Revised decode throughput benchmark"},
@@ -20,6 +22,20 @@ COPY = {
     "zh-TW": (
         {"evergreen": "這套配置的解碼吞吐量是多少？", "correction": "解碼吞吐量基準測試已修訂"},
         "該配置經 {samples} 次測量，解碼吞吐量的中位數為 {value} {unit}。",
+    ),
+}
+SHARED_CPU_DECODE_BODY = {
+    "en": (
+        "On a shared CI runner, llama-bench used one CPU thread and started each timed decode run with an empty KV cache. "
+        "The median decode throughput across {samples} repetitions was {value} {unit}."
+    ),
+    "zh-CN": (
+        "在共享 CI 运行器上，llama-bench 使用单个 CPU 线程，每次解码计时均从空 KV 缓存开始。"
+        "{samples} 次重复测量的解码吞吐量中位数为 {value} {unit}。"
+    ),
+    "zh-TW": (
+        "在共用 CI 執行器上，llama-bench 使用單一 CPU 執行緒，每次解碼計時均從空的 KV 快取開始。"
+        "{samples} 次重複測量的解碼吞吐量中位數為 {value} {unit}。"
     ),
 }
 
@@ -65,7 +81,8 @@ def _verified_release(store, snapshot):
     }
 
 
-def _select_story(store, release_id, origin, copy):
+def _select_story(store, release_id, origin, locale):
+    headlines, body = COPY[locale]
     try:
         snapshot = store.read(release_id)
     except ReleaseNotFound:
@@ -95,9 +112,8 @@ def _select_story(store, release_id, origin, copy):
         return {"outcome": "no_story", "reason": "contributor_release", "release": release}
 
     metric = row["metric"]
-    if (metric["id"], metric["version"], metric["statistic"], metric["unit"]) != (
-        "decode-throughput", 1, "median", "tok/s"
-    ):
+    metric_key = (metric["id"], metric["version"], metric["statistic"], metric["unit"])
+    if metric_key not in SUPPORTED_METRICS:
         return {"outcome": "no_story", "reason": "unsupported_metric", "release": release}
 
     hashes = _verified_release(store, snapshot)
@@ -110,7 +126,10 @@ def _select_story(store, release_id, origin, copy):
     # The release revision belongs to this evidence ID. The global release
     # pointer might previously have pointed to a different observation.
     kind = "correction" if release["revision"] > 1 else "evergreen"
-    headlines, body = copy
+    workload = row["workload"]
+    workload_key = (workload["id"], workload["version"])
+    if metric_key == LLAMA_BENCH_DECODE_METRIC and workload_key == ("llama-bench-shared-ci-cpu-decode", 1):
+        body = SHARED_CPU_DECODE_BODY[locale]
     return {
         "outcome": "story",
         "release": {**release, **hashes},
@@ -121,7 +140,7 @@ def _select_story(store, release_id, origin, copy):
             "benchmark_conditions": {
                 "hardware": row["hardware"],
                 "artifact": row["artifact"],
-                "workload": row["workload"],
+                "workload": workload,
             },
             "attribution": row["source"],
             "rights": rights,
@@ -137,7 +156,7 @@ def _select_story(store, release_id, origin, copy):
 
 def generate_package(store, *, editorial_date, locale, public_origin, release_id=None):
     """Build the daily decision and its immutable review revision using the public release interface."""
-    outcome = _select_story(store, release_id, _public_origin(public_origin), COPY[locale])
+    outcome = _select_story(store, release_id, _public_origin(public_origin), locale)
     package = {
         "schema_version": 1,
         "editorial_date": editorial_date.isoformat(),
