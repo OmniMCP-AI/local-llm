@@ -51,6 +51,9 @@ Use **localdecode.com** as the public site identity. Build a photo gallery for e
 39. As a buyer, I want the GPU I opened to stand out in every GPU profile chart that includes it, so that I can find it immediately at any zoom level.
 40. As a buyer, I want the GPU profile to show real photos and useful comparisons without a generic schematic, so that the available space goes to evidence about that card.
 41. As a photo researcher, I want to check exact GPU listings and variants on Amazon and eBay, so that I can find additional views and trace them to their original sources.
+42. As a visitor opening a GPU profile from a search engine, I want the same top menu as the home page, so that I can navigate the site without returning to the catalog first.
+43. As a visitor moving between directories, profiles, comparisons and evidence pages, I want the same menu labels, order and destinations, so that navigation feels predictable across the site.
+44. As a keyboard or mobile user, I want the same menu options and a clear current section in every page layout, so that I can orient myself from any deep link.
 
 ## Implementation Decisions
 
@@ -82,6 +85,12 @@ Use **localdecode.com** as the public site identity. Build a photo gallery for e
 - Remove the conceptual schematic and the caption “Original schematic · conceptual GPU and memory layout” from GPU profile pages. Emphasize the current card consistently in each applicable profile chart with the shared selected styling, using orange where it meets contrast requirements. Add a visible label or marker shape as well, so the highlighted card is recognizable without color. Preserve this emphasis through zoom and comparison filtering whenever the card is in the visible domain.
 - Place one to five concise strengths and one to five limitations on each card, machine build, model and inference engine profile. Connect each point to its underlying specs, measurements or documented compatibility and to a meaningful use case. Version editorial text and review any generated suggestions. When evidence is incomplete, explain the limitation and its impact with a source or the exact evidence gap.
 
+### Site-wide top navigation
+
+- Resolve the GPU profile header mismatch by using one canonical top-level menu across the site. Use the same brand link, item labels, order and destinations on the home and explorer pages, directories, GPU, machine, model and runtime profiles, comparisons, methods, Costs, Price Watch, wiki, research and public benchmark or evidence pages. This applies to the app shell, standalone generated HTML and origin-backed HTML.
+- Share the navigation definition across the renderers. Resolve links correctly from deep paths and between the site and its evidence origin. Mark the parent section active on a detail page, such as Catalog for a GPU profile. Keep breadcrumbs, release links and per-page sections in secondary navigation. Apply the same language controls and responsive menu behavior wherever the global menu appears.
+- Include a usable menu in the generated HTML for direct links. Ensure hydration preserves the menu and current section. Use the active deployment configuration to determine visible destinations consistently across every page in that environment.
+
 ### Public name and rollout
 
 - Use **localdecode.com** as the displayed site name throughout navigation, logo text, titles, metadata, wiki, discovery and generated public content. Preserve durable URLs, catalog IDs and data ownership. Configure **fastest.ai** as an alternate entry that goes to the same canonical site and preserves deep links. Release the canonical identity and alias behavior together so alternate traffic resolves consistently. An audience-specific second site can be decided separately.
@@ -97,6 +106,7 @@ Use **localdecode.com** as the public site identity. Build a photo gallery for e
 - Test an exact Amazon variation and eBay listing, an ambiguous shared image, expired display data and a withdrawn or ended listing. Confirm static exports exclude provider images that lack a separate reusable grant. Check the linked listing and permitted refresh limits for live displays.
 - Verify the seven-entry runtime cap, two-to-five selection bounds, pinned comparisons, missing comparable trials, popularity provenance, exact backend conditions, ties, source dates and shareable state. Compare the same runtime evidence on overview, custom comparison, profile and export.
 - Verify both Machines entries, exact machine details, creator thumbnail scope and accessible source links. Sample the existing Machines, Cards, Models and Runtimes profile sets for guidance counts and check that each statement can be traced to evidence.
+- Audit every user-facing HTML route in the generated release inventory against the canonical menu. Compare labels, order, destinations and the active section. Exercise direct links to GPU, machine, model and runtime profiles, all app routes, wiki, research and evidence-origin templates. Verify desktop and mobile layouts, keyboard navigation, locale selection, before-to-after hydration and link resolution across deployment origins. Include a regression check that catches a GPU profile serving a catalog-only header in place of the site menu.
 - Build the existing Pages review and navigate representative front-door and deep links. Inspect public names, redirects on the configured alias, canonical tags, sitemap, Markdown alternates, social metadata and agent discovery files. Where production cannot be exercised, report the corresponding acceptance gap.
 
 ## Out of Scope
@@ -109,6 +119,8 @@ Use **localdecode.com** as the public site identity. Build a photo gallery for e
 ## Further Notes
 
 Baseline inspected on November 22, 2026. The pinned catalog stored 168 GPU identities, 42 licensed images on 22 cards, 88 separate manufacturer gallery links and 16 modified GPU identities. The image ledger covers the entire existing release and separates researched leads from eligible placements. The current review branch predates the sole displayed LocalDecode identity, so the naming requirement is a rollout item.
+
+The navigation audit found a catalog-only menu on all 650 locally generated profiles (168 GPUs, 136 machines, 308 models and 38 runtimes). Across all 35 HTML files in a fresh Pages build, initial menus varied by template. The home page exposed release links, the battle, research and most wiki pages exposed their own resource menus, and Price Watch, the wiki landing page and the 404 page had no navigation landmark in their initial HTML. The hydrated app defines the main navigation. Review of the evidence-origin templates also found page-specific headers.
 
 The first sourcing batch expanded the local catalog to 57 credited photos across 37 identities. The remaining 131 identities still need eligible photos. An anonymous Google Images session returned a traffic challenge and Pinterest yielded no attributable source in this pass. The audit records reuse candidates and original publishers for follow-up. [Intel Arc Pro B70 photograph](https://commons.wikimedia.org/wiki/File:Intel_Arc_Pro_B70_-_two_cards_top_view.jpg) · [Radeon RX 7900 XT photograph](https://commons.wikimedia.org/wiki/File:RX7900XT_crop.jpg)
 
