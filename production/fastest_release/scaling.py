@@ -88,7 +88,8 @@ def _positive_decimal(value):
     return isinstance(value, str) and DECIMAL.fullmatch(value) is not None and Decimal(value) > 0
 
 
-def _transport(network, devices):
+def transport_matches_devices(network, devices):
+    """Check documented transfer paths connect the active PCI devices."""
     if not isinstance(network, list) or not network:
         return False
     adjacent = {device: set() for device in devices}
@@ -110,7 +111,7 @@ def _transport(network, devices):
         if device not in visited:
             visited.add(device)
             pending.extend(adjacent[device] - visited)
-    return visited == devices.keys()
+    return visited == adjacent.keys()
 
 
 def _ratio(value):
@@ -196,7 +197,7 @@ def scaling_report(store, pair):
         if not (metadata["strategy"] in strategies and plain_text(metadata["treatment"])
                 and plain_text(metadata["primary_device"]) and metadata["primary_device"] in devices):
             return excluded("strategy")
-    if one["transports"] != [] or not _transport(many["transports"], parallel):
+    if one["transports"] != [] or not transport_matches_devices(many["transports"], parallel):
         return excluded("path_unavailable")
 
     values = [row["metric"]["value"] for row in (baseline, comparison)]
