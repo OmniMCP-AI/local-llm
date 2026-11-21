@@ -1,3 +1,4 @@
+import { runtimeOverview } from "./runtime-overview.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -200,6 +201,7 @@ export async function writeCatalogProjection(output, { manifest, shards, hardwar
     writeFile(join(target, "LICENSE.txt"), licenseNotice + "\n"),
     ...(manifest.snapshotId && catalogApi ? [writeFile(join(target, "openapi.json"), JSON.stringify(catalogOpenApi(release), null, 2) + "\n")] : []),
     writeFile(join(data, "runtimes.json"), JSON.stringify(runtimes)),
+    writeFile(join(data, "runtime-overview-v1.json"), JSON.stringify(runtimeOverview(runtimes))),
     writeFile(join(data, "cards.json"), JSON.stringify(hardware.catalog.cards)),
     writeFile(join(data, "machines.json"), JSON.stringify(hardware.catalog.machines)),
     ...[...shards].map(([key, rows]) => writeFile(join(data, key + ".json"), JSON.stringify(rows))),
