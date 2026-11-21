@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 
-export async function withLocalPages(output, signal, verify, { feedbackDatabaseUrl, staticOnly = false } = {}) {
+export async function withLocalPages(output, signal, verify, { feedbackDatabaseUrl, battlesDatabaseUrl, staticOnly = false } = {}) {
   const scratch = await mkdtemp(join(tmpdir(), "fastest-pages-worker-"));
   let worker;
   let closed;
@@ -21,11 +21,15 @@ export async function withLocalPages(output, signal, verify, { feedbackDatabaseU
   process.once("SIGTERM", stopWorker);
   try {
     if (!staticOnly) await symlink(join(here, "functions"), join(scratch, "functions"), "dir");
-    if (feedbackDatabaseUrl) {
+    const bindings = {
+      ...(feedbackDatabaseUrl && { FEEDBACK_PG: feedbackDatabaseUrl }),
+      ...(battlesDatabaseUrl && { BATTLES_PG: battlesDatabaseUrl }),
+    };
+    if (Object.keys(bindings).length) {
       await writeFile(join(scratch, "wrangler.json"), JSON.stringify({
         name: "fastest-pages-test",
         pages_build_output_dir: output,
-        hyperdrive: [{ binding: "FEEDBACK_PG", id: "00000000000000000000000000000000" }],
+        hyperdrive: Object.keys(bindings).map(binding => ({ binding, id: "00000000000000000000000000000000" })),
       }));
     }
     worker = spawn(process.execPath, [
@@ -38,7 +42,9 @@ export async function withLocalPages(output, signal, verify, { feedbackDatabaseU
         ...process.env,
         WRANGLER_SEND_METRICS: "false",
         WRANGLER_LOG_PATH: join(scratch, "wrangler.log"),
-        ...(feedbackDatabaseUrl && { CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_FEEDBACK_PG: feedbackDatabaseUrl }),
+        ...Object.fromEntries(Object.entries(bindings).map(([binding, url]) => [
+          "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_" + binding, url,
+        ])),
       },
     });
     closed = once(worker, "close");

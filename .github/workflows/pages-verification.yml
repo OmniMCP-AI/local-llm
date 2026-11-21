@@ -5,12 +5,14 @@ on:
     paths:
       - "opendesign/mockups/llm-observatory/**"
       - "production/fastest_feedback/schema.sql"
+      - "production/fastest_battles/schema.sql"
       - ".github/workflows/pages-verification.yml"
   push:
     branches: [main]
     paths:
       - "opendesign/mockups/llm-observatory/**"
       - "production/fastest_feedback/schema.sql"
+      - "production/fastest_battles/schema.sql"
       - ".github/workflows/pages-verification.yml"
   workflow_dispatch:
 
@@ -49,12 +51,13 @@ jobs:
           cache: npm
           cache-dependency-path: opendesign/mockups/llm-observatory/package-lock.json
       - run: npm ci
-      - name: Prepare the disposable catalog and feedback database
+      - name: Prepare the disposable catalog and engagement database
         env:
           FASTEST_TEST_DATABASE_URL: &publisher postgresql://catalog_publisher:ci-publisher@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
         run: |
           psql -Xw -v ON_ERROR_STOP=1 "$FASTEST_TEST_DATABASE_URL" \
-            -f catalog-pg.sql -f ../../../production/fastest_feedback/schema.sql -f - <<'SQL'
+            -f catalog-pg.sql -f ../../../production/fastest_feedback/schema.sql \
+            -f ../../../production/fastest_battles/schema.sql -f - <<'SQL'
           CREATE ROLE catalog_reader LOGIN PASSWORD 'ci-reader';
           ALTER ROLE catalog_reader SET default_transaction_read_only = on;
           GRANT USAGE ON SCHEMA fastest_catalog TO catalog_reader;
@@ -66,6 +69,10 @@ jobs:
           GRANT USAGE ON SCHEMA fastest_feedback TO feedback_pages;
           GRANT EXECUTE ON FUNCTION fastest_feedback.submit_feedback(uuid, text, text, jsonb),
             fastest_feedback.read_feedback_receipt(uuid) TO feedback_pages;
+          CREATE ROLE battles_pages LOGIN PASSWORD 'ci-battles';
+          GRANT USAGE ON SCHEMA fastest_battles TO battles_pages;
+          GRANT EXECUTE ON FUNCTION fastest_battles.rank_comparisons(text, text),
+            fastest_battles.record_comparison(text, text, text, text, uuid) TO battles_pages;
           SQL
       - name: Verify Pages and replay the catalog import
         shell: bash
@@ -73,6 +80,7 @@ jobs:
           FASTEST_TEST_DATABASE_URL: *publisher
           FASTEST_TEST_CATALOG_READER_URL: &reader postgresql://catalog_reader:ci-reader@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
           FASTEST_TEST_FEEDBACK_DATABASE_URL: postgresql://feedback_pages:ci-feedback@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
+          FASTEST_TEST_BATTLES_DATABASE_URL: postgresql://battles_pages:ci-battles@127.0.0.1:${{ job.services.catalog.ports['5432'] }}/catalog_ci
           NODE_OPTIONS: --test-reporter=tap
         run: |
           results=$(mktemp)
@@ -80,12 +88,14 @@ jobs:
           hosted_case='production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs'
           hardware_review_case='the static Pages review links to exact hardware profiles from its pinned PostgreSQL snapshot'
           feedback_case='hosted Pages acknowledges a feedback receipt persisted in PostgreSQL'
+          battles_case='hosted Pages ranks opt-in comparisons from the exact published PostgreSQL catalog'
           replay_case='the local PostgreSQL snapshot exports ranked repositories and complete factory profiles'
 
           npm run test:pages | tee "$results"
           grep -qxE "ok [0-9]+ - $hosted_case" "$results"
           grep -qxE "ok [0-9]+ - $hardware_review_case" "$results"
           grep -qxE "ok [0-9]+ - $feedback_case" "$results"
+          grep -qxE "ok [0-9]+ - $battles_case" "$results"
           node --test --test-name-pattern="^$replay_case$" catalog-release.test.mjs | tee "$results"
           grep -qxE "ok [0-9]+ - $replay_case" "$results"
       - name: Build and verify the Pages review archive
