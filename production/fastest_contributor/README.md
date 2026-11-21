@@ -3,12 +3,12 @@
 Contributors send a scoped JSON result through the operator's private intake
 channel. The operator verifies the contributor and records the file. Each
 submission gets a shareable receipt with the state of every version and a
-pinned evidence link after publication. The operator can send that receipt or a
-later status result back to the contributor.
+pinned evidence link after publication. Share the receipt link privately with
+the verified contributor so they can follow decisions and amendments.
 
 Run the commands from `production/` with a database login authorized to write
 benchmark releases. Set `FASTEST_DATABASE_URL` to the same database used by the
-release service. The public reader role needs no grants on the intake schema.
+release service.
 
 ```sh
 python3 -m fastest_release migrate
@@ -19,10 +19,30 @@ python3 -m fastest_contributor inspect RECEIPT_UUID 1
 python3 -m fastest_contributor review RECEIPT_UUID 1 review.json
 ```
 
-`submit` and `review` also accept `-` for standard input. Share the output
-from `submit`, `status`, or a successful `review` for that contributor.
-`inspect` includes the original input text, evidence ID and editorial decision
-details for private use.
+`submit` and `review` also accept `-` for standard input. Outputs from
+`submit`, `status`, and `review` include a relative `status_url`. Prefix it
+with the HTTPS release origin to share a browser link. The existing receipt
+UUID works as a private link key and stays the same across amendments. Anyone
+with the link can see the version numbers, status, intake issue labels, and
+links to published evidence or withdrawal notices. Keep it out of public
+issues and shared logs. `inspect` is for operators and includes the original
+input, evidence ID, and editorial decision details.
+
+## Serve receipt links
+
+Run the contributor migration as the release schema owner and grant the
+release listener's dedicated reader just the receipt lookup function.
+The intake tables and review functions stay private.
+
+```sql
+GRANT EXECUTE ON FUNCTION fastest_release.read_contributor_receipt(uuid) TO fastest_release_reader;
+```
+
+Start the release server with `serve --contributor-receipts`, or pass
+`--contributor-receipts` to the release container. The route uses the
+release reader connection and returns a no-store, noindex page. The
+server log omits the receipt query. Configure the proxy and any request
+logging or analytics to omit query strings for `/contributors/receipt`.
 
 ## Submission format
 

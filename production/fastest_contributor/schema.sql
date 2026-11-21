@@ -130,6 +130,22 @@ RETURNS jsonb LANGUAGE sql STABLE AS $$
     GROUP BY submission.receipt;
 $$;
 
+CREATE OR REPLACE FUNCTION fastest_release.read_contributor_receipt(receipt_code uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp AS $$
+    SELECT jsonb_agg(
+        jsonb_build_object(
+            'version', revision->'version',
+            'status', revision->'status',
+            'issues', revision->'issues'
+        ) || CASE WHEN revision ? 'url' THEN jsonb_build_object('url', revision->'url')
+                 ELSE '{}'::jsonb END ORDER BY position
+    )
+    FROM jsonb_array_elements(fastest_contributor.receipt_status(receipt_code)->'revisions')
+        WITH ORDINALITY AS revisions(revision, position);
+$$;
+
+REVOKE ALL ON FUNCTION fastest_release.read_contributor_receipt(uuid) FROM PUBLIC;
 REVOKE ALL ON SCHEMA fastest_contributor FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA fastest_contributor FROM PUBLIC;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA fastest_contributor FROM PUBLIC;

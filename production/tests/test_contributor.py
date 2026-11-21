@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stderr
 from datetime import date
+from io import StringIO
 import json
 import os
 from pathlib import Path
@@ -296,6 +298,82 @@ class ContributorTest(unittest.TestCase):
         self.assertIn("Duplicate JSON field", review.stderr)
         self.assertEqual(self.intake.status(receipt["receipt"]), receipt)
 
+    def test_contributor_can_follow_private_receipt_through_review_and_withdrawal(self):
+        record = submission()
+        options = {"contributor_receipts": True}
+        result = subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_contributor", "submit", "-"],
+            input=json.dumps(record), encoding="utf-8", capture_output=True, check=True,
+            env={**os.environ, "FASTEST_DATABASE_URL": self.database},
+        )
+        received = json.loads(result.stdout)
+        receipt = received["receipt"]
+        status_url = received["status_url"]
+        self.assertEqual(status_url, f"/contributors/receipt?id={receipt}")
+
+        self.public._query(
+            "CREATE ROLE contributor_receipt_reader LOGIN; "
+            "GRANT USAGE ON SCHEMA fastest_release TO contributor_receipt_reader; "
+            "GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid) TO contributor_receipt_reader; "
+            "GRANT EXECUTE ON FUNCTION fastest_release.read_contributor_receipt(uuid) TO contributor_receipt_reader;"
+        )
+        database = self.database + " user=contributor_receipt_reader"
+        reader = ReleaseStore(database)
+        self.assertEqual(reader.read_contributor_receipt(receipt), received["revisions"])
+        with self.assertRaises(ReleaseError):
+            contributor_store(database).inspect(receipt, 1)
+        with self.assertRaises(ReleaseError):
+            contributor_store(database).submit(json.dumps(submission()))
+        evidence_id = self.intake.inspect(receipt, 1)["evidence_id"]
+
+        log = StringIO()
+        with redirect_stderr(log), api_client(reader) as request:
+            self.assertEqual(request(status_url, decode=False)[0], 404)
+
+        with redirect_stderr(log), api_client(reader, **options) as request:
+            status, headers, page = request(status_url, decode=False)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers.get_content_type(), "text/html")
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            self.assertEqual(headers["X-Robots-Tag"], "noindex")
+            self.assertEqual(headers["Referrer-Policy"], "no-referrer")
+            self.assertIn("Pending review", page)
+            self.assertNotIn("benchmarks.example.org", page)
+            self.assertEqual(request(status_url, "HEAD", decode=False)[2], "")
+            self.assertEqual(request(status_url, "POST", decode=False)[0], 501)
+            for missing in ("", str(uuid4()), record["submission_id"], "invalid"):
+                status, headers, page = request(f"/contributors/receipt?id={missing}", decode=False)
+                self.assertEqual((status, page), (404, "Contributor receipt unavailable.\n"))
+                self.assertEqual(headers["X-Robots-Tag"], "noindex")
+
+            published = self.intake.review(receipt, 1, decision())["revisions"][0]
+            self.assertEqual(reader.read_contributor_receipt(receipt), [
+                {key: published[key] for key in ("version", "status", "issues", "url")},
+            ])
+            status, _, page = request(status_url, decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("Published", page)
+            self.assertIn(f'href="{published["url"]}"', page)
+            self.assertIn("Excluded from controlled comparisons", request(published["url"], decode=False)[2])
+
+            amended = {**record, "version": 2, "metric": {**record["metric"], "unit": "tokens"}}
+            self.intake.submit(json.dumps(amended))
+            status, _, page = request(status_url, decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("Quarantined", page)
+            self.assertIn("Unregistered metric", page)
+            self.intake.review(receipt, 2, decision("reject"))
+            self.public.withdraw(evidence_id, "Private rights withdrawal")
+            status, _, page = request(status_url, decode=False)
+            self.assertEqual(status, 200)
+            self.assertIn("Rejected", page)
+            self.assertIn("Withdrawn", page)
+            self.assertEqual(request(published["url"], decode=False)[0], 410)
+            for private in (receipt, record["submission_id"], evidence_id, "fictional-private",
+                            "Private rights withdrawal", "benchmarks.example.org"):
+                self.assertNotIn(private, page)
+        self.assertNotIn(receipt, log.getvalue())
+
     def test_reader_role_cannot_read_the_private_intake(self):
         record = submission()
         receipt = self.intake.submit(json.dumps(record))["receipt"]
@@ -307,7 +385,10 @@ class ContributorTest(unittest.TestCase):
             "GRANT EXECUTE ON FUNCTION fastest_release.read_release(uuid) TO intake_test_reader;"
         )
         database = self.database + " user=intake_test_reader"
-        self.assertEqual(ReleaseStore(database).read(release)["row"]["kind"], "contributor")
+        reader = ReleaseStore(database)
+        self.assertEqual(reader.read(release)["row"]["kind"], "contributor")
+        with self.assertRaises(ReleaseError):
+            reader.read_contributor_receipt(receipt)
         with self.assertRaises(ReleaseError):
             contributor_store(database).status(receipt)
         with self.assertRaises(ReleaseNotFound):
