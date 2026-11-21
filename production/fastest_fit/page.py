@@ -1,6 +1,8 @@
 from html import escape
 from urllib.parse import urlencode
 
+from . import APPLE_PROFILE, RTX_PROFILE
+
 
 QUALIFICATIONS = {
     "missing_request_inputs": "Choose a machine and artifact, and enter your context and memory reservations.",
@@ -8,6 +10,8 @@ QUALIFICATIONS = {
     "artifact_quantization_unavailable": "The catalog does not identify this artifact's quantization.",
     "runtime_artifact_unavailable": "The fit engine has no supported estimate for this runtime and file format.",
     "reservation_exhausts_memory": "The reservations leave no available memory in one of the selected machine's pools.",
+    "unified_memory_has_no_vram_reservation": "Enter the whole reservation in Reserved RAM and set Reserved VRAM to zero.",
+    "factory_cpu_cores_mismatch": "Leave the CPU core field blank to use the factory configuration's core count.",
     "context_out_of_range": "The requested context exceeds the model catalog's limit.",
     "model_fit_inputs_unavailable": "The model metadata is outside the adapter's reviewed fit coverage.",
     "backend_incompatible": "The core reports that the selected backend does not support this model.",
@@ -50,17 +54,35 @@ def _summary(result, selection):
                 f'<p>Core suggestion {escape(result["engine_suggested_quantization"])} '
                 f'with {escape(result["engine_selected_runtime"])}</p>'
             )
+    calculation = result.get("calculation", {})
+    shared = calculation.get("available_unified_memory_gib")
+    if shared is not None:
+        assumptions = result["assumptions"]
+        runtime = result["runtime"]
+        details += (
+            f'<p>{escape(runtime["id"])} {escape(runtime["tag"])} with Metal · '
+            f'{assumptions["context_tokens"]:,} requested context tokens</p>'
+            f'<p>Shared memory {calculation["installed_unified_memory_gib"]:g} GiB installed, '
+            f'{assumptions["ram_reserved_gib"]:g} GiB reserved, {shared:g} GiB budgeted. '
+            f'Rated bandwidth {calculation["unified_memory_bandwidth_gbps"]:g} GB/s. '
+            'The actual Metal working-set limit is unknown.</p>'
+        )
+    configuration = result["sources"].get("factory_configuration", {})
     sources = [
         ("Machine profile", result["machine"]["source"] if result["machine"] else None),
         ("Selected file", result["artifact"]["source"] if result["artifact"] else None),
         ("Runtime release", result["runtime"]["source"] if result["runtime"] else None),
+        ("Runtime backend support", result["runtime"]["backend_source"] if shared is not None else None),
+        (configuration.get("locator"), configuration.get("url")),
         ("Memory bandwidth", result["sources"].get("memory_bandwidth")),
+        ("Metal support", result["sources"].get("metal_backend")),
+        ("Metal working-set documentation", result["sources"].get("metal_working_set")),
         ("Installed VRAM", result["sources"].get("installed_vram")),
         ("Model metadata", result["sources"]["model_metadata"]["url"]),
         ("Pinned fit implementation", result["engine"]["source"]),
     ]
     links = " · ".join(
-        f'<a href="{escape(url)}">{label}</a>' for label, url in sources if url
+        f'<a href="{escape(url)}">{escape(label)}</a>' for label, url in sources if url
     )
     query = escape(urlencode(selection))
     return (
@@ -71,13 +93,14 @@ def _summary(result, selection):
 
 
 def render_fit(service, selection, result=None):
+    machine = selection.get("machine", RTX_PROFILE)
     machines = sorted(
         service.machines.values(),
-        key=lambda row: (row["kind"] != "llmfit example preset", row["name"].casefold()),
+        key=lambda row: (row["id"] not in {RTX_PROFILE, APPLE_PROFILE}, row["name"].casefold()),
     )
     artifacts = sorted(service.artifacts.items(), key=lambda pair: pair[1]["quantization"] != "Q8_0")
     machine_options = _options(
-        ((row["id"], row["name"]) for row in machines), selection.get("machine", "llmfit-nvidia-rtx-4090")
+        ((row["id"], row["name"]) for row in machines), machine
     )
     artifact_options = _options(
         ((key, item["path"]) for key, item in artifacts), selection.get("artifact")
@@ -85,7 +108,7 @@ def render_fit(service, selection, result=None):
     runtime_options = _options(((key, key) for key in service.runtimes), selection.get("runtime"))
     context = escape(selection.get("context", "4096"))
     ram = escape(selection.get("ram_reserved_gib", "8"))
-    vram = escape(selection.get("vram_reserved_gib", "2"))
+    vram = escape(selection.get("vram_reserved_gib", "0" if machine == APPLE_PROFILE else "2"))
     cores = escape(selection.get("cpu_cores", ""))
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -103,9 +126,10 @@ select {{ max-width: 100%; }} code {{ overflow-wrap: anywhere; }}
 <label>Artifact <select name="artifact">{artifact_options}</select></label>
 <label>Runtime <select name="runtime">{runtime_options}</select></label>
 <label>Context tokens <input name="context" type="number" min="1" value="{context}" required></label>
-<label>Reserved RAM (GiB) <input name="ram_reserved_gib" type="number" min="0" step="any" value="{ram}" required></label>
-<label>Reserved VRAM (GiB) <input name="vram_reserved_gib" type="number" min="0" step="any" value="{vram}" required></label>
-<label>CPU cores for offload <input name="cpu_cores" type="number" min="1" value="{cores}"></label>
+<p id="memory-note">For the Mac mini's unified memory, enter one reservation in Reserved RAM and set Reserved VRAM to zero.</p>
+<label>Reserved RAM (GiB) <input name="ram_reserved_gib" type="number" min="0" step="any" value="{ram}" aria-describedby="memory-note" required></label>
+<label>Reserved VRAM (GiB) <input name="vram_reserved_gib" type="number" min="0" step="any" value="{vram}" aria-describedby="memory-note" required></label>
+<label>CPU cores for discrete GPU offload <input name="cpu_cores" type="number" min="1" value="{cores}"></label>
 <button>Estimate fit</button></form>
 {_summary(result, selection)}
 </main></body></html>

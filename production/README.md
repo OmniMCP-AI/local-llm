@@ -261,11 +261,13 @@ python3 -m fastest_fit build /tmp/fastest-fit-26450cc
 python3 -m fastest_release serve --fit-engine /tmp/fastest-fit-26450cc
 ```
 
-Open [Estimate model fit](http://127.0.0.1:8000/fit). The form accepts
-`?machine=llmfit-nvidia-rtx-4090` to preselect that catalog profile.
+Open [Estimate model fit](http://127.0.0.1:8000/fit). Preselect with
+`?machine=llmfit-nvidia-rtx-4090` or `?machine=apple-mac-mini-m4-24gb-512gb`.
+The hosted Mac mini catalog profile opens the same form through the configured
+`FASTEST_RELEASE_ORIGIN`.
 Use `GET /fit.json` for JSON. Pass `machine`, the artifact SHA-256 as
-`artifact`, `runtime`, `context`, `ram_reserved_gib`, and
-`vram_reserved_gib`. Supply `cpu_cores` from the selected configuration
+`artifact`, `runtime`, `context`, and `ram_reserved_gib`. Pass
+`vram_reserved_gib` for a discrete GPU and supply its system `cpu_cores`
 for CPU offload. The result ID hashes the selected inputs, provenance,
 calculation settings, and engine revision. The endpoint serves estimates
 without recording a benchmark or a successful model run.
@@ -280,6 +282,15 @@ quantization, fit level, run mode, context, and nullable speed and latency.
 Throughput comes from a model of hardware capability. It can differ greatly
 from an actual run.
 
+The Apple Mac mini M4 factory configuration MCYT4LL/A pairs a 10-core CPU and
+10-core GPU with 24 GiB of nominal unified memory and a 512 GB SSD. The pinned
+core runs its explicit llama.cpp path on Metal and checks the M4 bandwidth lookup
+against Apple's 120 GB/s rating. The single reservation covers macOS and any
+headroom the visitor wants to keep. Leave `vram_reserved_gib` absent or zero.
+The assumed shared budget and unknown actual Metal working-set limit are shown
+with the estimate. Apple does not supply FP16 throughput in the cited
+specification, so prefill speed and time to first token are unavailable.
+
 Partial profiles, missing inputs, and unsupported runtime or format
 combinations return a qualification. When the core recommends another
 quantization or shortens context, the response gives a separate estimate of
@@ -293,10 +304,10 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m fastest_fit verify
 
 The build uses the same archive pin and checked Cargo lockfile as the research
 contract verifier. A candidate update must review the preset and catalog
-payload hashes, run both verifiers, and compare the reviewed GPU and CPU
-offload outputs. The [llmfit parity workflow](../.github/workflows/llmfit-parity.yml)
+payload hashes, run both verifiers, and compare the reviewed CUDA, Metal and
+CPU offload outputs. The [llmfit parity workflow](../.github/workflows/llmfit-parity.yml)
 builds and verifies the pinned engine on Linux x64 and macOS arm64. It checks
-that the complete `/fit.json` responses for GPU, CPU offload, and missing input
+that the complete `/fit.json` responses for CUDA, Metal, CPU offload, and missing input
 are identical after sorting JSON keys. To reproduce the check on other
 workers, run `python3 -m fastest_fit verify --report fit-report.json` on each
 worker and compare the two reports with `diff -u`.

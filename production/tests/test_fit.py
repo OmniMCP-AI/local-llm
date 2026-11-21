@@ -23,6 +23,10 @@ REQUEST = {
 }
 OFFLOAD = {**REQUEST, "vram_reserved_gib": "23.5", "cpu_cores": "8"}
 MISSING = {"machine": REQUEST["machine"]}
+APPLE_REQUEST = {
+    key: value for key, value in {**REQUEST, "machine": "apple-mac-mini-m4-24gb-512gb"}.items()
+    if key != "vram_reserved_gib"
+}
 Q4 = "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
 
 
@@ -76,6 +80,67 @@ class FitRequestTests(unittest.TestCase):
         self.assertAlmostEqual(result["estimate"]["memory_required_gib"], 1.0656094064)
         self.assertAlmostEqual(result["estimate"]["decode_tokens_per_second"], 1122.192769205139)
         self.assertRegex(result["id"], r"^[0-9a-f]{64}$")
+
+    def test_factory_mac_mini_uses_one_shared_budget_on_the_public_path(self):
+        with self.server() as base:
+            with urlopen(f"{base}/fit?machine={APPLE_REQUEST['machine']}", timeout=10) as response:
+                form = response.read().decode()
+            with urlopen(f"{base}/fit?{urlencode(APPLE_REQUEST)}", timeout=10) as response:
+                page = response.read().decode()
+            with patch.dict(os.environ, {"LLMFIT_DDR_BANDWIDTH": "5"}):
+                result = read_estimate(base, APPLE_REQUEST)
+            with patch.dict(os.environ, {"LLMFIT_DDR_BANDWIDTH": "500"}):
+                self.assertEqual(result, read_estimate(base, APPLE_REQUEST))
+
+        self.assertIn(f'value="{APPLE_REQUEST["machine"]}" selected', form)
+        self.assertIn("Perfect · Gpu · Q8_0", page)
+        self.assertIn("Metal", page)
+        self.assertEqual(result["kind"], "fit_estimate")
+        self.assertEqual(result["status"], "estimated")
+        self.assertEqual(result["machine"]["configuration"], "MCYT4LL/A")
+        self.assertEqual(result["engine"]["revision"], "26450cccaf3a3f14b1822875f2473847a744a718")
+        self.assertEqual(result["engine_selected_runtime"], "llama.cpp")
+        self.assertEqual(result["assumptions"], {
+            "context_tokens": 4096,
+            "ram_reserved_gib": 8,
+            "vram_reserved_gib": None,
+            "cpu_cores": 10,
+        })
+        self.assertEqual(result["sources"]["memory_bandwidth"], "https://support.apple.com/en-us/121555")
+        self.assertEqual(result["sources"]["metal_backend"], "https://support.apple.com/en-us/102894")
+        self.assertEqual(result["calculation"]["backend"], "Metal")
+        self.assertEqual(result["calculation"]["installed_unified_memory_gib"], 24)
+        self.assertEqual(result["calculation"]["available_unified_memory_gib"], 16)
+        self.assertEqual(result["calculation"]["unified_memory_bandwidth_gbps"], 120)
+        self.assertNotIn("installed_vram_gib", result["calculation"])
+        self.assertIsNone(result["calculation"]["metal_working_set_limit_gib"])
+        self.assertEqual(result["estimate"]["run_mode"], "Gpu")
+        self.assertEqual(result["estimate"]["quantization"], "Q8_0")
+        self.assertEqual(result["estimate"]["memory_available_gib"], 16)
+        self.assertAlmostEqual(result["estimate"]["memory_required_gib"], 1.0656094064)
+        self.assertEqual(result["estimate"]["decode_basis"]["gpu_bandwidth_gbps"], 120)
+        self.assertIsNone(result["estimate"]["prefill_tokens_per_second"])
+
+    def test_shared_memory_inputs_qualify_conflicts_and_accept_zero_discrete_reservation(self):
+        with self.server() as base:
+            self.assertEqual(
+                read_estimate(base, {**APPLE_REQUEST, "vram_reserved_gib": "0", "cpu_cores": "10"}),
+                read_estimate(base, APPLE_REQUEST),
+            )
+            cases = [
+                ({"vram_reserved_gib": "2"}, "unified_memory_has_no_vram_reservation"),
+                ({"cpu_cores": "12"}, "factory_cpu_cores_mismatch"),
+                ({"ram_reserved_gib": "24"}, "reservation_exhausts_memory"),
+                ({"ram_reserved_gib": ""}, "missing_request_inputs"),
+                ({"machine": "apple-mac-mini-m6-24gb-512gb", "vram_reserved_gib": "0"},
+                 "machine_fit_inputs_unavailable"),
+            ]
+            for fields, reason in cases:
+                with self.subTest(reason=reason):
+                    result = read_estimate(base, {**APPLE_REQUEST, **fields})
+                    self.assertEqual(result["status"], "insufficient_input")
+                    self.assertEqual(result["qualification"], reason)
+                    self.assertIsNone(result["estimate"])
 
     def test_worker_settings_do_not_change_cpu_offload_estimates(self):
         with self.server() as base, TemporaryDirectory(prefix="fastest-fit-worker-") as temp:
