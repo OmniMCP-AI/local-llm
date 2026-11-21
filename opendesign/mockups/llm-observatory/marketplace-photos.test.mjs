@@ -8,10 +8,10 @@ import { fileURLToPath } from 'node:url';
 
 const now = '2026-11-22T12:00:00Z';
 const ebay = {
-  provider: 'ebay', itemId: '137016414155', variantId: 'v1',
-  listingUrl: 'https://www.ebay.com/itm/137016414155', imageUrl: 'https://i.ebayimg.com/images/g/example.jpg',
+  provider: 'ebay', itemId: '137016414155', variantId: '987654321',
+  listingUrl: 'https://www.ebay.com/itm/137016414155?var=987654321', imageUrl: 'https://i.ebayimg.com/images/g/example.jpg',
   catalogId: 'asus-dual-rtx5060ti-16g', partNumber: 'DUAL-RTX5060TI-16G',
-  reviewedPartNumber: 'DUAL-RTX5060TI-16G', reviewedVariantId: 'v1',
+  reviewedPartNumber: 'DUAL-RTX5060TI-16G', reviewedVariantId: '987654321',
   matchEvidence: 'https://example.org/verified-board', imageKind: 'seller-specimen',
   imageEvidence: 'https://example.org/original-photo',
   fetchedAt: '2026-11-22T11:00:00Z', expiresAt: '2026-11-22T13:00:00Z',
@@ -56,7 +56,8 @@ test('Amazon exact variation enforces 24-hour link expiry', () => {
 
 test('listing identities and hostnames must agree', () => {
   for (const row of [
-    { ...ebay, listingUrl: 'https://www.ebay.com/itm/123456789012' },
+    { ...ebay, listingUrl: 'https://www.ebay.com/itm/123456789012?var=987654321' },
+    { ...ebay, listingUrl: 'https://www.ebay.com/itm/137016414155?var=123456' },
     { ...ebay, imageUrl: 'https://example.org/image.jpg' },
     { ...ebay, listingUrl: 'https://www.ebay.com.example.org/itm/137016414155' },
   ]) assert.equal(listingPhoto(row, now), null);

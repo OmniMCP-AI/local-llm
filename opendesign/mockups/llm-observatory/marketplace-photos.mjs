@@ -23,7 +23,9 @@ export function listingPhoto(row, at = new Date().toISOString()) {
   const image = url(row.imageUrl, amazon ? ['m.media-amazon.com', 'images-na.ssl-images-amazon.com'] : ['i.ebayimg.com']);
   const itemValid = amazon ? /^[A-Z0-9]{10}$/.test(row.itemId ?? '') && /^[A-Z0-9]{10}$/.test(row.variantId ?? '') &&
     listing?.pathname === `/dp/${row.variantId}`
-    : /^\d{9,15}$/.test(row.itemId ?? '') && listing?.pathname === `/itm/${row.itemId}`;
+    : /^\d{9,15}$/.test(row.itemId ?? '') && listing?.pathname === `/itm/${row.itemId}` &&
+      (row.variantId === 'single' ? !listing.searchParams.has('var') :
+        /^\d+$/.test(row.variantId ?? '') && listing.searchParams.getAll('var').length === 1 && listing.searchParams.get('var') === row.variantId);
   const fetched = instant(row.fetchedAt), expiry = instant(row.expiresAt), now = instant(at);
   if (!listing || !image || !itemValid || !nonempty(row.variantId) || row.variantId !== row.reviewedVariantId ||
       !nonempty(row.catalogId) || !nonempty(row.partNumber) || row.partNumber !== row.reviewedPartNumber ||
