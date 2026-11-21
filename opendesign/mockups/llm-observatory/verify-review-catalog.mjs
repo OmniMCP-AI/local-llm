@@ -1,3 +1,4 @@
+import { verifyCatalogScripts, catalogNavigationLinks } from "./verify-catalog-html.mjs";
 import assert from "node:assert/strict";
 import { escapeHtml, escapeMarkdown } from "./catalog-card.mjs";
 import { readPublishedCatalog } from "./catalog-pg.mjs";
@@ -101,7 +102,7 @@ export async function verifyReviewCatalog(catalog, review, { read, origin }) {
       for (const target of paths) {
         assert.ok(paths.length === 1 || (links.includes(target) && companions.includes(target + ".md")), target);
       }
-      assert.doesNotMatch(html, /<script\b/i, path);
+      verifyCatalogScripts(html, path);
     });
   }
 
@@ -112,12 +113,12 @@ export async function verifyReviewCatalog(catalog, review, { read, origin }) {
   const modelProfiles = new Set(Object.values(collections).flat());
   const common = ["/", review.directory.html, review.directory.html + "#cards", review.directory.html + "#machines",
     review.models.popular.html, review.runtimes.html, review.models.popular.markdown, review.runtimes.markdown,
-    root + "/manifest.json", root + "/LICENSE.txt"];
+    root + "/manifest.json", root + "/LICENSE.txt", ...catalogNavigationLinks];
   const routes = new Set([...common, ...runtimes.flatMap(row => [runtimePath(row), runtimePath(row) + ".md"])]);
   async function verifyProfile(path, title, citations) {
     const { html, markdown } = await readPair(path);
     assert.ok(html.includes(`<h1>${escapeHtml(title)}</h1>`), path);
-    assert.doesNotMatch(html, /<script\b/i, path);
+    verifyCatalogScripts(html, path);
     assert.ok([...htmlLinks(html), ...markdownLinks(markdown)].every(link =>
       routes.has(link) || link === path || link === path + ".md"), path);
     for (const citation of citations.filter(Boolean)) {
