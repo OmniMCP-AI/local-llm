@@ -2,6 +2,7 @@
 SELECT format('SELECT %L AS table_name, count(*) AS row_count FROM %I.%I;',
               schemaname || '.' || tablename, schemaname, tablename)
 FROM pg_tables
-WHERE schemaname IN ('fastest_catalog', 'fastest_research', 'fastest_release', 'fastest_prices', 'fastest_contributor', 'fastest_intake')
+WHERE schemaname IN ('fastest_catalog', 'fastest_research', 'fastest_release',
+                     'fastest_prices', 'fastest_contributor', 'fastest_intake', 'fastest_release_watch')
 ORDER BY schemaname, tablename
 \gexec

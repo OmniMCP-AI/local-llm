@@ -150,6 +150,23 @@ The release manifest maps the widget path to its content hash. Its JSON rows car
 
 Machine pages can use a topology widget to show installed devices, physical and logical links, negotiated capabilities, and measured transport and scaling. Its chart and table label theoretical versus observed values and include the endpoint path and direction with any bandwidth number.
 
+## Runtime release watch
+
+A separate refresh reads the official llama.cpp feed and records deduplicated
+revisions and refresh health in the PostgreSQL `fastest_release_watch` schema.
+The opt-in release origin reads that retained history for `/runtime-releases`,
+`/runtime-releases.md` and `/runtime-releases.json`. The CLI and origin share the
+projection of source links, release status and last successful refresh. Failed
+upstream refreshes preserve the prior success and its history. All three
+origin responses bypass caches and reflect the current database read.
+
+A reviewed applicability file attaches a technique to a retained release
+revision and exact card, driver, runtime build and workload. For a verified
+note the origin uses the benchmark reader to check rights and match the
+baseline and tuned runs on every request. An unavailable store or ineligible
+configured approval gives a service-unavailable response in each format.
+[Runtime watch setup](../production/fastest_release_watch/README.md#serve-the-watch)
+
 ## Correction, validation and rollout
 
 - **Correct and withdraw.** Replace claims by adding new source versions, revision rows and review decisions. Publish a new release linked to its predecessor. For withdrawn rights, immediately apply a denylist at every public read, then quarantine affected Markdown, chart payloads, graph links, search entries, downloads and project-controlled mirrors. Purge cached pages and CDN objects. Notify recipients of previously distributed files and record the affected hashes. External clones may retain an old snapshot. Old release URLs retain allowed content and show that evidence was withdrawn. They do not bypass the current rights check.

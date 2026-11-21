@@ -7,6 +7,7 @@ import sys
 from fastest_fit import FitEngineError
 from fastest_goals import GoalService
 from fastest_prices import PriceStore
+from fastest_release_watch.postgres import PostgresStore
 
 from . import ReleaseError, ReleaseNotFound, ReleaseStore
 from .http import CONTENT_TYPES, make_server
@@ -50,6 +51,10 @@ def main(argv=None):
                        help="Serve private contributor receipt links using the configured release reader.")
     serve.add_argument("--goal-rights", type=Path, help="Read this live rights file on each measured goal request.")
     serve.add_argument("--agent-task-release", help="Use this pinned PostgreSQL agent-task report as the default.")
+    serve.add_argument("--runtime-release-watch", action="store_true",
+                       help="Serve the retained llama.cpp release history from PostgreSQL.")
+    serve.add_argument("--runtime-release-watch-notes", type=Path,
+                       help="Read reviewed runtime applicability JSON on each release watch request.")
     research_import = commands.add_parser("research-import", help="Reconcile the private video research seed.")
     research_import.add_argument("--seed-dir", type=Path, default=SEED_ROOT)
     research_read = commands.add_parser("research-read", help="Read a private research manifest or its records.")
@@ -62,6 +67,11 @@ def main(argv=None):
     if not args.database_url and args.command != "serve":
         parser.error("set FASTEST_DATABASE_URL or pass --database-url")
     store = ReleaseStore(args.database_url) if args.database_url else None
+    if args.command == "serve":
+        if args.runtime_release_watch and store is None:
+            parser.error("--runtime-release-watch requires FASTEST_DATABASE_URL or --database-url")
+        if args.runtime_release_watch_notes is not None and not args.runtime_release_watch:
+            parser.error("--runtime-release-watch-notes requires --runtime-release-watch")
     try:
         if args.command == "migrate":
             store.migrate()
@@ -81,6 +91,7 @@ def main(argv=None):
         elif args.command == "research-read":
             print(json.dumps(read_seed(store, args.seed_id, args.kind, args.identifier), ensure_ascii=False, indent=2))
         elif args.command == "serve":
+            runtime_watch = PostgresStore(args.database_url) if args.runtime_release_watch else None
             price_reader = PriceStore(args.database_url).read if args.database_url else None
             goal_history = [GoalService(manifest, price_reader=price_reader, rights_path=args.goal_rights) for manifest in args.goal_cohort]
             with make_server(store, args.host, args.port, args.trusted_host, fit_engine=fit_engine,
@@ -90,7 +101,8 @@ def main(argv=None):
                              price_reader=price_reader, scaling_pair=args.scaling_pair, cost_scenario=args.cost_scenario,
                              contributor_receipts=args.contributor_receipts,
                              agent_task_release=args.agent_task_release,
-                             cost_tariff_references=args.cost_tariff_references) as server:
+                             cost_tariff_references=args.cost_tariff_references, runtime_watch=runtime_watch,
+                             runtime_watch_notes=args.runtime_release_watch_notes) as server:
                 host, port = server.server_address
                 print(f"Listening on {host}:{port}", file=sys.stderr, flush=True)
                 server.serve_forever()
