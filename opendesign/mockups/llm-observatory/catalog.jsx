@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Cpu, Layers3, 
 import topics from "./catalog-topics.json";
 import { catalogPath } from "./catalog-paths.mjs";
 import { modelCard, renderCard } from "./catalog-card.mjs";
+import { runtimeOverview } from "./runtime-overview.mjs";
 import { CatalogCompare } from "./catalog-compare";
 import { modelCollections, modelTags, queryModelCatalog } from "./catalog-search.mjs";
 import { useLocale } from "./locale";
@@ -237,6 +238,27 @@ function Pager({ page, pages, onPage, label, number }) {
   </nav>;
 }
 
+function RuntimeOverview() {
+  const overview = runtimeOverview(runtimes);
+  const profile = id => catalogRelease ? "/" + catalogPath(catalogRelease, "runtimes", id)
+    : "local-catalog/" + catalogPath(localCatalogRelease, "runtimes", id);
+  return <section aria-labelledby="runtime-overview-title" className="catalog-runtime-overview">
+    <h2 id="runtime-overview-title">Runtime overview</h2>
+    <p>{overview.selection.method} Review v{overview.selection.version} · {overview.selection.reviewedAt}. The full directory remains below. {catalogRelease && <a href={`/catalog-data/${catalogRelease}/runtime-overview-v1.json`}>Structured overview</a>}</p>
+    <p><strong>Performance slice:</strong> {overview.workload.description}. Metric: {overview.workload.metric} ({overview.workload.unit}); higher is better. Only source-linked measured runs with disclosed run date, runtime version, driver and matching conditions qualify. Missing measurements are not ranked.</p>
+    <div className="catalog-table-wrap"><table className="catalog-table" aria-label="Runtime capabilities and comparable performance">
+      <thead><tr><th scope="col">Runtime and pinned version</th><th scope="col">Documented backend and formats</th><th scope="col">Workload</th><th scope="col">Performance in selected slice</th></tr></thead>
+      <tbody>{overview.rows.map(row => <tr key={row.id}>
+        <th scope="row"><a href={profile(row.id)}>{row.name}</a><small><a href={row.releaseUrl ?? row.source + "/releases/tag/" + row.tag}>{row.tag}</a> · {row.published ?? "Date unknown"}</small></th>
+        <td><a href={row.backendSource}>{row.backends}</a><small><a href={row.formatSource}>{row.formats}</a></small></td>
+        <td><a href={row.docs}>{row.workload}</a></td>
+        <td>{row.result ? <><strong>#{row.rank} · {row.result.score} {overview.workload.unit}</strong><small><a href={row.result.source}>Run evidence</a> · {row.result.runDate} · {row.result.runtimeVersion} · {row.result.backend} · driver {row.result.driver}</small></> : "No eligible measurement"}</td>
+      </tr>)}</tbody>
+    </table></div>
+    <p className="catalog-muted">Documented support does not establish a tested configuration. Driver, hardware, artifact, context and concurrency are reported with each eligible measurement; no benchmark run date is inferred from a publication date.</p>
+  </section>;
+}
+
 export function SourceCatalog({ go, onCopy, initialKind }) {
   const { language, t } = useLocale();
   const number = useMemo(() => new Intl.NumberFormat(language), [language]);
@@ -387,6 +409,7 @@ export function SourceCatalog({ go, onCopy, initialKind }) {
           <SourceLink href={discovery.source}>{discovery.capturedAt.slice(0, 10)}</SourceLink>
         </p>}
       </>}
+      {active === "runtimes" && <RuntimeOverview />}
       <div className="catalog-tools" ref={tableTop}>
         <label className="deep-search">
           <Search size={16} aria-hidden="true" />

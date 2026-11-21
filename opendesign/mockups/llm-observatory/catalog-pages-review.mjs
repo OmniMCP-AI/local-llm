@@ -1,3 +1,4 @@
+import { runtimeOverview } from "./runtime-overview.mjs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -120,13 +121,21 @@ async function writePair(output, htmlPath, html, markdown) {
   ]);
 }
 
-async function writeCatalogIndex(output, { title, path, release, review, summary, fields, nav = [], pagination = [], rows }) {
+async function writeCatalogIndex(output, { title, path, release, review, summary, fields, nav = [], pagination = [], rows, overview }) {
   const navHtml = (label, links) => links.length ? `<nav class="profile-actions" aria-label="${label}">${links.map(([name, url]) =>
     `<a href="${url}"${url === path ? ' aria-current="page"' : ""}>${escapeHtml(name)}</a>`).join("")}</nav>` : "";
   const navMd = (links) => links.map(([name, url]) => `[${escapeMarkdown(name)}](${url}.md)`).join(" · ");
+  const sourceHtml = (value, source) => source ? `<a href="${escapeHtml(source)}">${escapeHtml(value ?? "Unknown")}</a>` : escapeHtml(value ?? "Unknown");
+  const sourceMd = (value, source) => source ? `[${escapeMarkdown(value ?? "Unknown")}](<${source}>)` : escapeMarkdown(value ?? "Unknown");
+  const overviewHtml = overview ? `<section class="profile-section"><h2>Runtime overview</h2>
+<p>${escapeHtml(overview.selection.method)} Review v${overview.selection.version} · ${overview.selection.reviewedAt}.</p>
+<p>Performance slice: ${escapeHtml(overview.workload.description)}. ${escapeHtml(overview.workload.metric)} (${escapeHtml(overview.workload.unit)}), higher is better. Missing measurements are not ranked.</p>
+<table><thead><tr><th>Runtime and version</th><th>Backend</th><th>Formats</th><th>Workload</th><th>Performance</th></tr></thead><tbody>${overview.rows.map(row => `<tr><th>${sourceHtml(`${row.name} ${row.tag ?? "Version unknown"}`, row.releaseUrl ?? (row.source && row.tag && `${row.source}/releases/tag/${row.tag}`))} · ${escapeHtml(row.published ?? "Date unknown")}</th><td>${sourceHtml(row.backends, row.backendSource)}</td><td>${sourceHtml(row.formats, row.formatSource)}</td><td>${sourceHtml(row.workload, row.docs)}</td><td>${row.result ? `#${row.rank} · ${row.result.score} ${escapeHtml(overview.workload.unit)} · <a href="${escapeHtml(row.result.source)}">Run evidence</a> · ${escapeHtml(row.result.runDate)}` : "No eligible measurement"}</td></tr>`).join("")}</tbody></table></section>` : "";
+  const overviewMarkdown = overview ? ["## Runtime overview", "", overview.selection.method + ` Review v${overview.selection.version} · ${overview.selection.reviewedAt}.`, "", `Performance slice: ${overview.workload.description}. ${overview.workload.metric} (${overview.workload.unit}), higher is better. Missing measurements are not ranked.`, "", ...overview.rows.map(row => `- ${sourceMd(`${row.name} ${row.tag ?? "Version unknown"}`, row.releaseUrl ?? (row.source && row.tag && `${row.source}/releases/tag/${row.tag}`))} · ${row.published ?? "Date unknown"} · Backend: ${sourceMd(row.backends, row.backendSource)} · Formats: ${sourceMd(row.formats, row.formatSource)} · Workload: ${sourceMd(row.workload, row.docs)} · ${row.result ? `#${row.rank} · ${row.result.score} ${overview.workload.unit} · [Run evidence](<${row.result.source}>) · ${row.result.runDate}` : "No eligible measurement"}`), ""] : [];
   const main = `<div class="profile-hero"><h1>${escapeHtml(title)}</h1><p class="profile-evidence">${escapeHtml(summary)}</p>
 <div class="profile-actions"><a href="${path}.md">Markdown</a></div>
 ${navHtml("Model collections", nav)}${htmlFields(fields)}</div>
+${overviewHtml}
 ${directoryTable(escapeHtml(title), rows, row => row.path)}
 ${navHtml("Collection pages", pagination)}`;
   const markdown = [
@@ -135,6 +144,7 @@ ${navHtml("Collection pages", pagination)}`;
     `# ${escapeMarkdown(title)}`, "", summary, "",
     `[HTML directory](${path}) · [Coverage and source manifest](/catalog/${release}/manifest.json)`, "",
     navMd(nav), "", ...markdownFields(fields), "",
+    ...overviewMarkdown,
     ...rows.map(row => `- [${escapeMarkdown(row.name)}](${row.path}.md)${row.name === row.id ? "" : ` · \`${row.id}\``} · ${escapeMarkdown(row.detail)}`),
     "", navMd(pagination), "",
   ].join("\n");
@@ -200,6 +210,7 @@ export async function writeModelRuntimeDirectories(output, { manifest, shards, r
       title: "Runtime catalog", path: runtimeDirectory, release, review,
       summary: "Browse upstream releases, pinned commits and documented support from this catalog snapshot.",
       fields: [["Runtime projects", number.format(runtimes.length)]],
+      overview: runtimeOverview(runtimes),
       rows: runtimes.map(row => ({ id: row.id, name: row.name,
         detail: [row.tag, row.published, row.category].filter(Boolean).join(" · "), path: runtimePath(row.id) })),
     }),

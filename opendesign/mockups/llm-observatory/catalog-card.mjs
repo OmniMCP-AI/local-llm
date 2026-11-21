@@ -139,6 +139,8 @@ export function runtimeCard(row, { local = false, observation, review = false } 
         ["Workload", row.workload, row.docs],
         ["Artifact format examples", row.formats, row.formatSource],
         ["Backend and platform examples", row.backends, row.backendSource],
+        ["Tested driver, hardware and settings", "No reviewed matching test in this release"],
+        ["Tested context, cache and concurrency", "Not reported in this release"],
         ...(!review && ["GGUF", "Safetensors"].includes(row.formats) ? [["Models with this artifact format", "Browse the model catalog",
           (local ? "../../../../fastest-ai.html" : "/") + "#catalog/models?view=all&tag=" + encodeURIComponent(row.formats)]] : []),
       ],
