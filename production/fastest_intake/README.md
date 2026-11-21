@@ -42,7 +42,46 @@ Review rights, exact identity, methodology, and current offer status before prep
 | Collection | Intake fields | Access and review |
 | --- | --- | --- |
 | [Speed by context depth](https://local-llm-benchmarks.dev/speed) | Keep prompt processing and token generation separate. Preserve the run ID, backend/build, model revision and quantization, hardware and device count, context depth, serving mode, concurrency, request rate, repeats, and run-specific settings. Distinguish cached-prefix extensions and post-first-token timing from native full-prefix runs. | Direct automated access to the Speed page returned HTTP 403 on November 21, 2026. The site advertises reference use and excludes training. Prefer a publisher-provided export with reviewed collection and display terms. [Robots policy](https://local-llm-benchmarks.dev/robots.txt) |
-| [Terminal-Bench-Local Core-19](https://kyuz0.github.io/terminal-bench-mini/) | Preserve suite revision and denominator, exact model and runtime, attempt count, and verified pass outcome. Keep legacy Mini-20 runs in a separate cohort. | Start with commit-pinned structured results from the publisher. The repository notice documents locally produced result artifacts and separately identifies the license for vendored tasks. Review the result reuse scope before public release. [Results repository](https://github.com/kyuz0/terminal-bench-mini/tree/main/results/suites) · [Provenance notice](https://github.com/kyuz0/terminal-bench-mini/blob/main/NOTICE.md) |
+| [Terminal-Bench-Local Core-19](https://kyuz0.github.io/terminal-bench-mini/) | Preserve the suite manifest, scores and denominator, publisher model label, and known engine, backend, agent, and settings. | A commit-pinned structured import is available for private evidence review. Public reuse is pending a separate review. |
+
+## Import source-reported Core-19 scores
+
+From `production`, select the private PostgreSQL intake database and run `python3 -B -m fastest_intake migrate`.
+Set `checked_at` to the source check time with a time zone and record it for replay. Use the same
+timestamp and files to replay the same batch.
+
+```sh
+(
+  set -eu
+  packet=$(mktemp -d "${TMPDIR:-/tmp}/fastest-core19.XXXXXX")
+  trap 'rm -rf "$packet"' EXIT
+  trap 'exit 1' HUP INT TERM
+  repo=kyuz0/terminal-bench-mini
+  revision=f28e1a024df97d40470a5e10a0147a56650b6457
+  suite=results/suites/core19-8db507125de192b10b0930110efe9e014696fa30c274dc8e76c8337a84e23cf7
+  checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  gh api -H 'Accept: application/vnd.github.raw+json' "repos/$repo/contents/$suite/index.json?ref=$revision" > "$packet/index.json"
+  gh api -H 'Accept: application/vnd.github.raw+json' "repos/$repo/contents/docs/data.json?ref=$revision" > "$packet/data.json"
+  printf 'Source check time %s\n' "$checked_at"
+  python3 -B -m fastest_intake ingest-core19 "$packet" --checked-at "$checked_at"
+)
+```
+
+The importer verifies both file digests and checks the full Core-19 1.0.0 suite index against the
+publisher's Explorer v2 summary. It retains two `publisher_reported` scores per complete profile
+in `fastest_intake.model_evaluation`. The integer `amount` is the number of tasks passed on the first
+attempt or within the recorded attempts, with a denominator of 19 for both. The 27 profiles in this
+snapshot yield 46 observations from 23 profiles. The captured source note records the four deferred
+incomplete profiles. Completed profiles can include attempted tasks that ended in counted failures
+without a completed task flag. The context records this count along with the number of recorded attempts.
+Projected legacy scores are outside the pinned suite.
+
+Each row cites the publisher's immutable result summary and retains the run profile hash, platform,
+and known runtime, agent, and settings. The model is the publisher's label and the tested checkpoint
+revision stays unset. The import retains run-level facts in the private schema. Task instructions,
+transcripts, and endpoint metadata stay out of the database. The repository declares Apache-2.0, and
+the provenance notice describes the vendored tasks separately from the locally produced results.
+Public reuse remains pending review. [Suite index](https://github.com/kyuz0/terminal-bench-mini/blob/f28e1a024df97d40470a5e10a0147a56650b6457/results/suites/core19-8db507125de192b10b0930110efe9e014696fa30c274dc8e76c8337a84e23cf7/index.json) · [Explorer data](https://github.com/kyuz0/terminal-bench-mini/blob/f28e1a024df97d40470a5e10a0147a56650b6457/docs/data.json) · [Provenance notice](https://github.com/kyuz0/terminal-bench-mini/blob/f28e1a024df97d40470a5e10a0147a56650b6457/NOTICE.md)
 
 ## Import source-reported GPU inference trials
 
