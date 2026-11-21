@@ -29,7 +29,7 @@ export async function onRequestGet(context) {
   const row = entries.find((entry) => entry.id === id);
   if (!row) return notFound();
 
-  const card = isModel ? modelCard(row, release)
+  const card = isModel ? modelCard(row, release, { discoveryCapture: row.discoveryCapture })
     : kind === "runtimes" ? runtimeCard(row) : hardwareCard(row, release, kind, { peers: kind === "cards" ? entries : [] });
   const markdown = extension === "md";
   return new Response(renderCard(card, {

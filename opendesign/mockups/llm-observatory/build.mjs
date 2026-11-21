@@ -5,7 +5,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
-import { writeCatalogRelease } from "./catalog-release-build.mjs";
+import { prepareCatalogRelease, readCatalogModelFiles, writeCatalogProjection, writeCatalogRelease } from "./catalog-release-build.mjs";
+import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { writeLocalCatalogProfiles } from "./catalog-local-build.mjs";
 import { profileStyles } from "./catalog-profile-styles.mjs";
 import { activeHighlights, wikiHtmlRoute, writeWikiRelease } from "./wiki-release.mjs";
@@ -22,6 +23,16 @@ const require = createRequire(import.meta.url);
 const { build } = require("esbuild");
 const openccRoot = resolve(dirname(require.resolve("opencc-js")), "../..");
 const pages = process.argv.includes("--pages");
+const catalogPostgres = process.argv.includes("--catalog-postgres");
+const catalogDatabase = process.env.FASTEST_CATALOG_DATABASE_URL;
+const catalogSnapshot = process.env.FASTEST_CATALOG_SNAPSHOT_ID;
+if (catalogPostgres) {
+  if (!pages) throw new Error("--catalog-postgres requires --pages");
+  if (!catalogDatabase?.trim()) throw new Error("FASTEST_CATALOG_DATABASE_URL is required");
+  if (!/^[a-f0-9]{64}$/.test(catalogSnapshot ?? "")) {
+    throw new Error("FASTEST_CATALOG_SNAPSHOT_ID must be a full SHA-256 digest");
+  }
+}
 const outputArgument = process.argv.indexOf("--output");
 if (outputArgument !== -1 && (!pages || !process.argv[outputArgument + 1])) throw new Error("--output requires a Pages directory");
 const output = outputArgument === -1 ? fileURLToPath(here("dist/")) : resolve(process.argv[outputArgument + 1]);
@@ -76,18 +87,25 @@ if (pages) {
   if (evidenceState.withdrawnSources?.some((hash) => !blocked.has(hash))) {
     throw new Error("Build approvals would restore a withdrawn research source");
   }
-  researchIndex = await writeResearchRelease(fileURLToPath(here(".")), output, approvals);
 } else {
   researchIndex = await withPreviewResults(JSON.parse(researchPayload));
 }
-const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).map(async ([id, asset]) => {
+const catalogDirectory = fileURLToPath(here("."));
+const withdrawn = Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id);
+const isWithdrawn = withdrawnReference(JSON.parse(researchPayload), approvals);
+const published = catalogPostgres ? (await import("./catalog-pg.mjs")).readPublishedCatalog(catalogDatabase, catalogSnapshot) : null;
+const modelFiles = published ?? await readCatalogModelFiles(catalogDirectory);
+const projection = published && prepareCatalogRelease(published);
+if (projection && ((withdrawn.length && isWithdrawn(JSON.stringify(published))) ||
+    deniedCatalogPin(projection.manifest.release, evidenceState.paths))) {
+  throw new Error("PostgreSQL catalog snapshot conflicts with active evidence withdrawals: " + catalogSnapshot);
+}
+if (pages) researchIndex = await writeResearchRelease(catalogDirectory, output, approvals);
+const media = Object.fromEntries(await Promise.all(Object.entries(mediaIndex).filter(([, asset]) => !isWithdrawn(asset.source)).map(async ([id, asset]) => {
   if (!/^[a-z0-9-]+\.jpg$/.test(asset.file)) throw new Error("Invalid hardware photo filename: " + asset.file);
   const jpeg = await readFile(here("hardware-assets/" + asset.file));
   return [id, { ...asset, data: "data:image/jpeg;base64," + jpeg.toString("base64") }];
 })));
-const catalogDirectory = fileURLToPath(here("."));
-const withdrawn = Object.entries(approvals).filter(([, value]) => value.status === "withdrawn").map(([id]) => id);
-const isWithdrawn = withdrawnReference(JSON.parse(researchPayload), approvals);
 const publicTopologies = topologyReports.filter(({ source, id }) => !isWithdrawn(source) && !isWithdrawn(id));
 const publicDocuments = Object.fromEntries(Object.entries(documents)
   .filter(([, { evidence, status }]) => !isWithdrawn(evidence) && status !== "withdrawn")
@@ -95,29 +113,35 @@ const publicDocuments = Object.fromEntries(Object.entries(documents)
     const clean = (text) => text.split("\n").filter((line) => !isWithdrawn(line)).join("\n");
     return [id, { ...doc, body: clean(doc.body), raw: clean(doc.raw) }];
   }));
-const hardware = await readHardwareCatalog(catalogDirectory, isWithdrawn);
-const gpuPhotos = {
-  "nvidia-geforce-rtx-4090": "rtx-4090",
-  "nvidia-geforce-rtx-3090": "rtx-3090",
-  "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
-  "intel-arc-b580": "arc-b580",
-};
-for (const card of hardware.catalog.cards) {
-  const photo = media[gpuPhotos[card.id]];
-  if (photo && !isWithdrawn(photo.source)) card.photos = [photo];
+const hardware = published?.hardware ?? await readHardwareCatalog(catalogDirectory, isWithdrawn);
+if (!published) {
+  const gpuPhotos = {
+    "nvidia-geforce-rtx-4090": "rtx-4090",
+    "nvidia-geforce-rtx-3090": "rtx-3090",
+    "nvidia-geforce-rtx-3060-12gb": "rtx-3060",
+    "intel-arc-b580": "arc-b580",
+  };
+  for (const card of hardware.catalog.cards) {
+    const photo = media[gpuPhotos[card.id]];
+    if (photo) card.photos = [photo];
+  }
+  hardware.digest = createHash("sha256").update(JSON.stringify({ catalog: hardware.catalog, manifest: hardware.manifest })).digest("hex");
 }
-hardware.digest = createHash("sha256").update(JSON.stringify({ catalog: hardware.catalog, manifest: hardware.manifest })).digest("hex");
 const hardwareDirectory = {
   asOf: hardware.manifest.asOf,
   coverage: hardware.manifest.coverage,
   cards: hardware.catalog.cards.map(({ id, name, detail, aliases, source, memory, vendorSpec }) => ({ id, name, detail, aliases, source, memory, vendorSpec })),
   machines: hardware.catalog.machines.map(({ id, name, detail, kind, source }) => ({ id, name, detail, kind, source })),
 };
-const runtimes = JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8")).map(({ references, ...row }) => ({
+const runtimes = published?.runtimes ?? JSON.parse(await readFile(here("catalog-runtimes.json"), "utf8")).map(({ references, ...row }) => ({
   ...row,
   references: (references ?? []).filter(({ href }) => !isWithdrawn(href)),
 }));
-const catalogRelease = pages ? await writeCatalogRelease(catalogDirectory, output, hardware, runtimes) : "";
+let catalogRelease = "";
+if (pages) {
+  catalogRelease = projection ? await writeCatalogProjection(output, projection)
+    : await writeCatalogRelease(catalogDirectory, output, hardware, runtimes, modelFiles);
+}
 let localCatalogRelease = "";
 let localModelIds = [];
 if (!pages) {
@@ -164,6 +188,9 @@ const result = await build({
     __FASTEST_RELEASE_ORIGIN__: JSON.stringify(origin),
     __FASTEST_RESEARCH_INDEX__: JSON.stringify(researchIndex),
     __FASTEST_CATALOG_RELEASE__: JSON.stringify(catalogRelease),
+    __FASTEST_MODEL_CATALOG__: JSON.stringify(modelFiles.source),
+    __FASTEST_MODEL_IDENTITIES__: JSON.stringify(modelFiles.identities),
+    __FASTEST_MODEL_DISCOVERY__: JSON.stringify(modelFiles.discovery),
     __FASTEST_RUNTIMES__: JSON.stringify(runtimes),
     __FASTEST_LOCAL_CATALOG_RELEASE__: JSON.stringify(localCatalogRelease),
     __FASTEST_LOCAL_MODEL_IDS__: JSON.stringify(localModelIds),
@@ -240,6 +267,15 @@ if (pages) {
   for (const name of await readdir(join(output, "research"))) {
     if (name !== researchIndex.release && !Object.hasOwn(retained, name) && researchReleaseId.test(name)) {
       await rm(join(output, "research", name), { recursive: true, force: true });
+    }
+  }
+  if (projection) {
+    for (const root of ["catalog", "catalog-data"]) {
+      for (const name of await readdir(join(output, root))) {
+        if (name !== catalogRelease && catalogReleasePattern.test(name)) {
+          await rm(join(output, root, name), { recursive: true, force: true });
+        }
+      }
     }
   }
 } else {
