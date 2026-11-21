@@ -79,7 +79,8 @@ def render_contributor_receipt(revisions):
 
 def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_engine=None,
                 profile_releases=(), profile_archives=(), goals=None, goal_history=(), price_reader=None,
-                scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None):
+                scaling_pair=(), cost_scenario=None, contributor_receipts=False, agent_task_release=None,
+                cost_tariff_references=None):
     """Bind a read-only HTTP server that checks rights on every release request."""
     if contributor_receipts and store is None:
         raise ValueError("Contributor receipts require a release reader.")
@@ -130,8 +131,10 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
         for base, files in ((image_base, image_files), (text_base, text_files), (agent_task_base, agent_task_files))
         for name, content in files.items()
     }
-    cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader)
-    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader, cost_reader=cost_reader)
+    cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader,
+                          tariff_references_path=cost_tariff_references)
+    api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader,
+                    cost_reader=cost_reader, tariff_references_enabled=cost_tariff_references is not None)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
 
     class ReleaseRequest(BaseHTTPRequestHandler):
