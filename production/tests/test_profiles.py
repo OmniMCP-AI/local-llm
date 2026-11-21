@@ -1,5 +1,6 @@
 from contextlib import closing
 
+from hashlib import sha256
 import http.client
 import json
 from threading import Thread
@@ -54,6 +55,57 @@ class ProfileRoutesTest(unittest.TestCase):
                             self.assertEqual(status, 200)
                             self.assertIn(data["release"], markdown)
                     self.assertEqual(get(base + "machines/unlisted.html")[0], 404)
+            finally:
+                server.shutdown()
+                worker.join(timeout=5)
+                self.assertFalse(worker.is_alive())
+
+    def test_sdxl_profile_links_to_pinned_image_pilot_and_exact_workflow(self):
+        with make_server(None, port=0) as server:
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                with closing(http.client.HTTPConnection(*server.server_address, timeout=5)) as client:
+                    def get(path):
+                        client.request("GET", path)
+                        response = client.getresponse()
+                        return response.status, response.headers, response.read()
+
+                    _, index, _ = get("/profiles")
+                    profile = index["Location"].removesuffix("index.html") + "models/sdxl-turbo"
+                    for extension in ("html", "md"):
+                        status, _, body = get(f"{profile}.{extension}")
+                        self.assertEqual(status, 200)
+                        self.assertIn(b"/image-pilot", body)
+
+                    status, headers, _ = get("/image-pilot")
+                    self.assertEqual(status, 307)
+                    report = headers["Location"]
+                    self.assertRegex(report, r"^/image-pilot/[a-f0-9]{64}/image-pilot\.html$")
+                    base = report.removesuffix("image-pilot.html")
+                    status, _, manifest = get(base + "manifest.json")
+                    self.assertEqual(status, 200)
+                    self.assertIn(sha256(manifest).hexdigest(), report)
+
+                    files = {}
+                    for name, digest in json.loads(manifest)["files"].items():
+                        status, headers, body = get(base + name)
+                        self.assertEqual(status, 200, name)
+                        self.assertEqual(headers["Cache-Control"], "no-store")
+                        self.assertEqual(sha256(body).hexdigest(), digest)
+                        files[name] = body
+                    dataset = json.loads(files["image-pilot.json"])
+                    self.assertEqual(dataset["evidence_kind"], "planned")
+                    self.assertEqual(dataset["protocol"]["warmup_seed"], 731000)
+                    self.assertEqual(dataset["protocol"]["repeat_seeds"], [731001, 731002, 731003, 731004, 731005])
+                    self.assertEqual([cell["id"] for cell in dataset["cells"]], ["apple-m4", "rtx-4090"])
+                    for cell in dataset["cells"]:
+                        self.assertEqual(cell["status"], "blocked")
+                        self.assertIsNone(cell["metrics"]["seconds_per_accepted_image"]["value"])
+                        self.assertIn(cell["blocker"].encode(), files["image-pilot.html"])
+                    self.assertIn(b"Exact workflow", files["image-pilot.html"])
+                    self.assertEqual(sha256(files["workflow.json"]).hexdigest(), dataset["workflow"]["sha256"])
+                    self.assertEqual(get(base + "private.json")[0], 404)
             finally:
                 server.shutdown()
                 worker.join(timeout=5)

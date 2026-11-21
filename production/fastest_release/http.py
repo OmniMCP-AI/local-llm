@@ -14,6 +14,9 @@ from fastest_fit import FitEngineError, FitService, PUBLIC_FIELDS
 from fastest_fit.page import render_fit
 from fastest_goals import GoalEvidenceWithdrawn, GoalRightsUnavailable, GoalService, PUBLIC_FIELDS as GOAL_FIELDS
 from fastest_goals.page import render_goals
+from fastest_image import IMAGE_PILOT_ROUTE
+from fastest_image.__main__ import report_artifacts as image_report_artifacts
+from fastest_pilot_bundle import bundle_manifest, digest
 from fastest_prices import PriceError, PriceReleaseNotFound
 
 from . import CONTRIBUTOR_RECEIPT_PATH, ReleaseError, ReleaseNotFound
@@ -89,6 +92,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
     default_goals = GoalService()
     goals = goals or default_goals
     goal_versions = {service.release_id: service for service in (default_goals, *goal_history, goals)}
+    image_report_id, image_files = image_report_artifacts()
+    image_manifest = bundle_manifest(image_report_id, image_files)
+    image_base = f"{IMAGE_PILOT_ROUTE}/{digest(image_manifest)}/"
+    image_files["manifest.json"] = image_manifest
+    image_types = {"html": CONTENT_TYPES["benchmark.html"], "md": CONTENT_TYPES["benchmark.md"],
+                   "json": "application/json", "txt": "text/plain; charset=utf-8"}
     cost_reader = partial(calculate, reviewed_path=cost_scenario, price_reader=price_reader)
     api = PublicApi(store, profiles, profile_versions, goals, goal_versions, price_reader, cost_reader=cost_reader)
     profile_script = Path(__file__).with_name("profile-interaction.js").read_text(encoding="utf-8")
@@ -143,6 +152,12 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                 return self._respond(status, body, content_type)
             if path == "/profiles/interaction.js":
                 return self._respond(200, profile_script, "text/javascript; charset=utf-8")
+            if path == IMAGE_PILOT_ROUTE:
+                return self._respond(307, location=image_base + "image-pilot.html")
+            if path.startswith(image_base):
+                name = path.removeprefix(image_base)
+                if name in image_files:
+                    return self._respond(200, image_files[name], image_types[name.rsplit(".", 1)[1]])
             if path in {"/profiles", "/profiles/current"}:
                 return self._respond(307, location=profiles.base + "/index.html")
             if path in profile_indexes:
@@ -173,6 +188,7 @@ def make_server(store, host="127.0.0.1", port=8000, trusted_hosts=(), *, fit_eng
                     '<p><a href="/goals">Compare setups by goal</a></p>'
                     '<p><a href="/advisor">Guided advisor</a></p>'
                     '<p><a href="/costs">Compare text workload costs</a></p>'
+                    f'<p><a href="{IMAGE_PILOT_ROUTE}">Two-machine image pilot</a></p>'
                     f'<p><a href="{SCALING_ROUTE}">Compare single-to-multi-GPU scaling</a></p>' + fit_link + benchmark,
                     CONTENT_TYPES["benchmark.html"],
                 )
