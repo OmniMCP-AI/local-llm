@@ -1,9 +1,14 @@
 import json
+import os
 from pathlib import Path
+import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from uuid import uuid4
 
 
 PRODUCTION = Path(__file__).resolve().parents[1]
@@ -29,20 +34,13 @@ def github_release(release_id, tag, published_at, *, body="Original notes", prer
     }
 
 
-class ReleaseWatchTest(unittest.TestCase):
+class ReleaseWatchScenarios:
     def setUp(self):
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="release-watch-20-")))
-        self.database = self.directory / "watch.sqlite3"
         self.feed = self.directory / "feed.json"
 
-    def invoke(self, *options):
-        return subprocess.run(
-            [sys.executable, "-B", "-m", "fastest_release_watch", "--db", self.database, *options],
-            cwd=PRODUCTION,
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
+    def prepare_history(self):
+        pass
 
     def refresh(self, rows, at, *, success=True):
         self.feed.write_text(json.dumps(rows), encoding="utf-8")
@@ -59,6 +57,7 @@ class ReleaseWatchTest(unittest.TestCase):
         return json.loads(result.stdout)
 
     def test_repeat_and_older_replay_preserve_revision_identity_and_last_success(self):
+        self.prepare_history()
         older = github_release(100, "fixture-b1", "2026-11-19T01:00:00Z")
         edited = {**older, "body": "<script>raw release text</script>"}
         newer = github_release(101, "fixture-b2", DAY_TWO)
@@ -71,6 +70,16 @@ class ReleaseWatchTest(unittest.TestCase):
         self.refresh([preview, edited, newer], DAY_TWO)
         self.refresh([older], DAY_ONE)
         self.assertEqual(self.report(), updated)
+
+        late_edit_at = "2026-11-20T23:00:00Z"
+        self.refresh([{**older, "body": "Previously unobserved edit"}], late_edit_at)
+        with_late_edit = self.report()
+        self.assertEqual(with_late_edit["last_attempt"], DAY_TWO)
+        self.assertEqual(with_late_edit["last_successful_refresh"], DAY_TWO)
+        self.assertEqual(with_late_edit["releases"][:3], updated["releases"][:3])
+        self.assertEqual(with_late_edit["releases"][-2]["first_seen_at"], late_edit_at)
+        self.assertEqual(with_late_edit["releases"][-2]["status"], "superseded_revision")
+        self.assertEqual(with_late_edit["releases"][-1]["revision_id"], original)
         self.assertEqual(updated["last_successful_refresh"], DAY_TWO)
         self.assertEqual(updated["source"]["mode"], "fixture")
         self.assertEqual(
@@ -84,6 +93,7 @@ class ReleaseWatchTest(unittest.TestCase):
         self.assertNotIn("raw release text", json.dumps(updated))
 
     def test_bad_feed_attempt_keeps_last_success_and_flags_stale_history(self):
+        self.prepare_history()
         release = github_release(100, "fixture-b1", DAY_ONE)
         self.refresh([release], DAY_ONE)
         first_snapshot = self.report(DAY_ONE)
@@ -98,23 +108,8 @@ class ReleaseWatchTest(unittest.TestCase):
         self.assertTrue(failed["stale"])
         self.assertEqual(failed["releases"], first_snapshot["releases"])
 
-    def test_official_request_rejects_redirects_without_following_them(self):
-        import io
-        from unittest.mock import patch
-
-        from fastest_release_watch.feed import fetch
-
-        with patch("http.client.HTTPSConnection") as transport:
-            connection = transport.return_value
-            connection.getresponse.return_value = io.BytesIO(b"")
-            connection.getresponse.return_value.status = 302
-            with self.assertRaisesRegex(ValueError, "HTTP 302"):
-                fetch()
-            connection.request.assert_called_once()
-            self.assertEqual(connection.request.call_args.args,
-                             ("GET", "/repos/ggml-org/llama.cpp/releases?per_page=10&page=1"))
-
     def test_authored_note_links_only_the_named_card_configuration_and_revision(self):
+        self.prepare_history()
         release = github_release(100, "fixture-b1", DAY_ONE)
         self.refresh([release], DAY_ONE)
         original = self.report()["releases"][0]["revision_id"]
@@ -175,6 +170,37 @@ class ReleaseWatchTest(unittest.TestCase):
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertEqual(rejected.stdout, "")
 
+
+class ReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.database = self.directory / "watch.sqlite3"
+
+    def invoke(self, *options):
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--db", self.database, *options],
+            cwd=PRODUCTION,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+
+    def test_official_request_rejects_redirects_without_following_them(self):
+        import io
+        from unittest.mock import patch
+
+        from fastest_release_watch.feed import fetch
+
+        with patch("http.client.HTTPSConnection") as transport:
+            connection = transport.return_value
+            connection.getresponse.return_value = io.BytesIO(b"")
+            connection.getresponse.return_value.status = 302
+            with self.assertRaisesRegex(ValueError, "HTTP 302"):
+                fetch()
+            connection.request.assert_called_once()
+            self.assertEqual(connection.request.call_args.args,
+                             ("GET", "/repos/ggml-org/llama.cpp/releases?per_page=10&page=1"))
+
     def test_only_measured_retests_with_matching_conditions_are_linked(self):
         from copy import deepcopy
 
@@ -227,3 +253,93 @@ class ReleaseWatchTest(unittest.TestCase):
         published[second_id] = {"release_id": second_id, "status": "withdrawn"}
         with self.assertRaisesRegex(ValueError, "published measured"):
             approved_links(published.__getitem__, note, pair, "https://benchmark.example")
+
+
+@unittest.skipUnless(
+    all(shutil.which(tool) for tool in ("initdb", "postgres", "pg_isready", "createdb", "psql")),
+    "PostgreSQL command-line tools required",
+)
+class PostgresReleaseWatchTest(ReleaseWatchScenarios, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        work = Path(cls.enterClassContext(tempfile.TemporaryDirectory(prefix="fastest-release-watch-pg-", dir="/tmp")))
+        data = work / "db"
+        subprocess.run(
+            ["initdb", "-D", data, "--auth=trust", "--encoding=UTF8", "--no-locale"],
+            check=True, capture_output=True, timeout=20,
+        )
+        log = work / "postgres.log"
+        with log.open("w") as output:
+            postgres = subprocess.Popen(
+                ["postgres", "-D", data, "-k", work, "-c", "listen_addresses="],
+                stdout=output, stderr=subprocess.STDOUT,
+            )
+        cls.addClassCleanup(cls.stop_postgres, postgres)
+        cls.socket = work
+        cls.maintenance_url = f"host={work} dbname=postgres"
+        for _ in range(100):
+            ready = subprocess.run(["pg_isready", "-d", cls.maintenance_url], capture_output=True, timeout=3)
+            if ready.returncode == 0:
+                break
+            if postgres.poll() is not None:
+                raise RuntimeError(log.read_text())
+            time.sleep(0.05)
+        else:
+            raise RuntimeError("Watcher test PostgreSQL did not start")
+
+    @staticmethod
+    def stop_postgres(postgres):
+        if postgres.poll() is None:
+            postgres.send_signal(signal.SIGINT)
+            try:
+                postgres.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                postgres.send_signal(signal.SIGQUIT)
+                postgres.wait(timeout=10)
+
+    def setUp(self):
+        super().setUp()
+        database = f"watch_{uuid4().hex}"
+        subprocess.run(
+            ["createdb", "--maintenance-db", self.maintenance_url, database],
+            check=True, capture_output=True, timeout=15,
+        )
+        self.database_url = f"host={self.socket} dbname={database}"
+
+    def invoke(self, *options, read_only=False):
+        env = {**os.environ, "FASTEST_DATABASE_URL": self.database_url}
+        if read_only:
+            env["PGOPTIONS"] = "-c default_transaction_read_only=on"
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "fastest_release_watch", "--postgres", *options],
+            cwd=PRODUCTION, env=env, capture_output=True, text=True, timeout=15,
+        )
+
+    def prepare_history(self):
+        migrated = self.invoke("migrate")
+        self.assertEqual(migrated.returncode, 0, migrated.stderr)
+
+    def test_explicit_migration_enables_read_only_report(self):
+        before = self.invoke("report", "--as-of", DAY_ONE)
+        self.assertNotEqual(before.returncode, 0)
+        self.assertEqual(before.stdout, "")
+        for _ in range(2):
+            migrated = self.invoke("migrate")
+            self.assertEqual(migrated.returncode, 0, migrated.stderr)
+
+        result = self.invoke("report", "--as-of", DAY_ONE, read_only=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), {
+            "schema": "fastest.ai/runtime-release-watch/v1",
+            "source": {
+                "repository": REPOSITORY,
+                "feed_url": "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10&page=1",
+                "page_size": 10,
+                "mode": None,
+            },
+            "last_attempt": None,
+            "last_error": None,
+            "last_successful_refresh": None,
+            "stale": True,
+            "releases": [],
+        })
