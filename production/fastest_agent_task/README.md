@@ -136,3 +136,19 @@ canonical UUID for the actual decision. Publish those reviewed records with
 `publish-agent-task` and keep the returned pin with the review. The publisher
 renders the CPU cohort from those reviewed fields. The quiet-host plan keeps
 its own default report and existing release pins.
+
+### Link the benchmark from the model catalog
+
+Set the Pages Functions runtime bindings `FASTEST_RELEASE_ORIGIN` to the verified
+HTTPS release origin and `FASTEST_AGENT_TASK_RELEASE` to the full lowercase
+manifest SHA-256 emitted by `publish-agent-task`. Use the pin for the reviewed
+shared CI CPU comparison with observed attempts under both tool policies.
+
+Open `/catalog/<catalogRelease>/models/Qwen/Qwen2.5-7B-Instruct.html` or its
+`.md` companion. Find `catalogRelease` in `/wiki/manifest.json`. Both formats
+link directly to the pinned inventory tool-policy benchmark under the exact
+Q4_K_M GGUF artifact and display its shared CPU scope. The profile checks the
+pinned public JSON response before showing the link. Missing configuration,
+unavailable evidence, expiry, and withdrawal remove the link on the next
+profile read. Previously copied links continue to use the release origin's
+expiry and withdrawal checks.
