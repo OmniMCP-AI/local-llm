@@ -1,17 +1,39 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { readHardwareCatalog } from "./catalog-hardware-build.mjs";
+import { modelShard } from "./catalog-paths.mjs";
+import { importLocalCatalog } from "./catalog-pg.mjs";
 import { withLocalPages } from "./pages-test-server.mjs";
 
 const run = promisify(execFile);
 const here = fileURLToPath(new URL(".", import.meta.url));
 const origin = "https://fastest.ai";
+
+test("a production Pages catalog requires a database and an exact pin before writing output", async (t) => {
+  const output = await mkdtemp(join(tmpdir(), "fastest-pages-required-pin-"));
+  t.after(() => rm(output, { recursive: true, force: true }));
+  await writeFile(join(output, "index.html"), "previous release");
+  const env = { ...process.env };
+  delete env.FASTEST_CATALOG_DATABASE_URL;
+  delete env.FASTEST_CATALOG_SNAPSHOT_ID;
+  const build = () => run(process.execPath, ["build.mjs", "--pages", "--catalog-postgres", "--output", output], { cwd: here, env });
+
+  await assert.rejects(build(), /FASTEST_CATALOG_DATABASE_URL is required/);
+  env.FASTEST_CATALOG_DATABASE_URL = "invalid until a valid pin is supplied";
+  for (const snapshot of ["", "0123456789abcdef", "g".repeat(64)]) {
+    env.FASTEST_CATALOG_SNAPSHOT_ID = snapshot;
+    await assert.rejects(build(), /FASTEST_CATALOG_SNAPSHOT_ID must be a full SHA-256 digest/);
+  }
+  assert.deepEqual(await readdir(output), ["index.html"]);
+  assert.equal(await readFile(join(output, "index.html"), "utf8"), "previous release");
+});
 
 async function releaseDigest(directory) {
   const files = [];
@@ -60,5 +82,95 @@ test("a date-pinned Pages build is reproducible and serves crawler discovery thr
       cwd: here, signal: t.signal,
     });
     t.diagnostic(stdout.trim());
+  });
+});
+
+const testDatabase = process.env.FASTEST_TEST_DATABASE_URL;
+const testCatalogReader = process.env.FASTEST_TEST_CATALOG_READER_URL;
+test("production Pages serves the selected PostgreSQL snapshot through the catalog list and profile pairs", {
+  skip: !testDatabase || !testCatalogReader, timeout: 90_000,
+}, async (t) => {
+  const scratch = await mkdtemp(join(tmpdir(), "fastest-pages-postgres-"));
+  t.after(() => rm(scratch, { recursive: true, force: true }));
+  const output = join(scratch, "pages");
+  const hardware = await readHardwareCatalog(here);
+  const machineId = "apple-mac-mini-m4-24gb-512gb";
+  const machine = hardware.catalog.machines.find(({ id }) => id === machineId);
+  machine.name = "Mac mini M4 from the pinned database snapshot";
+  const { snapshotId } = await importLocalCatalog(hardware, testDatabase);
+  machine.name = "Mac mini M4 from the newer database snapshot";
+  const newer = await importLocalCatalog(hardware, testDatabase);
+  assert.notEqual(snapshotId, newer.snapshotId);
+
+  const env = { ...process.env, FASTEST_CATALOG_DATABASE_URL: testCatalogReader, FASTEST_CATALOG_SNAPSHOT_ID: snapshotId };
+  for (const name of ["FASTEST_RELEASE_ORIGIN", "FASTEST_RESEARCH_METADATA_APPROVALS", "FASTEST_EVIDENCE_STATE", "FASTEST_RESEARCH_ARCHIVE"]) delete env[name];
+  const build = () => run(process.execPath, ["build.mjs", "--pages", "--catalog-postgres", "--output", output], {
+    cwd: here, env, signal: t.signal,
+  });
+  await build();
+  const wiki = JSON.parse(await readFile(join(output, "wiki/manifest.json"), "utf8"));
+  const release = wiki.catalogRelease;
+  const manifest = JSON.parse(await readFile(join(output, "catalog", release, "manifest.json"), "utf8"));
+  assert.equal(manifest.snapshotId, snapshotId);
+  assert.equal(manifest.coverage.publishedRows, 19_192);
+  assert.equal(manifest.discovery.popular, 300);
+  assert.equal(manifest.discovery.small, 75);
+  assert.equal(manifest.hardware.coverage.completeBuilds, 3);
+
+  const releaseHash = await releaseDigest(output);
+  env.FASTEST_CATALOG_SNAPSHOT_ID = "0".repeat(64);
+  await assert.rejects(build(), /PostgreSQL catalog snapshot was not found/);
+  assert.equal(await releaseDigest(output), releaseHash);
+
+  await run("psql", ["-X", "-w", "--dbname", testDatabase, "--set=ON_ERROR_STOP=1", "--command", `
+    UPDATE fastest_catalog.machine SET document = document || '{"name":"Unexpected replacement"}'::jsonb
+    WHERE snapshot_id = '${newer.snapshotId}' AND id = '${machineId}'`]);
+  env.FASTEST_CATALOG_SNAPSHOT_ID = newer.snapshotId;
+  await assert.rejects(build(), /PostgreSQL catalog snapshot content does not match its publication digest/);
+  assert.equal(await releaseDigest(output), releaseHash);
+
+  env.FASTEST_CATALOG_SNAPSHOT_ID = snapshotId;
+  const approvals = join(scratch, "approvals.json");
+  await writeFile(approvals, JSON.stringify({ "youtube/09GB4LtXUok": { status: "withdrawn" } }));
+  env.FASTEST_RESEARCH_METADATA_APPROVALS = approvals;
+  await assert.rejects(build(), /PostgreSQL catalog snapshot conflicts with active evidence withdrawals/);
+  assert.equal(await releaseDigest(output), releaseHash);
+
+  delete env.FASTEST_RESEARCH_METADATA_APPROVALS;
+  const quarantine = join(scratch, "quarantine.json");
+  await writeFile(quarantine, JSON.stringify({ paths: [`/catalog-data/${release}/*`], updates: [] }));
+  env.FASTEST_EVIDENCE_STATE = quarantine;
+  await assert.rejects(build(), /PostgreSQL catalog snapshot conflicts with active evidence withdrawals/);
+  assert.equal(await releaseDigest(output), releaseHash);
+
+  await withLocalPages(output, t.signal, async (address) => {
+    const get = async (path) => {
+      const response = await fetch(address + path, { signal: t.signal });
+      assert.equal(response.status, 200, path);
+      return response;
+    };
+    const home = await (await get("/")).text();
+    assert.match(home, /Mac mini M4 from the pinned database snapshot/);
+    assert.doesNotMatch(home, /Mac mini M4 from the newer database snapshot/);
+    const machines = await (await get(`/catalog-data/${release}/machines.json`)).json();
+    assert.match(machines.find(({ id }) => id === machineId).name, /pinned database snapshot/);
+
+    const modelId = "Qwen/Qwen2.5-0.5B-Instruct";
+    const models = await (await get(`/catalog-data/${release}/${modelShard(modelId)}.json`)).json();
+    const row = models.find(({ id }) => id === modelId);
+    assert.equal(row.discovery.popular.rank, 11);
+    assert.equal(row.discovery.small.rank, 4);
+    for (const [path, expected] of [
+      [`machines/${machineId}`, /Mac mini M4 from the pinned database snapshot/],
+      [`models/${modelId}`, /Popular rank[^\n]{0,20}11/],
+      ["models/Corianas/1.3b", /Family unavailable/],
+      ["runtimes/llama.cpp", /No fastest\.ai compatibility test is published in this release/],
+    ]) {
+      for (const [extension, type] of [["html", "text/html"], ["md", "text/markdown"]]) {
+        const response = await get(`/catalog/${release}/${path}.${extension}`);
+        assert.ok(response.headers.get("content-type").startsWith(type));
+        assert.match(await response.text(), expected);
+      }
+    }
   });
 });

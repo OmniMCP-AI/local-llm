@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { catalogReleasePattern, deniedCatalogPin } from "./catalog-paths.mjs";
 import { emptyEvidenceState, isPublicIssue, validateEvidenceState, writeEvidenceState } from "./evidence-state.mjs";
 import { checkedPagesFile, pagesFileRoutes } from "./evidence-public-paths.mjs";
 import { withdrawnReference } from "./evidence-provenance.mjs";
@@ -80,6 +81,9 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
   const { action, evidenceId, sourceId, sourceLocator } = request;
   if (!["withdraw", "correct"].includes(action)) throw new Error("Unknown evidence resolution action");
   const { wiki: oldWiki, index: old } = await snapshot(previous);
+  const priorCatalog = catalogReleasePattern.test(oldWiki.catalogRelease ?? "")
+    ? await readJson(join(previous, "catalog", oldWiki.catalogRelease, "manifest.json")) : null;
+  const catalogPin = process.env.FASTEST_CATALOG_SNAPSHOT_ID || priorCatalog?.snapshotId;
   const source = old.sources.find(({ id }) => id === sourceId);
   const target = evidenceId === sourceId ? source : source?.records.find(({ id }) => id === evidenceId);
   if (!target || target.url !== sourceLocator) throw new Error("Evidence ID and locator do not identify a published source or record");
@@ -98,11 +102,17 @@ async function stageResolution(request, previous, output, approvalPath, archiveR
     const candidate = join(output, "pages");
     const trackedApprovals = join(output, "approvals.json");
     await writeFile(trackedApprovals, json(approvals), { mode: 0o600 });
-    await run(process.execPath, ["build.mjs", "--pages", "--output", candidate], {
+    await run(process.execPath, ["build.mjs", "--pages", ...(catalogPin ? ["--catalog-postgres"] : []), "--output", candidate], {
       cwd: directory,
-      env: { ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: trackedApprovals, FASTEST_EVIDENCE_STATE: "" },
+      env: {
+        ...process.env, FASTEST_RESEARCH_METADATA_APPROVALS: trackedApprovals, FASTEST_EVIDENCE_STATE: "",
+        ...(catalogPin && { FASTEST_CATALOG_SNAPSHOT_ID: catalogPin }),
+      },
     });
     const { wiki, index: current } = await snapshot(candidate);
+    if (catalogPin && deniedCatalogPin(wiki.catalogRelease, priorState.paths)) {
+      throw new Error("Replacement catalog conflicts with the prior evidence quarantine");
+    }
     const updatedSource = current.sources.find(({ id }) => id === sourceId);
     const updatedTarget = evidenceId === sourceId ? updatedSource : updatedSource?.records.find(({ id }) => id === evidenceId);
     if (action === "correct" && (!updatedTarget || JSON.stringify(updatedTarget) === JSON.stringify(target))) {
